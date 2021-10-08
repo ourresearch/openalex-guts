@@ -103,6 +103,7 @@ if False:
     echo 'PATH=$(pyenv root)/shims:$PATH' >> ~/.zshrc
     /Users/hpiwowar/.pyenv/versions/3.9.5/bin/python3  --version
     PYTHONPATH=/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages:
-    python --version""")
+    python --version
+    """)
     # unset PYTHONPATH
 

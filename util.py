@@ -102,6 +102,35 @@ def normalize_simple(text):
     response = re.sub("\s+", "", response)
     return response
 
+def normalize_doi(doi, return_none_if_error=False):
+    if not doi:
+        if return_none_if_error:
+            return None
+        else:
+            raise NoDoiException("There's no DOI at all.")
+
+    doi = doi.strip().lower()
+
+    # test cases for this regex are at https://regex101.com/r/zS4hA0/4
+    p = re.compile(r'(10\.\d+/[^\s]+)')
+    matches = re.findall(p, doi)
+
+    if len(matches) == 0:
+        if return_none_if_error:
+            return None
+        else:
+            raise NoDoiException("There's no valid DOI.")
+
+    doi = matches[0]
+
+    # clean_doi has error handling for non-utf-8
+    # but it's preceded by a call to remove_nonprinting_characters
+    # which calls to_unicode_or_bust with no error handling
+    # clean/normalize_doi takes a unicode object or utf-8 basestring or dies
+    doi = to_unicode_or_bust(doi)
+
+    return doi.replace('\0', '')
+
 def remove_everything_but_alphas(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
     only_alphas = input_string
