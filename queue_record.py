@@ -11,11 +11,10 @@ from sqlalchemy import text
 
 from app import db
 from app import logger
-from record import Record
+from models.record import Record
 from queue_main import DbQueue
 from util import elapsed
 from util import normalize_doi
-from util import run_sql
 
 
 class DbQueueRecord(DbQueue):
@@ -32,6 +31,7 @@ class DbQueueRecord(DbQueue):
         single_obj_id = kwargs.get("id", None)
         chunk = kwargs.get("chunk", 100)
         limit = kwargs.get("limit", 10)
+        worker_name = kwargs.get("name", "myworker")
         run_class = Record
         run_method = kwargs.get("method")
 
@@ -49,6 +49,7 @@ class DbQueueRecord(DbQueue):
                         (select id
                         FROM   {queue_table}
                         WHERE  started is null and finished is null
+                        order by random()
                         LIMIT  {chunk});
                 commit;
                 end;
@@ -72,56 +73,66 @@ class DbQueueRecord(DbQueue):
                 single_obj_id = normalize_doi(single_obj_id)
                 objects = [run_class.query.filter(run_class.id == single_obj_id).first()]
             else:
-                logger.info("looking for new jobs")
+                logger.info("{}: looking for new jobs".format(worker_name))
 
                 job_time = time()
-                row_list = db.engine.execute(text(text_query)).fetchall()
+                row_list = db.session.execute(text(text_query)).fetchall()
+                # db.session.commit()
+
                 object_ids = [row[0] for row in row_list]
-                logger.info("got ids, took {} seconds".format(elapsed(job_time)))
+                logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
+
 
                 job_time = time()
                 q = db.session.query(Record).options(orm.undefer('*')).filter(Record.id.in_(object_ids))
                 objects = q.all()
-                logger.info("got record objects in {} seconds".format(elapsed(job_time)))
+                # db.session.commit()
+                logger.info("{}: got record objects in {} seconds".format(worker_name, elapsed(job_time)))
 
                 # shuffle them or they sort by doi order
                 random.shuffle(objects)
 
+                # text_query = "select * from recordthresher_record limit 10; "
                 # objects = Record.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
 
+
                 # objects = run_class.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
+                # print(objects)
                 # id_rows =  db.engine.execute(text(text_query)).fetchall()
                 # ids = [row[0] for row in id_rows]
                 #
                 # job_time = time()
                 # objects = run_class.query.filter(run_class.id.in_(ids)).all()
 
-                # logger.info(u"finished get-new-objects query in {} seconds".format(elapsed(job_time)))
+                # logger.info(u"{}: finished get-new-objects query in {} seconds".format(worker_name, elapsed(job_time)))
 
-            if not objects:
-                # logger.info(u"sleeping for 5 seconds, then going again")
-                sleep(5)
-                continue
 
-            object_ids = [obj.id for obj in objects]
-            self.update_fn(run_class, run_method, objects, index=index)
+                if not objects:
+                    # logger.info(u"{}: sleeping for 5 seconds, then going again".format(worker_name)
+                    sleep(5)
+                    continue
 
-            # logger.info(u"finished update_fn")
-            if queue_table:
-                object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
-                object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
-                sql_command = "update {queue_table} set finished=sysdate, started=null where id in ({ids})".format(
-                    queue_table=queue_table, ids=object_ids_str)
-                logger.info(u"sql command to update finished is: {}".format(sql_command))
-                run_sql(db, sql_command)
-                # logger.info(u"finished run_sql")
+                object_ids = [obj.id for obj in objects]
+                self.update_fn(run_class, run_method, objects, index=index)
 
-            # finished is set in update_fn
-            index += 1
-            if single_obj_id:
-                return
-            else:
-                self.print_update(new_loop_start_time, chunk, limit, start_time, index)
+                # logger.info(u"{}: finished update_fn".format(worker_name)
+                if queue_table:
+                    object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
+                    object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
+                    sql_command = "update {queue_table} set finished=sysdate, started=null where id in ({ids})".format(
+                        queue_table=queue_table, ids=object_ids_str)
+                    logger.info(u"{}: sql command to update finished is: {}".format(worker_name, sql_command))
+                    # run_sql(db, sql_command)
+
+                    db.session.execute(text(sql_command))
+
+                    # logger.info(u"{}: finished run_sql".format(worker_name)
+
+                index += 1
+                if single_obj_id:
+                    return
+                else:
+                    self.print_update(new_loop_start_time, chunk, limit, start_time, index)
 
 
 if __name__ == "__main__":
@@ -132,17 +143,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run stuff.")
     parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
     parser.add_argument('--doi', nargs="?", type=str, help="id of the one thing you want to update (case insensitive)")
-    parser.add_argument('--method', nargs="?", type=str, default="update", help="method name to run")
+    parser.add_argument('--method', nargs="?", type=str, default="process", help="method name to run")
 
+    parser.add_argument('--run', default=True, action='store_true', help="to run the queue")
+    parser.add_argument('--chunk', "-ch", nargs="?", default=5, type=int, help="how many to take off db at once")
     parser.add_argument('--reset', default=False, action='store_true', help="do you want to just reset?")
-    parser.add_argument('--run', default=False, action='store_true', help="to run the queue")
     parser.add_argument('--status', default=False, action='store_true', help="to logger.info(the status")
     parser.add_argument('--dynos', default=None, type=int, help="scale to this many dynos")
     parser.add_argument('--logs', default=False, action='store_true', help="logger.info(out logs")
     parser.add_argument('--monitor', default=False, action='store_true', help="monitor till done, then turn off dynos")
     parser.add_argument('--kick', default=False, action='store_true', help="put started but unfinished dois back to unstarted so they are retried")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many jobs to do")
-    parser.add_argument('--chunk', "-ch", nargs="?", default=500, type=int, help="how many to take off db at once")
+    parser.add_argument('--name', nargs="?", default="myworker", type=str, help="worker name")
 
     parsed_args = parser.parse_args()
 

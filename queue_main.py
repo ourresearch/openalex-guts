@@ -189,9 +189,9 @@ class DbQueue(object):
 
 
         start_time = time()
-        commit_success = safe_commit(db)
-        if not commit_success:
-            logger.info("COMMIT fail")
+        # commit_success = safe_commit(db)
+        # if not commit_success:
+        #     logger.info("COMMIT fail")
         logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
         db.session.remove()  # close connection nicely
         return None  # important for if we use this on RQ

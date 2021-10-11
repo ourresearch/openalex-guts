@@ -74,10 +74,10 @@ app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 # app.config['SQLALCHEMY_ECHO'] = True
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")  # don't use this though, default is unclear, use binds
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_REDSHIFT")  # don't use this though, default is unclear, use binds
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_OPENALEX_REDSHIFT")  # don't use this though, default is unclear, use binds
 app.config["SQLALCHEMY_BINDS"] = {
     "unpaywall_db": os.getenv("DATABASE_URL_UNPAYWALL"),
-    "redshift_db": os.getenv("DATABASE_URL_REDSHIFT")
+    "redshift_db": os.getenv("DATABASE_URL_OPENALEX_REDSHIFT")
 }
 
 # from http://stackoverflow.com/a/12417346/596939
@@ -89,7 +89,7 @@ app.config["SQLALCHEMY_BINDS"] = {
 # db = NullPoolSQLAlchemy(app, session_options={"autoflush": False})
 
 app.config["SQLALCHEMY_POOL_SIZE"] = 10
-db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": False})
+db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": True})
 
 # do compression.  has to be above flask debug toolbar so it can override this.
 compress_json = os.getenv("COMPRESS_DEBUG", "True")=="True"
@@ -111,15 +111,13 @@ Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
 
-redshift_url = urlparse(os.getenv("DATABASE_URL_REDSHIFT"))
+redshift_url = urlparse(os.getenv("DATABASE_URL_OPENALEX_REDSHIFT"))
 app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
                                   database=redshift_url.path[1:],
                                   user=redshift_url.username,
                                   password=redshift_url.password,
                                   host=redshift_url.hostname,
                                   port=redshift_url.port)
-
-
 
 
 

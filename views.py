@@ -4,6 +4,8 @@ from flask import redirect
 from flask import abort
 from flask import render_template
 from flask import jsonify
+from flask_restx import Api
+from flask_restx import Resource
 
 import json
 import os
@@ -23,7 +25,12 @@ from util import is_issn
 from util import jsonify_fast_no_sort
 from util import str2bool
 from util import Timer
+from util import NoDoiException
 
+app_api = Api(app=app, version="0.0.1", description="OpenAlex APIs")
+name_space_api_base = app_api.namespace("base", description="Base endpoint")
+name_space_api_record = app_api.namespace("record", description="a record")
+name_space_api_work = app_api.namespace("work", description="a work")
 
 
 def json_dumper(obj):
@@ -82,20 +89,43 @@ def after_request_stuff(resp):
     return resp
 
 
+@name_space_api_base.route("/")
+class BaseEndpoint(Resource):
+    def get(self):
+        return jsonify_fast_no_sort({
+                "msg": "Welcome to OpenAlex Guts. Don't panic"
+            })
 
-@app.route('/', methods=["GET", "POST"])
-def base_endpoint():
-    return jsonify_fast_no_sort({
-        "version": "0.0.1",
-        "msg": "Welcome to OpenAlex Guts. Don't panic"
-    })
+@name_space_api_record.route("/record/<int:record_id>")
+class RecordEndpoint(Resource):
+    def get(self, record_id):
+        return record_from_id(record_id)
+
+@name_space_api_work.route("/work/doi/<string:doi>")
+class WorkDoiEndpoint(Resource):
+    def get(self, doi):
+        return work_from_doi(doi)
+
+@name_space_api_work.route("/work/pmid/<string:pmid>")
+class WorkPmidEndpoint(Resource):
+    def get(self, pmid):
+        return work_from_pmid(pmid)
+
+
+def record_from_id(record_id):
+    return {"id": record_id}
+
+def work_from_doi(doi):
+    return {"id": doi}
+
+def work_from_pmid(pmid):
+    return {"id": pmid}
+
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5007))
     app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
-
-
 
 if False:
     print("""
