@@ -96,7 +96,7 @@ class Record(db.Model):
         self.work.refresh()
 
     def to_dict(self):
-        return self.__dict__
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
