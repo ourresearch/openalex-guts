@@ -11,16 +11,16 @@ from nose.tools import assert_true
 
 requests_cache.install_cache('openalex_requests_cache', expire_after=60*60*24*7)  # expire_after is in seconds
 
-# nosetests test/
+# nosetests tests/
 
 # run default open and closed like this:
-# nosetests --processes=50 --process-timeout=600 test/
+# nosetests --processes=50 --process-timeout=600 tests/
 
-# test just hybrid like this
-# nosetests --processes=50 --process-timeout=600 -s test/test_publication.py:TestHybrid
+# tests just hybrid like this
+# nosetests --processes=50 --process-timeout=600 -s tests/test_publication.py:TestHybrid
 
-# test just active one like this
-# nosetests --processes=50 --process-timeout=600 -s test/test_publication.py:TestActive
+# tests just active one like this
+# nosetests --processes=50 --process-timeout=600 -s tests/test_publication.py:TestActive
 
 
 class MyTestCase(unittest.TestCase):

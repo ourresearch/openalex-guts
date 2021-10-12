@@ -3,7 +3,7 @@
 
 for (( i=1; i<=$QUEUE_WORKERS_PER_DYNO; i++ ))
 do
-  COMMAND="python queue_record.py --run --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_record-worker$DYNO-${i}"
+  COMMAND="python -m queues.queue_record --run --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_record-worker$DYNO-${i}"
   echo $COMMAND
   $COMMAND&
 done

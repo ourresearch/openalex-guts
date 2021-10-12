@@ -12,7 +12,7 @@ from sqlalchemy import text
 from app import db
 from app import logger
 from models.record import Record
-from queue_main import DbQueue
+from queues.queue_main import DbQueue
 from util import elapsed
 from util import normalize_doi
 
@@ -67,7 +67,7 @@ class DbQueueRecord(DbQueue):
                 queue_table=queue_table,
                 started_label=started_label
             )
-            # logger.info("the queue query is:\n{}".format(text_query))
+            # logger.info("the queues query is:\n{}".format(text_query))
 
             if single_obj_id:
                 single_obj_id = normalize_doi(single_obj_id)
@@ -84,7 +84,8 @@ class DbQueueRecord(DbQueue):
 
 
                 job_time = time()
-                q = db.session.query(Record).options(orm.undefer('*')).filter(Record.id.in_(object_ids))
+                q = db.session.query(Record).filter(Record.id.in_(object_ids))
+                # q = db.session.query(Record).options(orm.undefer('*')).filter(Record.id.in_(object_ids))
                 objects = q.all()
                 # db.session.commit()
                 logger.info("{}: got record objects in {} seconds".format(worker_name, elapsed(job_time)))
@@ -121,7 +122,7 @@ class DbQueueRecord(DbQueue):
                     object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
                     sql_command = "update {queue_table} set finished=sysdate, started=null where id in ({ids})".format(
                         queue_table=queue_table, ids=object_ids_str)
-                    logger.info(u"{}: sql command to update finished is: {}".format(worker_name, sql_command))
+                    # logger.info(u"{}: sql command to update finished is: {}".format(worker_name, sql_command))
                     # run_sql(db, sql_command)
 
                     db.session.execute(text(sql_command))
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument('--doi', nargs="?", type=str, help="id of the one thing you want to update (case insensitive)")
     parser.add_argument('--method', nargs="?", type=str, default="process", help="method name to run")
 
-    parser.add_argument('--run', default=True, action='store_true', help="to run the queue")
+    parser.add_argument('--run', default=True, action='store_true', help="to run the queues")
     parser.add_argument('--chunk', "-ch", nargs="?", default=5, type=int, help="how many to take off db at once")
     parser.add_argument('--reset', default=False, action='store_true', help="do you want to just reset?")
     parser.add_argument('--status', default=False, action='store_true', help="to logger.info(the status")

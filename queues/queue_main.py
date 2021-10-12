@@ -82,7 +82,7 @@ class DbQueue(object):
         num_dois = self.number_total_on_queue(job_type)
         num_waiting = self.number_waiting_on_queue(job_type)
         if num_dois:
-            logger.info("There are {} dois in the queue, of which {} ({}%) are waiting to run".format(
+            logger.info("There are {} dois in the queues, of which {} ({}%) are waiting to run".format(
                 num_dois, num_waiting, int(100*float(num_waiting)/num_dois)))
 
     def kick(self, job_type):
@@ -182,16 +182,17 @@ class DbQueue(object):
                 elapsed=elapsed(start_time, 4)
             ))
 
-            # for handling the queue
+            # for handling the queues
             if not (method_name == "update" and obj.__class__.__name__ == "Pub"):
                 obj.finished = datetime.datetime.utcnow().isoformat()
-            # db.session.merge(obj)
+
+            db.session.merge(obj)
 
 
         start_time = time()
-        # commit_success = safe_commit(db)
-        # if not commit_success:
-        #     logger.info("COMMIT fail")
+        commit_success = safe_commit(db)
+        if not commit_success:
+            logger.info("COMMIT fail")
         logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
         db.session.remove()  # close connection nicely
         return None  # important for if we use this on RQ

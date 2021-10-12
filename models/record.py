@@ -1,13 +1,13 @@
-import datetime
-import json
-import re
-from copy import deepcopy
-
 from app import db
+
 
 # alter table recordthresher_record add column started_label text;
 # alter table recordthresher_record add column started datetime;
 # alter table recordthresher_record add column finished datetime;
+# alter table recordthresher_record add column work_id bigint
+# alter table recordthresher_record add column normalized_title text
+
+
 
 class Record(db.Model):
     __tablename__ = "recordthresher_record"
@@ -53,13 +53,52 @@ class Record(db.Model):
     open_license = db.Column(db.Text)
     open_version = db.Column(db.Text)
 
-    # queue
+    # for processing
+    normalized_title = db.Column(db.Text)
+
+    # queues
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
     started_label = db.Column(db.Text)
 
+    # relationship to works is set in Work
+    work_id = db.Column(db.BigInteger, db.ForeignKey("recordthresher_work.id"))
+    # work = db.relationship("Work", back_populates="records")
+
+    def get_or_mint_work(self):
+        from models.work import calc_normalized_title
+        from models.work import Work
+
+        # if already assigned to a work, return that work
+        if self.work:
+            return self.work
+
+        if not self.normalized_title:
+            self.normalized_title = calc_normalized_title(self.title, self.repository_id)
+        print(self.normalized_title)
+
+        # look up by title (algorithm magic here)
+        candidates = Work.query.filter(Work.normalized_title==self.normalized_title).all()
+        if candidates:
+            if len(candidates > 1):
+                print("too many candidates!  {}".format(candidates))
+                print(1/0)
+            return candidates[0]
+
+        # if no existing work, mint a new one
+        new_work = Work()
+        return new_work
+
+
     def process(self):
         print("processing! {}".format(self.id))
+        self.work = self.get_or_mint_work()
+        self.work.refresh()
+
+    def to_dict(self):
+        return self.__dict__
 
     def __repr__(self):
         return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
+
+

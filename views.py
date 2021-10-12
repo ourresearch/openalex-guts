@@ -96,30 +96,46 @@ class BaseEndpoint(Resource):
                 "msg": "Welcome to OpenAlex Guts. Don't panic"
             })
 
-@name_space_api_record.route("/record/<int:record_id>")
-class RecordEndpoint(Resource):
+@name_space_api_record.route("/record/id/<string:record_id>")
+class RecordIdEndpoint(Resource):
     def get(self, record_id):
-        return record_from_id(record_id)
+        return jsonify_fast_no_sort(record_from_id(record_id).to_dict())
+
+@name_space_api_work.route("/work/id/<int:work_id>")
+class WorkIdEndpoint(Resource):
+    def get(self, work_id):
+        return jsonify_fast_no_sort(work_from_id(work_id).to_dict())
 
 @name_space_api_work.route("/work/doi/<string:doi>")
 class WorkDoiEndpoint(Resource):
     def get(self, doi):
-        return work_from_doi(doi)
+        return jsonify_fast_no_sort(work_from_doi(doi).to_dict())
 
 @name_space_api_work.route("/work/pmid/<string:pmid>")
 class WorkPmidEndpoint(Resource):
     def get(self, pmid):
-        return work_from_pmid(pmid)
+        return jsonify_fast_no_sort(work_from_pmid(pmid).to_dict())
 
 
 def record_from_id(record_id):
-    return {"id": record_id}
+    from models.record import Record
+    my_record = Record.query.filter(Record.id==record_id).first()
+    return my_record
+
+def work_from_id(work_id):
+    from models.work import Work
+    my_work = Work.query.filter(Work.id==work_id).first()
+    return my_work
 
 def work_from_doi(doi):
-    return {"id": doi}
+    from models.work import Work
+    my_work = Work.query.filter(Work.doi==doi).first()
+    return my_work
 
 def work_from_pmid(pmid):
-    return {"id": pmid}
+    from models.work import Work
+    my_work = Work.query.filter(Work.pmid==pmid).first()
+    return my_work
 
 
 

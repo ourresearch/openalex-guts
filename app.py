@@ -25,8 +25,6 @@ from util import safe_commit
 from util import elapsed
 from util import HTTPMethodOverrideMiddleware
 
-
-
 HEROKU_APP_NAME = "openalex-guts"
 
 # set up logging
@@ -89,7 +87,7 @@ app.config["SQLALCHEMY_BINDS"] = {
 # db = NullPoolSQLAlchemy(app, session_options={"autoflush": False})
 
 app.config["SQLALCHEMY_POOL_SIZE"] = 10
-db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": True})
+db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": False})
 
 # do compression.  has to be above flask debug toolbar so it can override this.
 compress_json = os.getenv("COMPRESS_DEBUG", "True")=="True"
