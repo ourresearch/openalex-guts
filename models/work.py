@@ -8,8 +8,8 @@ from util import normalize_title
 
 
 class Work(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_main_papers"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "work"
 
     # __table_args__ = {'schema': 'mid'}
     # __tablename__ = "work"

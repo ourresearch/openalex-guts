@@ -2,8 +2,8 @@ from app import db
 
 
 class Institution(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_main_affiliations"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institution"
 
     # __table_args__ = {'schema': 'work'}
     # __tablename__ = "institution"

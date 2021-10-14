@@ -15,21 +15,21 @@ from models.work_concept import WorkConcept
 
 
 # relationships without association tables
-Work.records = db.relationship("Record", lazy='subquery', backref="legacy.mag_main_papers")
-Work.mesh = db.relationship("Mesh", lazy='subquery', backref="legacy.mag_main_papers")
-Work.citations = db.relationship("Citation", lazy='subquery', backref="legacy.mag_main_papers")
-Work.locations = db.relationship("Location", lazy='subquery', backref="legacy.mag_main_papers")
-Work.abstract = db.relationship("Abstract", lazy='subquery', backref="legacy.mag_main_papers", uselist=False)
-Work.journal = db.relationship("Journal", lazy='subquery', backref="legacy.mag_main_papers", uselist=False)
+Work.records = db.relationship("Record", lazy='subquery', backref="mid.work")
+Work.mesh = db.relationship("Mesh", lazy='subquery', backref="mid.work")
+Work.citations = db.relationship("Citation", lazy='subquery', backref="mid.work")
+Work.locations = db.relationship("Location", lazy='subquery', backref="mid.work")
+Work.abstract = db.relationship("Abstract", lazy='subquery', backref="mid.work", uselist=False)
+Work.journal = db.relationship("Journal", lazy='subquery', backref="mid.work", uselist=False)
 
 # relationships with association tables
-Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="legacy.mag_main_papers")
-Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="legacy.mag_main_papers")
+Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="mid.work")
+Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="mid.work")
 
 Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
-Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="legacy.mag_advanced_fields_of_study.field_of_study_id", uselist=False)
+Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="mid.concept.field_of_study_id", uselist=False)
 WorkConcept.concept = db.relationship("Concept")
 
 

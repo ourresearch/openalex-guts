@@ -1,8 +1,8 @@
 from app import db
 
 class Author(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_main_authors"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "author"
 
     # __table_args__ = {'schema': 'work'}
     # __tablename__ = "author"

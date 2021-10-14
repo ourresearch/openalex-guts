@@ -2,8 +2,8 @@ from app import db
 
 
 class Concept(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_advanced_fields_of_study"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "concept"
 
     # __table_args__ = {'schema': 'work'}
     # __tablename__ = "concept"

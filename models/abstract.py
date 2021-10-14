@@ -5,7 +5,7 @@ class Abstract(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "abstract"
 
-    work_id = db.Column(db.BigInteger, db.ForeignKey("legacy.mag_main_papers.paper_id"), primary_key=True)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     abstract = db.Column(db.Text)
 
     def to_dict(self):

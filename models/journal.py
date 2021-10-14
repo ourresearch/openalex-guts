@@ -2,13 +2,13 @@ from app import db
 
 
 class Journal(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_main_journals"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "journal"
 
     # __table_args__ = {'schema': 'work'}
     # __tablename__ = "journal"
 
-    journal_id = db.Column(db.BigInteger, db.ForeignKey("legacy.mag_main_papers.journal_id"), primary_key=True)
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.journal_id"), primary_key=True)
     # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)

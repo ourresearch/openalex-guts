@@ -2,14 +2,14 @@ from app import db
 
 
 class WorkConcept(db.Model):
-    __table_args__ = {'schema': 'legacy'}
-    __tablename__ = "mag_advanced_paper_fields_of_study"
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "work_concept"
 
     # __table_args__ = {'schema': 'work'}
     # __tablename__ = "concept"
 
-    paper_id = db.Column(db.BigInteger, db.ForeignKey("legacy.mag_main_papers.paper_id"), primary_key=True)
-    field_of_study = db.Column(db.BigInteger, db.ForeignKey("legacy.mag_advanced_fields_of_study.field_of_study_id"), primary_key=True)
+    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept.field_of_study_id"), primary_key=True)
     score = db.Column(db.Float)
 
 
