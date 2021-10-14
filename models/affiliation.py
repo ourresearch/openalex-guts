@@ -17,7 +17,10 @@ class Affiliation(db.Model):
     def to_dict(self):
         response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         response["author"] = self.author.to_dict()
-        response["institution"] = self.institution.to_dict()
+        if self.institution:
+            response["institution"] = self.institution.to_dict()
+        else:
+            response["institution"] = None
         return response
 
     def __repr__(self):
