@@ -8,66 +8,40 @@ from util import normalize_title
 
 
 class Work(db.Model):
+    __table_args__ = {'schema': 'legacy'}
+    __tablename__ = "mag_main_papers"
 
-    __tablename__ = "recordthresher_work"
+    # __table_args__ = {'schema': 'mid'}
+    # __tablename__ = "work"
 
-    id = db.Column(db.BigInteger, primary_key=True)
-    created = db.Column(db.DateTime)
-    updated = db.Column(db.DateTime)
-    title = db.Column(db.Text)
-    normalized_title = db.Column(db.Text)
-
-
-    id = db.Column(db.Text, primary_key=True)
-    updated = db.Column(db.DateTime)
-
-    # ids
-    record_type = db.Column(db.Text)
+    paper_id = db.Column(db.BigInteger, primary_key=True)
+    # created = db.Column(db.DateTime)
+    # updated = db.Column(db.DateTime)
     doi = db.Column(db.Text)
-    pmid = db.Column(db.Text)
-    pmh_id = db.Column(db.Text)
+    doc_type = db.Column(db.Text)
+    paper_title = db.Column(db.Text)
+    original_title = db.Column(db.Text)
+    # book_title character varying(65535),
+    year = db.Column(db.Numeric)
+    publication_date = db.Column(db.DateTime)
+    online_date = db.Column(db.DateTime)
+    publisher = db.Column(db.Text)
+    journal_id = db.Column(db.BigInteger)
+    # conference_series_id bigint,
+    # conference_instance_id bigint,
+    # volume character varying(65535),
+    # issue character varying(65535),
+    # first_page character varying(65535),
+    # last_page character varying(65535),
+    # reference_count bigint,
+    # citation_count bigint,
+    # estimated_citation bigint,
+    # original_venue character varying(65535),
+    # family_id bigint,
+    # family_rank bigint,
+    created_date = db.Column(db.DateTime)
+    doi_lower = db.Column(db.Text)
 
-    # metadata
-    title = db.Column(db.Text)
-    published_date = db.Column(db.DateTime)
-    genre = db.Column(db.Text)
-    abstract = db.Column(db.Text)
-    mesh = db.Column(db.Text)
-
-    # related tables
-    citations = db.Column(db.Text)
-    authors = db.Column(db.Text)
-    mesh = db.Column(db.Text)
-
-    # venue links
-    repository_id = db.Column(db.Text)
-    journal_id = db.Column(db.Text)
-    journal_issn_l = db.Column(db.Text)
-
-    # record data
-    record_webpage_url = db.Column(db.Text)
-    record_webpage_archive_url = db.Column(db.Text)
-    record_structured_url = db.Column(db.Text)
-    record_structured_archive_url = db.Column(db.Text)
-
-    # oa and urls
-    work_pdf_url = db.Column(db.Text)
-    work_pdf_archive_url = db.Column(db.Text)
-    is_work_pdf_url_free_to_read = db.Column(db.Boolean)
-    is_oa = db.Column(db.Boolean)
-    oa_date = db.Column(db.DateTime)
-    open_license = db.Column(db.Text)
-    open_version = db.Column(db.Text)
-
-    # for processing
-    normalized_title = db.Column(db.Text)
-
-    # relationships
-    records = db.relationship(
-        "Record",
-        lazy='subquery',
-        backref="work"
-    )
 
     def __init__(self, **kwargs):
         self.id = random.randint(1000, 10000000)
@@ -93,7 +67,24 @@ class Work(db.Model):
         print("done! {}".format(self.id))
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        response["records"] = [record.to_dict() for record in self.records]
+
+        if self.abstract:
+            response["abstract"] = self.abstract.to_dict()
+        else:
+            response["abstract"] = None
+
+        if self.journal:
+            response["journal"] = self.journal.to_dict()
+        else:
+            response["journal"] = None
+        response["mesh"] = [mesh.to_dict() for mesh in self.mesh]
+        response["citations"] = [citation.to_dict() for citation in self.citations]
+        response["affiliations"] = [affiliation.to_dict() for affiliation in self.affiliations]
+        response["concepts"] = [concept.to_dict() for concept in self.concepts]
+        response["locations"] = [location.to_dict() for location in self.locations]
+        return response
 
     def __repr__(self):
         return "<Work ( {} ) {}>".format(self.id, self.title)

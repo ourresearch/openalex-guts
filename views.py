@@ -6,6 +6,8 @@ from flask import render_template
 from flask import jsonify
 from flask_restx import Api
 from flask_restx import Resource
+from sqlalchemy.sql import func
+from sqlalchemy.orm import load_only
 
 import json
 import os
@@ -18,6 +20,7 @@ from app import db
 from app import get_db_connection
 from app import get_db_cursor
 from app import logger
+import models
 
 from util import clean_doi
 from util import is_doi
@@ -28,10 +31,13 @@ from util import Timer
 from util import NoDoiException
 
 app_api = Api(app=app, version="0.0.1", description="OpenAlex APIs")
-name_space_api_base = app_api.namespace("base", description="Base endpoint")
-name_space_api_record = app_api.namespace("record", description="a record")
-name_space_api_work = app_api.namespace("work", description="a work")
-
+base_api_endpoint = app_api.namespace("about", description="Base endpoint")
+record_api_endpoint = app_api.namespace("record", description="A RecordThresher record")
+work_api_endpoint = app_api.namespace("work", description="An OpenAlex work")
+author_api_endpoint = app_api.namespace("author", description="An OpenAlex author")
+institution_api_endpoint = app_api.namespace("institution", description="An OpenAlex institution")
+journal_api_endpoint = app_api.namespace("journal", description="An OpenAlex journal")
+concept_api_endpoint = app_api.namespace("concept", description="An OpenAlex concept")
 
 def json_dumper(obj):
     """
@@ -76,12 +82,15 @@ def abort_json(status_code, msg):
 def after_request_stuff(resp):
 
     #support CORS
-    resp.headers['Access-Control-Allow-Origin'] = "*"
-    resp.headers['Access-Control-Allow-Methods'] = "POST, GET, OPTIONS, PUT, DELETE, PATCH"
-    resp.headers['Access-Control-Allow-Headers'] = "origin, content-type, accept, x-requested-with"
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS, PUT, DELETE, PATCH"
+    resp.headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
+    resp.headers["Access-Control-Expose-Headers"] = "Authorization, Cache-Control"
+    resp.headers["Access-Control-Allow-Credentials"] = "true"
 
-    # # remove session
-    # db.session.remove()
+    # make not cacheable because the GETs change after parameter change posts!
+    resp.cache_control.max_age = 0
+    resp.cache_control.no_cache = True
 
     # without this jason's heroku local buffers forever
     sys.stdout.flush()
@@ -89,53 +98,137 @@ def after_request_stuff(resp):
     return resp
 
 
-@name_space_api_base.route("/")
+#### Base
+
+@base_api_endpoint.route("/")
 class BaseEndpoint(Resource):
     def get(self):
         return jsonify_fast_no_sort({
                 "msg": "Welcome to OpenAlex Guts. Don't panic"
             })
 
-@name_space_api_record.route("/record/id/<string:record_id>")
+
+#### Record
+
+@record_api_endpoint.route("/RANDOM")
+class RecordRandomEndpoint(Resource):
+    def get(self, record_id):
+        obj = models.Record.query.order_by(func.random()).first()
+        return jsonify_fast_no_sort(obj.to_dict())
+
+@record_api_endpoint.route("/id/<string:record_id>")
 class RecordIdEndpoint(Resource):
     def get(self, record_id):
-        return jsonify_fast_no_sort(record_from_id(record_id).to_dict())
+        return jsonify_fast_no_sort(models.record_from_id(record_id).to_dict())
 
-@name_space_api_work.route("/work/id/<int:work_id>")
+
+
+#### Work
+
+@work_api_endpoint.route("/RANDOM")
+class WorkRandomEndpoint(Resource):
+    def get(self):
+        paper_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
+        obj = models.Work.query.get(paper_id)
+        return jsonify_fast_no_sort(obj.to_dict())
+
+@work_api_endpoint.route("/id/<int:work_id>")
 class WorkIdEndpoint(Resource):
     def get(self, work_id):
-        return jsonify_fast_no_sort(work_from_id(work_id).to_dict())
+        return jsonify_fast_no_sort(models.work_from_id(work_id).to_dict())
 
-@name_space_api_work.route("/work/doi/<string:doi>")
+@work_api_endpoint.route("/doi/<string:doi>")
 class WorkDoiEndpoint(Resource):
     def get(self, doi):
-        return jsonify_fast_no_sort(work_from_doi(doi).to_dict())
+        return jsonify_fast_no_sort(models.work_from_doi(doi).to_dict())
 
-@name_space_api_work.route("/work/pmid/<string:pmid>")
+@work_api_endpoint.route("/pmid/<string:pmid>")
 class WorkPmidEndpoint(Resource):
     def get(self, pmid):
-        return jsonify_fast_no_sort(work_from_pmid(pmid).to_dict())
+        return jsonify_fast_no_sort(models.work_from_pmid(pmid).to_dict())
 
 
-def record_from_id(record_id):
-    from models.record import Record
-    my_record = Record.query.filter(Record.id==record_id).first()
-    return my_record
+#### Author
 
-def work_from_id(work_id):
-    from models.work import Work
-    my_work = Work.query.filter(Work.id==work_id).first()
-    return my_work
+@author_api_endpoint.route("/RANDOM")
+class AuthorRandomEndpoint(Resource):
+    def get(self):
+        obj = models.Author.query.order_by(func.random()).first()
+        return jsonify_fast_no_sort(obj.to_dict())
 
-def work_from_doi(doi):
-    from models.work import Work
-    my_work = Work.query.filter(Work.doi==doi).first()
-    return my_work
+@author_api_endpoint.route("/id/<int:author_id>")
+class AuthorIdEndpoint(Resource):
+    def get(self, author_id):
+        return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
 
-def work_from_pmid(pmid):
-    from models.work import Work
-    my_work = Work.query.filter(Work.pmid==pmid).first()
-    return my_work
+@author_api_endpoint.route("/orcid/<string:orcid>")
+class AuthorOrcidEndpoint(Resource):
+    def get(self, orcid):
+        return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_orcid(orcid)])
+
+@author_api_endpoint.route("/normalized_name/<string:normalized_name>")
+class AuthorNormalizedNameEndpoint(Resource):
+    def get(self, normalized_name):
+        return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_normalized_name(normalized_name)])
+
+
+#### Institution
+
+@institution_api_endpoint.route("/RANDOM")
+class InstitutionRandomEndpoint(Resource):
+    def get(self):
+        obj = models.Institution.query.order_by(func.random()).first()
+        return jsonify_fast_no_sort(obj.to_dict())
+
+@institution_api_endpoint.route("/id/<int:institution_id>")
+class InstitutionIdEndpoint(Resource):
+    def get(self, institution_id):
+        return jsonify_fast_no_sort(models.institution_from_id(institution_id).to_dict())
+
+@institution_api_endpoint.route("/ror/<string:ror_id>")
+class InstitutionRorEndpoint(Resource):
+    def get(self, ror_id):
+        return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
+
+@institution_api_endpoint.route("/grid/<string:grid_id>")
+class InstitutionRorEndpoint(Resource):
+    def get(self, grid_id):
+        return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_grid(grid_id)])
+
+
+#### Journal
+
+@journal_api_endpoint.route("/RANDOM")
+class JournalRandomEndpoint(Resource):
+    def get(self):
+        obj = models.Journal.query.order_by(func.random()).first()
+        return jsonify_fast_no_sort(obj.to_dict())
+
+@journal_api_endpoint.route("/id/<int:journal_id>")
+class JournalIdEndpoint(Resource):
+    def get(self, journal_id):
+        return jsonify_fast_no_sort(models.journal_from_id(journal_id).to_dict())
+
+@journal_api_endpoint.route("/issn/<string:issn>")
+class JournalRorEndpoint(Resource):
+    def get(self, issn):
+        return jsonify_fast_no_sort([obj.to_dict() for obj in models.journals_from_issn(issn)])
+
+
+#### Concept
+
+@concept_api_endpoint.route("/RANDOM")
+class ConceptRandomEndpoint(Resource):
+    def get(self):
+        obj = models.Concept.query.order_by(func.random()).first()
+        return jsonify_fast_no_sort(obj.to_dict())
+
+@concept_api_endpoint.route("/id/<int:concept_id>")
+class ConceptIdEndpoint(Resource):
+    def get(self, concept_id):
+        return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
+
+
 
 
 

@@ -10,6 +10,7 @@ from app import db
 
 
 class Record(db.Model):
+    __table_args__ = {'schema': 'ins'}
     __tablename__ = "recordthresher_record"
 
     id = db.Column(db.Text, primary_key=True)
@@ -62,8 +63,7 @@ class Record(db.Model):
     started_label = db.Column(db.Text)
 
     # relationship to works is set in Work
-    work_id = db.Column(db.BigInteger, db.ForeignKey("recordthresher_work.id"))
-    # work = db.relationship("Work", back_populates="records")
+    work_id = db.Column(db.BigInteger, db.ForeignKey("legacy.mag_main_papers.paper_id"))
 
     def get_or_mint_work(self):
         from models.work import calc_normalized_title
