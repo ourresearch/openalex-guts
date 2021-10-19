@@ -15,22 +15,22 @@ from models.work_concept import WorkConcept
 
 
 # relationships without association tables
-Work.records = db.relationship("Record", lazy='subquery', backref="mid.work")
-Work.mesh = db.relationship("Mesh", lazy='subquery', backref="mid.work")
-Work.citations = db.relationship("Citation", lazy='subquery', backref="mid.work")
-Work.locations = db.relationship("Location", lazy='subquery', backref="mid.work")
-Work.abstract = db.relationship("Abstract", lazy='subquery', backref="mid.work", uselist=False)
-Work.journal = db.relationship("Journal", lazy='subquery', backref="mid.work", uselist=False)
+Work.records = db.relationship("Record", lazy='subquery', backref="work")
+Work.mesh = db.relationship("Mesh", lazy='subquery', backref="work")
+Work.citations = db.relationship("Citation", lazy='subquery', backref="work")
+Work.locations = db.relationship("Location", lazy='subquery', backref="work")
+Work.abstract = db.relationship("Abstract", lazy='subquery', backref="work", uselist=False)
+Work.journal = db.relationship("Journal", lazy='subquery', backref="work", uselist=False)
 
 # relationships with association tables
-Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="mid.work")
-Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="mid.work")
+Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="work")
+Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="work")
 
 Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
-Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="mid.concept.field_of_study_id", uselist=False)
-WorkConcept.concept = db.relationship("Concept")
+# Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="concept", uselist=False)
+WorkConcept.concept = db.relationship("Concept", lazy='subquery', backref="work_concept", uselist=False)
 
 
 def author_from_id(author_id):
@@ -67,7 +67,7 @@ def work_from_id(work_id):
     return Work.query.filter(Work.paper_id==work_id).first()
 
 def work_from_doi(doi):
-    return Work.query.filter(Work.doi==doi).first()
+    return Work.query.filter(Work.doi_lower==doi).first()
 
 def work_from_pmid(pmid):
     return Work.query.filter(Work.pmid==pmid).first()

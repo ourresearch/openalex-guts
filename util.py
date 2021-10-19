@@ -725,8 +725,13 @@ def myconverter(o):
         return o.isoformat()
     raise TypeError(repr(o) + " is not JSON serializable")
 
-# from https://stackoverflow.com/a/50762571/596939
 def jsonify_fast_no_sort(*args, **kwargs):
+    dumps_response = jsonify_fast_no_sort_raw(args, kwargs)
+    return current_app.response_class(dumps_response + '\n', mimetype=current_app.config['JSONIFY_MIMETYPE'])
+
+
+# from https://stackoverflow.com/a/50762571/596939
+def jsonify_fast_no_sort_raw(*args, **kwargs):
     if args and kwargs:
         raise TypeError('jsonify() behavior undefined when passed both args and kwargs')
     elif len(args) == 1:  # single args are passed directly to dumps()
@@ -737,8 +742,7 @@ def jsonify_fast_no_sort(*args, **kwargs):
     # turn this to False to be even faster, but warning then responses may not cache
     sort_keys = False
 
-    return current_app.response_class(
-        dumps(data,
+    return dumps(data,
               skipkeys=True,
               ensure_ascii=True,
               check_circular=False,
@@ -747,8 +751,9 @@ def jsonify_fast_no_sort(*args, **kwargs):
               default=myconverter,
               indent=None,
               # separators=None,
-              sort_keys=sort_keys) + '\n', mimetype=current_app.config['JSONIFY_MIMETYPE']
-    )
+              sort_keys=sort_keys)
+
+
 
 
 class Timer(object):
@@ -781,7 +786,8 @@ def normalize_title(title):
     # just first n characters
     response = response[0:500]
 
-    response = unidecode.unidecode(response.decode('utf-8')).encode('ascii', 'ignore')
+    if not isinstance(response, str):
+        response = unidecode.unidecode(response.decode('utf-8')).encode('ascii', 'ignore')
 
     # lowercase
     response = response.lower()

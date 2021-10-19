@@ -6,8 +6,10 @@ from flask import render_template
 from flask import jsonify
 from flask_restx import Api
 from flask_restx import Resource
+from flask_restx import fields
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
+from sqlalchemy.orm.exc import NoResultFound
 
 import json
 import os
@@ -30,7 +32,7 @@ from util import str2bool
 from util import Timer
 from util import NoDoiException
 
-app_api = Api(app=app, version="0.0.1", description="OpenAlex APIs")
+app_api = Api(app=app, version="0.0.1", title="OpenAlex", description="OpenAlex APIs", url_scheme="http", catch_all_404s=True, license="MIT", license_url="https://github.com/ourresearch/openalex-guts/blob/main/LICENSE")
 base_api_endpoint = app_api.namespace("about", description="Base endpoint")
 record_api_endpoint = app_api.namespace("record", description="A RecordThresher record")
 work_api_endpoint = app_api.namespace("work", description="An OpenAlex work")
@@ -38,6 +40,7 @@ author_api_endpoint = app_api.namespace("author", description="An OpenAlex autho
 institution_api_endpoint = app_api.namespace("institution", description="An OpenAlex institution")
 journal_api_endpoint = app_api.namespace("journal", description="An OpenAlex journal")
 concept_api_endpoint = app_api.namespace("concept", description="An OpenAlex concept")
+
 
 def json_dumper(obj):
     """
@@ -98,6 +101,19 @@ def after_request_stuff(resp):
     return resp
 
 
+@app_api.errorhandler(NoResultFound)
+def handle_no_result_exception(error):
+    '''Return a custom not found error message and 404 status code'''
+    return {'message': error.specific}, 404
+
+
+# use this to play with the swagger CSS
+@app.route('/swaggerui/swagger-ui.css')
+def custom_css_theme():
+    from flask import send_file
+    return send_file('static/swagger-ui.css')
+
+
 #### Base
 
 @base_api_endpoint.route("/")
@@ -110,12 +126,14 @@ class BaseEndpoint(Resource):
 
 #### Record
 
+@app_api.deprecated
 @record_api_endpoint.route("/RANDOM")
 class RecordRandomEndpoint(Resource):
     def get(self, record_id):
         obj = models.Record.query.order_by(func.random()).first()
         return jsonify_fast_no_sort(obj.to_dict())
 
+@app_api.deprecated
 @record_api_endpoint.route("/id/<string:record_id>")
 class RecordIdEndpoint(Resource):
     def get(self, record_id):
@@ -124,6 +142,31 @@ class RecordIdEndpoint(Resource):
 
 
 #### Work
+
+
+
+class BigInteger(fields.Integer, fields.Raw):
+    __schema_type__ = "long"
+    __schema_example__ = 123456789123456789
+
+class Doi(fields.Integer, fields.Raw):
+    __schema_type__ = "doi"
+    __schema_example__ = "10.123/abc.def"
+
+my_other_model = app_api.model('Author', {
+    'author_id': BigInteger(required=True),
+    'doi': Doi(required=True),
+})
+
+my_model = app_api.model('Work', {
+    'name': fields.String(description='The name', required=True),
+    'type': fields.String(description='The object type', enum=['A', 'B']),
+    'age': fields.Integer(),
+    "locations": fields.List(fields.Nested(my_other_model)),
+    "one_location": fields.Nested(my_other_model)
+})
+
+
 
 @work_api_endpoint.route("/RANDOM")
 class WorkRandomEndpoint(Resource):
@@ -137,10 +180,20 @@ class WorkIdEndpoint(Resource):
     def get(self, work_id):
         return jsonify_fast_no_sort(models.work_from_id(work_id).to_dict())
 
-@work_api_endpoint.route("/doi/<string:doi>")
+@work_api_endpoint.route("/doi/<path:doi>")
+# @app_api.doc(params={'doi': 'DOI of the work'}, description= "An endpoint to get work from the doi")
+@app_api.doc(params={'doi': {'description': 'new DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': Doi}}, description= "An endpoint to get work from the doi")
+@app_api.response(200, 'Success', my_model)
+@app_api.response(400, 'Validation Error')
+@app_api.response(404, 'Not found')
 class WorkDoiEndpoint(Resource):
     def get(self, doi):
-        return jsonify_fast_no_sort(models.work_from_doi(doi).to_dict())
+        from util import normalize_doi
+        clean_doi = normalize_doi(doi)
+        my_obj = models.work_from_doi(clean_doi)
+        if not my_obj:
+            abort(404)
+        return jsonify_fast_no_sort(my_obj.to_dict())
 
 @work_api_endpoint.route("/pmid/<string:pmid>")
 class WorkPmidEndpoint(Resource):
@@ -183,7 +236,10 @@ class InstitutionRandomEndpoint(Resource):
 @institution_api_endpoint.route("/id/<int:institution_id>")
 class InstitutionIdEndpoint(Resource):
     def get(self, institution_id):
-        return jsonify_fast_no_sort(models.institution_from_id(institution_id).to_dict())
+        obj = models.institution_from_id(institution_id)
+        if not obj:
+            return abort_json(404, "not found"), 404
+        return jsonify_fast_no_sort(obj.to_dict())
 
 @institution_api_endpoint.route("/ror/<string:ror_id>")
 class InstitutionRorEndpoint(Resource):
@@ -202,15 +258,21 @@ class InstitutionRorEndpoint(Resource):
 class JournalRandomEndpoint(Resource):
     def get(self):
         obj = models.Journal.query.order_by(func.random()).first()
-        return jsonify_fast_no_sort(obj.to_dict())
+        if not obj:
+            raise NoResultFound
+        response = obj.to_dict()
+        return response
 
 @journal_api_endpoint.route("/id/<int:journal_id>")
+@app_api.response(200, 'Success', my_model)
+@app_api.response(400, 'Validation Error')
+@app_api.response(404, 'Not found')
 class JournalIdEndpoint(Resource):
     def get(self, journal_id):
         return jsonify_fast_no_sort(models.journal_from_id(journal_id).to_dict())
 
 @journal_api_endpoint.route("/issn/<string:issn>")
-class JournalRorEndpoint(Resource):
+class JournalIssnEndpoint(Resource):
     def get(self, issn):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.journals_from_issn(issn)])
 

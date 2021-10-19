@@ -3,8 +3,10 @@ import datetime
 import shortuuid
 import random
 
+
 from app import db
 from util import normalize_title
+from util import jsonify_fast_no_sort_raw
 
 
 class Work(db.Model):
@@ -14,6 +16,7 @@ class Work(db.Model):
     # __table_args__ = {'schema': 'mid'}
     # __tablename__ = "work"
 
+    # id = db.Column(db.BigInteger)
     paper_id = db.Column(db.BigInteger, primary_key=True)
     # created = db.Column(db.DateTime)
     # updated = db.Column(db.DateTime)
@@ -42,12 +45,29 @@ class Work(db.Model):
     created_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
 
+    # for processing
+    normalized_title = db.Column(db.Text)
+
+    # for stored_response
+    json_full = db.Column(db.Text)
+    json_elastic = db.Column(db.Text)
+
+    # queues
+    started = db.Column(db.DateTime)
+    finished = db.Column(db.DateTime)
+    started_label = db.Column(db.Text)
+
 
     def __init__(self, **kwargs):
         self.id = random.randint(1000, 10000000)
+        self.paper_id = self.id
         self.created = datetime.datetime.utcnow().isoformat()
         self.updated = self.created
         super(Work, self).__init__(**kwargs)
+
+    @property
+    def id(self):
+        return self.paper_id
 
     def refresh(self):
         print("refreshing! {}".format(self.id))
@@ -65,6 +85,14 @@ class Work(db.Model):
 
         self.updated = datetime.datetime.utcnow().isoformat()
         print("done! {}".format(self.id))
+
+    def process(self):
+        print("processing! {}".format(self.id))
+        self.normalized_title = normalize_title(self.original_title)
+        self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
+        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict_elastic())
+        print(self.json_elastic[0:100])
+
 
     def to_dict(self):
         response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -86,8 +114,18 @@ class Work(db.Model):
         response["locations"] = [location.to_dict() for location in self.locations]
         return response
 
+    def to_dict_elastic(self):
+        response = self.to_dict()
+        # remove things we don't need for elastic index
+        response.pop("records", None)
+        response.pop("mesh", None)
+        response.pop("citations", None)
+        response.pop("locations", None)
+        response.pop("abstract", None)
+        return response
+
     def __repr__(self):
-        return "<Work ( {} ) {}>".format(self.id, self.title)
+        return "<Work ( {} ) '{}...'>".format(self.id, self.paper_title[0:20])
 
 
 def calc_normalized_title(title, repository_id=None):
