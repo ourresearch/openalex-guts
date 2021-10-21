@@ -32,12 +32,12 @@ class Work(db.Model):
     journal_id = db.Column(db.BigInteger)
     # conference_series_id bigint,
     # conference_instance_id bigint,
-    # volume character varying(65535),
-    # issue character varying(65535),
-    # first_page character varying(65535),
-    # last_page character varying(65535),
+    volume = db.Column(db.Text)
+    issue = db.Column(db.Text)
+    first_page = db.Column(db.Text)
+    last_page = db.Column(db.Text)
     # reference_count bigint,
-    # citation_count bigint,
+    citation_count = db.Column(db.BigInteger)
     # estimated_citation bigint,
     # original_venue character varying(65535),
     # family_id bigint,
@@ -121,11 +121,10 @@ class Work(db.Model):
         self.normalized_title = normalize_title(self.original_title)
         self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
-        print(self.json_elastic[0:100])
-
+        # print(self.json_elastic[0:100])
 
     def to_dict(self, return_level="full"):
-        keys = ["work_id", "work_title", "year", "publication_date", "doc_type"]
+        keys = ["work_id", "work_title", "year", "publication_date", "doc_type", "volume", "issue", "first_page", "last_page", "citation_count"]
         response = {key: getattr(self, key) for key in keys}
         response["ids"] = {}
         if self.doi:
@@ -139,6 +138,7 @@ class Work(db.Model):
             response["unpaywall"] = self.unpaywall.to_dict(return_level)
         response["affiliations"] = [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted]
         response["concepts"] = [concept.to_dict(return_level) for concept in self.concepts_sorted]
+        response["locations"] = [location.to_dict(return_level) for location in self.locations_sorted]
 
         if return_level == "full":
             response["records"] = [record.to_dict(return_level) for record in self.records]
