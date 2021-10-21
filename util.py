@@ -764,10 +764,8 @@ class TimingMessages(object):
         my_elapsed = elapsed(self.section_time, 2)
         if use_start_time:
             my_elapsed = elapsed(self.start_time, 2)
-
         # now reset section time
         self.section_time = time.time()
-
         return "{: <30} {: >6}s".format(message, my_elapsed)
 
     def log_timing(self, message):

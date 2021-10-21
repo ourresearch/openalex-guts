@@ -172,9 +172,23 @@ my_model = app_api.model('Work', {
 @work_api_endpoint.route("/RANDOM")
 class WorkRandomEndpoint(Resource):
     def get(self):
-        paper_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
-        obj = models.Work.query.get(paper_id)
-        return jsonify_fast_no_sort(obj.to_dict())
+        my_timing = TimingMessages()
+        response = {"_timing": None}
+        work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
+        work_id = work_id[0]
+        my_timing.log_timing("after random()")
+        my_obj = models.work_from_id(work_id)
+        my_timing.log_timing("after work_from_id()")
+        if not my_obj:
+            abort(404)
+        return_level = "full"
+        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
+            return_level = "elastic"
+        response["results"] = my_obj.to_dict(return_level)
+        my_timing.log_timing("after to_dict()")
+        response["_timing"] = my_timing.to_dict()
+        return jsonify_fast_no_sort(response)
+
 
 @work_api_endpoint.route("/id/<int:work_id>")
 @app_api.doc(params={
@@ -188,8 +202,7 @@ class WorkRandomEndpoint(Resource):
 class WorkIdEndpoint(Resource):
     def get(self, work_id):
         my_timing = TimingMessages()
-        response = {}
-        response["_timing"] = my_timing.to_dict()
+        response = {"_timing": None}
         my_obj = models.work_from_id(work_id)
         my_timing.log_timing("after work_from_id()")
         if not my_obj:
@@ -199,6 +212,7 @@ class WorkIdEndpoint(Resource):
             return_level = "elastic"
         response["results"] = my_obj.to_dict(return_level)
         my_timing.log_timing("after to_dict()")
+        response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
 
 @work_api_endpoint.route("/doi/<path:doi>")
@@ -215,8 +229,7 @@ class WorkDoiEndpoint(Resource):
         from util import normalize_doi
         clean_doi = normalize_doi(doi)
         my_timing = TimingMessages()
-        response = {}
-        response["_timing"] = my_timing.to_dict()
+        response = {"_timing": None}
         my_obj = models.work_from_doi(clean_doi)
         my_timing.log_timing("after work_from_doi()")
         if not my_obj:
@@ -226,6 +239,7 @@ class WorkDoiEndpoint(Resource):
             return_level = "elastic"
         response["results"] = my_obj.to_dict(return_level)
         my_timing.log_timing("after to_dict()")
+        response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
 
 @work_api_endpoint.route("/pmid/<string:pmid>")
