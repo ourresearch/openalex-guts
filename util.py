@@ -726,7 +726,7 @@ def myconverter(o):
     raise TypeError(repr(o) + " is not JSON serializable")
 
 def jsonify_fast_no_sort(*args, **kwargs):
-    dumps_response = jsonify_fast_no_sort_raw(args, kwargs)
+    dumps_response = jsonify_fast_no_sort_raw(*args, **kwargs)
     return current_app.response_class(dumps_response + '\n', mimetype=current_app.config['JSONIFY_MIMETYPE'])
 
 
@@ -754,25 +754,29 @@ def jsonify_fast_no_sort_raw(*args, **kwargs):
               sort_keys=sort_keys)
 
 
-
-
-class Timer(object):
+class TimingMessages(object):
     def __init__(self):
-        self.timing_messages = []
         self.start_time = time.time()
         self.section_time = time.time()
+        self.messages = []
 
-    def log_timing(self, message):
-        self.timing_messages.append("{: <30} {: >6}s".format(message, elapsed(self.section_time, 2)))
+    def format_timing_message(self, message, use_start_time=False):
+        my_elapsed = elapsed(self.section_time, 2)
+        if use_start_time:
+            my_elapsed = elapsed(self.start_time, 2)
+
+        # now reset section time
         self.section_time = time.time()
 
-    @property
-    def elapsed_total(self):
-        return elapsed(self.start_time, 2)
+        return "{: <30} {: >6}s".format(message, my_elapsed)
+
+    def log_timing(self, message):
+        self.messages.append(self.format_timing_message(message))
 
     def to_dict(self):
-        self.timing_messages.append("{: <30} {: >6}s".format("TOTAL", self.elapsed_total))
-        return self.timing_messages
+        self.messages.append(self.format_timing_message("TOTAL", use_start_time=True))
+        return self.messages
+
 
 def normalize_title(title):
     import unidecode

@@ -13,9 +13,9 @@ class WorkConcept(db.Model):
     score = db.Column(db.Float)
 
 
-    def to_dict(self):
-        response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        response["concept"] = self.concept.to_dict()
+    def to_dict(self, return_level="full"):
+        response = self.concept.to_dict(return_level)
+        response["score"] = self.score
         return response
 
     def __repr__(self):

@@ -17,8 +17,21 @@ class Author(db.Model):
     citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
 
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    @property
+    def author_display_name(self):
+        return self.display_name
+
+    @property
+    def orcid(self):
+        return None
+
+
+    def to_dict(self, return_level="full"):
+        if return_level=="full":
+            keys = [col.name for col in self.__table__.columns]
+        else:
+            keys = ["author_id", "author_display_name", "orcid"]
+        return {key: getattr(self, key) for key in keys}
 
     def __repr__(self):
         return "<Author ( {} ) {}>".format(self.author_id, self.display_name)

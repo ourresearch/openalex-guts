@@ -7,6 +7,7 @@ from flask import jsonify
 from flask_restx import Api
 from flask_restx import Resource
 from flask_restx import fields
+from flask_restx import inputs
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import NoResultFound
@@ -29,7 +30,7 @@ from util import is_doi
 from util import is_issn
 from util import jsonify_fast_no_sort
 from util import str2bool
-from util import Timer
+from util import TimingMessages
 from util import NoDoiException
 
 app_api = Api(app=app, version="0.0.1", title="OpenAlex", description="OpenAlex APIs", url_scheme="http", catch_all_404s=True, license="MIT", license_url="https://github.com/ourresearch/openalex-guts/blob/main/LICENSE")
@@ -176,13 +177,36 @@ class WorkRandomEndpoint(Resource):
         return jsonify_fast_no_sort(obj.to_dict())
 
 @work_api_endpoint.route("/id/<int:work_id>")
+@app_api.doc(params={
+                'id': {'description': 'id of the work (eg 2741809807)', 'in': 'path', 'type': int},
+                'return': {'description': 'full or elastic (default full)', "required":False, 'in': 'query', 'type': str},
+                },
+             description= "An endpoint to get work from the id")
+@app_api.response(200, 'Success', my_model)
+@app_api.response(400, 'Validation Error')
+@app_api.response(404, 'Not found')
 class WorkIdEndpoint(Resource):
     def get(self, work_id):
-        return jsonify_fast_no_sort(models.work_from_id(work_id).to_dict())
+        my_timing = TimingMessages()
+        response = {}
+        response["_timing"] = my_timing.to_dict()
+        my_obj = models.work_from_id(work_id)
+        my_timing.log_timing("after work_from_id()")
+        if not my_obj:
+            abort(404)
+        return_level = "full"
+        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
+            return_level = "elastic"
+        response["results"] = my_obj.to_dict(return_level)
+        my_timing.log_timing("after to_dict()")
+        return jsonify_fast_no_sort(response)
 
 @work_api_endpoint.route("/doi/<path:doi>")
-# @app_api.doc(params={'doi': 'DOI of the work'}, description= "An endpoint to get work from the doi")
-@app_api.doc(params={'doi': {'description': 'new DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': Doi}}, description= "An endpoint to get work from the doi")
+@app_api.doc(params={
+                'doi': {'description': 'new DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': Doi},
+                'return': {'description': 'full or elastic (default full)', "required":False, 'in': 'query', 'type': str},
+                },
+             description= "An endpoint to get work from the doi")
 @app_api.response(200, 'Success', my_model)
 @app_api.response(400, 'Validation Error')
 @app_api.response(404, 'Not found')
@@ -190,10 +214,19 @@ class WorkDoiEndpoint(Resource):
     def get(self, doi):
         from util import normalize_doi
         clean_doi = normalize_doi(doi)
+        my_timing = TimingMessages()
+        response = {}
+        response["_timing"] = my_timing.to_dict()
         my_obj = models.work_from_doi(clean_doi)
+        my_timing.log_timing("after work_from_doi()")
         if not my_obj:
             abort(404)
-        return jsonify_fast_no_sort(my_obj.to_dict())
+        return_level = "full"
+        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
+            return_level = "elastic"
+        response["results"] = my_obj.to_dict(return_level)
+        my_timing.log_timing("after to_dict()")
+        return jsonify_fast_no_sort(response)
 
 @work_api_endpoint.route("/pmid/<string:pmid>")
 class WorkPmidEndpoint(Resource):

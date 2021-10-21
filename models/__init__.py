@@ -12,6 +12,10 @@ from models.record import Record
 from models.work import Work
 from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
+from models.ror import Ror
+from models.journalsdb import Journalsdb
+from models.unpaywall import Unpaywall
+from models.work_extra_ids import WorkExtraIds
 
 
 # relationships without association tables
@@ -21,6 +25,8 @@ Work.citations = db.relationship("Citation", lazy='subquery', backref="work")
 Work.locations = db.relationship("Location", lazy='subquery', backref="work")
 Work.abstract = db.relationship("Abstract", lazy='subquery', backref="work", uselist=False)
 Work.journal = db.relationship("Journal", lazy='subquery', backref="work", uselist=False)
+Work.unpaywall = db.relationship("Unpaywall", lazy='subquery', backref="work", uselist=False)
+Work.extra_ids = db.relationship("WorkExtraIds", lazy='subquery', backref="work")
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="work")
@@ -28,6 +34,9 @@ Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="work")
 
 Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
+
+Institution.ror = db.relationship("Ror", uselist=False)
+Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
 
 # Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='subquery', backref="work_concept", uselist=False)

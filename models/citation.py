@@ -11,7 +11,7 @@ class Citation(db.Model):
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     paper_reference_id = db.Column(db.BigInteger, primary_key=True)
 
-    def to_dict(self):
+    def to_dict(self, return_level="full"):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):

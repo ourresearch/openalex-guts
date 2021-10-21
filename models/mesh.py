@@ -15,7 +15,7 @@ class Mesh(db.Model):
     qualifier_name = db.Column(db.Text)
     qualifier_name = db.Column(db.Boolean)
 
-    def to_dict(self):
+    def to_dict(self, return_level="full"):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):

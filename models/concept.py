@@ -19,8 +19,11 @@ class Concept(db.Model):
     citation_count = db.Column(db.BigInteger)
     create_date = db.Column(db.DateTime)
 
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    def to_dict(self, return_level="full"):
+        if return_level == "full":
+            return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        keys = ["field_of_study_id", "display_name"]
+        return {key: getattr(self, key) for key in keys}
 
     def __repr__(self):
         return "<Concept ( {} ) {}>".format(self.field_of_study_id, self.display_name)

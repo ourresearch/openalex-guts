@@ -86,43 +86,72 @@ class Work(db.Model):
         self.updated = datetime.datetime.utcnow().isoformat()
         print("done! {}".format(self.id))
 
+    @property
+    def affiliations_sorted(self):
+        return sorted(self.affiliations, key=lambda x: x.author_sequence_number)
+
+    @property
+    def concepts_sorted(self):
+        return sorted(self.concepts, key=lambda x: x.score, reverse=True)
+
+    @property
+    def locations_sorted(self):
+        return sorted(self.locations, key=lambda x: (x.source_description, x.source_url))
+
+    @property
+    def mag_publisher(self):
+        return self.publisher
+
+    @property
+    def work_title(self):
+        return self.original_title
+
+    @property
+    def work_id(self):
+        return self.paper_id
+
+    @property
+    def doi_url(self):
+        if not self.doi:
+            return None
+        return "https://doi.org/{}".format(self.doi_lower)
+
     def process(self):
         print("processing! {}".format(self.id))
         self.normalized_title = normalize_title(self.original_title)
         self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
-        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict_elastic())
+        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
         print(self.json_elastic[0:100])
 
 
-    def to_dict(self):
-        response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        response["records"] = [record.to_dict() for record in self.records]
-
-        if self.abstract:
-            response["abstract"] = self.abstract.to_dict()
-        else:
-            response["abstract"] = None
+    def to_dict(self, return_level="full"):
+        keys = ["work_id", "work_title", "year", "publication_date", "doc_type"]
+        response = {key: getattr(self, key) for key in keys}
+        response["ids"] = {}
+        if self.doi:
+            response["ids"]["doi"] = [self.doi_lower, self.doi_url]
+        if self.extra_ids:
+            response["ids"].update({extra_id.id_type: extra_id.to_dict(return_level) for extra_id in self.extra_ids})
 
         if self.journal:
-            response["journal"] = self.journal.to_dict()
-        else:
-            response["journal"] = None
-        response["mesh"] = [mesh.to_dict() for mesh in self.mesh]
-        response["citations"] = [citation.to_dict() for citation in self.citations]
-        response["affiliations"] = [affiliation.to_dict() for affiliation in self.affiliations]
-        response["concepts"] = [concept.to_dict() for concept in self.concepts]
-        response["locations"] = [location.to_dict() for location in self.locations]
+            response["journal"] = self.journal.to_dict(return_level)
+        if self.unpaywall:
+            response["unpaywall"] = self.unpaywall.to_dict(return_level)
+        response["affiliations"] = [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted]
+        response["concepts"] = [concept.to_dict(return_level) for concept in self.concepts_sorted]
+
+        if return_level == "full":
+            response["records"] = [record.to_dict(return_level) for record in self.records]
+            response["locations"] = [location.to_dict(return_level) for location in self.locations_sorted]
+            response["mesh"] = [mesh.to_dict(return_level) for mesh in self.mesh]
+            response["citations"] = [citation.to_dict(return_level) for citation in self.citations]
+            if self.abstract:
+                response["abstract"] = self.abstract.to_dict(return_level)
+            else:
+                response["abstract"] = None
+
         return response
 
-    def to_dict_elastic(self):
-        response = self.to_dict()
-        # remove things we don't need for elastic index
-        response.pop("records", None)
-        response.pop("mesh", None)
-        response.pop("citations", None)
-        response.pop("locations", None)
-        response.pop("abstract", None)
-        return response
 
     def __repr__(self):
         return "<Work ( {} ) '{}...'>".format(self.id, self.paper_title[0:20])

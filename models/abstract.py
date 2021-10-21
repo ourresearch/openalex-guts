@@ -8,7 +8,7 @@ class Abstract(db.Model):
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     abstract = db.Column(db.Text)
 
-    def to_dict(self):
+    def to_dict(self, return_level="full"):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
     def __repr__(self):

@@ -14,13 +14,13 @@ class Affiliation(db.Model):
     original_author = db.Column(db.Text)
     original_affiliation = db.Column(db.Text)
 
-    def to_dict(self):
-        response = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        response["author"] = self.author.to_dict()
+    def to_dict(self, return_level="full"):
+        response = {}
+        response["author_sequence_number"] = self.author_sequence_number
+        response.update(self.author.to_dict(return_level))
+        response.update(self.author.to_dict(return_level))
         if self.institution:
-            response["institution"] = self.institution.to_dict()
-        else:
-            response["institution"] = None
+            response.update(self.institution.to_dict(return_level))
         return response
 
     def __repr__(self):

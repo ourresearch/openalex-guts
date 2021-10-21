@@ -12,6 +12,7 @@ class Institution(db.Model):
     # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
+    grid_id = db.Column(db.Text)
     official_page = db.Column(db.Text)
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
@@ -22,8 +23,27 @@ class Institution(db.Model):
     # latitude real,
     # longitude real,
 
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    @property
+    def institution_id(self):
+        return self.affiliation_id
+
+    @property
+    def institution_display_name(self):
+        return self.display_name
+
+    @property
+    def country_code(self):
+        return self.iso3166_code
+
+    def to_dict(self, return_level="full"):
+        if return_level=="full":
+            keys = [col.name for col in self.__table__.columns]
+        else:
+            keys = ["institution_id", "institution_display_name", "grid_id"]
+        response = {key: getattr(self, key) for key in keys}
+        if self.ror:
+            response.update(self.ror.to_dict(return_level))
+        return response
 
     def __repr__(self):
         return "<Institution ( {} ) {}>".format(self.affiliation_id, self.display_name)

@@ -18,10 +18,20 @@ class Journal(db.Model):
     # paper_count bigint,
     # paper_family_count bigint,
     # citation_count bigint,
-    webpage = db.Column(db.DateTime)
+    created_date = db.Column(db.DateTime)
 
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    @property
+    def mag_journal(self):
+        return self.display_name
+
+    def to_dict(self, return_level="full"):
+        if return_level=="full":
+            return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        keys = ["journal_id"]
+        response = {key: getattr(self, key) for key in keys}
+        if self.journalsdb:
+            response.update(self.journalsdb.to_dict(return_level))
+        return response
 
     def __repr__(self):
         return "<Journal ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)
