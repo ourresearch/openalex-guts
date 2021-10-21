@@ -11,6 +11,7 @@ from flask_restx import inputs
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import or_
 
 import json
 import os
@@ -174,7 +175,7 @@ class WorkRandomEndpoint(Resource):
     def get(self):
         my_timing = TimingMessages()
         response = {"_timing": None}
-        work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
+        work_id = db.session.query(models.Work.paper_id).filter(or_(models.Work.doc_type == None, models.Work.doc_type != 'Patent')).order_by(func.random()).first()
         work_id = work_id[0]
         my_timing.log_timing("after random()")
         my_obj = models.work_from_id(work_id)
