@@ -78,6 +78,17 @@ app.config["SQLALCHEMY_BINDS"] = {
     "redshift_db": os.getenv("DATABASE_URL_OPENALEX_REDSHIFT")
 }
 
+# see https://stackoverflow.com/questions/43594310/redshift-sqlalchemy-long-query-hangs
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_pre_ping": True,
+                                            "pool_recycle": 300,
+                                            "connect_args": {
+                                                "keepalives": 1,
+                                                "keepalives_idle": 10,
+                                                "keepalives_interval": 2,
+                                                "keepalives_count": 5
+                                            }
+            }
+
 # from http://stackoverflow.com/a/12417346/596939
 # class NullPoolSQLAlchemy(SQLAlchemy):
 #     def apply_driver_hacks(self, app, info, options):
