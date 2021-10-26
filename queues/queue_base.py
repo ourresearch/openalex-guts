@@ -245,6 +245,10 @@ class DbQueue(object):
 
     def run_right_thing(self, parsed_args, job_type):
         if parsed_args.id or parsed_args.doi or parsed_args.run:
+            if parsed_args.randstart:
+                sleep_time = round(random.random(), 2) * 10
+                print("Sleeping to randomize start for {} seconds".format(sleep_time))
+                sleep(sleep_time)
             self.run(parsed_args, job_type)
 
 

@@ -64,6 +64,7 @@ if __name__ == "__main__":
     parser.add_argument('--chunk', "-ch", nargs="?", default=5, type=int, help="how many to take off db at once")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many jobs to do")
     parser.add_argument('--name', nargs="?", default="myworker", type=str, help="worker name")
+    parser.add_argument('--randstart', default=False, action='store_true', help="randomize the start time")
 
     parsed_args = parser.parse_args()
 
