@@ -13,6 +13,7 @@ from models.work import Work
 from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
 from models.ror import Ror
+from models.grid_address import GridAddress
 from models.journalsdb import Journalsdb
 from models.unpaywall import Unpaywall
 from models.work_extra_ids import WorkExtraIds
@@ -36,6 +37,7 @@ Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
 Institution.ror = db.relationship("Ror", uselist=False)
+Institution.grid_address = db.relationship("GridAddress", uselist=False)
 Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
 
 # Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="concept", uselist=False)

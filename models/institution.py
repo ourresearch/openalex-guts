@@ -35,11 +35,17 @@ class Institution(db.Model):
     def country_code(self):
         return self.iso3166_code
 
+    @property
+    def city(self):
+        if not self.grid_address:
+            return None
+        return self.grid_address.city
+
     def to_dict(self, return_level="full"):
         if return_level=="full":
             keys = [col.name for col in self.__table__.columns]
         else:
-            keys = ["institution_id", "institution_display_name", "grid_id"]
+            keys = ["institution_id", "institution_display_name", "grid_id", "city"]
         response = {key: getattr(self, key) for key in keys}
         if self.ror:
             response.update(self.ror.to_dict(return_level))
