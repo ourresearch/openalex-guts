@@ -90,13 +90,13 @@ class DbQueue(object):
             queue_table = self.table_name
             if not limit:
                 limit = 1000
+            # order by random()
             text_query_pattern_update = """
                 update {queue_table} set started=sysdate, started_label='{started_label}'
                     where {id_field_name} in
                         (select {id_field_name}
                         FROM   {queue_table}
                         WHERE  started is null and finished is null
-                        order by random()
                         LIMIT  {chunk});
             """
             text_query_pattern_select = """
