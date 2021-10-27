@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 
 from app import db
 from app import logger
+import models
 from util import elapsed
 from util import safe_commit
 
@@ -151,13 +152,15 @@ class DbQueue(object):
                 # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
 
                 q = db.session.query(self.myclass).options(
-                     joinedload(self.myclass.locations, innerjoin=True)
-                    , joinedload(self.myclass.journal, innerjoin=True)
-                    , joinedload(self.myclass.unpaywall, innerjoin=True)
-                    , joinedload(self.myclass.extra_ids, innerjoin=True)
-                    , joinedload(self.myclass.affiliations, innerjoin=True)
-                    , joinedload(self.myclass.concepts, innerjoin=True)
-                    , orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                     joinedload(self.myclass.locations, innerjoin=True),
+                     joinedload(self.myclass.journal, innerjoin=True).joinedload(models.Journal.journalsdb, innerjoin=True),
+                     joinedload(self.myclass.unpaywall, innerjoin=True),
+                     joinedload(self.myclass.extra_ids, innerjoin=True),
+                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.author, innerjoin=True),
+                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.institution.Ror, innerjoin=True),
+                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.institution.GridAddress, innerjoin=True),
+                     joinedload(self.myclass.concepts, innerjoin=True).joinedload(models.WorkConcept.concept, innerjoin=True),
+                     orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                 objects = q.all()
                 # db.session.commit()
