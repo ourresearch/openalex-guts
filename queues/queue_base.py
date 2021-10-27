@@ -97,6 +97,7 @@ class DbQueue(object):
                         (select {id_field_name}
                         FROM   {queue_table}
                         WHERE  started is null and finished is null
+                        and ((doc_type is null) or (doc_type != 'Patent'))
                         order by paper_id desc
                         LIMIT  {chunk});
             """
