@@ -119,7 +119,7 @@ class Work(db.Model):
     def process(self):
         print("processing! {}".format(self.id))
         self.normalized_title = normalize_title(self.original_title)
-        self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
+        # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
         # print(self.json_elastic[0:100])
 
