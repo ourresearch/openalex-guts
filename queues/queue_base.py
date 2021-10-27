@@ -97,7 +97,7 @@ class DbQueue(object):
                         (select {id_field_name}
                         FROM   {queue_table}
                         WHERE  started is null and finished is null
-                        order by random()
+                        order by paper_id desc
                         LIMIT  {chunk});
             """
             text_query_pattern_select = """
