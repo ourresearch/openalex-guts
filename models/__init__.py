@@ -20,18 +20,18 @@ from models.work_extra_ids import WorkExtraIds
 
 
 # relationships without association tables
-Work.records = db.relationship("Record", lazy='subquery', backref="work")
-Work.mesh = db.relationship("Mesh", lazy='subquery', backref="work")
-Work.citations = db.relationship("Citation", lazy='subquery', backref="work")
-Work.locations = db.relationship("Location", lazy='subquery', backref="work")
-Work.abstract = db.relationship("Abstract", lazy='subquery', backref="work", uselist=False)
-Work.journal = db.relationship("Journal", lazy='subquery', backref="work", uselist=False)
-Work.unpaywall = db.relationship("Unpaywall", lazy='subquery', backref="work", uselist=False)
-Work.extra_ids = db.relationship("WorkExtraIds", lazy='subquery', backref="work")
+Work.records = db.relationship("Record", lazy='select', backref="work")
+Work.mesh = db.relationship("Mesh", lazy='select', backref="work")
+Work.citations = db.relationship("Citation", lazy='select', backref="work")
+Work.locations = db.relationship("Location", lazy='select', backref="work")
+Work.abstract = db.relationship("Abstract", lazy='select', backref="work", uselist=False)
+Work.journal = db.relationship("Journal", lazy='select', backref="work", uselist=False)
+Work.unpaywall = db.relationship("Unpaywall", lazy='select', backref="work", uselist=False)
+Work.extra_ids = db.relationship("WorkExtraIds", lazy='select', backref="work")
 
 # relationships with association tables
-Work.affiliations = db.relationship("Affiliation", lazy='subquery', backref="work")
-Work.concepts = db.relationship("WorkConcept", lazy='subquery', backref="work")
+Work.affiliations = db.relationship("Affiliation", lazy='select', backref="work")
+Work.concepts = db.relationship("WorkConcept", lazy='select', backref="work")
 
 Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
@@ -40,8 +40,8 @@ Institution.ror = db.relationship("Ror", uselist=False)
 Institution.grid_address = db.relationship("GridAddress", uselist=False)
 Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
 
-# Concept.works = db.relationship("WorkConcept", lazy='subquery', backref="concept", uselist=False)
-WorkConcept.concept = db.relationship("Concept", lazy='subquery', backref="work_concept", uselist=False)
+# Concept.works = db.relationship("WorkConcept", lazy='select', backref="concept", uselist=False)
+WorkConcept.concept = db.relationship("Concept", lazy='select', backref="work_concept", uselist=False)
 
 
 def author_from_id(author_id):
