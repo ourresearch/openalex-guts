@@ -157,8 +157,8 @@ class DbQueue(object):
                      joinedload(self.myclass.unpaywall, innerjoin=True),
                      joinedload(self.myclass.extra_ids, innerjoin=True),
                      joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.author, innerjoin=True),
-                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.institution.Ror, innerjoin=True),
-                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.institution.GridAddress, innerjoin=True),
+                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.Institution.ror, innerjoin=True),
+                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.Institution.grid_address, innerjoin=True),
                      joinedload(self.myclass.concepts, innerjoin=True).joinedload(models.WorkConcept.concept, innerjoin=True),
                      orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
