@@ -5,6 +5,7 @@ from time import time
 import shortuuid
 from sqlalchemy import text
 from sqlalchemy import orm
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app import logger
@@ -147,7 +148,16 @@ class DbQueue(object):
                 # q = db.session.query(self.myclass).options(orm.undefer('*')).filter(self.myclass.id.in_(object_ids))
 
                 # q = db.session.query(self.myclass).options(orm.noload('*')).filter(self.myid.in_(object_ids))
-                q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
+                # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
+
+                q = db.session.query(self.myclass).options(
+                     joinedload(self.myclass.locations, innerjoin=True)
+                    , joinedload(self.myclass.journal, innerjoin=True)
+                    , joinedload(self.myclass.unpaywall, innerjoin=True)
+                    , joinedload(self.myclass.extra_ids, innerjoin=True)
+                    , joinedload(self.myclass.affiliations, innerjoin=True)
+                    , joinedload(self.myclass.concepts, innerjoin=True)
+                    , orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                 objects = q.all()
                 # db.session.commit()
