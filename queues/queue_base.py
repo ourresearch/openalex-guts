@@ -5,7 +5,7 @@ from time import time
 import shortuuid
 from sqlalchemy import text
 from sqlalchemy import orm
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 
 from app import db
 from app import logger
@@ -152,14 +152,14 @@ class DbQueue(object):
                 # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
 
                 q = db.session.query(self.myclass).options(
-                     joinedload(self.myclass.locations),
-                     joinedload(self.myclass.journal).joinedload(models.Journal.journalsdb),
-                     joinedload(self.myclass.unpaywall),
-                     joinedload(self.myclass.extra_ids),
-                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.author),
-                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.institution).joinedload(models.Institution.ror),
-                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.institution).joinedload(models.Institution.grid_address),
-                     joinedload(self.myclass.concepts).joinedload(models.WorkConcept.concept),
+                     selectinload(self.myclass.locations),
+                     selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
+                     selectinload(self.myclass.unpaywall),
+                     selectinload(self.myclass.extra_ids),
+                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author),
+                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.grid_address),
+                     selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
                      orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                 objects = q.all()
