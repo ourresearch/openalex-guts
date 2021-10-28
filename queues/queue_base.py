@@ -152,18 +152,17 @@ class DbQueue(object):
                 # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
 
                 q = db.session.query(self.myclass).options(
-                     joinedload(self.myclass.locations, innerjoin=True),
-                     joinedload(self.myclass.journal, innerjoin=True).joinedload(models.Journal.journalsdb, innerjoin=True),
-                     joinedload(self.myclass.unpaywall, innerjoin=True),
-                     joinedload(self.myclass.extra_ids, innerjoin=True),
-                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.author, innerjoin=True),
-                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.Institution.ror, innerjoin=True),
-                     joinedload(self.myclass.affiliations, innerjoin=True).joinedload(models.Affiliation.institution, innerjoin=True).joinedload(models.Institution.grid_address, innerjoin=True),
-                     joinedload(self.myclass.concepts, innerjoin=True).joinedload(models.WorkConcept.concept, innerjoin=True),
+                     joinedload(self.myclass.locations),
+                     joinedload(self.myclass.journal).joinedload(models.Journal.journalsdb),
+                     joinedload(self.myclass.unpaywall),
+                     joinedload(self.myclass.extra_ids),
+                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.author),
+                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.institution).joinedload(models.Institution.ror),
+                     joinedload(self.myclass.affiliations).joinedload(models.Affiliation.institution).joinedload(models.Institution.grid_address),
+                     joinedload(self.myclass.concepts).joinedload(models.WorkConcept.concept),
                      orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                 objects = q.all()
-                # db.session.commit()
                 logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
 
                 # shuffle them or they sort by doi order
@@ -185,7 +184,7 @@ class DbQueue(object):
 
 
                 if not objects:
-                    # logger.info(u"{}: sleeping for 5 seconds, then going again".format(worker_name)
+                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name)
                     sleep(5)
                     continue
 
