@@ -197,6 +197,7 @@ class DbQueue(object):
                     # object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
                     # object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
                     object_ids_str = ",".join(["'{}'".format(id) for id in object_ids])
+                    # heather fix this should it be paperid and also not a string?
                     sql_command = "update {queue_table} set finished=sysdate, started=null where id in ({ids})".format(
                         queue_table=queue_table, ids=object_ids_str)
                     # logger.info(u"{}: sql command to update finished is: {}".format(worker_name, sql_command))
