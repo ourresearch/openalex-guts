@@ -184,7 +184,7 @@ class DbQueue(object):
 
 
                 if not objects:
-                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name)
+                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
                     sleep(5)
                     continue
 
