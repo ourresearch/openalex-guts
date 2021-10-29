@@ -49,8 +49,8 @@ class Work(db.Model):
     normalized_title = db.Column(db.Text)
 
     # for stored_response
-    json_full = db.Column(db.Text)
-    json_elastic = db.Column(db.Text)
+    # json_full = db.Column(db.Text)
+    # json_elastic = db.Column(db.Text)
 
     # queues
     started = db.Column(db.DateTime)
