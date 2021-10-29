@@ -122,7 +122,7 @@ class Work(db.Model):
         # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
         # has to match order of get_insert_fieldnames
-        json_elastic_escaped = self.json_elastic.replace("'", "''")
+        json_elastic_escaped = self.json_elastic.replace("'", "''").replace("%", "\%")
         self.insert_dict = {"mid.work_json": "({}, '{}', '{}')".format(self.paper_id,
                                                                   datetime.datetime.utcnow().isoformat(),
                                                                   json_elastic_escaped)
@@ -193,3 +193,5 @@ def calc_normalized_title(title, repository_id=None):
         # working_title = re.sub("vollständige digitalisierte Ausgabe", "", working_title, re.IGNORECASE | re.MULTILINE)
 
     return normalize_title(title)
+
+
