@@ -88,8 +88,11 @@ class DbQueue(object):
                 table_name, ', '.join(fields), ', '.join(all_insert_strings))
             # print(sql_command)
             db.session.remove()
+
+            # try not using text() because it interprets things as bind params etc
             # db.session.execute(text(sql_command))
             db.session.execute(sql_command)
+
             db.session.commit()
 
 
