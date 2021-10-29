@@ -121,7 +121,22 @@ class Work(db.Model):
         self.normalized_title = normalize_title(self.original_title)
         # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
+        # has to match order of get_insert_fieldnames
+        json_elastic_escaped = self.json_elastic.replace("'", "''")
+        self.insert_dict = {"mid.work_json": "({}, '{}', '{}')".format(self.paper_id,
+                                                                  datetime.datetime.utcnow().isoformat(),
+                                                                  json_elastic_escaped)
+                            }
+
         # print(self.json_elastic[0:100])
+
+    def get_insert_fieldnames(self, table_name=None):
+        lookup = {
+            "mid.work_json": ["paper_id", "updated", "json_elastic"]
+        }
+        if table_name:
+            return lookup[table_name]
+        return lookup
 
     def to_dict(self, return_level="full"):
         keys = ["work_id", "work_title", "year", "publication_date", "doc_type", "volume", "issue", "first_page", "last_page", "citation_count"]

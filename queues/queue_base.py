@@ -6,6 +6,7 @@ import shortuuid
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
+from collections import defaultdict
 
 from app import db
 from app import logger
@@ -66,15 +67,34 @@ class DbQueue(object):
             if not (method_name == "update" and obj.__class__.__name__ == "Pub"):
                 obj.finished = datetime.datetime.utcnow().isoformat()
 
-            db.session.merge(obj)
+            # db.session.merge(obj)
 
 
-        start_time = time()
-        commit_success = safe_commit(db)
-        if not commit_success:
-            logger.info("COMMIT fail")
+        # start_time = time()
+        # commit_success = safe_commit(db)
+        # if not commit_success:
+        #     logger.info("COMMIT fail")
+
+
+        insert_dict_all_objects = defaultdict(list)
+        for count, obj in enumerate(objects):
+            for table_name, insert_string in obj.insert_dict.items():
+                insert_dict_all_objects[table_name] += [insert_string]
+
+        for table_name, all_insert_strings in insert_dict_all_objects.items():
+            fields = obj.get_insert_fieldnames(table_name)
+
+            sql_command = u"INSERT INTO {} ({}) VALUES {};".format(
+                table_name, ', '.join(fields), ', '.join(all_insert_strings))
+            # print(sql_command)
+            db.session.remove()
+            db.session.execute(text(sql_command))
+            db.session.commit()
+
+
         logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
-        db.session.remove()  # close connection nicely
+        # db.session.remove()  # close connection nicely
+
         return None  # important for if we use this on RQ
 
     def worker_run(self, **kwargs):
@@ -92,38 +112,24 @@ class DbQueue(object):
             queue_table = self.table_name
             if not limit:
                 limit = 1000
-            # order by random()
-            text_query_pattern_update = """
-                update {queue_table} set started=sysdate, started_label='{started_label}'
-                    where {id_field_name} in
-                        (select {id_field_name}
-                        FROM   {queue_table}
-                        WHERE  started is null and finished is null
-                        and ((doc_type is null) or (doc_type != 'Patent'))
-                        order by paper_id desc
-                        LIMIT  {chunk});
-            """
             text_query_pattern_select = """
-                select {id_field_name} from {queue_table} where started_label='{started_label}';
+                select {id_field_name} from {queue_table}
+                    where {id_field_name} not in
+                        (select {id_field_name} from {insert_table})
+                    order by random()
+                    limit {chunk};
             """
+
 
         index = 0
         start_time = time()
+        big_chunk = 10000
         while True:
             new_loop_start_time = time()
-            started_label = shortuuid.uuid()[0:10]
-            text_query_update = text_query_pattern_update.format(
-                limit=limit,
-                chunk=chunk,
-                queue_table=queue_table,
-                started_label=started_label,
-                id_field_name=self.id_field_name
-            )
             text_query_select = text_query_pattern_select.format(
-                limit=limit,
-                chunk=chunk,
+                chunk=big_chunk,
                 queue_table=queue_table,
-                started_label=started_label,
+                insert_table="mid.work_json",
                 id_field_name=self.id_field_name
             )
             # logger.info("the queues query is:\n{}".format(text_query))
@@ -133,84 +139,82 @@ class DbQueue(object):
                 objects = [run_class.query.filter(run_class.id == single_obj_id).first()]
             else:
                 logger.info("{}: looking for new jobs".format(worker_name))
-
                 job_time = time()
-                db.session.execute(text(text_query_update))
                 row_list = db.session.execute(text(text_query_select)).fetchall()
-                # db.session.commit()
-
-                object_ids = [row[0] for row in row_list]
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
+                number_of_smaller_chunks = int(big_chunk/chunk)
+                for chunk_number in range(0, number_of_smaller_chunks):
+                    object_ids = [row[0] for row in row_list[(chunk*chunk_number):(chunk*(chunk_number+1))]]
 
-                job_time = time()
-                print(object_ids)
-                # q = db.session.query(self.myclass).filter(self.myclass.id.in_(object_ids))
-                # q = db.session.query(self.myclass).options(orm.undefer('*')).filter(self.myclass.id.in_(object_ids))
+                    job_time = time()
+                    print(object_ids)
+                    # q = db.session.query(self.myclass).filter(self.myclass.id.in_(object_ids))
+                    # q = db.session.query(self.myclass).options(orm.undefer('*')).filter(self.myclass.id.in_(object_ids))
 
-                # q = db.session.query(self.myclass).options(orm.noload('*')).filter(self.myid.in_(object_ids))
-                # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
+                    # q = db.session.query(self.myclass).options(orm.noload('*')).filter(self.myid.in_(object_ids))
+                    # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
 
-                q = db.session.query(self.myclass).options(
-                     selectinload(self.myclass.locations),
-                     selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
-                     selectinload(self.myclass.unpaywall),
-                     selectinload(self.myclass.extra_ids),
-                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author),
-                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                     selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.grid_address),
-                     selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
-                     orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                    q = db.session.query(self.myclass).options(
+                         selectinload(self.myclass.locations),
+                         selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
+                         selectinload(self.myclass.unpaywall),
+                         selectinload(self.myclass.extra_ids),
+                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author),
+                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.grid_address),
+                         selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
+                         orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
-                objects = q.all()
-                logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
+                    objects = q.all()
+                    logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
 
-                # shuffle them or they sort by doi order
-                random.shuffle(objects)
+                    # shuffle them or they sort by doi order
+                    # random.shuffle(objects)
 
-                # text_query = "select * from recordthresher_record limit 10; "
-                # objects = self.myclass.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
-
-
-                # objects = run_class.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
-                # print(objects)
-                # id_rows =  db.engine.execute(text(text_query)).fetchall()
-                # ids = [row[0] for row in id_rows]
-                #
-                # job_time = time()
-                # objects = run_class.query.filter(run_class.id.in_(ids)).all()
-
-                # logger.info(u"{}: finished get-new-objects query in {} seconds".format(worker_name, elapsed(job_time)))
+                    # text_query = "select * from recordthresher_record limit 10; "
+                    # objects = self.myclass.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
 
 
-                if not objects:
-                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
-                    sleep(5)
-                    continue
+                    # objects = run_class.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
+                    # print(objects)
+                    # id_rows =  db.engine.execute(text(text_query)).fetchall()
+                    # ids = [row[0] for row in id_rows]
+                    #
+                    # job_time = time()
+                    # objects = run_class.query.filter(run_class.id.in_(ids)).all()
 
-                object_ids = [obj.id for obj in objects]
-                self.update_fn(run_class, run_method, objects, index=index)
+                    # logger.info(u"{}: finished get-new-objects query in {} seconds".format(worker_name, elapsed(job_time)))
 
-                # logger.info(u"{}: finished update_fn".format(worker_name)
-                if queue_table:
-                    # object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
-                    # object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
-                    object_ids_str = ",".join(["'{}'".format(id) for id in object_ids])
-                    # heather fix this should it be paperid and also not a string?
-                    sql_command = "update {queue_table} set finished=sysdate, started=null where id in ({ids})".format(
-                        queue_table=queue_table, ids=object_ids_str)
-                    # logger.info(u"{}: sql command to update finished is: {}".format(worker_name, sql_command))
-                    # run_sql(db, sql_command)
 
-                    db.session.execute(text(sql_command))
+                    if not objects:
+                        logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
+                        sleep(5)
+                        continue
 
-                    # logger.info(u"{}: finished run_sql".format(worker_name)
+                    object_ids = [obj.id for obj in objects]
+                    self.update_fn(run_class, run_method, objects, index=index)
 
-                index += 1
-                if single_obj_id:
-                    return
-                else:
-                    self.print_update(new_loop_start_time, chunk, limit, start_time, index)
+                    # logger.info(u"{}: finished update_fn".format(worker_name)
+                    if queue_table:
+                        update_time = time()
+
+                        # object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
+                        # object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
+                        # object_ids_str = ",".join(["'{}'".format(id) for id in object_ids])
+                        # object_ids_str = ",".join(["{}".format(id) for id in object_ids])
+
+                        # sql_command = "update {queue_table} set finished=sysdate, started=null where {id_field_name} in ({ids})".format(
+                        #     queue_table=queue_table, id_field_name=self.id_field_name, ids=object_ids_str)
+
+                        # db.session.execute(text(sql_command))
+                        # logger.info(u"{}: sql command to update finished in {} seconds".format(worker_name, elapsed(update_time, 2)))
+
+                    index += 1
+                    if single_obj_id:
+                        return
+                    else:
+                        self.print_update(new_loop_start_time, chunk, limit, start_time, index)
 
 
     def run(self, parsed_args, job_type):
