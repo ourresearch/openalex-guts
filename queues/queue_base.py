@@ -125,7 +125,6 @@ class DbQueue(object):
         start_time = time()
         big_chunk = 10000
         while True:
-            new_loop_start_time = time()
             text_query_select = text_query_pattern_select.format(
                 chunk=big_chunk,
                 queue_table=queue_table,
@@ -145,6 +144,8 @@ class DbQueue(object):
 
                 number_of_smaller_chunks = int(big_chunk/chunk)
                 for chunk_number in range(0, number_of_smaller_chunks):
+                    new_loop_start_time = time()
+
                     object_ids = [row[0] for row in row_list[(chunk*chunk_number):(chunk*(chunk_number+1))]]
 
                     job_time = time()
