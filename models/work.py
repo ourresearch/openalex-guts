@@ -123,6 +123,9 @@ class Work(db.Model):
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
         # has to match order of get_insert_fieldnames
         json_elastic_escaped = self.json_elastic.replace("'", "''").replace("%", "%%").replace(":", "\:")
+        if len(json_elastic_escaped) > 65000:
+            print("Error: json_elastic_escaped too long for paper_id {}, skipping".format(self.work_id))
+            json_elastic_escaped = None
         self.insert_dict = {"mid.work_json": "({}, '{}', '{}')".format(self.paper_id,
                                                                   datetime.datetime.utcnow().isoformat(),
                                                                   json_elastic_escaped)
