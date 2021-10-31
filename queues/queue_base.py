@@ -165,7 +165,7 @@ class DbQueue(object):
                          selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
                          selectinload(self.myclass.unpaywall),
                          selectinload(self.myclass.extra_ids),
-                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author),
+                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                          selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                          selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.grid_address),
                          selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
