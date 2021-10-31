@@ -117,6 +117,7 @@ class Work(db.Model):
         return "https://doi.org/{}".format(self.doi_lower)
 
     def process(self):
+        JSON_ELASTIC_VERSION_STRING = "includes some orcid"
         print("processing! {}".format(self.id))
         self.normalized_title = normalize_title(self.original_title)
         # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
@@ -126,16 +127,18 @@ class Work(db.Model):
         if len(json_elastic_escaped) > 65000:
             print("Error: json_elastic_escaped too long for paper_id {}, skipping".format(self.work_id))
             json_elastic_escaped = None
-        self.insert_dict = {"mid.work_json": "({}, '{}', '{}')".format(self.paper_id,
-                                                                  datetime.datetime.utcnow().isoformat(),
-                                                                  json_elastic_escaped)
-                            }
+        self.insert_dict = {"mid.work_json": "({paper_id}, '{updated}', '{json_elastic}', '{version}')".format(
+                                                                  paper_id=self.paper_id,
+                                                                  updated=datetime.datetime.utcnow().isoformat(),
+                                                                  json_elastic=json_elastic_escaped,
+                                                                  version=JSON_ELASTIC_VERSION_STRING
+                                                                )}
 
         # print(self.json_elastic[0:100])
 
     def get_insert_fieldnames(self, table_name=None):
         lookup = {
-            "mid.work_json": ["paper_id", "updated", "json_elastic"]
+            "mid.work_json": ["paper_id", "updated", "json_elastic", "version"]
         }
         if table_name:
             return lookup[table_name]
