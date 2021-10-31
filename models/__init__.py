@@ -2,6 +2,7 @@ from app import db
 
 from models.abstract import Abstract
 from models.author import Author
+from models.author_orcid import AuthorOrcid
 from models.citation import Citation
 from models.concept import Concept
 from models.institution import Institution
@@ -39,6 +40,7 @@ Affiliation.institution = db.relationship("Institution")
 Institution.ror = db.relationship("Ror", uselist=False)
 Institution.grid_address = db.relationship("GridAddress", uselist=False)
 Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
+Author.orcids = db.relationship("AuthorOrcid")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
