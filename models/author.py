@@ -22,7 +22,7 @@ class Author(db.Model):
     def orcid(self):
         if not self.orcids:
             return None
-        return sorted(self.orcids)[0]
+        return sorted(self.orcids, key=lambda x: x.orcid)[0]
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
