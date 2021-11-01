@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.work_concept
+# insert into mid.work_concept (select * from legacy.mag_advanced_paper_fields_of_study)
+
 class WorkConcept(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work_concept"

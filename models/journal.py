@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.journal
+# insert into mid.journal (select * from legacy.mag_main_journals)
+
 class Journal(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "journal"

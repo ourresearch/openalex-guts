@@ -1,6 +1,10 @@
 from app import db
 
 
+# truncate mid.work_extra_ids
+# insert into mid.work_extra_ids (select * from legacy.mag_main_paper_extended_attributes)
+
+
 class WorkExtraIds(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work_extra_ids"

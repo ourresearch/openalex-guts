@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.mesh
+# insert into mid.mesh (select * from legacy.mag_advanced_paper_mesh)
+
 class Mesh(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "mesh"

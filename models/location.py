@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.location
+# insert into mid.location (select * from legacy.mag_main_paper_urls)
+
 class Location(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "location"

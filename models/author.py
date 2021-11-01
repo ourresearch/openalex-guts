@@ -1,5 +1,9 @@
 from app import db
 
+
+# truncate mid.author
+# insert into mid.author (select * from legacy.mag_main_authors)
+
 class Author(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "author"

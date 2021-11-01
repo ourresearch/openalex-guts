@@ -3,13 +3,15 @@ from app import db
 
 class Ror(db.Model):
     __table_args__ = {'schema': 'ins'}
-    __tablename__ = "ror"
+    __tablename__ = "ror_summary_view"
 
-    ror_id = db.Column(db.Text, primary_key=True)
-    grid_id = db.Column(db.Text, db.ForeignKey("mid.institution.grid_id"))
+    ror_id = db.Column(db.Text, db.ForeignKey("mid.institution_ror.ror_id"), primary_key=True)
+    grid_id = db.Column(db.Text)
     name = db.Column(db.Text)
+    city = db.Column(db.Text)
     country = db.Column(db.Text)
     country_code = db.Column(db.Text)
+
 
     @property
     def ror_url(self):
@@ -19,9 +21,8 @@ class Ror(db.Model):
         if return_level=="full":
             keys = [col.name for col in self.__table__.columns]
         else:
-            keys = ["country", "country_code"]
+            keys = ["grid_id", "city", "country", "country_code"]
         response = {key: getattr(self, key) for key in keys}
-        response["ror"] = [self.ror_id, self.ror_url]
         return response
 
     def __repr__(self):

@@ -22,21 +22,26 @@ AS $$
     # just first n characters
     response = response[0:500]
 
-    response = unidecode.unidecode(response.decode('utf-8')).encode('ascii', 'ignore')
+    try:
+        response = unidecode.unidecode(response.decode('utf-8')).encode('ascii', 'ignore')
 
-    # lowercase
-    response = response.lower()
+        # lowercase
+        response = response.lower()
 
-    # has to be before remove_punctuation
-    # the kind in titles are simple <i> etc, so this is simple
-    response = re.sub(u'<.*?>', u'', response)
+        # has to be before remove_punctuation
+        # the kind in titles are simple <i> etc, so this is simple
+        response = re.sub(u'<.*?>', u'', response)
 
-    # remove articles and common prepositions
-    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", u"", response)
+        # remove articles and common prepositions
+        response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", u"", response)
+
+    except UnicodeDecodeError:
+        pass
 
     # remove everything except alphas
     response = u"".join(e for e in response if (e.isalpha()))
 
     return response
 $$LANGUAGE plpythonu;
+
 

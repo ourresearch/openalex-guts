@@ -166,8 +166,7 @@ class DbQueue(object):
                          selectinload(self.myclass.unpaywall),
                          selectinload(self.myclass.extra_ids),
                          selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.grid_address),
+                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.institution_ror).selectinload(models.InstitutionRor.ror),
                          selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
                          orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 

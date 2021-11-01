@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.citation
+# insert into mid.citation (select * from legacy.mag_main_paper_references_id)
+
 class Citation(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation"

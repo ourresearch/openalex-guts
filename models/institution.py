@@ -1,5 +1,11 @@
 from app import db
 
+# alter table institution rename column normalized_name to mag_normalized_name
+# alter table institution add column normalized_name varchar(65000)
+# update institution set normalized_name=f_normalize_title(institution.mag_normalized_name)
+
+# truncate mid.institution
+# insert into mid.institution (select * from legacy.mag_main_affiliations)
 
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -12,7 +18,7 @@ class Institution(db.Model):
     # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
-    grid_id = db.Column(db.Text)
+    # grid_id = db.Column(db.Text)
     official_page = db.Column(db.Text)
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
@@ -33,22 +39,18 @@ class Institution(db.Model):
 
     @property
     def country_code(self):
-        return self.iso3166_code
-
-    @property
-    def city(self):
-        if not self.grid_address:
+        if not self.iso3166_code:
             return None
-        return self.grid_address.city
+        return self.iso3166_code.lower()
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
             keys = [col.name for col in self.__table__.columns]
         else:
-            keys = ["institution_id", "institution_display_name", "grid_id", "city"]
+            keys = ["institution_id", "institution_display_name", "country_code"]
         response = {key: getattr(self, key) for key in keys}
-        if self.ror:
-            response.update(self.ror.to_dict(return_level))
+        if self.institution_ror:
+            response.update(self.institution_ror.to_dict(return_level))
         return response
 
     def __repr__(self):

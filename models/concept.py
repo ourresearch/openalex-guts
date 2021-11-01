@@ -1,6 +1,9 @@
 from app import db
 
 
+# truncate mid.concept
+# insert into mid.concept (select * from legacy.mag_advanced_fields_of_study)
+
 class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept"

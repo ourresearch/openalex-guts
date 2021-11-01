@@ -9,6 +9,11 @@ from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 
 
+# truncate mid.work
+# insert into mid.work (select * from legacy.mag_main_papers)
+
+# update work set normalized_title = f_normalize_title(paper_title)
+
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
@@ -47,10 +52,6 @@ class Work(db.Model):
 
     # for processing
     normalized_title = db.Column(db.Text)
-
-    # for stored_response
-    # json_full = db.Column(db.Text)
-    # json_elastic = db.Column(db.Text)
 
     # queues
     started = db.Column(db.DateTime)
