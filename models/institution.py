@@ -7,18 +7,16 @@ from app import db
 # truncate mid.institution
 # insert into mid.institution (select * from legacy.mag_main_affiliations)
 
+
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "institution"
 
-    # __table_args__ = {'schema': 'work'}
-    # __tablename__ = "institution"
-
+    # grid_id mapped to ror and in institution_ror
     affiliation_id = db.Column(db.BigInteger, primary_key=True)
     # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
-    # grid_id = db.Column(db.Text)
     official_page = db.Column(db.Text)
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)

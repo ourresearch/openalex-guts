@@ -8,9 +8,6 @@ class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept"
 
-    # __table_args__ = {'schema': 'work'}
-    # __tablename__ = "concept"
-
     field_of_study_id = db.Column(db.BigInteger, primary_key=True)
     rank = db.Column(db.Text)
     normalized_name = db.Column(db.Text)

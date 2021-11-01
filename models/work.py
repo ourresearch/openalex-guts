@@ -18,9 +18,6 @@ class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
 
-    # __table_args__ = {'schema': 'mid'}
-    # __tablename__ = "work"
-
     # id = db.Column(db.BigInteger)
     paper_id = db.Column(db.BigInteger, primary_key=True)
     # created = db.Column(db.DateTime)

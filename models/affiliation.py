@@ -16,9 +16,6 @@ class Affiliation(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "affiliation"
 
-    # __table_args__ = {'schema': 'work'}
-    # __tablename__ = "concept"
-
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
