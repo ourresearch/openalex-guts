@@ -33,6 +33,8 @@ class Institution(db.Model):
 
     @property
     def institution_display_name(self):
+        if self.institution_ror:
+            return self.institution_ror.ror.name
         return self.display_name
 
     @property
