@@ -1,5 +1,45 @@
 from app import db
 
+# copy ins.unpaywall_raw from
+# 's3://unpaywall-daily-snapshots/unpaywall_snapshot_2021-11-01T083001.jsonl.gz'
+# credentials 'CREDS HERE'
+# COMPUPDATE ON
+# GZIP
+# JSON 'auto ignorecase'
+# TRUNCATECOLUMNS
+# TRIMBLANKS
+# region 'us-west-2';
+
+# create or replace view ins.oa_locations_for_unload_view as (
+# select doi,
+#     replace(replace(replace(replace(oa_locations,
+#                  '[{', '{'), '}]', '}'), '},{', '}\n{'),
+#                  '"url"',
+#                  '"doi": "' || doi || '", "url"'
+#                  )
+#                  as oa_location_jsonlines
+#     from ins.unpaywall_raw
+#     where is_oa
+#     and doi not like '%\\\\%'
+#     and len(oa_locations) < 50000
+# ) with no schema binding;
+#
+# #
+# unload ('select oa_location_jsonlines from oa_locations_for_unload_view')
+# to 's3://openalex-sandbox/unpaywall/oa_locations.jsonl.gz'
+# credentials 'CREDS HERE'
+# ALLOWOVERWRITE
+# gzip;
+#
+#
+# copy ins.unpaywall_oa_location_raw from 's3://openalex-sandbox/unpaywall/oa_locations.jsonl.gz'
+# credentials 'CREDS HERE'
+# COMPUPDATE ON
+# GZIP
+# JSON 'auto ignorecase'
+# MAXERROR as 100;
+
+
 
 class Unpaywall(db.Model):
     __table_args__ = {'schema': 'ins'}

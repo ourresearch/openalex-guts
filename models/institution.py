@@ -14,16 +14,12 @@ class Institution(db.Model):
 
     # grid_id mapped to ror and in institution_ror
     affiliation_id = db.Column(db.BigInteger, primary_key=True)
-    # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
     official_page = db.Column(db.Text)
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
-    # paper_count integer,
-    # paper_family_count integer,
-    # citation_count integer,
     # latitude real,
     # longitude real,
 

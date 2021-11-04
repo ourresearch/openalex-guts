@@ -18,6 +18,7 @@ class Journal(db.Model):
     # paper_count bigint,
     # paper_family_count bigint,
     # citation_count bigint,
+    updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
     @property
