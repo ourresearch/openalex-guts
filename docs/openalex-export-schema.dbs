@@ -1,0 +1,929 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="Redshift" id="Project-147e" database="Redshift" >
+	<schema name="outs" catalogname="dev" >
+		<udt name="related_field_of_study_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="related_field_of_study" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="papers_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="papers" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_urls_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_urls" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_resources_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_resources" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_references_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_references" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_recommendations_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_recommendations" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_mesh_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_mesh" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_fields_of_study_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_fields_of_study" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_extended_attributes_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_extended_attributes" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_author_affiliations_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="paper_author_affiliations" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="journals_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="journals" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="fields_of_study_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="fields_of_study" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="field_of_study_extended_attributes_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="field_of_study_extended_attributes" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="field_of_study_children_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="field_of_study_children" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="entity_related_entities_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="entity_related_entities" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="conference_series_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="conference_series" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="conference_instances_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="conference_instances" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="authors_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="authors" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="author_extended_attributes_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="author_extended_attributes" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="affiliations_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="affiliations" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="abstracts_inverted_view" udt_java_type="2002" udt_precision="NONE" />
+		<udt name="abstracts_inverted" udt_java_type="2002" udt_precision="NONE" />
+		<table name="abstracts_inverted" >
+			<comment><![CDATA[Inverted abstracts]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES papers.papers_id]]></comment>
+			</column>
+			<column name="indexed_abstract" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Inverted index, see https://en.wikipedia.org/wiki/Inverted_index]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_abstracts_inverted_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="affiliations" >
+			<comment><![CDATA[Base table for affiliations]]></comment>
+			<column name="affiliation_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added.]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="grid_id" type="varchar" length="250" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[DEPRECATED; ror_id is the new standard identifier for organizations]]></comment>
+			</column>
+			<column name="ror_id" type="varchar" length="250" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; ROR for this organization, see https://ror.org, https://ror.org/:ror_id]]></comment>
+			</column>
+			<column name="official_page" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="wiki_page" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count.]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="iso3166_code" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Two-letter country codes, see https://en.wikipedia.org/wiki/ISO_3166-2]]></comment>
+			</column>
+			<column name="latitude" type="real" length="8" decimal="8" jt="7" />
+			<column name="longitude" type="real" length="8" decimal="8" jt="7" />
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="updated_date" type="timestamp" length="29" decimal="6" jt="93" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[NEW; set values updated from new ror data]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="affiliation_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="affiliation_id" />
+			</index>
+		</table>
+		<table name="author_extended_attributes" >
+			<comment><![CDATA[Additional author name representations]]></comment>
+			<column name="author_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Authors.AuthorId]]></comment>
+			</column>
+			<column name="attribute_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 1=Alternative name]]></comment>
+			</column>
+			<column name="attribute_value" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="author_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="author_id" />
+			</index>
+			<fk name="fk_author_extended_attributes_authors" virtual="y" to_schema="dev.outs" to_table="authors" >
+				<fk_column name="author_id" pk="author_id" />
+			</fk>
+		</table>
+		<table name="authors" >
+			<comment><![CDATA[Base table for affiliations]]></comment>
+			<column name="author_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="orcid" type="varchar" length="64" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; ORCID identifier for this author]]></comment>
+			</column>
+			<column name="last_known_affiliation_id" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="updated_date" type="timestamp" length="29" decimal="6" jt="93" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[NEW; set when changes are made going forward]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="author_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="author_id" />
+			</index>
+		</table>
+		<table name="conference_instances" >
+			<comment><![CDATA[Base table for Conference Instances]]></comment>
+			<column name="conference_instance_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="conference_series_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES ConferenceSeries.ConferenceSeriesId]]></comment>
+			</column>
+			<column name="location" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="official_url" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="start_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="end_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="abstract_registration_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="submission_deadline_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="notification_due_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="final_version_due_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="latitude" type="real" length="8" decimal="8" jt="7" />
+			<column name="longitude" type="real" length="8" decimal="8" jt="7" />
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="conference_instance_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="conference_instance_id" />
+			</index>
+			<fk name="fk_conference_instances_conference_series" virtual="y" to_schema="dev.outs" to_table="conference_series" >
+				<fk_column name="conference_series_id" pk="conference_series_id" />
+			</fk>
+		</table>
+		<table name="conference_series" >
+			<comment><![CDATA[Base table for Conference Series]]></comment>
+			<column name="conference_series_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="conference_series_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="conference_series_id" />
+			</index>
+		</table>
+		<table name="entity_related_entities" >
+			<comment><![CDATA[DEPRECATED]]></comment>
+			<column name="entity_id" type="bigint" length="19" decimal="0" jt="-5" />
+			<column name="entity_type" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: af (Affiliation), j (Journal), c (Conference)]]></comment>
+			</column>
+			<column name="related_entity_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="related_entity_type" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: af (Affiliation), j (Journal), c (Conference)]]></comment>
+			</column>
+			<column name="related_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 0 (same paper), 1 (common coauthors), 2 (co-cited), 3 (common field of study), 4 (same venue), 5 (A cites B), 6 (B cites A)]]></comment>
+			</column>
+			<column name="score" type="real" length="8" decimal="8" jt="7" >
+				<comment><![CDATA[Confidence range between 0 and 1. Larger number representing higher confidence.]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="entity_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="entity_id" />
+			</index>
+		</table>
+		<table name="field_of_study_children" >
+			<comment><![CDATA[Relationship between fields_of_study.]]></comment>
+			<column name="field_of_study_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<column name="child_field_of_study_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="field_of_study_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="field_of_study_id" />
+			</index>
+			<fk name="fk_field_of_study_children_fields_of_study" virtual="y" to_schema="dev.outs" to_table="fields_of_study" >
+				<fk_column name="field_of_study_id" pk="field_of_study_id" />
+			</fk>
+		</table>
+		<table name="field_of_study_extended_attributes" >
+			<comment><![CDATA[Other identifiers for fields_of_study.]]></comment>
+			<column name="field_of_study_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<column name="attribute_type" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 1 (AUI from UMLS https://www.nlm.nih.gov/research/umls/licensedcontent/umlsarchives04.html#2018AA), 2 (source url), 3 (CUI from UMLS https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html)]]></comment>
+			</column>
+			<column name="attribute_value" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="field_of_study_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="field_of_study_id" />
+			</index>
+			<fk name="fk_field_of_study_extended_attributes_fields_of_study" virtual="y" to_schema="dev.outs" to_table="fields_of_study" >
+				<fk_column name="field_of_study_id" pk="field_of_study_id" />
+			</fk>
+		</table>
+		<table name="fields_of_study" >
+			<comment><![CDATA[Base table for Fields of Study]]></comment>
+			<column name="field_of_study_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added.]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="main_type" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="level" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 0-5]]></comment>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count.]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="create_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="field_of_study_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="field_of_study_id" />
+			</index>
+		</table>
+		<table name="journals" >
+			<comment><![CDATA[Base table for Journals]]></comment>
+			<column name="journal_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added]]></comment>
+			</column>
+			<column name="normalized_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="display_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="issn" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[the ISSN-L for the journal (see https://en.wikipedia.org/wiki/International_Standard_Serial_Number#Linking_ISSN)]]></comment>
+			</column>
+			<column name="issns" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; JSON list of all ISSNs for this journal (example: '["1469-5073","0016-6723"]' )]]></comment>
+			</column>
+			<column name="is_oa" type="boolean" length="1" decimal="0" jt="-7" >
+				<comment><![CDATA[NEW; TRUE when the journal is 100% OA]]></comment>
+			</column>
+			<column name="is_in_doaj" type="boolean" length="1" decimal="0" jt="-7" >
+				<comment><![CDATA[NEW; TRUE when the journal is in DOAJ (see https://doaj.org/)]]></comment>
+			</column>
+			<column name="publisher" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="webpage" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="paper_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="paper_family_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; same value as paper_count]]></comment>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="updated_date" type="timestamp" length="29" decimal="6" jt="93" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[NEW; set when changes are made going forward]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="journal_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="journal_id" />
+			</index>
+		</table>
+		<table name="paper_author_affiliations" >
+			<comment><![CDATA[Links between papers]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="author_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES Authors.AuthorId]]></comment>
+			</column>
+			<column name="affiliation_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES Affiliations.AffiliationId]]></comment>
+			</column>
+			<column name="author_sequence_number" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[1-based author sequence number. 1: the 1st author listed on paper, 2: the 2nd author listed on paper, etc.]]></comment>
+			</column>
+			<column name="original_author" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="original_affiliation" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_author_affiliations_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+			<fk name="fk_paper_author_affiliations_affiliations" virtual="y" to_schema="dev.outs" to_table="affiliations" >
+				<fk_column name="affiliation_id" pk="affiliation_id" />
+			</fk>
+			<fk name="fk_paper_author_affiliations_authors" virtual="y" to_schema="dev.outs" to_table="authors" >
+				<fk_column name="author_id" pk="author_id" />
+			</fk>
+		</table>
+		<table name="paper_extended_attributes" >
+			<comment><![CDATA[Extra paper identifiers]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="attribute_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 1=PatentId, 2=PubMedId, 3=PmcId, 4=Alternative Title]]></comment>
+			</column>
+			<column name="attribute_value" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_extended_attributes_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="paper_fields_of_study" >
+			<comment><![CDATA[Linking table from papers to fields]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="field_of_study_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<column name="score" type="real" length="8" decimal="8" jt="7" >
+				<comment><![CDATA[Confidence range between 0 and 1. Bigger number representing higher confidence.]]></comment>
+			</column>
+			<column name="algorithm_version" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[NEW; version of algorithm to assign fields. Possible values: 1=old MAG (no longer added), 2=OpenAlex]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_fields_of_study_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+			<fk name="fk_paper_fields_of_study_fields_of_study" virtual="y" to_schema="dev.outs" to_table="fields_of_study" >
+				<fk_column name="field_of_study_id" pk="field_of_study_id" />
+			</fk>
+		</table>
+		<table name="paper_mesh" >
+			<comment><![CDATA[MeSH headings assigned to the paper by PubMed]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="descriptor_ui" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[see https://en.wikipedia.org/wiki/Medical_Subject_Headings]]></comment>
+			</column>
+			<column name="descriptor_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[see https://en.wikipedia.org/wiki/Medical_Subject_Headings]]></comment>
+			</column>
+			<column name="qualifier_ui" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[see https://en.wikipedia.org/wiki/Medical_Subject_Headings]]></comment>
+			</column>
+			<column name="qualifier_name" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[see https://en.wikipedia.org/wiki/Medical_Subject_Headings]]></comment>
+			</column>
+			<column name="is_major_topc" type="boolean" length="1" decimal="0" jt="-7" >
+				<comment><![CDATA[see https://en.wikipedia.org/wiki/Medical_Subject_Headings]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_mesh_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="paper_recommendations" >
+			<comment><![CDATA[Paper recommendations with score]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="recommended_paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="score" type="real" length="8" decimal="8" jt="7" >
+				<comment><![CDATA[Confidence range between 0 and 1. Bigger number representing higher confidence.]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_recommendations_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="paper_references" >
+			<comment><![CDATA[Paper references]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="paper_reference_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_references_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+			<fk name="fk_paper_references_papers_0" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_reference_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="paper_resources" >
+			<comment><![CDATA[DEPRECATED]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES papers.papers_id]]></comment>
+			</column>
+			<column name="resource_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Bit flags: 1=Project, 2=Data, 4=Code]]></comment>
+			</column>
+			<column name="resource_url" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Url of resource]]></comment>
+			</column>
+			<column name="source_url" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[List of urls associated with the project, used to derive resource_url]]></comment>
+			</column>
+			<column name="relationship_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Bit flags: 1=Own, 2=Cite]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_resources_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="paper_urls" >
+			<comment><![CDATA[MeSH headings assigned to the paper by PubMed]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
+			</column>
+			<column name="source_type" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[Possible values: 1=Html, 2=Text, 3=Pdf, 4=Doc, 5=Ppt, 6=Xls, 8=Rtf, 12=Xml, 13=Rss, 20=Swf, 27=Ics, 31=Pub, 33=Ods, 34=Odp, 35=Odt, 36=Zip, 40=Mp3, 0/999/NULL=unknown]]></comment>
+			</column>
+			<column name="source_url" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="language_code" type="varchar" length="256" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="url_for_landing_page" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; URL for the landing page, when article is free to read]]></comment>
+			</column>
+			<column name="url_for_pdf" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; URL for the PDF, when article is free to read]]></comment>
+			</column>
+			<column name="host_type" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; host type of the free-to-read URL, Possible values: publisher, repository]]></comment>
+			</column>
+			<column name="version" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; version of the free-to-read URL Possible values: submittedVersion, acceptedVersion, publishedVersion]]></comment>
+			</column>
+			<column name="license" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; license of the free-to-read URL (example: cc0, cc-by, publisher-specific)]]></comment>
+			</column>
+			<column name="repository_institution" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; name of repository host of URL]]></comment>
+			</column>
+			<column name="oai_pmh_id" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; OAH-PMH id of the repository record]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_paper_urls_papers" virtual="y" to_schema="dev.outs" to_table="papers" >
+				<fk_column name="paper_id" pk="paper_id" />
+			</fk>
+		</table>
+		<table name="papers" >
+			<comment><![CDATA[Main data for papers]]></comment>
+			<column name="paper_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[PRIMARY KEY]]></comment>
+			</column>
+			<column name="rank" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no new ranks are being added]]></comment>
+			</column>
+			<column name="doi" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Doi values are upper-cased per DOI standard at https://www.doi.org/doi_handbook/2_Numbering.html#2.4]]></comment>
+			</column>
+			<column name="doc_type" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: Book, BookChapter, Conference, Dataset, Journal, Patent, Repository, Thesis, NULL : unknown. Patent is DEPRECATED; no new Patents are being added.]]></comment>
+			</column>
+			<column name="genre" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW]]></comment>
+			</column>
+			<column name="is_paratext" type="boolean" length="1" decimal="0" jt="-7" >
+				<comment><![CDATA[NEW]]></comment>
+			</column>
+			<column name="paper_title" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="original_title" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="book_title" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="year" type="integer" length="10" decimal="0" jt="4" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="publication_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="online_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="publisher" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="journal_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY references journals.journal_id]]></comment>
+			</column>
+			<column name="conference_series_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no longer updated, no new Conference Series are being added. FOREIGN KEY references conference_series.conference_series_id.]]></comment>
+			</column>
+			<column name="conference_instance_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no longer updated, no new Conference Instances are being added. FOREIGN KEY references conference_instances.conference_instance_id.]]></comment>
+			</column>
+			<column name="volume" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="issue" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="first_page" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="last_page" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="reference_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="citation_count" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+			</column>
+			<column name="estimated_citation" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; is set equal to citation_count]]></comment>
+			</column>
+			<column name="original_venue" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="family_id" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no longer updated.]]></comment>
+			</column>
+			<column name="family_rank" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[DEPRECATED; no longer updated.]]></comment>
+			</column>
+			<column name="doc_sub_types" type="varchar" length="250" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: "Retracted Publication", "Retraction Notice".]]></comment>
+			</column>
+			<column name="oa_status" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; Possible values: closed, green, gold, hybrid, bronze (see https://en.wikipedia.org/wiki/Open_access#Colour_naming_system)]]></comment>
+			</column>
+			<column name="best_url" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; An url for the paper (see paper_urls table for more)]]></comment>
+			</column>
+			<column name="best_free_url" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; An url of legal free-to-read copy when it exists]]></comment>
+			</column>
+			<column name="best_free_version" type="varchar" length="65000" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; Possible values: submittedVersion, acceptedVersion, publishedVersion]]></comment>
+			</column>
+			<column name="doi_lower" type="varchar" length="256" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; lowercase doi for convenience linking to Unpaywall]]></comment>
+			</column>
+			<column name="created_date" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+			</column>
+			<column name="updated_date" type="timestamp" length="29" decimal="6" jt="93" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[NEW; set when changes are made going forward]]></comment>
+			</column>
+			<column name="best_open_access_url" type="varchar" length="1" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[NEW; The best url for reading this paper for free]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="paper_id" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="paper_id" />
+			</index>
+			<fk name="fk_papers_conference_series" virtual="y" to_schema="dev.outs" to_table="conference_series" >
+				<fk_column name="conference_series_id" pk="conference_series_id" />
+			</fk>
+			<fk name="fk_papers_conference_instances" virtual="y" to_schema="dev.outs" to_table="conference_instances" >
+				<fk_column name="conference_instance_id" pk="conference_instance_id" />
+			</fk>
+			<fk name="fk_papers_journals" virtual="y" to_schema="dev.outs" to_table="journals" >
+				<fk_column name="journal_id" pk="journal_id" />
+			</fk>
+		</table>
+		<table name="related_field_of_study" >
+			<comment><![CDATA[Relationships between fields of study]]></comment>
+			<column name="field_of_study_id1" type="bigint" length="19" decimal="0" jt="-5" >
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<column name="type1" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: general, disease, disease_cause, medical_treatment, symptom]]></comment>
+			</column>
+			<column name="field_of_study_id2" type="bigint" length="19" decimal="0" jt="-5" >
+				<column_options><![CDATA[encode az64]]></column_options>
+				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
+			</column>
+			<column name="type2" type="varchar" length="65535" decimal="0" jt="12" >
+				<column_options><![CDATA[encode lzo]]></column_options>
+				<comment><![CDATA[Possible values: general, disease, disease_cause, medical_treatment, symptom]]></comment>
+			</column>
+			<column name="rank" type="real" length="8" decimal="8" jt="7" >
+				<comment><![CDATA[DEPRECATED; no new ranks are being added.]]></comment>
+			</column>
+			<index name="Distribution" unique="CUSTOM1" >
+				<column name="field_of_study_id1" />
+			</index>
+			<index name="Sorting" unique="CUSTOM2" options="COMPOUND" >
+				<column name="field_of_study_id1" />
+			</index>
+			<fk name="fk_related_field_of_study_fields_of_study" virtual="y" to_schema="dev.outs" to_table="fields_of_study" >
+				<fk_column name="field_of_study_id1" pk="field_of_study_id" />
+			</fk>
+			<fk name="fk_related_field_of_study_fields_of_study_0" virtual="y" to_schema="dev.outs" to_table="fields_of_study" >
+				<fk_column name="field_of_study_id2" pk="field_of_study_id" />
+			</fk>
+		</table>
+	</schema>
+	<connector name="Redshift" database="Redshift" driver_class="com.amazon.redshift.jdbc42.Driver" driver_jar="redshift-jdbc42-2.1.0.1.jar" driver_desc="Standard" url="jdbc:redshift://openalex-4.cnw77bm9bpcp.us-east-1.redshift.amazonaws.com:5439/dev" host="localhost" port="5439" user="awsuser" passwd="Q3JhZnRSYW1lbjQyIQ==" />
+	<layout name="Export Tables" id="Layout-25a8" show_relation="no_text" >
+		<entity schema="dev.outs" name="abstracts_inverted" color="80B3B3" x="80" y="1184" />
+		<entity schema="dev.outs" name="affiliations" color="F7F2EC" x="832" y="672" />
+		<entity schema="dev.outs" name="author_extended_attributes" color="F7F2EC" x="1344" y="496" />
+		<entity schema="dev.outs" name="authors" color="F7F2EC" x="1088" y="496" />
+		<entity schema="dev.outs" name="conference_instances" color="664DB3" x="832" y="1056" />
+		<entity schema="dev.outs" name="conference_series" color="664DB3" x="608" y="1104" />
+		<entity schema="dev.outs" name="entity_related_entities" color="F4BEBE" x="112" y="144" />
+		<entity schema="dev.outs" name="field_of_study_children" color="1A3399" x="928" y="192" />
+		<entity schema="dev.outs" name="field_of_study_extended_attributes" color="1A3399" x="928" y="80" />
+		<entity schema="dev.outs" name="fields_of_study" color="1A3399" x="672" y="112" />
+		<entity schema="dev.outs" name="journals" color="F4BEE9" x="592" y="624" />
+		<entity schema="dev.outs" name="paper_author_affiliations" color="F7F2EC" x="832" y="496" />
+		<entity schema="dev.outs" name="paper_extended_attributes" color="80B3B3" x="48" y="400" />
+		<entity schema="dev.outs" name="paper_fields_of_study" color="1A3399" x="480" y="224" />
+		<entity schema="dev.outs" name="paper_mesh" color="80B3B3" x="80" y="1008" />
+		<entity schema="dev.outs" name="paper_recommendations" color="80B3B3" x="48" y="896" />
+		<entity schema="dev.outs" name="paper_references" color="80B3B3" x="352" y="1184" />
+		<entity schema="dev.outs" name="paper_resources" color="80B3B3" x="80" y="752" />
+		<entity schema="dev.outs" name="paper_urls" color="80B3B3" x="64" y="512" />
+		<entity schema="dev.outs" name="papers" color="C7F4BE" x="352" y="480" />
+		<entity schema="dev.outs" name="related_field_of_study" color="1A3399" x="928" y="288" />
+		<group name="conferences" color="664DB3" >
+			<entity schema="dev.outs" name="conference_series" />
+			<entity schema="dev.outs" name="conference_instances" />
+		</group>
+		<group name="authors and affiliations" color="F7F2EC" >
+			<entity schema="dev.outs" name="paper_author_affiliations" />
+			<entity schema="dev.outs" name="affiliations" />
+			<entity schema="dev.outs" name="authors" />
+			<entity schema="dev.outs" name="author_extended_attributes" />
+		</group>
+		<group name="fields_of_study" color="1A3399" >
+			<entity schema="dev.outs" name="fields_of_study" />
+			<entity schema="dev.outs" name="paper_fields_of_study" />
+			<entity schema="dev.outs" name="related_field_of_study" />
+			<entity schema="dev.outs" name="field_of_study_children" />
+			<entity schema="dev.outs" name="field_of_study_extended_attributes" />
+		</group>
+	</layout>
+</project>
