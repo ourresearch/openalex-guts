@@ -1,0 +1,25 @@
+Metadata-Version: 1.1
+Name: cyrtranslit
+Version: 1.0
+Summary: Bi-directional Cyrillic transliteration. Transliterate Cyrillic script to Latin script and vice versa.
+Home-page: https://github.com/opendatakosovo/cyrillic-transliteration
+Author: Georges Labrèche, Open Data Kosovo
+Author-email: georges@tanagraspace.com
+License: MIT
+Download-URL: https://github.com/opendatakosovo/cyrillic-transliteration/archive/v1.0.tar.gz
+Description: Transliteration is the conversion of a text from one script to another. Current version supports transliteration for Bulgarian, Montenegrin, Macedonian, Russian, Serbian, Tajik, and Ukrainian.
+Keywords: cyrillic,latin,transliteration,transliterate,cyrtranslit,bulgarian,montenegrin,macedonian,russian,serbian,tajik,ukrainian
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
