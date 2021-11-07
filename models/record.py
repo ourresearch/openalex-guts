@@ -1,3 +1,9 @@
+from sqlalchemy import text
+from sqlalchemy import orm
+from sqlalchemy.orm import selectinload
+from collections import defaultdict
+from time import sleep
+
 from app import db
 
 
@@ -90,10 +96,26 @@ class Record(db.Model):
         return new_work
 
 
+
     def process(self):
-        print("processing! {}".format(self.id))
-        self.work = self.get_or_mint_work()
-        self.work.refresh()
+        from models import Work
+
+        self.insert_dict = {}
+        print("processing record! {}".format(self.id))
+        # self.work = self.get_or_mint_work()
+        # self.work.refresh()
+        q = "select paper_id from mid.work where normalized_title = f_normalize_title(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
+        print(f"this record: {self.record_webpage_url} {self.title}")
+        rows = db.session.execute(text(q), {"title": self.title}).fetchall()
+        paper_ids = [row[0] for row in rows]
+        print(f"work paper_ids that match title: {paper_ids}")
+        if paper_ids:
+            matching_works = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).all()
+            urls = ["https://openalex-guts.herokuapp.com/work/id/{}".format(w.paper_id) for w in matching_works]
+            print(f"works: {urls}")
+            print("...... ")
+            # sleep(10)
+
 
     def to_dict(self, return_level="full"):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}

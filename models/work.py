@@ -116,7 +116,7 @@ class Work(db.Model):
 
     def process(self):
         JSON_ELASTIC_VERSION_STRING = "includes some orcid"
-        # print("processing! {}".format(self.id))
+        # print("processing work! {}".format(self.id))
         self.normalized_title = normalize_title(self.original_title)
         # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
@@ -173,7 +173,7 @@ class Work(db.Model):
 
 
     def __repr__(self):
-        return "<Work ( {} ) '{}...'>".format(self.id, self.paper_title[0:20])
+        return "<Work ( {} ) {} '{}...'>".format(self.paper_id, self.doi, self.paper_title[0:20])
 
 
 def calc_normalized_title(title, repository_id=None):

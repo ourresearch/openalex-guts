@@ -64,8 +64,8 @@ class DbQueue(object):
             ))
 
             # for handling the queues
-            if not (method_name == "update" and obj.__class__.__name__ == "Pub"):
-                obj.finished = datetime.datetime.utcnow().isoformat()
+            # if not (method_name == "update" and obj.__class__.__name__ == "Pub"):
+            #     obj.finished = datetime.datetime.utcnow().isoformat()
 
             # db.session.merge(obj)
 
@@ -95,9 +95,9 @@ class DbQueue(object):
 
             db.session.commit()
 
-
-        logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
-        # db.session.remove()  # close connection nicely
+        if insert_dict_all_objects:
+            logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
+            # db.session.remove()  # close connection nicely
 
         return None  # important for if we use this on RQ
 
@@ -114,16 +114,31 @@ class DbQueue(object):
             queue_table = None
         else:
             queue_table = self.table_name
+            insert_table = None
+
             if not limit:
                 limit = 1000
-            text_query_pattern_select = """
-                select {id_field_name} from {queue_table}
-                    where {id_field_name} not in
-                        (select {id_field_name} from {insert_table})
-                    order by random()
-                    limit {chunk};
-            """
-
+            if self.myclass == models.Work:
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select {id_field_name} from {insert_table})
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = "mid.work_json"
+            elif self.myclass == models.Record:
+                text_query_pattern_select = """
+                    select {id_field_name} 
+                    from ins.recordthresher_record
+                    where record_type='pmh_record' 
+                    and doi is null
+                    and published_date is not null
+                    and published_date > '2021-06-01'
+                    order by random() limit {chunk};
+                """
+            else:
+                raise("myclass not known")
 
         index = 0
         start_time = time()
@@ -132,7 +147,7 @@ class DbQueue(object):
             text_query_select = text_query_pattern_select.format(
                 chunk=big_chunk,
                 queue_table=queue_table,
-                insert_table="mid.work_json",
+                insert_table=insert_table,
                 id_field_name=self.id_field_name
             )
             # logger.info("the queues query is:\n{}".format(text_query))
@@ -160,15 +175,18 @@ class DbQueue(object):
                     # q = db.session.query(self.myclass).options(orm.noload('*')).filter(self.myid.in_(object_ids))
                     # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
 
-                    q = db.session.query(self.myclass).options(
-                         selectinload(self.myclass.locations),
-                         selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
-                         selectinload(self.myclass.unpaywall),
-                         selectinload(self.myclass.extra_ids),
-                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                         selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.institution_ror).selectinload(models.InstitutionRor.ror),
-                         selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
-                         orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                    if self.myclass == models.Work:
+                        q = db.session.query(self.myclass).options(
+                             selectinload(self.myclass.locations),
+                             selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
+                             selectinload(self.myclass.unpaywall),
+                             selectinload(self.myclass.extra_ids),
+                             selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                             selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.institution_ror).selectinload(models.InstitutionRor.ror),
+                             selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
+                             orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                    if self.myclass == models.Record:
+                        q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                     objects = q.all()
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
