@@ -21,7 +21,7 @@ update mid.institution set ror_id=ror.ror_id from mid.institution t1
 join mid.institution_ror ror on t1.affiliation_id=ror.institution_id
 
 update mid.institution set
-       normalized_name=f_mag_normalize_string(ror.name),
+       match_name=f_normalize_string(ror.name),
        display_name=ror.name,
        grid_id=ror.grid_id,
        official_page=ror.official_page,
