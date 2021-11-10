@@ -1,6 +1,6 @@
 ------ mag_advanced_entity_related_entities
 
-CREATE or replace view outs.entity_related_entities_view --- DEPRECATED; no longer updated. Relationship between papers.
+CREATE or replace view outs.entity_related_entities_view --- FROZEN; no longer updated. Relationship between papers.
 --- DISTSTYLE key
 --- distkey (entity_id)
 --- sortkey (entity_id)
@@ -56,13 +56,13 @@ as (
         group_papers as (select field_of_study as field_of_study_id, count(distinct paper_id) as n from mid.work_concept group by field_of_study)
     select
         concept.field_of_study_id as field_of_study_id,      --- PRIMARY KEY
-           rank,                           --- DEPRECATED; no new ranks are being added.
-           normalized_name,
+           rank,                           --- FROZEN; no new ranks are being added.
+           normalized_name,                --- UPDATED; slightly different normalization algorithm
            display_name,
            main_type,
            level,                          --- Possible values: 0-5
            group_papers.n as paper_count,
-           group_papers.n as paper_family_count, --- DEPRECATED; same value as paper_count.
+           group_papers.n as paper_family_count, --- FROZEN; same value as paper_count.
            coalesce(group_citations.n, 0) as citation_count,
            create_date
     from mid.concept concept
@@ -136,7 +136,7 @@ as (
            type1,                   --- Possible values: general, disease, disease_cause, medical_treatment, symptom
            field_of_study_id2,      --- FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId
            type2,                   --- Possible values: general, disease, disease_cause, medical_treatment, symptom
-           rank                     --- DEPRECATED; no new ranks are being added.
+           rank                     --- FROZEN; no new ranks are being added.
     from legacy.mag_advanced_related_field_of_study
    )
 with no schema binding;
@@ -154,15 +154,15 @@ as (
             group_papers as (select affiliation_id, count(distinct paper_id) as n from mid.affiliation group by affiliation_id)
     select
         affil.affiliation_id as affiliation_id,    --- PRIMARY KEY
-       rank,                        --- DEPRECATED; no new ranks are being added.
-       normalized_name,
+       rank,                        --- FROZEN; no new ranks are being added.
+       normalized_name,             --- UPDATED; slightly different normalization algorithm
        display_name,
-       grid_id,                     --- DEPRECATED; ror_id is the new standard identifier for organizations
+       grid_id,                     --- FROZEN; ror_id is the new standard identifier for organizations
        ror_id,                      --- NEW; ROR for this organization, see https://ror.org, https://ror.org/:ror_id
        official_page,
        wiki_page,
        coalesce(group_papers.n, 0) as paper_count,
-       coalesce(group_papers.n, 0) as paper_family_count,  --- DEPRECATED; same value as paper_count.
+       coalesce(group_papers.n, 0) as paper_family_count,  --- FROZEN; same value as paper_count.
        coalesce(group_citations.n, 0) as citation_count,
        iso3166_code,              --- Two-letter country codes, see https://en.wikipedia.org/wiki/ISO_3166-2
        latitude,
@@ -203,13 +203,13 @@ as (
             group_papers as (select author_id, count(distinct paper_id) as n from mid.affiliation group by author_id)
     select
         author.author_id as author_id,        --- PRIMARY KEY
-       rank,                        --- DEPRECATED; no new ranks are being added
-       normalized_name,
+       rank,                        --- FROZEN; no new ranks are being added
+       normalized_name,           --- UPDATED; slightly different normalization algorithm
        display_name,
        author_orcid.orcid as orcid,                        --- NEW; ORCID identifier for this author
        last_known_affiliation_id,
        coalesce(group_papers.n, 0) as paper_count,
-       coalesce(group_papers.n, 0) as paper_family_count,  --- DEPRECATED; same value as paper_count
+       coalesce(group_papers.n, 0) as paper_family_count,  --- FROZEN; same value as paper_count
        coalesce(group_citations.n, 0) as citation_count,
        created_date,
        updated_date              --- NEW; set when changes are made going forward
@@ -233,7 +233,7 @@ as (
             group_papers as (select conference_instance_id, count(*) as n from mid.work group by conference_instance_id)
     select
         inst.conference_instance_id as conference_instance_id, --- PRIMARY KEY
-           normalized_name,
+           normalized_name,                 --- UPDATED; slightly different normalization algorithm
            display_name,
            conference_series_id,            --- FOREIGN KEY REFERENCES ConferenceSeries.ConferenceSeriesId
            location,
@@ -245,7 +245,7 @@ as (
            notification_due_date,
            final_version_due_date,
            coalesce(group_papers.n, 0) as paper_count,
-           coalesce(group_papers.n, 0) as paper_family_count,  --- DEPRECATED; same value as paper_count
+           coalesce(group_papers.n, 0) as paper_family_count,  --- FROZEN; same value as paper_count
            coalesce(group_citations.n, 0) as citation_count,
            latitude,
            longitude,
@@ -269,11 +269,11 @@ as (
             group_papers as (select conference_series_id, count(*) as n from mid.work group by conference_series_id)
     select
         series.conference_series_id as conference_series_id,     --- PRIMARY KEY
-           rank,                            --- DEPRECATED; no new ranks are being added
-           normalized_name,
+           rank,                            --- FROZEN; no new ranks are being added
+           normalized_name,                 --- UPDATED; slightly different normalization algorithm
            display_name,
            coalesce(group_papers.n, 0) as paper_count,
-           coalesce(group_papers.n, 0) as paper_family_count,  --- DEPRECATED; same value as paper_count
+           coalesce(group_papers.n, 0) as paper_family_count,  --- FROZEN; same value as paper_count
            coalesce(group_citations.n, 0) as citation_count,
            created_date
     from legacy.mag_main_conference_series series
@@ -295,8 +295,8 @@ as (
             group_papers as (select journal_id, count(distinct paper_id) as n from mid.work group by journal_id)
     select
         mid.journal.journal_id as journal_id,     --- PRIMARY KEY
-       rank,                    --- DEPRECATED; no new ranks are being added
-       normalized_name,
+       rank,                    --- FROZEN; no new ranks are being added
+       normalized_name,         --- UPDATED; slightly different normalization algorithm
        display_name,
        issn,                    --- the ISSN-L for the journal (see https://en.wikipedia.org/wiki/International_Standard_Serial_Number#Linking_ISSN)
        issns,                   --- NEW; JSON list of all ISSNs for this journal (example: \'["1469-5073","0016-6723"]\' )
@@ -305,7 +305,7 @@ as (
        publisher,
        webpage,
        coalesce(group_papers.n, 0) as paper_count,
-       coalesce(group_papers.n, 0) as paper_family_count, --- DEPRECATED; same value as paper_count
+       coalesce(group_papers.n, 0) as paper_family_count, --- FROZEN; same value as paper_count
        coalesce(group_citations.n, 0) as citation_count,
        created_date,
        updated_date              --- NEW; set when changes are made going forward
@@ -389,9 +389,9 @@ as (
 with no schema binding;
 
 
------- mag_nlp_abstracts_inverted
+------ mag_nlp_paper_abstracts_inverted
 
-CREATE or replace view outs.abstracts_inverted_view --- Inverted abstracts
+CREATE or replace view outs.paper_abstracts_inverted_view --- Inverted abstracts
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -403,10 +403,25 @@ as (
 with no schema binding;
 
 
+------ mag_nlp_paper_citation_contexts
+
+CREATE or replace view outs.paper_citation_contexts_view --- FROZEN; citation contexts
+--- DISTSTYLE key
+--- distkey (paper_id)
+--- sortkey (paper_id)
+as (
+    select
+        paper_id,               --- FOREIGN KEY REFERENCES papers.papers_id
+        paper_reference_id      --- FOREIGN KEY REFERENCES papers.papers_id
+        citation_context        ---
+ from mid.citation_contexts)
+with no schema binding;
+
+
 ------ mag_main_paper_resources
 
 
-CREATE or replace view outs.paper_resources_view --- DEPRECATED; no longer updated. Data and code urls associated with papers
+CREATE or replace view outs.paper_resources_view --- FROZEN; no longer updated. Data and code urls associated with papers
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -433,12 +448,12 @@ as (
         citation_count as (select paper_reference_id as cited_paper_id, count(*) as n from mid.citation group by paper_reference_id)
     select
         paper_id,       -- PRIMARY KEY
-        rank,           --- DEPRECATED; no new ranks are being added
+        rank,           --- FROZEN; no new ranks are being added
         doi,            --- Doi values are upper-cased per DOI standard at https://www.doi.org/doi_handbook/2_Numbering.html#2.4
-        doc_type,       --- Possible values: Book, BookChapter, Conference, Dataset, Journal, Patent, Repository, Thesis, NULL : unknown. Patent is DEPRECATED; no new Patents are being added.
+        doc_type,       --- Possible values: Book, BookChapter, Conference, Dataset, Journal, Patent, Repository, Thesis, NULL : unknown. Patent is FROZEN; no new Patents are being added.
         genre,          --- NEW
         is_paratext,    --- NEW
-        paper_title,
+        paper_title,    --- UPDATED; slightly different normalization algorithm
         original_title,
         book_title,
         year,
@@ -446,27 +461,26 @@ as (
         online_date,
         publisher,
         journal_id,     --- FOREIGN KEY references journals.journal_id
-        conference_series_id, --- DEPRECATED; no longer updated, no new Conference Series are being added. FOREIGN KEY references conference_series.conference_series_id.
-        conference_instance_id, --- DEPRECATED; no longer updated, no new Conference Instances are being added. FOREIGN KEY references conference_instances.conference_instance_id.
+        conference_series_id, --- FROZEN; no longer updated, no new Conference Series are being added. FOREIGN KEY references conference_series.conference_series_id.
+        conference_instance_id, --- FROZEN; no longer updated, no new Conference Instances are being added. FOREIGN KEY references conference_instances.conference_instance_id.
         volume,
         issue,
         first_page,
         last_page,
         coalesce(reference_count.n, 0) as reference_count,
         coalesce(citation_count.n, 0) as citation_count,
-        coalesce(citation_count.n, 0) as estimated_citation, --- DEPRECATED; is set equal to citation_count
+        coalesce(citation_count.n, 0) as estimated_citation, --- UPDATED; new algorithm
         original_venue,
-        family_id,          --- DEPRECATED; no longer updated.
-        family_rank,        --- DEPRECATED; no longer updated.
+        family_id,          --- FROZEN; no longer updated.
+        family_rank,        --- FROZEN; no longer updated.
         doc_sub_types,      --- Possible values: "Retracted Publication", "Retraction Notice".
         oa_status,          --- NEW; Possible values: closed, green, gold, hybrid, bronze (see https://en.wikipedia.org/wiki/Open_access#Colour_naming_system)
         best_url,           --- NEW; An url for the paper (see paper_urls table for more)
-        best_free_url,      --- NEW; An url of legal free-to-read copy when it exists
+        best_free_url,      --- NEW; Url of best legal free-to-read copy when it exists (see https://support.unpaywall.org/support/solutions/articles/44001943223)
         best_free_version,  --- NEW; Possible values: submittedVersion, acceptedVersion, publishedVersion
         doi_lower,          --- NEW; lowercase doi for convenience linking to Unpaywall
         created_date,
         updated_date,       --- NEW; set when changes are made going forward
-        NULL AS best_open_access_url --- NEW; The best url for reading this paper for free
     from mid.work work
     left outer join reference_count on work.paper_id=reference_count.citing_paper_id
     left outer join citation_count on work.paper_id=citation_count.cited_paper_id
