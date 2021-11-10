@@ -1,6 +1,6 @@
 ------ mag_advanced_entity_related_entities
 
-CREATE or replace view outs.entity_related_entities_view --- FROZEN; no longer updated. Relationship between papers.
+CREATE or replace view outs.entity_related_entities_view --- Relationship between papers, authors, fields of study. (advanced/EntityRelatedEntities.txt)
 --- DISTSTYLE key
 --- distkey (entity_id)
 --- sortkey (entity_id)
@@ -18,7 +18,7 @@ with no schema binding;
 
 ------ mag_advanced_field_of_study_children
 
-CREATE or replace view outs.field_of_study_children_view --- Relationship between fields_of_study.
+CREATE or replace view outs.field_of_study_children_view --- Relationship between Fields of Study (advanced/FieldOfStudyChildren.txt)
 --- DISTSTYLE key
 --- distkey (field_of_study_id)
 --- sortkey (field_of_study_id)
@@ -32,7 +32,7 @@ with no schema binding;
 
 ------ mag_advanced_field_of_study_extended_attributes
 
-CREATE or replace view outs.field_of_study_extended_attributes_view --- Other identifiers for fields_of_study.
+CREATE or replace view outs.field_of_study_extended_attributes_view --- Other identifiers for Fields of Study (advanced/FieldOfStudyExtendedAttributes.txt)
 --- DISTSTYLE key
 --- distkey (field_of_study_id)
 --- sortkey (field_of_study_id)
@@ -46,7 +46,7 @@ with no schema binding;
 
 ------ mag_advanced_fields_of_study
 
-CREATE or replace view outs.fields_of_study_view --- Base table for Fields of Study
+CREATE or replace view outs.fields_of_study_view --- Base table for Fields of Study (advanced/FieldsOfStudy.txt)
 --- DISTSTYLE key
 --- distkey (field_of_study_id)
 --- sortkey (field_of_study_id)
@@ -74,7 +74,7 @@ with no schema binding;
 
 ------ mag_advanced_paper_fields_of_study
 
-CREATE or replace view outs.paper_fields_of_study_view --- Linking table from papers to fields, with score
+CREATE or replace view outs.paper_fields_of_study_view --- Linking table from papers to fields, with score (advanced/PaperFieldsOfStudy.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -91,7 +91,7 @@ with no schema binding;
 
 ------ mag_advanced_paper_mesh
 
-CREATE or replace view outs.paper_mesh_view --- MeSH headings assigned to the paper by PubMed
+CREATE or replace view outs.paper_mesh_view --- MeSH headings assigned to the paper by PubMed (advanced/PaperMeSH.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -110,7 +110,7 @@ with no schema binding;
 
 ------ mag_advanced_paper_recommendations
 
-CREATE or replace view outs.paper_recommendations_view --- Paper recommendations with score
+CREATE or replace view outs.paper_recommendations_view --- Paper recommendations with score (advanced/PaperRecommendations.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -126,7 +126,7 @@ with no schema binding;
 
 ------ mag_advanced_related_field_of_study
 
-CREATE or replace view outs.related_field_of_study_view --- Relationships between fields of study
+CREATE or replace view outs.related_field_of_study_view --- Relationships between fields of study (advanced/RelatedFieldOfStudy.txt)
 --- DISTSTYLE key
 --- distkey (field_of_study_id1)
 --- sortkey (field_of_study_id1)
@@ -144,7 +144,7 @@ with no schema binding;
 
 ------ mag_main_affiliations
 
-CREATE or replace view outs.affiliations_view --- Base table for affiliations (institutions)
+CREATE or replace view outs.affiliations_view --- Base table for affiliations/institutions (mag/Affiliations.txt)
 --- DISTSTYLE key
 --- distkey (affiliation_id)
 --- sortkey (affiliation_id)
@@ -177,7 +177,7 @@ with no schema binding;
 
 ------ mag_main_author_extended_attributes
 
-CREATE or replace view outs.author_extended_attributes_view --- Additional author name representations
+CREATE or replace view outs.author_extended_attributes_view --- Additional author name representations (mag/AuthorExtendedAttributes.txt)
 --- DISTSTYLE key
 --- distkey (author_id)
 --- sortkey (author_id)
@@ -193,7 +193,7 @@ with no schema binding;
 
 ------ mag_main_authors
 
-CREATE or replace view outs.authors_view --- Base table for affiliations (institutions)
+CREATE or replace view outs.authors_view --- Base table for authors (mag/Authors.txt)
 --- DISTSTYLE key
 --- distkey (author_id)
 --- sortkey (author_id)
@@ -223,7 +223,7 @@ with no schema binding;
 
 ------ mag_main_conference_instances
 
-CREATE or replace view outs.conference_instances_view --- Base table for Conference Instances
+CREATE or replace view outs.conference_instances_view --- FROZEN; Base table for Conference Instances (mag/ConferenceInstances.txt)
 --- DISTSTYLE key
 --- distkey (conference_instance_id)
 --- sortkey (conference_instance_id)
@@ -259,7 +259,7 @@ with no schema binding;
 
 ------ mag_main_conference_series
 
-CREATE or replace view outs.conference_series_view --- Base table for Conference Series
+CREATE or replace view outs.conference_series_view --- FROZEN; Base table for Conference Series (mag/ConferenceSeries.txt)
 --- DISTSTYLE key
 --- distkey (conference_series_id)
 --- sortkey (conference_series_id)
@@ -285,7 +285,7 @@ with no schema binding;
 
 ------ mag_main_journals
 
-CREATE or replace view outs.journals_view --- Base table for Journals
+CREATE or replace view outs.journals_view --- Base table for Journals (mag/Journals.txt)
 --- DISTSTYLE key
 --- distkey (journal_id)
 --- sortkey (journal_id)
@@ -298,7 +298,7 @@ as (
        rank,                    --- FROZEN; no new ranks are being added
        normalized_name,         --- UPDATED; slightly different normalization algorithm
        display_name,
-       issn,                    --- the ISSN-L for the journal (see https://en.wikipedia.org/wiki/International_Standard_Serial_Number#Linking_ISSN)
+       issn,                    --- UPDATED; the ISSN-L for the journal (see https://en.wikipedia.org/wiki/International_Standard_Serial_Number#Linking_ISSN)
        issns,                   --- NEW; JSON list of all ISSNs for this journal (example: \'["1469-5073","0016-6723"]\' )
        is_oa,                   --- NEW; TRUE when the journal is 100% OA
        is_in_doaj,              --- NEW; TRUE when the journal is in DOAJ (see https://doaj.org/)
@@ -318,7 +318,7 @@ with no schema binding;
 
 ------ mag_main_paper_author_affiliations
 
-CREATE or replace view outs.paper_author_affiliations_view --- Links between papers, authors, and institutions. NOTE: It is possible to have multiple rows with same (PaperId, AuthorId, AffiliationId) when an author is associated with multiple affiliations.
+CREATE or replace view outs.paper_author_affiliations_view --- Links between papers, authors, and affiliations/institutions. NOTE: It is possible to have multiple rows with same (PaperId, AuthorId, AffiliationId) when an author is associated with multiple affiliations. (mag/PaperAuthorAffiliations.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -336,7 +336,7 @@ with no schema binding;
 
 ------ mag_main_paper_extended_attributes
 
-CREATE or replace view outs.paper_extended_attributes_view --- Extra paper identifiers
+CREATE or replace view outs.paper_extended_attributes_view --- Extra paper identifiers (mag/PaperExtendedAttributes.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -353,7 +353,7 @@ with no schema binding;
 
 ------ mag_main_paper_references_id
 
-CREATE or replace view outs.paper_references_view --- Paper references (and also, in reverse, citations)
+CREATE or replace view outs.paper_references_view --- Paper references and, in reverse, citations (mag/PaperReferences.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -367,7 +367,7 @@ with no schema binding;
 
 ------ mag_main_paper_urls
 
-CREATE or replace view outs.paper_urls_view --- MeSH headings assigned to the paper by PubMed
+CREATE or replace view outs.paper_urls_view --- Urls for the paper (mag/PaperUrls.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -391,7 +391,7 @@ with no schema binding;
 
 ------ mag_nlp_paper_abstracts_inverted
 
-CREATE or replace view outs.paper_abstracts_inverted_view --- Inverted abstracts
+CREATE or replace view outs.paper_abstracts_inverted_view --- Inverted abstracts (nlp/PaperAbstractsInvertedIndex.txt.{*})
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -405,7 +405,7 @@ with no schema binding;
 
 ------ mag_nlp_paper_citation_contexts
 
-CREATE or replace view outs.paper_citation_contexts_view --- FROZEN; citation contexts
+CREATE or replace view outs.paper_citation_contexts_view --- FROZEN; citation contexts (nlp/PaperCitationContexts.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -421,7 +421,7 @@ with no schema binding;
 ------ mag_main_paper_resources
 
 
-CREATE or replace view outs.paper_resources_view --- FROZEN; no longer updated. Data and code urls associated with papers
+CREATE or replace view outs.paper_resources_view --- FROZEN; no longer updated. Data and code urls associated with papers (mag/PaperResources.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
@@ -438,7 +438,7 @@ with no schema binding;
 
 ------ mag_main_papers
 
-CREATE or replace view outs.papers_view --- Main data for papers
+CREATE or replace view outs.papers_view --- Main data for papers (mag/Papers.txt)
 --- DISTSTYLE key
 --- distkey (paper_id)
 --- sortkey (paper_id)
