@@ -44,6 +44,8 @@ libraries_to_mum = [
     "stripe",
     "oauthlib",
     "boto",
+    "boto3",
+    "botocore",
     "newrelic",
     "RateLimiter",
     "paramiko",
