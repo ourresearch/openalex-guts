@@ -7,7 +7,7 @@ credentials 'CREDS HERE'
 
 
 create or replace function
-util.f_matching_string(original_string character varying(65535))
+util.f_mag_normalize_string(original_string character varying(65535))
 RETURNS character varying(65535)
 STABLE
 as $$
@@ -40,11 +40,13 @@ as $$
         result = ' '.join(words)
 
     result = result.lower()
-    result = re.sub("\s*", "", result)
+    # leave the spaces for mag version
+--    result = re.sub("\s*", "", result)
 
     return result
 
 $$LANGUAGE plpythonu;
 
 
--- select original_title, util.f_matching_string(original_title) from mid.work limit 1000;
+-- select original_title, util.f_mag_normalize_string(original_title) from mid.work limit 1000;
+

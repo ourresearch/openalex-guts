@@ -6,7 +6,7 @@ credentials 'CREDS HERE'
 
 -- Based on code written by Alireza on Upwork
 create or replace function
-util.f_normalize_author_string(origName character varying(65535))
+util.f_mag_normalize_author_string(origName character varying(65535))
  RETURNS character varying(65535)
 STABLE
 AS $$
@@ -90,9 +90,9 @@ $$LANGUAGE plpythonu;
 
 -- select display_name,
 --    normalized_name,
---    util.f_normalize_author_string(display_name),
---    normalized_name= util.f_normalize_author_base(display_name) as is_same
---    from mid_dev.author
+--    util.f_mag_normalize_author_string(display_name),
+--    normalized_name= util.f_mag_normalize_author_string(display_name) as is_same
+--    from mid.author
 --    where is_same is false
 --    limit 10000;
 

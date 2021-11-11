@@ -114,7 +114,7 @@ AS $$
 $$LANGUAGE plpythonu;
 
 
--- select display_name, normalized_name, util.f_matching_author_string(display_name) from mid_dev.author limit 1000;
+-- select display_name, normalized_name, util.f_matching_author_string(display_name) from mid.author limit 1000;
 
 
 
