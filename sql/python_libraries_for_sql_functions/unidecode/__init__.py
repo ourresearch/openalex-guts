@@ -46,7 +46,8 @@ def unidecode_expect_ascii(string):
     _warn_if_not_unicode(string)
     try:
         bytestring = string.encode('ASCII')
-    except UnicodeEncodeError:
+    # HAP added UnicodeDecodeError
+    except (UnicodeEncodeError, UnicodeDecodeError):
         return _unidecode(string)
     if version_info[0] >= 3:
         return string

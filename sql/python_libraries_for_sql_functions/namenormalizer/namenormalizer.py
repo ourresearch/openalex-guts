@@ -17,4 +17,6 @@ def popularity_as_korean_lastname(word):
 
 def unicode_map(uLetter):
     sLetter = uLetter.encode("utf-8")
-    return gUnicodeMapping.get(sLetter, sLetter)
+    if sLetter in gUnicodeMapping:
+        return gUnicodeMapping[sLetter]['translated']
+    return sLetter
