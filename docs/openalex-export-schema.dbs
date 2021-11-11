@@ -37,7 +37,7 @@
 		<udt name="AuthorExtendedAttributes_view" udt_java_type="2002" udt_precision="NONE" />
 		<udt name="Affiliations_view" udt_java_type="2002" udt_precision="NONE" />
 		<table name="Affiliations" >
-			<comment><![CDATA[Base table for affiliations]]></comment>
+			<comment><![CDATA[Base table for affiliations/institutions (mag/Affiliations.txt)]]></comment>
 			<column name="AffiliationId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -97,7 +97,7 @@
 			</index>
 		</table>
 		<table name="AuthorExtendedAttributes" >
-			<comment><![CDATA[Additional author name representations]]></comment>
+			<comment><![CDATA[Additional author name representations (mag/AuthorExtendedAttributes.txt)]]></comment>
 			<column name="AuthorId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Authors.AuthorId]]></comment>
 			</column>
@@ -119,7 +119,7 @@
 			</fk>
 		</table>
 		<table name="Authors" >
-			<comment><![CDATA[Base table for authors]]></comment>
+			<comment><![CDATA[Base table for authors (mag/Authors.txt)]]></comment>
 			<column name="AuthorId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -169,7 +169,7 @@
 			</fk>
 		</table>
 		<table name="ConferenceInstances" >
-			<comment><![CDATA[FROZEN]]></comment>
+			<comment><![CDATA[FROZEN; Base table for Conference Instances (mag/ConferenceInstances.txt)]]></comment>
 			<column name="ConferenceInstanceId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -234,7 +234,7 @@
 			</fk>
 		</table>
 		<table name="ConferenceSeries" >
-			<comment><![CDATA[FROZEN]]></comment>
+			<comment><![CDATA[FROZEN; Base table for Conference Series (mag/ConferenceSeries.txt)]]></comment>
 			<column name="ConferenceSeriesId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -270,7 +270,7 @@
 			</index>
 		</table>
 		<table name="EntityRelatedEntities" >
-			<comment><![CDATA[Relationship between papers]]></comment>
+			<comment><![CDATA[Relationship between papers, authors, fields of study. (advanced/EntityRelatedEntities.txt)]]></comment>
 			<column name="EntityId" type="bigint" length="19" decimal="0" jt="-5" />
 			<column name="EntityType" type="varchar" length="65535" decimal="0" jt="12" >
 				<column_options><![CDATA[encode lzo]]></column_options>
@@ -298,7 +298,7 @@
 			</index>
 		</table>
 		<table name="FieldOfStudyChildren" >
-			<comment><![CDATA[Relationship between Fields of Study]]></comment>
+			<comment><![CDATA[Relationship between Fields of Study (advanced/FieldOfStudyChildren.txt)]]></comment>
 			<column name="FieldOfStudyId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
 			</column>
@@ -320,7 +320,7 @@
 			</fk>
 		</table>
 		<table name="FieldOfStudyExtendedAttributes" >
-			<comment><![CDATA[Other identifiers for Fields of Study]]></comment>
+			<comment><![CDATA[Other identifiers for Fields of Study (advanced/FieldOfStudyExtendedAttributes.txt)]]></comment>
 			<column name="FieldOfStudyId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
 			</column>
@@ -342,7 +342,7 @@
 			</fk>
 		</table>
 		<table name="FieldsOfStudy" >
-			<comment><![CDATA[Base table for Fields of Study]]></comment>
+			<comment><![CDATA[Base table for Fields of Study (advanced/FieldsOfStudy.txt)]]></comment>
 			<column name="FieldOfStudyId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -385,7 +385,7 @@
 			</index>
 		</table>
 		<table name="Journals" >
-			<comment><![CDATA[Base table for Journals]]></comment>
+			<comment><![CDATA[Base table for Journals (mag/Journals.txt)]]></comment>
 			<column name="JournalId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -445,7 +445,7 @@
 			</index>
 		</table>
 		<table name="PaperAbstractsInvertedIndex" >
-			<comment><![CDATA[Inverted abstracts]]></comment>
+			<comment><![CDATA[Inverted abstracts (nlp/PaperAbstractsInvertedIndex.txt.]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES papers.papers_id]]></comment>
 			</column>
@@ -464,7 +464,7 @@
 			</fk>
 		</table>
 		<table name="PaperAuthorAffiliations" >
-			<comment><![CDATA[Links between papers]]></comment>
+			<comment><![CDATA[Links between papers, authors, and affiliations/institutions. NOTE: It is possible to have multiple rows with same (PaperId, AuthorId, AffiliationId) when an author is associated with multiple affiliations. (mag/PaperAuthorAffiliations.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -503,7 +503,7 @@
 			</fk>
 		</table>
 		<table name="PaperCitationContexts" >
-			<comment><![CDATA[FROZEN]]></comment>
+			<comment><![CDATA[FROZEN; citation contexts (nlp/PaperCitationContexts.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES papers.papers_id]]></comment>
 			</column>
@@ -528,7 +528,7 @@
 			</fk>
 		</table>
 		<table name="PaperExtendedAttributes" >
-			<comment><![CDATA[Extra paper identifiers]]></comment>
+			<comment><![CDATA[Extra paper identifiers (mag/PaperExtendedAttributes.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -550,7 +550,7 @@
 			</fk>
 		</table>
 		<table name="PaperFieldsOfStudy" >
-			<comment><![CDATA[Linking table from papers to fields]]></comment>
+			<comment><![CDATA[Linking table from papers to fields, with score (advanced/PaperFieldsOfStudy.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -579,7 +579,7 @@
 			</fk>
 		</table>
 		<table name="PaperMeSH" >
-			<comment><![CDATA[MeSH headings assigned to the paper by PubMed]]></comment>
+			<comment><![CDATA[MeSH headings assigned to the paper by PubMed (advanced/PaperMeSH.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -613,7 +613,7 @@
 			</fk>
 		</table>
 		<table name="PaperRecommendations" >
-			<comment><![CDATA[Paper recommendations with score]]></comment>
+			<comment><![CDATA[Paper recommendations with score (advanced/PaperRecommendations.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -638,7 +638,7 @@
 			</fk>
 		</table>
 		<table name="PaperReferences" >
-			<comment><![CDATA[Paper references and]]></comment>
+			<comment><![CDATA[Paper references and, in reverse, citations (mag/PaperReferences.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -660,7 +660,7 @@
 			</fk>
 		</table>
 		<table name="PaperResources" >
-			<comment><![CDATA[FROZEN]]></comment>
+			<comment><![CDATA[FROZEN; no longer updated. Data and code urls associated with papers (mag/PaperResources.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES papers.papers_id]]></comment>
 			</column>
@@ -691,7 +691,7 @@
 			</fk>
 		</table>
 		<table name="PaperUrls" >
-			<comment><![CDATA[Urls for the paper]]></comment>
+			<comment><![CDATA[Urls for the paper (mag/PaperUrls.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
 			</column>
@@ -744,7 +744,7 @@
 			</fk>
 		</table>
 		<table name="Papers" >
-			<comment><![CDATA[Main data for papers]]></comment>
+			<comment><![CDATA[Main data for papers (mag/Papers.txt)]]></comment>
 			<column name="PaperId" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[PRIMARY KEY]]></comment>
 			</column>
@@ -865,10 +865,6 @@
 				<column_options><![CDATA[encode az64]]></column_options>
 				<comment><![CDATA[NEW; set when changes are made going forward]]></comment>
 			</column>
-			<column name="RecommendedPaperId" type="bigint" length="19" decimal="0" jt="-5" >
-				<column_options><![CDATA[encode az64]]></column_options>
-				<comment><![CDATA[FOREIGN KEY REFERENCES Papers.PaperId]]></comment>
-			</column>
 			<index name="Distribution" unique="CUSTOM1" >
 				<column name="PaperId" />
 			</index>
@@ -886,7 +882,7 @@
 			</fk>
 		</table>
 		<table name="RelatedFieldOfStudy" >
-			<comment><![CDATA[Relationships between fields of study]]></comment>
+			<comment><![CDATA[Relationships between fields of study (advanced/RelatedFieldOfStudy.txt)]]></comment>
 			<column name="FieldOfStudyId1" type="bigint" length="19" decimal="0" jt="-5" >
 				<comment><![CDATA[FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId]]></comment>
 			</column>
@@ -921,26 +917,27 @@
 	</schema>
 	<connector name="Redshift" database="Redshift" driver_class="com.amazon.redshift.jdbc42.Driver" driver_jar="redshift-jdbc42-2.1.0.1.jar" url="jdbc:redshift://openalex-4.cnw77bm9bpcp.us-east-1.redshift.amazonaws.com:5439/dev" host="localhost" port="5439" user="awsuser" passwd="Q3JhZnRSYW1lbjQyIQ==" read_only="y" />
 	<layout name="Main Layout" id="Layout-15a6" show_relation="no_text" >
-		<entity schema="dev.outs" name="Affiliations" color="B3801A" x="912" y="672" />
-		<entity schema="dev.outs" name="AuthorExtendedAttributes" color="B3801A" x="1344" y="496" />
-		<entity schema="dev.outs" name="Authors" color="B3801A" x="1120" y="496" />
-		<entity schema="dev.outs" name="ConferenceInstances" color="8066CC" x="848" y="1040" />
-		<entity schema="dev.outs" name="ConferenceSeries" color="8066CC" x="640" y="1072" />
-		<entity schema="dev.outs" name="EntityRelatedEntities" color="F4BECB" x="112" y="160" />
+		<comment><![CDATA[Redshift]]></comment>
+		<entity schema="dev.outs" name="Affiliations" color="B3801A" x="912" y="656" />
+		<entity schema="dev.outs" name="AuthorExtendedAttributes" color="B3801A" x="1344" y="480" />
+		<entity schema="dev.outs" name="Authors" color="B3801A" x="1120" y="480" />
+		<entity schema="dev.outs" name="ConferenceInstances" color="8066CC" x="848" y="1024" />
+		<entity schema="dev.outs" name="ConferenceSeries" color="8066CC" x="640" y="1056" />
+		<entity schema="dev.outs" name="EntityRelatedEntities" color="F4BECB" x="144" y="144" />
 		<entity schema="dev.outs" name="FieldOfStudyChildren" color="4D66CC" x="832" y="192" />
 		<entity schema="dev.outs" name="FieldOfStudyExtendedAttributes" color="4D66CC" x="832" y="80" />
 		<entity schema="dev.outs" name="FieldsOfStudy" color="4D66CC" x="624" y="112" />
 		<entity schema="dev.outs" name="Journals" color="F4BEEE" x="656" y="560" />
 		<entity schema="dev.outs" name="PaperAbstractsInvertedIndex" color="C4E0F9" x="336" y="1280" />
-		<entity schema="dev.outs" name="PaperAuthorAffiliations" color="B3801A" x="896" y="496" />
+		<entity schema="dev.outs" name="PaperAuthorAffiliations" color="B3801A" x="896" y="480" />
 		<entity schema="dev.outs" name="PaperCitationContexts" color="C4E0F9" x="336" y="1136" />
-		<entity schema="dev.outs" name="PaperExtendedAttributes" color="C4E0F9" x="64" y="416" />
+		<entity schema="dev.outs" name="PaperExtendedAttributes" color="C4E0F9" x="64" y="400" />
 		<entity schema="dev.outs" name="PaperFieldsOfStudy" color="4D66CC" x="432" y="240" />
-		<entity schema="dev.outs" name="PaperMeSH" color="3986C1" x="96" y="784" />
-		<entity schema="dev.outs" name="PaperRecommendations" color="C4E0F9" x="48" y="528" />
-		<entity schema="dev.outs" name="PaperReferences" color="C4E0F9" x="80" y="944" />
-		<entity schema="dev.outs" name="PaperResources" color="3986C1" x="80" y="640" />
-		<entity schema="dev.outs" name="PaperUrls" color="C4E0F9" x="64" y="1040" />
+		<entity schema="dev.outs" name="PaperMeSH" color="3986C1" x="96" y="768" />
+		<entity schema="dev.outs" name="PaperRecommendations" color="C4E0F9" x="48" y="512" />
+		<entity schema="dev.outs" name="PaperReferences" color="C4E0F9" x="80" y="928" />
+		<entity schema="dev.outs" name="PaperResources" color="3986C1" x="80" y="624" />
+		<entity schema="dev.outs" name="PaperUrls" color="C4E0F9" x="64" y="1024" />
 		<entity schema="dev.outs" name="Papers" color="C7F4BE" x="368" y="480" />
 		<entity schema="dev.outs" name="RelatedFieldOfStudy" color="4D66CC" x="832" y="288" />
 		<group name="Conferences" color="8066CC" >

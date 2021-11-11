@@ -4,7 +4,7 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = True
+GENERATE_CREATE_TABLE = False
 GENERATE_COMMENTS = True
 GENERATE_UNLOAD = False
 
@@ -47,7 +47,7 @@ VIEW_START_REGEXP = r'create\s*(or\s*replace)?\s*view'
 VIEW_END_REGEXP = r'.*;\s*$'
 VIEW_TABLENAME_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w."]*)'
 REG_GROUP_TABLE_NAME = 2
-VIEW_COMMENT_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w."]*)\s*---*\s*((\s*[\w."]*)*)'
+VIEW_COMMENT_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w."]*)\s*---*\s*((\s*[\w.,"()/;:]*)*)'
 REG_GROUP_COMMENT = 3
 VIEW_DIST_CONFIG_REGEXP = r'--*\s*(DISTSTYLE|DISTKEY|SORTKEY)'
 VIEW_QUERY_START_REGEXP = r'^\s*as\s*\(\s*$'

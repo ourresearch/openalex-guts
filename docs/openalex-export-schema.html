@@ -71,8 +71,8 @@ tr:nth-child(even) {
 <li><a href='#outs.PaperUrls'/>outs.PaperUrls</a>
 <li><a href='#outs.RelatedFieldOfStudy'/>outs.RelatedFieldOfStudy</a></ul>
 </div></div><br><br><br>
-<div class='card'><div class='card-body'><a name='outs.Affiliations'  onclick="window.scrollTo(712, 672);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Schema dev.outs</h5><h5 class='card-title'>Table Affiliations</h5></a>
-<p class="text-muted">Base table for affiliations</p>
+<div class='card'><div class='card-body'><a name='outs.Affiliations'  onclick="window.scrollTo(712, 656);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Schema dev.outs</h5><h5 class='card-title'>Table Affiliations</h5></a>
+<p class="text-muted">Base table for affiliations&#47;institutions &#40;mag&#47;Affiliations&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -186,20 +186,20 @@ tr:nth-child(even) {
 <tr><th colspan='4'>Referring Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_Authors_Affiliations</td>
-		<td > (AffiliationId) &#8592; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a>(LastKnownAffiliationId) </td>
+		<td > (AffiliationId) &#8592; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a>(LastKnownAffiliationId) </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperAuthorAffiliations_Affiliations</td>
-		<td > (AffiliationId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
+		<td > (AffiliationId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.AuthorExtendedAttributes'  onclick="window.scrollTo(1144, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.AuthorExtendedAttributes').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table AuthorExtendedAttributes</h5></a>
-<p class="text-muted">Additional author name representations</p>
+<div class='card'><div class='card-body'><a name='outs.AuthorExtendedAttributes'  onclick="window.scrollTo(1144, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.AuthorExtendedAttributes').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table AuthorExtendedAttributes</h5></a>
+<p class="text-muted">Additional author name representations &#40;mag&#47;AuthorExtendedAttributes&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -235,15 +235,15 @@ tr:nth-child(even) {
 <tr><th colspan='4'>Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_AuthorExtendedAttributes_Authors</td>
-		<td > (AuthorId) &#8594; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a> </td>
+		<td > (AuthorId) &#8594; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.Authors'  onclick="window.scrollTo(920, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table Authors</h5></a>
-<p class="text-muted">Base table for authors</p>
+<div class='card'><div class='card-body'><a name='outs.Authors'  onclick="window.scrollTo(920, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table Authors</h5></a>
+<p class="text-muted">Base table for authors &#40;mag&#47;Authors&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -327,26 +327,26 @@ tr:nth-child(even) {
 <tr><th colspan='4'>Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_Authors_Affiliations</td>
-		<td > (LastKnownAffiliationId) &#8594; <a href='#outs&#46;Affiliations'  onclick="window.scrollTo(712, 672);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;">Affiliations</a>(AffiliationId) </td>
+		<td > (LastKnownAffiliationId) &#8594; <a href='#outs&#46;Affiliations'  onclick="window.scrollTo(712, 656);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;">Affiliations</a>(AffiliationId) </td>
 		<td>  </td>
 	</tr>
 <tr><th colspan='4'>Referring Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_AuthorExtendedAttributes_Authors</td>
-		<td > (AuthorId) &#8592; <a href='#outs&#46;AuthorExtendedAttributes'  onclick="window.scrollTo(1144, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.AuthorExtendedAttributes').classList.add('palpable'); return false;">AuthorExtendedAttributes</a> </td>
+		<td > (AuthorId) &#8592; <a href='#outs&#46;AuthorExtendedAttributes'  onclick="window.scrollTo(1144, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.AuthorExtendedAttributes').classList.add('palpable'); return false;">AuthorExtendedAttributes</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperAuthorAffiliations_Authors</td>
-		<td > (AuthorId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
+		<td > (AuthorId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.ConferenceInstances'  onclick="window.scrollTo(648, 1040);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table ConferenceInstances</h5></a>
-<p class="text-muted">FROZEN</p>
+<div class='card'><div class='card-body'><a name='outs.ConferenceInstances'  onclick="window.scrollTo(648, 1024);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table ConferenceInstances</h5></a>
+<p class="text-muted">FROZEN&#59; Base table for Conference Instances &#40;mag&#47;ConferenceInstances&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -472,7 +472,7 @@ tr:nth-child(even) {
 <tr><th colspan='4'>Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_ConferenceInstances_ConferenceSeries</td>
-		<td > (ConferenceSeriesId) &#8594; <a href='#outs&#46;ConferenceSeries'  onclick="window.scrollTo(440, 1072);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;">ConferenceSeries</a> </td>
+		<td > (ConferenceSeriesId) &#8594; <a href='#outs&#46;ConferenceSeries'  onclick="window.scrollTo(440, 1056);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;">ConferenceSeries</a> </td>
 		<td>  </td>
 	</tr>
 <tr><th colspan='4'>Referring Foreign Keys</th></tr>
@@ -485,8 +485,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.ConferenceSeries'  onclick="window.scrollTo(440, 1072);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table ConferenceSeries</h5></a>
-<p class="text-muted">FROZEN</p>
+<div class='card'><div class='card-body'><a name='outs.ConferenceSeries'  onclick="window.scrollTo(440, 1056);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table ConferenceSeries</h5></a>
+<p class="text-muted">FROZEN&#59; Base table for Conference Series &#40;mag&#47;ConferenceSeries&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -557,15 +557,15 @@ tr:nth-child(even) {
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_ConferenceInstances_ConferenceSeries</td>
-		<td > (ConferenceSeriesId) &#8592; <a href='#outs&#46;ConferenceInstances'  onclick="window.scrollTo(648, 1040);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;">ConferenceInstances</a> </td>
+		<td > (ConferenceSeriesId) &#8592; <a href='#outs&#46;ConferenceInstances'  onclick="window.scrollTo(648, 1024);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;">ConferenceInstances</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.EntityRelatedEntities'  onclick="window.scrollTo(60, 160);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.EntityRelatedEntities').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table EntityRelatedEntities</h5></a>
-<p class="text-muted">Relationship between papers</p>
+<div class='card'><div class='card-body'><a name='outs.EntityRelatedEntities'  onclick="window.scrollTo(60, 144);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.EntityRelatedEntities').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table EntityRelatedEntities</h5></a>
+<p class="text-muted">Relationship between papers&#44; authors&#44; fields of study&#46; &#40;advanced&#47;EntityRelatedEntities&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -621,7 +621,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.FieldOfStudyChildren'  onclick="window.scrollTo(632, 192);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.FieldOfStudyChildren').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table FieldOfStudyChildren</h5></a>
-<p class="text-muted">Relationship between Fields of Study</p>
+<p class="text-muted">Relationship between Fields of Study &#40;advanced&#47;FieldOfStudyChildren&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -664,7 +664,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.FieldOfStudyExtendedAttributes'  onclick="window.scrollTo(632, 80);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.FieldOfStudyExtendedAttributes').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table FieldOfStudyExtendedAttributes</h5></a>
-<p class="text-muted">Other identifiers for Fields of Study</p>
+<p class="text-muted">Other identifiers for Fields of Study &#40;advanced&#47;FieldOfStudyExtendedAttributes&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -708,7 +708,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.FieldsOfStudy'  onclick="window.scrollTo(424, 112);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.FieldsOfStudy').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table FieldsOfStudy</h5></a>
-<p class="text-muted">Base table for Fields of Study</p>
+<p class="text-muted">Base table for Fields of Study &#40;advanced&#47;FieldsOfStudy&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -819,7 +819,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.Journals'  onclick="window.scrollTo(456, 560);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Journals').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table Journals</h5></a>
-<p class="text-muted">Base table for Journals</p>
+<p class="text-muted">Base table for Journals &#40;mag&#47;Journals&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -935,7 +935,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.PaperAbstractsInvertedIndex'  onclick="window.scrollTo(136, 1280);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAbstractsInvertedIndex').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperAbstractsInvertedIndex</h5></a>
-<p class="text-muted">Inverted abstracts</p>
+<p class="text-muted">Inverted abstracts &#40;nlp&#47;PaperAbstractsInvertedIndex&#46;txt&#46;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -972,8 +972,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperAuthorAffiliations'  onclick="window.scrollTo(696, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperAuthorAffiliations</h5></a>
-<p class="text-muted">Links between papers</p>
+<div class='card'><div class='card-body'><a name='outs.PaperAuthorAffiliations'  onclick="window.scrollTo(696, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperAuthorAffiliations</h5></a>
+<p class="text-muted">Links between papers&#44; authors&#44; and affiliations&#47;institutions&#46; NOTE&#58; It is possible to have multiple rows with same &#40;PaperId&#44; AuthorId&#44; AffiliationId&#41; when an author is associated with multiple affiliations&#46; &#40;mag&#47;PaperAuthorAffiliations&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1032,12 +1032,12 @@ tr:nth-child(even) {
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperAuthorAffiliations_Authors</td>
-		<td > (AuthorId) &#8594; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a> </td>
+		<td > (AuthorId) &#8594; <a href='#outs&#46;Authors'  onclick="window.scrollTo(920, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Authors').classList.add('palpable'); return false;">Authors</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperAuthorAffiliations_Affiliations</td>
-		<td > (AffiliationId) &#8594; <a href='#outs&#46;Affiliations'  onclick="window.scrollTo(712, 672);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;">Affiliations</a> </td>
+		<td > (AffiliationId) &#8594; <a href='#outs&#46;Affiliations'  onclick="window.scrollTo(712, 656);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Affiliations').classList.add('palpable'); return false;">Affiliations</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
@@ -1045,7 +1045,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.PaperCitationContexts'  onclick="window.scrollTo(136, 1136);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperCitationContexts').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperCitationContexts</h5></a>
-<p class="text-muted">FROZEN</p>
+<p class="text-muted">FROZEN&#59; citation contexts &#40;nlp&#47;PaperCitationContexts&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1093,8 +1093,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperExtendedAttributes'  onclick="window.scrollTo(60, 416);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperExtendedAttributes').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperExtendedAttributes</h5></a>
-<p class="text-muted">Extra paper identifiers</p>
+<div class='card'><div class='card-body'><a name='outs.PaperExtendedAttributes'  onclick="window.scrollTo(60, 400);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperExtendedAttributes').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperExtendedAttributes</h5></a>
+<p class="text-muted">Extra paper identifiers &#40;mag&#47;PaperExtendedAttributes&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1138,7 +1138,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.PaperFieldsOfStudy'  onclick="window.scrollTo(232, 240);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperFieldsOfStudy').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperFieldsOfStudy</h5></a>
-<p class="text-muted">Linking table from papers to fields</p>
+<p class="text-muted">Linking table from papers to fields&#44; with score &#40;advanced&#47;PaperFieldsOfStudy&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1192,8 +1192,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperMeSH'  onclick="window.scrollTo(60, 784);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperMeSH').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperMeSH</h5></a>
-<p class="text-muted">MeSH headings assigned to the paper by PubMed</p>
+<div class='card'><div class='card-body'><a name='outs.PaperMeSH'  onclick="window.scrollTo(60, 768);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperMeSH').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperMeSH</h5></a>
+<p class="text-muted">MeSH headings assigned to the paper by PubMed &#40;advanced&#47;PaperMeSH&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1254,8 +1254,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperRecommendations'  onclick="window.scrollTo(60, 528);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperRecommendations</h5></a>
-<p class="text-muted">Paper recommendations with score</p>
+<div class='card'><div class='card-body'><a name='outs.PaperRecommendations'  onclick="window.scrollTo(60, 512);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperRecommendations</h5></a>
+<p class="text-muted">Paper recommendations with score &#40;advanced&#47;PaperRecommendations&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1303,8 +1303,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperReferences'  onclick="window.scrollTo(60, 944);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperReferences</h5></a>
-<p class="text-muted">Paper references and</p>
+<div class='card'><div class='card-body'><a name='outs.PaperReferences'  onclick="window.scrollTo(60, 928);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperReferences</h5></a>
+<p class="text-muted">Paper references and&#44; in reverse&#44; citations &#40;mag&#47;PaperReferences&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1346,8 +1346,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperResources'  onclick="window.scrollTo(60, 640);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperResources').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperResources</h5></a>
-<p class="text-muted">FROZEN</p>
+<div class='card'><div class='card-body'><a name='outs.PaperResources'  onclick="window.scrollTo(60, 624);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperResources').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperResources</h5></a>
+<p class="text-muted">FROZEN&#59; no longer updated&#46; Data and code urls associated with papers &#40;mag&#47;PaperResources&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1402,8 +1402,8 @@ tr:nth-child(even) {
 </table></div></div>
 
 <br><br>
-<div class='card'><div class='card-body'><a name='outs.PaperUrls'  onclick="window.scrollTo(60, 1040);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperUrls').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperUrls</h5></a>
-<p class="text-muted">Urls for the paper</p>
+<div class='card'><div class='card-body'><a name='outs.PaperUrls'  onclick="window.scrollTo(60, 1024);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperUrls').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table PaperUrls</h5></a>
+<p class="text-muted">Urls for the paper &#40;mag&#47;PaperUrls&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1495,7 +1495,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.Papers'  onclick="window.scrollTo(168, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.Papers').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table Papers</h5></a>
-<p class="text-muted">Main data for papers</p>
+<p class="text-muted">Main data for papers &#40;mag&#47;Papers&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
@@ -1705,12 +1705,6 @@ tr:nth-child(even) {
 		<td> timestamp encode az64 </td>
 		<td> NEW&#59; set when changes are made going forward </td>
 	</tr>
-	<tr>
-		<td>&nbsp;</td>
-		<td><a name='outs.Papers_RecommendedPaperId'>RecommendedPaperId</a></td>
-		<td> bigint encode az64 </td>
-		<td> FOREIGN KEY REFERENCES Papers&#46;PaperId </td>
-	</tr>
 <tr><th colspan='4'>Indexes</th></tr>
 	<tr>		<td><svg width='14' height='14'><use xlink:href='#idx'/></svg></td><td>Distribution</td>
 		<td> ON PaperId</td>
@@ -1728,53 +1722,53 @@ tr:nth-child(even) {
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_Papers_ConferenceSeries</td>
-		<td > (ConferenceSeriesId) &#8594; <a href='#outs&#46;ConferenceSeries'  onclick="window.scrollTo(440, 1072);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;">ConferenceSeries</a> </td>
+		<td > (ConferenceSeriesId) &#8594; <a href='#outs&#46;ConferenceSeries'  onclick="window.scrollTo(440, 1056);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceSeries').classList.add('palpable'); return false;">ConferenceSeries</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#fk'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_Papers_ConferenceInstances</td>
-		<td > (ConferenceInstanceId) &#8594; <a href='#outs&#46;ConferenceInstances'  onclick="window.scrollTo(648, 1040);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;">ConferenceInstances</a> </td>
+		<td > (ConferenceInstanceId) &#8594; <a href='#outs&#46;ConferenceInstances'  onclick="window.scrollTo(648, 1024);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.ConferenceInstances').classList.add('palpable'); return false;">ConferenceInstances</a> </td>
 		<td>  </td>
 	</tr>
 <tr><th colspan='4'>Referring Foreign Keys</th></tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperUrls_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperUrls'  onclick="window.scrollTo(60, 1040);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperUrls').classList.add('palpable'); return false;">PaperUrls</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperUrls'  onclick="window.scrollTo(60, 1024);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperUrls').classList.add('palpable'); return false;">PaperUrls</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperResources_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperResources'  onclick="window.scrollTo(60, 640);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperResources').classList.add('palpable'); return false;">PaperResources</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperResources'  onclick="window.scrollTo(60, 624);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperResources').classList.add('palpable'); return false;">PaperResources</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperReferences_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperReferences'  onclick="window.scrollTo(60, 944);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;">PaperReferences</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperReferences'  onclick="window.scrollTo(60, 928);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;">PaperReferences</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperReferences_Papers_0</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperReferences'  onclick="window.scrollTo(60, 944);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;">PaperReferences</a>(PaperReferenceId) </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperReferences'  onclick="window.scrollTo(60, 928);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperReferences').classList.add('palpable'); return false;">PaperReferences</a>(PaperReferenceId) </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperRecommendations_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperRecommendations'  onclick="window.scrollTo(60, 528);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;">PaperRecommendations</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperRecommendations'  onclick="window.scrollTo(60, 512);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;">PaperRecommendations</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperRecommendations_Papers_0</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperRecommendations'  onclick="window.scrollTo(60, 528);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;">PaperRecommendations</a>(RecommendedPaperId) </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperRecommendations'  onclick="window.scrollTo(60, 512);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperRecommendations').classList.add('palpable'); return false;">PaperRecommendations</a>(RecommendedPaperId) </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperMeSH_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperMeSH'  onclick="window.scrollTo(60, 784);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperMeSH').classList.add('palpable'); return false;">PaperMeSH</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperMeSH'  onclick="window.scrollTo(60, 768);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperMeSH').classList.add('palpable'); return false;">PaperMeSH</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperExtendedAttributes_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperExtendedAttributes'  onclick="window.scrollTo(60, 416);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperExtendedAttributes').classList.add('palpable'); return false;">PaperExtendedAttributes</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperExtendedAttributes'  onclick="window.scrollTo(60, 400);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperExtendedAttributes').classList.add('palpable'); return false;">PaperExtendedAttributes</a> </td>
 		<td>  </td>
 	</tr>
 	<tr>
@@ -1799,7 +1793,7 @@ tr:nth-child(even) {
 	</tr>
 	<tr>
 		<td><svg width='14' height='14'><use xlink:href='#ref'/></svg><svg width='14' height='14'><use xlink:href='#virtual'/></svg></td><td>Fk_PaperAuthorAffiliations_Papers</td>
-		<td > (PaperId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 496);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
+		<td > (PaperId) &#8592; <a href='#outs&#46;PaperAuthorAffiliations'  onclick="window.scrollTo(696, 480);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.PaperAuthorAffiliations').classList.add('palpable'); return false;">PaperAuthorAffiliations</a> </td>
 		<td>  </td>
 	</tr>
 </tbody>
@@ -1807,7 +1801,7 @@ tr:nth-child(even) {
 
 <br><br>
 <div class='card'><div class='card-body'><a name='outs.RelatedFieldOfStudy'  onclick="window.scrollTo(632, 288);var nodes = document.getElementsByClassName('palpable');for (var i = 0; i < nodes.length; i++) { nodes[i].classList.remove('palpable');}; document.getElementById('depict_outs.RelatedFieldOfStudy').classList.add('palpable'); return false;" style='cursor:pointer;'><h5 class='card-title'>Table RelatedFieldOfStudy</h5></a>
-<p class="text-muted">Relationships between fields of study</p>
+<p class="text-muted">Relationships between fields of study &#40;advanced&#47;RelatedFieldOfStudy&#46;txt&#41;</p>
 <table class='table table-sm small' style='table-layout: fixed; word-wrap: break-word;'>
 <thead>
 <tr><th style='width:5%'>Idx</th><th style='width:20%'>Field Name</th><th style='width:23%'>Data Type</th><th style='width:52%'>Description</th></tr>
