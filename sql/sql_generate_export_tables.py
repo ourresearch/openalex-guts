@@ -4,30 +4,33 @@ from os import path
 from os import getenv
 import re
 
-JUST_COMMENTS = True
+GENERATE_CREATE_TABLE = True
+GENERATE_COMMENTS = True
+GENERATE_UNLOAD = False
 
 lookup_export_filenames = {
-    'outs.entity_related_entities':     'advanced/EntityRelatedEntities',
-    'outs.field_of_study_children':     'advanced/FieldOfStudyChildren',
-    'outs.field_of_study_extended_attributes': 'advanced/FieldOfStudyExtendedAttributes',
-    'outs.fields_of_study':             'advanced/FieldsOfStudy',
-    'outs.paper_fields_of_study':       'advanced/PaperFieldsOfStudy',
-    'outs.paper_mesh':                  'advanced/PaperMeSH',
-    'outs.paper_recommendations':       'advanced/PaperRecommendations',
-    'outs.related_field_of_study':      'advanced/RelatedFieldOfStudy',
-    'outs.affiliations':                'mag/Affiliations',
-    'outs.author_extended_attributes':  'mag/AuthorExtendedAttributes',
-    'outs.authors':                     'mag/Authors',
-    'outs.conference_instances':        'mag/ConferenceInstances',
-    'outs.conference_series':           'mag/ConferenceSeries',
-    'outs.journals':                    'mag/Journals',
-    'outs.paper_author_affiliations':   'mag/PaperAuthorAffiliations',
-    'outs.paper_extended_attributes':   'mag/PaperExtendedAttributes',
-    'outs.paper_references':            'mag/PaperReferences',
-    'outs.paper_urls':                  'mag/PaperUrls',
-    'outs.abstracts_inverted':          'mag/AuthorExtendedAttributes',
-    'outs.paper_resources':             'mag/PaperResources',
-    'outs.papers':                      'mag/Papers'
+    'outs.EntityRelatedEntities':     'advanced/EntityRelatedEntities',
+    'outs.FieldOfStudyChildren':     'advanced/FieldOfStudyChildren',
+    'outs.FieldOfStudyExtendedAttributes': 'advanced/FieldOfStudyExtendedAttributes',
+    'outs.FieldsOfStudy':             'advanced/FieldsOfStudy',
+    'outs.PaperFieldsOfStudy':       'advanced/PaperFieldsOfStudy',
+    'outs.PaperMeSH':                  'advanced/PaperMeSH',
+    'outs.PaperRecommendations':       'advanced/PaperRecommendations',
+    'outs.RelatedFieldOfStudy':      'advanced/RelatedFieldOfStudy',
+    'outs.Affiliations':                'mag/Affiliations',
+    'outs.AuthorExtendedAttributes':  'mag/AuthorExtendedAttributes',
+    'outs.Authors':                     'mag/Authors',
+    'outs.ConferenceInstances':        'mag/ConferenceInstances',
+    'outs.ConferenceSeries':           'mag/ConferenceSeries',
+    'outs.Journals':                    'mag/Journals',
+    'outs.PaperAuthorAffiliations':   'mag/PaperAuthorAffiliations',
+    'outs.PaperExtendedAttributes':   'mag/PaperExtendedAttributes',
+    'outs.PaperReferences':            'mag/PaperReferences',
+    'outs.PaperUrls':                  'mag/PaperUrls',
+    'outs.PaperResources':             'mag/PaperResources',
+    'outs.Papers':                      'mag/Papers',
+    'outs.PaperAbstractsInvertedIndex':          'nlp/AuthorExtendedAttributes',
+    'outs.PaperCitationContexts':          'nlp/PaperCitationContexts'
 }
 
 ####################################################################################################
@@ -42,11 +45,11 @@ PROGRAM_NAME = 'SQL_PARSER'
 
 VIEW_START_REGEXP = r'create\s*(or\s*replace)?\s*view'
 VIEW_END_REGEXP = r'.*;\s*$'
-VIEW_TABLENAME_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w.]*)'
+VIEW_TABLENAME_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w."]*)'
 REG_GROUP_TABLE_NAME = 2
-VIEW_COMMENT_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w.]*)\s*---*\s*((\s*[\w.]*)*)'
+VIEW_COMMENT_REGEXP = r'create\s*(or\s*replace)?\s*view\s*([\w."]*)\s*---*\s*((\s*[\w."]*)*)'
 REG_GROUP_COMMENT = 3
-VIEW_DIST_CONFIG_REGEXP = r'--*\s*(DISTSTYLE|distkey|sortkey)'
+VIEW_DIST_CONFIG_REGEXP = r'--*\s*(DISTSTYLE|DISTKEY|SORTKEY)'
 VIEW_QUERY_START_REGEXP = r'^\s*as\s*\(\s*$'
 VIEW_QUERY_END_REGEXP = r'^\s*from\s'
 VIEW_QUERY_WITH_REGEXP = r'\s*with\s'
@@ -54,9 +57,9 @@ VIEW_QUERY_COMMA_REGEXP = r'^.*,$'
 VIEW_QUERY_COMMENTED_OUT_REGEXP = r'^\s*---*.*$'
 VIEW_CONTAINS_COMMENT = r'^\s*[\w.]+.*---*\s*(.*)'
 REG_COLUMN_COMMENT = 1
-VIEW_COLUMN_CONTAINS_AS = r'^[^-]*AS\s*([\w.]*)'
+VIEW_COLUMN_CONTAINS_AS = r'^[^-]* AS\s*([\w."]*)'
 REG_COLUMN_CONTAINS_AS_GROUP = 1
-VIEW_COLUMN_NAME = r'^\s*([\w.]*)[,|\s]'
+VIEW_COLUMN_NAME = r'^\s*([\w."]*)[,|\s]'
 REG_COLUMN_NAME_GROUP = 1
 
 
@@ -126,52 +129,55 @@ class view:
 # ---------------------------------------------------------------------------------------------------
     # Method for generating table script based on view object
     def generate_table(self):
-        table_name = re.sub(r'_view$', '', self.view_name)
+        table_name = re.sub(r'_view', '', self.view_name)
 
         # Start with DROP table ... header
         result = ""
 
-        if not JUST_COMMENTS:
-            result += f'DROP table {table_name};\n'
+        if GENERATE_CREATE_TABLE:
+            result += f'DROP TABLE IF EXISTS {table_name};\n'
 
             # Then with CREATE table ... header
-            result += f'CREATE table {table_name}\n'
+            result += f'CREATE TABLE {table_name}\n'
             # Add distribution config
             result += self.view_dist_config
             # define source select
-            result += f'as (select * from {self.view_name});\n'
+            result += f'as (SELECT * FROM {self.view_name});\n'
             result += '\n\n'
 
         # If there is comment on table then add it
-        if self.view_name:
-            result += f'COMMENT ON table {table_name} IS \'{self.view_comment}\';\n'
-        # If there is not comment on table then warn user
-        else:
-            logging.warn(
-                f'Table \'{self.table_name}\' Is missing table description!')
-        # Iterate all columns and comment to generate DDL command for them
-        for i in range(self.comments.__len__()):
-            result += f'COMMENT ON COLUMN {table_name}.{self.view_columns[i]} IS \'{self.comments[i]}\';\n'
+        if GENERATE_COMMENTS:
+            if self.view_name:
+                result += f'COMMENT ON TABLE {table_name} IS \'{self.view_comment}\';\n'
+            # If there is not comment on table then warn user
+            else:
+                logging.warn(
+                    f'Table \'{self.table_name}\' Is missing table description!')
+            # Iterate all columns and comment to generate DDL command for them
+            for i in range(self.comments.__len__()):
+                # column_name_no_quotes = self.view_columns[i].replace('"', '')
+                # result += f'ALTER TABLE {table_name} ALTER COLUMN RENAME {column_name_no_quotes} TO {self.view_columns[i]};\n'
+                if self.comments[i]:
+                    result += f'COMMENT ON COLUMN {table_name}.{self.view_columns[i]} IS \'{self.comments[i]}\';\n'
         return result
 
 # ---------------------------------------------------------------------------------------------------
     # Method for generating unload command
     def generate_unload_command(self):
-        table_name = re.sub(r'_view$', '', self.view_name)
-        export_dir = lookup_export_filenames[table_name]
+        table_name = re.sub(r'_view', '', self.view_name)
+        export_dir = lookup_export_filenames[table_name.replace('"', '')]
         export_file_name = export_dir.split("/")[1]
         aws_access_key_id = getenv("AWS_ACCESS_KEY_ID")
         aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY")
 
         # Start with UNLOAD table ... header
         result = ""
-        if not JUST_COMMENTS:
-            result += f"""
-unload ('select * from {table_name}')
-to 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
+        result += f"""
+unload ('SELECT * FROM {table_name}')
+TO 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 ALLOWOVERWRITE
-delimiter as '\\t';"""
+DELIMETER as '\\t';"""
 
         return result
 
@@ -197,7 +203,6 @@ delimiter as '\\t';"""
         result = ''
         # lets traver full body of view  (without header)
         for line in raw_body.splitlines():
-            logging.info(f"HI HEATHER {inside_view_query} {line}")
             if not inside_view_query:
                 # If not in query already, then go until you find start of query (it start with 'AS ('  command)
                 if re.match(f'{VIEW_QUERY_START_REGEXP}', line, re.IGNORECASE):
@@ -270,6 +275,19 @@ delimiter as '\\t';"""
                     else:
                         logging.error(f'Cannot parse comment for following row: {line}')
                         raise ValueError(f'Cannot parse comment for following row: {line}')
+
+                # else doesn't contain comment, but let's save it anyway
+                else:
+                    column_as_match = re.search(f'{VIEW_COLUMN_CONTAINS_AS}', line, re.IGNORECASE)
+                    if column_as_match and column_as_match.group(REG_COLUMN_CONTAINS_AS_GROUP):
+                        # Now that we know that column is renamed, lets double check and extract it
+                        columns.append(column_as_match.group(REG_COLUMN_CONTAINS_AS_GROUP))
+                        comments.append("")
+                    # if extraction of column name failed, then log error and raise it
+                    else:
+                        logging.error(f'Cannot parse column for following row: {line}')
+                        # raise ValueError(f'Cannot parse column for following row: {line}')
+
         # After extraction of all columns and all comments, lets check that their counts match
         if (columns.__len__() != comments.__len__()):
             # if counts of columns and comments does not match, then log err and raise it
@@ -313,13 +331,18 @@ class parser:
         try:
             f = open(self.output_file_path, "w")
             f.write('\n')
+            f.write('set enable_case_sensitive_identifier=true;\n')
+
             # Generate table for each view object that we have
             for view in self.views:
                 f.write(view.generate_table())
                 f.write('\n\n')
-            for view in self.views:
-                f.write(view.generate_unload_command())
-                f.write('\n\n')
+
+            if GENERATE_UNLOAD:
+                for view in self.views:
+                    f.write(view.generate_unload_command())
+                    f.write('\n\n')
+
             f.close()
         # If output file genereation failed, then log error and raise it
         except:
