@@ -32,7 +32,8 @@ create table mid.zz_bak_journal as (select * from mid.journal);
 -- MAG has better titles though so stick with their titles for now as default.
 update mid.journal set
        display_name=coalesce(t1.display_name, jdb.title),
-       normalized_name=coalesce(t1.normalized_name, f_normalize_author_string(jdb.title)),
+       normalized_name=coalesce(t1.normalized_name, f_mag_normalize_string(jdb.title)),
+       match_name=coalesce(f_matching_string(t1.normalized_name), f_matching_string(jdb.title)),
        issn=jdb.issn_l,
        issns=jdb.issns_string,
        is_oa=jdb.is_gold_journal,

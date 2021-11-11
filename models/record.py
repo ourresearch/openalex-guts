@@ -11,7 +11,6 @@ from app import db
 # alter table recordthresher_record add column started datetime;
 # alter table recordthresher_record add column finished datetime;
 # alter table recordthresher_record add column work_id bigint
-# alter table recordthresher_record add column normalized_title text
 
 
 
@@ -60,9 +59,6 @@ class Record(db.Model):
     open_license = db.Column(db.Text)
     open_version = db.Column(db.Text)
 
-    # for processing
-    normalized_title = db.Column(db.Text)
-
     # queues
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
@@ -72,29 +68,7 @@ class Record(db.Model):
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
     def get_or_mint_work(self):
-        from models.work import calc_normalized_title
-        from models.work import Work
-
-        # if already assigned to a work, return that work
-        if self.work:
-            return self.work
-
-        if not self.normalized_title:
-            self.normalized_title = calc_normalized_title(self.title, self.repository_id)
-        print(self.normalized_title)
-
-        # look up by title (algorithm magic here)
-        candidates = Work.query.filter(Work.normalized_title==self.normalized_title).all()
-        if candidates:
-            if len(candidates > 1):
-                print("too many candidates!  {}".format(candidates))
-                print(1/0)
-            return candidates[0]
-
-        # if no existing work, mint a new one
-        new_work = Work()
-        return new_work
-
+        pass
 
 
     def process(self):
@@ -104,7 +78,7 @@ class Record(db.Model):
         print("processing record! {}".format(self.id))
         # self.work = self.get_or_mint_work()
         # self.work.refresh()
-        q = "select paper_id from mid.work where normalized_title = f_normalize_title(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
+        q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
         print(f"this record: {self.record_webpage_url} {self.title}")
         rows = db.session.execute(text(q), {"title": self.title}).fetchall()
         paper_ids = [row[0] for row in rows]

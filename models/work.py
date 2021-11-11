@@ -12,7 +12,7 @@ from util import jsonify_fast_no_sort_raw
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
 
-# update work set normalized_title = f_normalize_title(paper_title)
+# update work set match_title = f_matching_string(original_title)
 
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -44,11 +44,12 @@ class Work(db.Model):
     # original_venue character varying(65535),
     # family_id bigint,
     # family_rank bigint,
+    match_title = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
 
     # for processing
-    normalized_title = db.Column(db.Text)
+    match_title = db.Column(db.Text)
 
     # queues
     started = db.Column(db.DateTime)
@@ -70,7 +71,6 @@ class Work(db.Model):
     def refresh(self):
         print("refreshing! {}".format(self.id))
         self.title = self.records[0].title
-        self.normalized_title = calc_normalized_title(self.title)
 
         # build citations list (combine crossref + pubmed via some way, look up IDs)
         # build concept list (call concept API)
@@ -117,7 +117,6 @@ class Work(db.Model):
     def process(self):
         JSON_ELASTIC_VERSION_STRING = "includes some orcid"
         # print("processing work! {}".format(self.id))
-        self.normalized_title = normalize_title(self.original_title)
         # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
         self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
         # has to match order of get_insert_fieldnames
@@ -175,27 +174,5 @@ class Work(db.Model):
     def __repr__(self):
         return "<Work ( {} ) {} '{}...'>".format(self.paper_id, self.doi, self.paper_title[0:20])
 
-
-def calc_normalized_title(title, repository_id=None):
-    if not title:
-        return None
-
-    if repository_id:
-        pass
-        # eventually make it handle these things, or the repository_id
-        # if self.endpoint_id == '63d70f0f03831f36129':
-        #     # figshare. the record is for a figure but the title is from its parent article.
-        #     return None
-        # # repo specific rules
-        # # AMNH adds biblio to the end of titles, which ruins match.  remove this.
-        # # example http://digitallibrary.amnh.org/handle/2246/6816 oai:digitallibrary.amnh.org:2246/6816
-        # if "amnh.org" in self.id:
-        #     # cut off the last part, after an openning paren
-        #     working_title = re.sub("(Bulletin of.+no.+\d+)", "", working_title, re.IGNORECASE | re.MULTILINE)
-        #     working_title = re.sub("(American Museum nov.+no.+\d+)", "", working_title, re.IGNORECASE | re.MULTILINE)
-        # # for endpoint 0dde28a908329849966, adds this to end of all titles, so remove (eg http://hdl.handle.net/11858/00-203Z-0000-002E-72BD-3)
-        # working_title = re.sub("vollständige digitalisierte Ausgabe", "", working_title, re.IGNORECASE | re.MULTILINE)
-
-    return normalize_title(title)
 
 

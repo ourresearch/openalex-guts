@@ -6,7 +6,7 @@ class Ror(db.Model):
     __table_args__ = {'schema': 'ins'}
     __tablename__ = "ror_summary_view"
 
-    ror_id = db.Column(db.Text, db.ForeignKey("mid.institution_ror.ror_id"), primary_key=True)
+    ror_id = db.Column(db.Text, db.ForeignKey("mid.institution.ror_id"), primary_key=True)
     grid_id = db.Column(db.Text)
     name = db.Column(db.Text)
     city = db.Column(db.Text)
@@ -24,6 +24,7 @@ class Ror(db.Model):
         else:
             keys = ["grid_id", "city", "country", "country_code"]
         response = {key: getattr(self, key) for key in keys}
+        response["ror_id"] = [self.ror_id, f"https://ror.org/{self.ror_id}"]
         return response
 
     def __repr__(self):

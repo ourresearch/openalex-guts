@@ -6,7 +6,6 @@ from models.author_orcid import AuthorOrcid
 from models.citation import Citation
 from models.concept import Concept
 from models.institution import Institution
-from models.institution_ror import InstitutionRor
 from models.journal import Journal
 from models.location import Location
 from models.mesh import Mesh
@@ -37,8 +36,7 @@ Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work")
 Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
-Institution.institution_ror = db.relationship("InstitutionRor", uselist=False)
-InstitutionRor.ror = db.relationship("Ror", uselist=False)
+Institution.ror = db.relationship("Ror", uselist=False)
 Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid")
 

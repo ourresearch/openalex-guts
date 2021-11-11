@@ -1,9 +1,10 @@
---- what to update when ROR updates, or when we add manual rors to mid.institution_ror
+--- what to update when ROR updates, or when we add manual rors to mid.institution
 
 
--- need to update mid.institution using mid.institution_ror and ins.ror_summary_view (a view based on ins.ror* tables)
+-- need to update mid.institution using mid.institution and ins.ror_summary_view (a view based on ins.ror* tables)
 -- specifically need to update these columns:
 --       normalized_name,
+--       match_name,
 --       display_name,
 --       grid_id,
 --       official_page,
@@ -17,11 +18,11 @@
 
 create table mid.zz_bak_institution as (select * from mid.institution);
 
-update mid.institution set ror_id=ror.ror_id from mid.institution t1
-join mid.institution_ror ror on t1.affiliation_id=ror.institution_id
+--update mid.institution set ror_id=inst.ror_id from mid.institution t1
+--join mid.institution_ror ror on t1.affiliation_id=ror.institution_id
 
 update mid.institution set
-       match_name=f_normalize_string(ror.name),
+       match_name=f_matching_string(ror.name),
        display_name=ror.name,
        grid_id=ror.grid_id,
        official_page=ror.official_page,

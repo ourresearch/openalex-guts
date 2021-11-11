@@ -15,6 +15,7 @@ class Author(db.Model):
     last_known_affiliation_id = db.Column(db.Numeric)
     paper_count = db.Column(db.Numeric)
     # paper_family_count integer,
+    match_name = db.Column(db.Text)
     citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
 
@@ -30,7 +31,7 @@ class Author(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
+            keys = ["author_id", "display_name", "match_name", "last_known_affiliation_id", "citation_count"]
         else:
             keys = ["author_id", "author_display_name"]
         response = {key: getattr(self, key) for key in keys}

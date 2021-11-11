@@ -17,8 +17,7 @@ class AuthorOrcid(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
-            return {key: getattr(self, key) for key in keys}
+            return [self.orcid, self.orcid_url]
         return [self.orcid, self.orcid_url]
 
     def __repr__(self):

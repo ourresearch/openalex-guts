@@ -12,7 +12,6 @@ class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "institution"
 
-    # grid_id mapped to ror and in institution_ror
     affiliation_id = db.Column(db.BigInteger, primary_key=True)
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
@@ -20,6 +19,9 @@ class Institution(db.Model):
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
+    match_name = db.Column(db.Text)
+    ror_id = db.Column(db.Text)
+    grid_id = db.Column(db.Text)
     # latitude real,
     # longitude real,
 
@@ -29,8 +31,8 @@ class Institution(db.Model):
 
     @property
     def institution_display_name(self):
-        if self.institution_ror:
-            return self.institution_ror.ror.name
+        if self.ror:
+            return self.ror.name
         return self.display_name
 
     @property
@@ -41,12 +43,14 @@ class Institution(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
+            keys = ["institution_id", "display_name", "country_code", "official_page", "wiki_page", "match_name", "grid_id"]
         else:
-            keys = ["institution_id", "institution_display_name", "country_code"]
+            keys = ["institution_id", "institution_display_name", "country_code","grid_id"]
         response = {key: getattr(self, key) for key in keys}
-        if self.institution_ror:
-            response.update(self.institution_ror.to_dict(return_level))
+        if self.ror_id:
+            response["ror_id"] = [self.ror_id, f"https://ror.org/{self.ror_id}"]
+        if self.ror:
+            response.update(self.ror.to_dict(return_level))
         return response
 
     def __repr__(self):
