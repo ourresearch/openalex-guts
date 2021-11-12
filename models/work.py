@@ -20,30 +20,20 @@ class Work(db.Model):
 
     # id = db.Column(db.BigInteger)
     paper_id = db.Column(db.BigInteger, primary_key=True)
-    # created = db.Column(db.DateTime)
-    # updated = db.Column(db.DateTime)
     doi = db.Column(db.Text)
     doc_type = db.Column(db.Text)
     paper_title = db.Column(db.Text)
     original_title = db.Column(db.Text)
-    # book_title character varying(65535),
     year = db.Column(db.Numeric)
     publication_date = db.Column(db.DateTime)
     online_date = db.Column(db.DateTime)
     publisher = db.Column(db.Text)
     journal_id = db.Column(db.BigInteger)
-    # conference_series_id bigint,
-    # conference_instance_id bigint,
     volume = db.Column(db.Text)
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
-    # reference_count bigint,
     citation_count = db.Column(db.BigInteger)
-    # estimated_citation bigint,
-    # original_venue character varying(65535),
-    # family_id bigint,
-    # family_rank bigint,
     match_title = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)

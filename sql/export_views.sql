@@ -476,7 +476,7 @@ as (
         last_page as "LastPage",
         coalesce(reference_count.n, 0) as "ReferenceCount",
         coalesce(citation_count.n, 0) as "CitationCount",
-        coalesce(citation_count.n, 0) as "EstimatedCitation", --- UPDATED; new algorithm
+        util.f_estimated_citation(citation_count.n, publication_date, publisher) as "EstimatedCitation", --- UPDATED; new algorithm
         original_venue as "OriginalVenue",
         family_id as "FamilyId",          --- FROZEN; no longer updated.
         family_rank as "FamilyRank",        --- FROZEN; no longer updated.
