@@ -1,6 +1,6 @@
 -- making the views is very fast
 -- then run
--- python sql_generate_export_tables.py  -i export_view"s.sql -o export_tables_generated.sql
+-- python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
 -- making the tables and comments currently takes about 800seconds
 
 set enable_case_sensitive_identifier=true;

@@ -4,33 +4,36 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = False
+GENERATE_CREATE_TABLE = True
 GENERATE_COMMENTS = True
-GENERATE_UNLOAD = False
+GENERATE_UNLOAD = True
+
+##  cd sql
+##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
 
 lookup_export_filenames = {
-    'outs.EntityRelatedEntities':     'advanced/EntityRelatedEntities',
-    'outs.FieldOfStudyChildren':     'advanced/FieldOfStudyChildren',
+    'outs.EntityRelatedEntities':       'advanced/EntityRelatedEntities',
+    'outs.FieldOfStudyChildren':        'advanced/FieldOfStudyChildren',
     'outs.FieldOfStudyExtendedAttributes': 'advanced/FieldOfStudyExtendedAttributes',
-    'outs.FieldsOfStudy':             'advanced/FieldsOfStudy',
-    'outs.PaperFieldsOfStudy':       'advanced/PaperFieldsOfStudy',
-    'outs.PaperMeSH':                  'advanced/PaperMeSH',
-    'outs.PaperRecommendations':       'advanced/PaperRecommendations',
-    'outs.RelatedFieldOfStudy':      'advanced/RelatedFieldOfStudy',
+    'outs.FieldsOfStudy':               'advanced/FieldsOfStudy',
+    'outs.PaperFieldsOfStudy':          'advanced/PaperFieldsOfStudy',
+    'outs.PaperMeSH':                   'advanced/PaperMeSH',
+    'outs.PaperRecommendations':        'advanced/PaperRecommendations',
+    'outs.RelatedFieldOfStudy':         'advanced/RelatedFieldOfStudy',
     'outs.Affiliations':                'mag/Affiliations',
-    'outs.AuthorExtendedAttributes':  'mag/AuthorExtendedAttributes',
+    'outs.AuthorExtendedAttributes':    'mag/AuthorExtendedAttributes',
     'outs.Authors':                     'mag/Authors',
-    'outs.ConferenceInstances':        'mag/ConferenceInstances',
-    'outs.ConferenceSeries':           'mag/ConferenceSeries',
+    'outs.ConferenceInstances':         'mag/ConferenceInstances',
+    'outs.ConferenceSeries':            'mag/ConferenceSeries',
     'outs.Journals':                    'mag/Journals',
-    'outs.PaperAuthorAffiliations':   'mag/PaperAuthorAffiliations',
-    'outs.PaperExtendedAttributes':   'mag/PaperExtendedAttributes',
-    'outs.PaperReferences':            'mag/PaperReferences',
-    'outs.PaperUrls':                  'mag/PaperUrls',
-    'outs.PaperResources':             'mag/PaperResources',
+    'outs.PaperAuthorAffiliations':     'mag/PaperAuthorAffiliations',
+    'outs.PaperExtendedAttributes':     'mag/PaperExtendedAttributes',
+    'outs.PaperReferences':             'mag/PaperReferences',
+    'outs.PaperUrls':                   'mag/PaperUrls',
+    'outs.PaperResources':              'mag/PaperResources',
     'outs.Papers':                      'mag/Papers',
-    'outs.PaperAbstractsInvertedIndex':          'nlp/AuthorExtendedAttributes',
-    'outs.PaperCitationContexts':          'nlp/PaperCitationContexts'
+    'outs.PaperAbstractsInvertedIndex': 'nlp/PaperAbstractsInvertedIndex',
+    'outs.PaperCitationContexts':       'nlp/PaperCitationContexts'
 }
 
 ####################################################################################################
@@ -177,7 +180,7 @@ unload ('SELECT * FROM {table_name}')
 TO 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 ALLOWOVERWRITE
-DELIMETER as '\\t';"""
+DELIMITER as '\\t';"""
 
         return result
 

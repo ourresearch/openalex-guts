@@ -9,6 +9,8 @@ from app import logger
 
 PART_SUFFIX = r'\d+_part_\d+$'
 
+##  python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
+##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
 
 def concat_files(bucket, bucket_name, prefix, output, delete, dry_run):
     job = S3Concat(
