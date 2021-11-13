@@ -1,9 +1,15 @@
 import argparse
+import concurrent.futures
 import re
+from collections import defaultdict
+from functools import partial
 from os import getenv
 
 import boto
+import boto3
+from s3_concat import MultipartUploadJob
 from s3_concat import S3Concat
+from s3_concat.utils import _threads, _chunk_by_size, MIN_S3_SIZE
 
 from app import logger
 
@@ -12,10 +18,118 @@ PART_SUFFIX = r'\d+_part_\d+$'
 ##  python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
 ##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
 
-def concat_files(bucket, bucket_name, prefix, output, delete, dry_run):
+_num_threads = 1
+
+def upload_part(part, bucket, key, upload_id):
+    s3 = boto3.session.Session().client('s3')
+
+    resp = s3.upload_part_copy(
+        Bucket=bucket,
+        Key=key,
+        PartNumber=part['part_num'],
+        UploadId=upload_id,
+        CopySource=part['source_part']
+    )
+
+    msg = "Setup S3 part #{}, with path: {}".format(part['part_num'],
+                                                    part['source_part'])
+    logger.debug("{}, got response: {}".format(msg, resp))
+
+    # ceph doesn't return quoted etags
+    etag = (resp['CopyPartResult']['ETag']
+            .replace("'", "").replace("\"", ""))
+
+    return {'ETag': etag, 'PartNumber': part['part_num']}
+
+
+def _assemble_parts(self, s3):
+    parts_mapping = []
+    part_num = 0
+
+    s3_parts = ["{}/{}".format(self.bucket, p[0])
+                for p in self.parts_list if p[1] > MIN_S3_SIZE]
+
+    local_parts = [p for p in self.parts_list if p[1] <= MIN_S3_SIZE]
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=_num_threads) as pool:
+        parts_mappings = pool.map(
+            partial(upload_part, bucket=self.bucket, key=self.result_filepath, upload_id=self.upload_id),
+            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, 1)],
+            chunksize=1
+        )
+
+    parts_mapping.extend([pm for pm in parts_mappings])
+
+    # assemble parts too small for direct S3 copy by downloading them,
+    # combining them, and then reuploading them as the last part of the
+    # multi-part upload (which is not constrained to the 5mb limit)
+
+    # Concat the small_parts into the minium size then upload
+    # this way not to much data is kept in memory
+    def get_small_parts(data):
+        part_num, part = data
+        small_part_count = len(part[1])
+
+        logger.debug("Start sub-part #{} from {} files"
+                     .format(part_num, small_part_count))
+
+        small_parts = []
+        for p in part[1]:
+            try:
+                small_parts.append(
+                    s3.get_object(
+                        Bucket=self.bucket,
+                        Key=p[0]
+                    )['Body'].read()
+                )
+            except Exception as e:
+                logger.critical(
+                    f"{e}: When getting {p[0]} from the bucket {self.bucket}")  # noqa: E501
+                raise
+
+        if len(small_parts) > 0:
+            last_part = b''.join(small_parts)
+
+            small_parts = None  # cleanup
+            resp = s3.upload_part(Bucket=self.bucket,
+                                  Key=self.result_filepath,
+                                  PartNumber=part_num,
+                                  UploadId=self.upload_id,
+                                  Body=last_part)
+            msg = "Finish sub-part #{} from {} files" \
+                .format(part_num, small_part_count)
+            logger.debug("{}, got response: {}".format(msg, resp))
+
+            last_part = None
+            # Handles both quoted and unquoted etags
+            etag = resp['ETag'].replace("'", "").replace("\"", "")
+            return {'ETag': etag,
+                    'PartNumber': part_num}
+        return {}
+
+    data_to_thread = []
+    for idx, data in enumerate(_chunk_by_size(local_parts,
+                                              MIN_S3_SIZE * 2),
+                               start=1):
+        data_to_thread.append([part_num + idx, data])
+
+    parts_mapping.extend(
+        _threads(self.small_parts_threads,
+                 data_to_thread,
+                 get_small_parts)
+    )
+
+    # Sort part mapping by part number
+    return sorted(parts_mapping, key=lambda i: i['PartNumber'])
+
+
+MultipartUploadJob._assemble_parts = _assemble_parts
+
+
+def concat_table(table, bucket_name, delete, dry_run):
     job = S3Concat(
         bucket=bucket_name,
-        key=output,
+        key=table['output_key'],
         min_file_size=None,
         s3_client_kwargs={
             'aws_access_key_id': getenv('AWS_ACCESS_KEY_ID'),
@@ -23,14 +137,18 @@ def concat_files(bucket, bucket_name, prefix, output, delete, dry_run):
         }
     )
 
-    job.add_files(prefix)
+    for part_key in table['part_keys']:
+        job.add_files(part_key)
 
-    logger.info(f'concatenating these files into s3://{bucket_name}/{output}')
+    logger.info(f'concatenating these files into s3://{bucket_name}/{table["output_key"]}')
     for part_file in job.all_files:
         logger.info(f'  s3://{bucket_name}/{part_file[0]}')
 
     if not dry_run:
         job.concat()
+
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(bucket_name)
 
     if delete:
         for part_file in job.all_files:
@@ -38,42 +156,53 @@ def concat_files(bucket, bucket_name, prefix, output, delete, dry_run):
             if not dry_run:
                 bucket.delete_key(part_file[0])
 
+    return table
 
-def concat_prefix(bucket_name, base_prefix, delete, dry_run):
+
+def get_tables(bucket, base_prefix):
     if not base_prefix.endswith('/'):
         base_prefix = f'{base_prefix}/'
 
-    logger.info(f'concatenating table files in s3://{bucket_name}/{base_prefix}')
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket(bucket_name)
-
-    table_prefixes = set()
+    tables = defaultdict(lambda: {'part_keys': []})
 
     for obj in bucket.list(base_prefix):
         if re.search(PART_SUFFIX, obj.key):
             table_prefix = re.sub(PART_SUFFIX, '', obj.key)
-            table_prefixes.add(table_prefix)
+            tables[table_prefix]['part_keys'].append(obj.key)
 
-    if not table_prefixes:
-        logger.info(f'found no table part files in s3://{bucket_name}/{base_prefix}')
+    if not tables:
+        logger.info(f'found no table part files in s3://{bucket.name}/{base_prefix}')
 
-    for table_prefix in table_prefixes:
+    for table_prefix, table in tables.items():
         basename = table_prefix.split('/')[-1]
         output_key = f'{base_prefix}{basename}'
-        concat_files(bucket, bucket_name, table_prefix, output_key, delete, dry_run)
+        table['output_key'] = output_key
+
+    return tables.values()
 
 
-def run(bucket_name, prefixes, delete, dry_run):
+def run(bucket_name, prefixes, delete, dry_run, threads):
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(bucket_name)
+
+    tables = []
     for prefix in prefixes:
-        concat_prefix(bucket_name, prefix, delete, dry_run)
+        tables.extend(get_tables(bucket, prefix))
+
+    global _num_threads
+    _num_threads = threads
+
+    for table in tables:
+        concat_table(table, bucket_name, delete, dry_run)
 
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('bucket', help='bucket contaning the table files')
     ap.add_argument('prefix', action='extend', nargs='+', help='base prefix for table files, not including the bucket name')
+    ap.add_argument('--threads', '-t', nargs='?', type=int, default=1, help='number of tables to concatenate in parallel')
     ap.add_argument('--delete', default=False, action='store_true', help='delete the source files after concatenating')
     ap.add_argument('--dry-run', default=False, action='store_true', help='only report the files that would have been concatenated')
 
     parsed = ap.parse_args()
-    run(bucket_name=parsed.bucket, prefixes=parsed.prefix, delete=parsed.delete, dry_run=parsed.dry_run)
+    run(parsed.bucket, parsed.prefix, parsed.delete, parsed.dry_run, parsed.threads)

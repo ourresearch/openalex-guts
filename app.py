@@ -52,6 +52,7 @@ libraries_to_mum = [
     "chardet",
     "cryptography",
     "psycopg2",
+    "s3_concat",
 ]
 
 
