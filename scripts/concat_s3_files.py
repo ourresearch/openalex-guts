@@ -6,7 +6,10 @@ from functools import partial
 from os import getenv
 
 import boto
+import boto3
+from s3_concat import MultipartUploadJob
 from s3_concat import S3Concat
+from s3_concat.utils import _threads, _chunk_by_size, MIN_S3_SIZE
 
 from app import logger
 
@@ -14,6 +17,113 @@ PART_SUFFIX = r'\d+_part_\d+$'
 
 ##  python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
 ##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
+
+_num_threads = 1
+
+def upload_part(part, bucket, key, upload_id):
+    s3 = boto3.session.Session().client('s3')
+
+    resp = s3.upload_part_copy(
+        Bucket=bucket,
+        Key=key,
+        PartNumber=part['part_num'],
+        UploadId=upload_id,
+        CopySource=part['source_part']
+    )
+
+    msg = "Setup S3 part #{}, with path: {}".format(part['part_num'],
+                                                    part['source_part'])
+    logger.debug("{}, got response: {}".format(msg, resp))
+
+    # ceph doesn't return quoted etags
+    etag = (resp['CopyPartResult']['ETag']
+            .replace("'", "").replace("\"", ""))
+
+    return {'ETag': etag, 'PartNumber': part['part_num']}
+
+
+def _assemble_parts(self, s3):
+    parts_mapping = []
+    part_num = 0
+
+    s3_parts = ["{}/{}".format(self.bucket, p[0])
+                for p in self.parts_list if p[1] > MIN_S3_SIZE]
+
+    local_parts = [p for p in self.parts_list if p[1] <= MIN_S3_SIZE]
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=_num_threads) as pool:
+        parts_mappings = pool.map(
+            partial(upload_part, bucket=self.bucket, key=self.result_filepath, upload_id=self.upload_id),
+            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, 1)],
+            chunksize=1
+        )
+
+    parts_mapping.extend([pm for pm in parts_mappings])
+
+    # assemble parts too small for direct S3 copy by downloading them,
+    # combining them, and then reuploading them as the last part of the
+    # multi-part upload (which is not constrained to the 5mb limit)
+
+    # Concat the small_parts into the minium size then upload
+    # this way not to much data is kept in memory
+    def get_small_parts(data):
+        part_num, part = data
+        small_part_count = len(part[1])
+
+        logger.debug("Start sub-part #{} from {} files"
+                     .format(part_num, small_part_count))
+
+        small_parts = []
+        for p in part[1]:
+            try:
+                small_parts.append(
+                    s3.get_object(
+                        Bucket=self.bucket,
+                        Key=p[0]
+                    )['Body'].read()
+                )
+            except Exception as e:
+                logger.critical(
+                    f"{e}: When getting {p[0]} from the bucket {self.bucket}")  # noqa: E501
+                raise
+
+        if len(small_parts) > 0:
+            last_part = b''.join(small_parts)
+
+            small_parts = None  # cleanup
+            resp = s3.upload_part(Bucket=self.bucket,
+                                  Key=self.result_filepath,
+                                  PartNumber=part_num,
+                                  UploadId=self.upload_id,
+                                  Body=last_part)
+            msg = "Finish sub-part #{} from {} files" \
+                .format(part_num, small_part_count)
+            logger.debug("{}, got response: {}".format(msg, resp))
+
+            last_part = None
+            # Handles both quoted and unquoted etags
+            etag = resp['ETag'].replace("'", "").replace("\"", "")
+            return {'ETag': etag,
+                    'PartNumber': part_num}
+        return {}
+
+    data_to_thread = []
+    for idx, data in enumerate(_chunk_by_size(local_parts,
+                                              MIN_S3_SIZE * 2),
+                               start=1):
+        data_to_thread.append([part_num + idx, data])
+
+    parts_mapping.extend(
+        _threads(self.small_parts_threads,
+                 data_to_thread,
+                 get_small_parts)
+    )
+
+    # Sort part mapping by part number
+    return sorted(parts_mapping, key=lambda i: i['PartNumber'])
+
+
+MultipartUploadJob._assemble_parts = _assemble_parts
 
 
 def concat_table(table, bucket_name, delete, dry_run):
@@ -79,14 +189,11 @@ def run(bucket_name, prefixes, delete, dry_run, threads):
     for prefix in prefixes:
         tables.extend(get_tables(bucket, prefix))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=threads) as pool:
-        mapped = pool.map(
-            partial(concat_table, delete=delete, dry_run=dry_run, bucket_name=bucket_name),
-            tables,
-            chunksize=1
-        )
+    global _num_threads
+    _num_threads = threads
 
-    return [m for m in mapped]
+    for table in tables:
+        concat_table(table, bucket_name, delete, dry_run)
 
 
 if __name__ == '__main__':
