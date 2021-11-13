@@ -7,6 +7,7 @@ import re
 GENERATE_CREATE_TABLE = True
 GENERATE_COMMENTS = True
 GENERATE_UNLOAD = True
+GENERATE_COPY = True
 
 ##  cd sql
 ##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
@@ -165,8 +166,8 @@ class view:
         return result
 
 # ---------------------------------------------------------------------------------------------------
-    # Method for generating unload command
-    def generate_unload_command(self):
+    # Method for generating more commands
+    def generate_more_commands(self):
         table_name = re.sub(r'_view', '', self.view_name)
         export_dir = lookup_export_filenames[table_name.replace('"', '')]
         export_file_name = export_dir.split("/")[1]
@@ -175,12 +176,30 @@ class view:
 
         # Start with UNLOAD table ... header
         result = ""
-        result += f"""
+
+        if GENERATE_UNLOAD:
+            result += f"""
 unload ('SELECT * FROM {table_name}')
 TO 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
-ALLOWOVERWRITE
+CLEANPATH
+ESCAPE '\'
+NULL AS ''
+QUOTE E'\b'
 DELIMITER as '\\t';"""
+            result += "\n\n"
+
+        if GENERATE_COPY:
+            result += f"""
+COPY {table_name}
+FROM 's3://openalex-sandbox/export/{export_file_name}.txt'
+ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
+COMPUPDATE ON
+ESCAPE '\'
+NULL AS ''
+QUOTE E'\b'
+DELIMITER as '\\t';"""
+            result += "\n\n"
 
         return result
 
@@ -341,10 +360,8 @@ class parser:
                 f.write(view.generate_table())
                 f.write('\n\n')
 
-            if GENERATE_UNLOAD:
-                for view in self.views:
-                    f.write(view.generate_unload_command())
-                    f.write('\n\n')
+            for view in self.views:
+                f.write(view.generate_more_commands())
 
             f.close()
         # If output file genereation failed, then log error and raise it
