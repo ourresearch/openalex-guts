@@ -178,7 +178,18 @@ class view:
         result = ""
 
         if GENERATE_UNLOAD:
-            result += f"""
+            if table_name == "PaperAbstractsInvertedIndex":
+                result += f"""
+unload ('SELECT * FROM {table_name}')
+TO 's3://openalex-sandbox/export/nlp/PaperAbstractsInvertedIndex.txt'
+ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
+CLEANPATH
+ESCAPE
+NULL AS ''
+MAXFILESIZE as 5GB
+DELIMITER as '\\t';"""
+            else:
+                result += f"""
 unload ('SELECT * FROM {table_name}')
 TO 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
