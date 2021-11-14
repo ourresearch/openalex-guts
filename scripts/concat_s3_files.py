@@ -14,9 +14,10 @@ from s3_concat.utils import _threads, _chunk_by_size, MIN_S3_SIZE
 from app import logger
 
 PART_SUFFIX = r'\d+_part_\d+$'
+SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
 
 ##  python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
-##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
+##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete --threads=10
 
 _num_threads = 1
 
@@ -175,8 +176,9 @@ def get_tables(bucket, base_prefix):
 
     for table_prefix, table in tables.items():
         basename = table_prefix.split('/')[-1]
-        output_key = f'{base_prefix}{basename}'
-        table['output_key'] = output_key
+        if basename not in SKIP_FILES:
+            output_key = f'{base_prefix}{basename}'
+            table['output_key'] = output_key
 
     return tables.values()
 
