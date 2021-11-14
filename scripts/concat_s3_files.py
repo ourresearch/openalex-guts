@@ -128,6 +128,9 @@ MultipartUploadJob._assemble_parts = _assemble_parts
 
 
 def concat_table(table, bucket_name, delete, dry_run):
+    if not "output_key" in table:
+        return
+
     job = S3Concat(
         bucket=bucket_name,
         key=table['output_key'],
