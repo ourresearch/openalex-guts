@@ -34,7 +34,7 @@ AS $$
     d0 = datetime.datetime.strptime(publication_date_string, '%Y-%m-%d')
     d1 = datetime.datetime.now()
     delta_days = (d1 - d0).days
-    years_since_publication = float(delta_days)/365
+    years_since_publication = max(0.0, float(delta_days)/365)
 
     is_publisher_in_list = 1.0 if (publisher in publishers_with_high_estimate_multiplier) else 0.0
     coef_citation_count = 1.07156829
@@ -42,8 +42,8 @@ AS $$
     coef_is_publisher_in_list = 0.07476177
 
     estimate = pow(10,
-                        coef_citation_count * math.log10(citation_count) +
-                        coef_years_since_publication * math.log10(years_since_publication) +
+                        coef_citation_count * math.log10(citation_count+0.1) +
+                        coef_years_since_publication * math.log10(years_since_publication+0.1) +
                         coef_is_publisher_in_list * is_publisher_in_list)
     estimate = int(estimate)
     return max(estimate, citation_count)
