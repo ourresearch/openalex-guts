@@ -7,7 +7,7 @@ import re
 GENERATE_CREATE_TABLE = True
 GENERATE_COMMENTS = True
 GENERATE_UNLOAD = True
-GENERATE_COPY = True
+GENERATE_COPY = False
 
 ##  cd sql
 ##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
@@ -183,9 +183,8 @@ unload ('SELECT * FROM {table_name}')
 TO 's3://openalex-sandbox/export/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
-ESCAPE '\'
+ESCAPE
 NULL AS ''
-QUOTE E'\b'
 DELIMITER as '\\t';"""
             result += "\n\n"
 
@@ -195,9 +194,8 @@ COPY {table_name}
 FROM 's3://openalex-sandbox/export/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 COMPUPDATE ON
-ESCAPE '\'
+ESCAPE
 NULL AS ''
-QUOTE E'\b'
 DELIMITER as '\\t';"""
             result += "\n\n"
 
@@ -353,7 +351,7 @@ class parser:
         try:
             f = open(self.output_file_path, "w")
             f.write('\n')
-            f.write('set enable_case_sensitive_identifier=true;\n')
+            f.write('SET enable_case_sensitive_identifier=true;\n\n')
 
             # Generate table for each view object that we have
             for view in self.views:
