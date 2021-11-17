@@ -6,7 +6,7 @@ from app import db
 
 # truncate mid.institution
 # insert into mid.institution (select * from legacy.mag_main_affiliations)
-
+# update mid.institution set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}

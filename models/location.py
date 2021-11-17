@@ -4,6 +4,16 @@ from app import db
 # truncate mid.location
 # insert into mid.location (select * from legacy.mag_main_paper_urls)
 
+# update mid.location set source_url=replace(source_url, '\ten', ''), language_code='en' where source_url ~ '\ten';
+# update mid.location set source_url=replace(source_url, '\tes', ''), language_code='es' where source_url ~ '\tes';
+# update mid.location set source_url=replace(source_url, '\tfr', ''), language_code='fr' where source_url ~ '\tfr';
+# update mid.location set source_url=replace(source_url, '\tsv', ''), language_code='sv' where source_url ~ '\tsv';
+# update mid.location set source_url=replace(source_url, '\tko', ''), language_code='ko' where source_url ~ '\tko';
+# update mid.location set source_url=replace(source_url, '\tpt', ''), language_code='pt' where source_url ~ '\tpt';
+# update mid.location set source_url=replace(source_url, '\tfi', ''), language_code='fi' where source_url ~ '\tfi';
+# update mid.location set source_url=replace(source_url, '\t', '') where source_url ~ '\t';
+
+
 class Location(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "location"

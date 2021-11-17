@@ -3,6 +3,7 @@ from app import db
 
 # truncate mid.author
 # insert into mid.author (select * from legacy.mag_main_authors)
+# update mid.author set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
 class Author(db.Model):
     __table_args__ = {'schema': 'mid'}
