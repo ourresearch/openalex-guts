@@ -16,7 +16,7 @@ from app import logger
 PART_SUFFIX = r'\d+_part_\d+$'
 SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
 
-##  python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete
+##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete
 ##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete --threads=10
 
 _num_threads = 1
@@ -128,7 +128,7 @@ MultipartUploadJob._assemble_parts = _assemble_parts
 
 
 def concat_table(table, bucket_name, delete, dry_run):
-    if not "output_key" in table:
+    if not table["output_key"]:
         return
 
     job = S3Concat(
@@ -140,6 +140,9 @@ def concat_table(table, bucket_name, delete, dry_run):
             'aws_secret_access_key': getenv('AWS_SECRET_ACCESS_KEY')
         }
     )
+
+    if table["header_key"]:
+        job.add_file(table["header_key"])
 
     for part_key in table['part_keys']:
         job.add_files(part_key)
@@ -167,24 +170,60 @@ def get_tables(bucket, base_prefix):
     if not base_prefix.endswith('/'):
         base_prefix = f'{base_prefix}/'
 
-    tables = defaultdict(lambda: {'part_keys': []})
+    tables = defaultdict(lambda: {'part_keys': [], 'output_key': "", 'header_key': ""})
 
     for obj in bucket.list(base_prefix):
         if re.search(PART_SUFFIX, obj.key):
             table_prefix = re.sub(PART_SUFFIX, '', obj.key)
-            tables[table_prefix]['part_keys'].append(obj.key)
+            if "HEADER_" in obj.key:
+                table_prefix = table_prefix.replace("HEADER_", "")
+                tables[table_prefix]['header_key'] = obj.key
+            else:
+                tables[table_prefix]['part_keys'].append(obj.key)
 
     if not tables:
         logger.info(f'found no table part files in s3://{bucket.name}/{base_prefix}')
 
     for table_prefix, table in tables.items():
         basename = table_prefix.split('/')[-1]
+        output_key = f'{base_prefix}{basename}'
         if basename not in SKIP_FILES:
-            output_key = f'{base_prefix}{basename}'
             table['output_key'] = output_key
 
     return tables.values()
 
+def do_directory_cleanups(bucket_name):
+    s3 = boto3.resource('s3')
+    my_bucket = s3.Bucket(bucket_name)
+
+    # do this before the listing
+    try:
+        s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt').copy_from(
+            CopySource=f'{bucket_name}/data_dump_v1/2021-10-11/README.txt000')
+        s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt000').delete()
+    except Exception:
+        pass
+
+    # do the listing
+    my_string = ""
+    for object_summary in my_bucket.objects.filter(Prefix="data_dump_v1/2021-10-11/"):
+        filename = object_summary.key
+        size_in_mb = round(my_bucket.Object(filename).content_length / (1000 * 1000))
+        my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
+
+    s3.Object(bucket_name, "data_dump_v1/2021-10-11/LISTING.txt").put(Body=my_string.encode("utf-8"))
+
+    # set content types
+    object = s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt')
+    object.copy_from(CopySource={'Bucket': bucket_name,
+                                 'Key': 'data_dump_v1/2021-10-11/README.txt'},
+                     MetadataDirective="REPLACE",
+                     ContentType="text/plain")
+    object = s3.Object(bucket_name, 'data_dump_v1/2021-10-11/LISTING.txt')
+    object.copy_from(CopySource={'Bucket': bucket_name,
+                                 'Key': 'data_dump_v1/2021-10-11/LISTING.txt'},
+                     MetadataDirective="REPLACE",
+                     ContentType="text/plain")
 
 def run(bucket_name, prefixes, delete, dry_run, threads):
     s3 = boto.connect_s3()
@@ -199,6 +238,10 @@ def run(bucket_name, prefixes, delete, dry_run, threads):
 
     for table in tables:
         concat_table(table, bucket_name, delete, dry_run)
+
+    do_directory_cleanups(bucket_name)
+
+
 
 
 if __name__ == '__main__':
