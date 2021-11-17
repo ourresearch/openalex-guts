@@ -11,6 +11,7 @@ from app import db
 
 # truncate mid.affiliation
 # insert into mid.affiliation (select * from legacy.mag_main_paper_author_affiliations)
+# update mid.affiliation set original_author=replace(original_author, '\t', '') where original_author ~ '\t';
 
 class Affiliation(db.Model):
     __table_args__ = {'schema': 'mid'}

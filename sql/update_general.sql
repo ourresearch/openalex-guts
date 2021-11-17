@@ -7,6 +7,9 @@
 -- No need to update old things in the future; will be triggered by new records.
 
 
+update legacy.mag_main_paper_extended_attributes set attribute_value=replace(attribute_value, '\\\\', '') where attribute_value ~ '\\\\';
+
+
 alter table mid.affiliation rename column normalized_author to match_author;
 alter table mid.affiliation rename column normalized_institution_name to match_institution_name;
 -- has no normalized columns in mag
@@ -34,3 +37,4 @@ alter table mid.institution drop column normalized_name;
 alter table mid.institution rename column mag_normalized_name to normalized_name;
 update mid.institution set match_name = f_matching_string(display_name)
 update mid.institution set normalized_name = f_mag_normalize_string(display_name)
+
