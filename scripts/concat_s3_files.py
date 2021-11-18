@@ -228,6 +228,9 @@ def merge_in_headers(table, bucket_name):
     if not table["part_keys"]:
         return
 
+    if not table["header_key"]:
+        return
+
     s3_client = boto3.client('s3')
 
     header_key = table["header_key"]
@@ -249,6 +252,10 @@ def merge_in_headers(table, bucket_name):
     s3_client.put_object(Body=buffer_to_upload, Bucket=bucket_name, Key=first_part_key)
     print(f"DONE MERGE for {first_part_key}")
 
+    # then delete header
+    print(f"DELETING HEADER {header_key}")
+    s3 = boto3.resource('s3')
+    s3.Object(bucket_name, header_key).delete()
 
 
 def run(bucket_name, prefixes, delete, dry_run, threads):
