@@ -108,6 +108,7 @@ def _assemble_parts(self, s3):
         return {}
 
     data_to_thread = []
+    part_num = 0 # for small parts, let them go first, header goes first
     for idx, data in enumerate(_chunk_by_size(local_parts,
                                               MIN_S3_SIZE * 2),
                                start=1):
