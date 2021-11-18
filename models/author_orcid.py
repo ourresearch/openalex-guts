@@ -48,6 +48,14 @@ class AuthorOrcid(db.Model):
 # and pubmed.orcid is not null
 # )
 
+# then cleanup from pubmed
+# update mid.author_orcid set orcid=replace(orcid, 's', '') where orcid ~ 's';
+#
+# update mid.author_orcid set orcid = substring(orcid, 1, 4) || '-' ||
+#                 substring(orcid, 5, 4) || '-' ||
+#                 substring(orcid, 9, 4) || '-' ||
+#                 substring(orcid, 13, 4)
+# from mid.author_orcid where not orcid ~ '-' ;
 
 # can explore more with these
 #
