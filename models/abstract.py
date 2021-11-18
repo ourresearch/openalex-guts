@@ -1,5 +1,6 @@
 from app import db
 
+# insert into mid.abstract (paper_id, indexed_abstract) (select paper_id, inverted_index_json from legacy.mag_nlp_abstracts_inverted);
 
 class Abstract(db.Model):
     __table_args__ = {'schema': 'mid'}
