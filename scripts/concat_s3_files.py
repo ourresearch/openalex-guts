@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 from functools import partial
 from os import getenv
+import io
 
 import boto
 import boto3
@@ -45,6 +46,7 @@ def upload_part(part, bucket, key, upload_id):
 
 def _assemble_parts(self, s3):
     parts_mapping = []
+    part_num = 0
 
     s3_parts = ["{}/{}".format(self.bucket, p[0])
                 for p in self.parts_list if p[1] > MIN_S3_SIZE]
@@ -54,7 +56,7 @@ def _assemble_parts(self, s3):
     with concurrent.futures.ProcessPoolExecutor(max_workers=_num_threads) as pool:
         parts_mappings = pool.map(
             partial(upload_part, bucket=self.bucket, key=self.result_filepath, upload_id=self.upload_id),
-            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, start=100)],
+            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, 1)],
             chunksize=1
         )
 
@@ -108,7 +110,6 @@ def _assemble_parts(self, s3):
         return {}
 
     data_to_thread = []
-    part_num = 0 # for small parts, let them go first, header goes first
     for idx, data in enumerate(_chunk_by_size(local_parts,
                                               MIN_S3_SIZE * 2),
                                start=1):
@@ -141,9 +142,6 @@ def concat_table(table, bucket_name, delete, dry_run):
         }
     )
 
-    if table["header_key"]:
-        job.add_file(table["header_key"])
-
     for part_key in table['part_keys']:
         job.add_files(part_key)
 
@@ -170,7 +168,7 @@ def get_tables(bucket, base_prefix):
     if not base_prefix.endswith('/'):
         base_prefix = f'{base_prefix}/'
 
-    tables = defaultdict(lambda: {'part_keys': [], 'output_key': "", 'header_key': ""})
+    tables = defaultdict(lambda: {'part_keys': [], 'output_key': "", "header_key": ""})
 
     for obj in bucket.list(base_prefix):
         if re.search(PART_SUFFIX, obj.key):
@@ -225,13 +223,44 @@ def do_directory_cleanups(bucket_name):
                      MetadataDirective="REPLACE",
                      ContentType="text/plain")
 
+
+def merge_in_headers(table, bucket_name):
+    if not table["part_keys"]:
+        return
+
+    s3_client = boto3.client('s3')
+
+    header_key = table["header_key"]
+    first_part_key = table["part_keys"][0]
+
+    print(f"downloading header file {header_key}")
+    header_object = s3_client.get_object(Bucket=bucket_name, Key=header_key)
+    header_data = header_object['Body'].read().decode('utf-8')
+
+    print(f"downloading first part file {first_part_key}")
+    first_part_object = s3_client.get_object(Bucket=bucket_name, Key=first_part_key)
+    first_part_data = first_part_object['Body'].read().decode('utf-8')
+
+    print(f"merging {first_part_key}")
+    merged_data = header_data + first_part_data
+
+    print(f"uploading {first_part_key}")
+    buffer_to_upload = io.BytesIO(merged_data.encode())
+    s3_client.put_object(Body=buffer_to_upload, Bucket=bucket_name, Key=first_part_key)
+    print(f"DONE MERGE for {first_part_key}")
+
+
+
 def run(bucket_name, prefixes, delete, dry_run, threads):
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket(bucket_name)
 
     tables = []
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(bucket_name)
     for prefix in prefixes:
         tables.extend(get_tables(bucket, prefix))
+
+    for table in tables:
+        merge_in_headers(table, bucket_name)
 
     global _num_threads
     _num_threads = threads
