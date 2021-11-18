@@ -17,7 +17,7 @@ PART_SUFFIX = r'\d+_part_\d+$'
 SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
 
 ##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete
-##  heroku run --size=performance-l python -m scripts.concat_s3_files openalex-sandbox export/mag export/advanced export/nlp --delete --threads=10
+## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete --threads=10
 
 _num_threads = 1
 
@@ -45,7 +45,6 @@ def upload_part(part, bucket, key, upload_id):
 
 def _assemble_parts(self, s3):
     parts_mapping = []
-    part_num = 0
 
     s3_parts = ["{}/{}".format(self.bucket, p[0])
                 for p in self.parts_list if p[1] > MIN_S3_SIZE]
@@ -55,7 +54,7 @@ def _assemble_parts(self, s3):
     with concurrent.futures.ProcessPoolExecutor(max_workers=_num_threads) as pool:
         parts_mappings = pool.map(
             partial(upload_part, bucket=self.bucket, key=self.result_filepath, upload_id=self.upload_id),
-            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, 1)],
+            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, start=100)],
             chunksize=1
         )
 
