@@ -178,7 +178,7 @@ class view:
         result = ""
 
         if GENERATE_UNLOAD:
-            if table_name == "PaperAbstractsInvertedIndex":
+            if "PaperAbstractsInvertedIndex" in table_name:
                 result += f"""
 UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex"')
 TO 's3://openalex/data_dump_v1/2021-10-11/nlp/PaperAbstractsInvertedIndex.txt.'
@@ -391,7 +391,7 @@ class parser:
                 aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY")
 
                 f.write(f"""\n\n
-unload ('select \'table\', \'num_rows\' as num_rows, \'size_in_mb\', \'date\'
+unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
 union
 select table_name::varchar(35), num_rows::varchar(25) as num_rows, used_mb::varchar(25), sysdate::varchar(25) from v_display_table_size_and_rows order by num_rows desc')
 TO 's3://openalex/data_dump_v1/2021-10-11/README.txt'

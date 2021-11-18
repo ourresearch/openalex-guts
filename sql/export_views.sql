@@ -1,7 +1,7 @@
 -- making the views is very fast
 -- then run
 -- python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
--- making the tables and comments currently takes about 800seconds
+-- making the tables and comments currently takes about 20 minutes (1400 seconds)
 
 set enable_case_sensitive_identifier=true;
 
@@ -207,13 +207,14 @@ create or replace view outs."Authors_view" --- Base table for authors (mag/Autho
 as (
         with
             group_citations as (select author_id, count(*) as n from mid.citation cite join mid.affiliation affil on affil.paper_id = cite.paper_reference_id group by author_id),
-            group_papers as (select author_id, count(distinct paper_id) as n from mid.affiliation group by author_id)
+            group_papers as (select author_id, count(distinct paper_id) as n from mid.affiliation group by author_id),
+            group_orcids as (select author_id, max(orcid) as orcid from mid.author_orcid group by author_id)
     select
         author.author_id as "AuthorId",        --- PRIMARY KEY
        rank as "Rank",                        --- FROZEN; no new ranks are being added
        normalized_name as "NormalizedName",           --- UPDATED; slightly different normalization algorithm
        display_name as "DisplayName",
-       author_orcid.orcid as "Orcid",                        --- NEW; ORCID identifier for this author (see https://orcid.org)
+       group_orcids.orcid as "Orcid",                        --- NEW; ORCID identifier for this author (see https://orcid.org)
        last_known_affiliation_id as "LastKnownAffiliationId",
        coalesce(group_papers.n, 0) as "PaperCount",
        coalesce(group_papers.n, 0) as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
@@ -223,7 +224,7 @@ as (
     from mid.author author
         left outer join group_citations on group_citations.author_id=author.author_id
         left outer join group_papers on group_papers.author_id = author.author_id
-        left outer join mid.author_orcid on mid.author_orcid.author_id = author.author_id
+        left outer join group_orcids on group_orcids.author_id = author.author_id
    )
 with no schema binding;
 
