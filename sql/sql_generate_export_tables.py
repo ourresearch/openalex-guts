@@ -4,10 +4,13 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = False
-GENERATE_COMMENTS = False
+GENERATE_CREATE_TABLE = True
+GENERATE_COMMENTS = True
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
+
+# DUMP_DIR = "2021-10-11"
+DUMP_DIR = "qa-2021-10-11"
 
 ##  cd sql
 ##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
@@ -181,7 +184,7 @@ class view:
             if "PaperAbstractsInvertedIndex" in table_name:
                 result += f"""
 UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex"')
-TO 's3://openalex/data_dump_v1/2021-10-11/nlp/PaperAbstractsInvertedIndex.txt.'
+TO 's3://openalex/data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
@@ -194,7 +197,7 @@ DELIMITER as '\\t';"""
                 # header file so no data
                 result += f"""
 UNLOAD ('SELECT * FROM {table_name} WHERE FALSE')
-TO 's3://openalex/data_dump_v1/2021-10-11/{export_dir}/HEADER_{export_file_name}.txt'
+TO 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
@@ -205,18 +208,19 @@ DELIMITER as '\\t';"""
                 # data
                 result += f"""
 UNLOAD ('SELECT * FROM {table_name}')
-TO 's3://openalex/data_dump_v1/2021-10-11/{export_dir}/{export_file_name}.txt'
+TO 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
 NULL AS ''
+MAXFILESIZE AS 1.5GB
 DELIMITER as '\\t';"""
             result += "\n\n"
 
         if GENERATE_COPY:
             result += f"""
 COPY {table_name}
-FROM 's3://openalex/data_dump_v1/2021-10-11/{export_file_name}.txt'
+FROM 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 COMPUPDATE ON
 ESCAPE
@@ -394,7 +398,7 @@ class parser:
 unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
 union
 select table_name::varchar(35), num_rows::varchar(25) as num_rows, used_mb::varchar(25), sysdate::varchar(25) from v_display_table_size_and_rows order by num_rows desc')
-TO 's3://openalex/data_dump_v1/2021-10-11/README.txt'
+TO 's3://openalex/data_dump_v1/{DUMP_DIR}/README.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 fixedwidth '0:35,1:25,2:25,3:25'
 ALLOWOVERWRITE
