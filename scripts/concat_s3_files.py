@@ -221,7 +221,7 @@ def do_directory_cleanups(bucket_name):
                                  'Key': f'data_dump_v1/{DUMP_DIR}/README.txt'},
                      MetadataDirective="REPLACE",
                      ContentType="text/plain")
-    object = s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}1/LISTING.txt')
+    object = s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/LISTING.txt')
     object.copy_from(CopySource={'Bucket': bucket_name,
                                  'Key': f'data_dump_v1/{DUMP_DIR}/LISTING.txt'},
                      MetadataDirective="REPLACE",
