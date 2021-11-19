@@ -87,11 +87,12 @@ create or replace view outs."PaperFieldsOfStudy_view" --- Linking table from pap
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",                    --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",                    --- FOREIGN KEY REFERENCES Papers.PaperId
            field_of_study as "FieldOfStudyId",    --- FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId
            score as "Score",                      --- Confidence range between 0 and 1. Bigger number representing higher confidence.
            1 as "AlgorithmVersion"                -- NEW; version of algorithm to assign fields. Possible values: 1=old MAG (FROZEN), 2=OpenAlex
-    from mid.work_concept
+    from mid.work_concept t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -104,13 +105,14 @@ create or replace view outs."PaperMeSH_view" --- MeSH headings assigned to the p
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",          --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",          --- FOREIGN KEY REFERENCES Papers.PaperId
            descriptor_ui as "DescriptorUI",     --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
            descriptor_name as "DescriptorName",   --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
            qualifier_ui as "QualifierUI",      --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
            qualifier_name as "QualifierName",    --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
            is_major_topic as "IsMajorTopic"     --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
-    from mid.mesh
+    from mid.mesh t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -123,10 +125,11 @@ create or replace view outs."PaperRecommendations_view" --- Paper recommendation
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
            recommended_paper_id as "RecommendedPaperId",    --- FOREIGN KEY REFERENCES Papers.PaperId
            score as "Score"                    --- Confidence range between 0 and 1. Bigger number representing higher confidence.
-    from legacy.mag_advanced_paper_recommendations
+    from legacy.mag_advanced_paper_recommendations t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -179,6 +182,7 @@ as (
     from mid.institution affil
         left outer join group_citations on group_citations.affiliation_id=affil.affiliation_id
         left outer join group_papers on group_papers.affiliation_id = affil.affiliation_id
+        join mid.without_patents_affiliation_ids_view without_patents on without_patents.affiliation_id=affil.affiliation_id
    )
 with no schema binding;
 
@@ -190,10 +194,11 @@ create or replace view outs."AuthorExtendedAttributes_view" --- Additional autho
 --- SORTKEY ("AuthorId")
 as (
     select
-        author_id as "AuthorId",             --- FOREIGN KEY REFERENCES Authors.AuthorId
+        t1.author_id as "AuthorId",             --- FOREIGN KEY REFERENCES Authors.AuthorId
            attribute_type as "AttributeType",       --- Possible values: 1=Alternative name
            attribute_value as "AttributeValue"
-    from legacy.mag_main_author_extended_attributes
+    from legacy.mag_main_author_extended_attributes t1
+    join mid.without_patents_author_ids_view without_patents on without_patents.author_id=t1.author_id
     )
 with no schema binding;
 
@@ -225,6 +230,7 @@ as (
         left outer join group_citations on group_citations.author_id=author.author_id
         left outer join group_papers on group_papers.author_id = author.author_id
         left outer join group_orcids on group_orcids.author_id = author.author_id
+        join mid.without_patents_author_ids_view without_patents on without_patents.author_id=author.author_id
    )
 with no schema binding;
 
@@ -332,13 +338,16 @@ create or replace view outs."PaperAuthorAffiliations_view" --- Links between pap
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
-           author_id as "AuthorId",               --- FOREIGN KEY REFERENCES Authors.AuthorId
-           affiliation_id as "AffiliationId",          --- FOREIGN KEY REFERENCES Affiliations.AffiliationId
+        t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
+           t1.author_id as "AuthorId",               --- FOREIGN KEY REFERENCES Authors.AuthorId
+           t1.affiliation_id as "AffiliationId",          --- FOREIGN KEY REFERENCES Affiliations.AffiliationId
            author_sequence_number as "AuthorSequenceNumber",  --- 1-based author sequence number. 1: the 1st author listed on paper, 2: the 2nd author listed on paper, etc.
            original_author as "OriginalAuthor",
            original_affiliation as "OriginalAffiliation"
-    from mid.affiliation
+    from mid.affiliation t1
+    join mid.without_patents_paper_ids_view without_papers on without_papers.paper_id=t1.paper_id
+    join mid.without_patents_author_ids_view without_authors on without_authors.author_id=t1.author_id
+    join mid.without_patents_affiliation_ids_view without_affil on without_affil.affiliation_id=t1.affiliation_id
    )
 with no schema binding;
 
@@ -350,10 +359,11 @@ create or replace view outs."PaperExtendedAttributes_view" --- Extra paper ident
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",             --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",             --- FOREIGN KEY REFERENCES Papers.PaperId
            attribute_type as "AttributeType",       --- Possible values: 1=PatentId, 2=PubMedId, 3=PmcId, 4=Alternative Title
            attribute_value as "AttributeValue"
-    from mid.work_extra_ids
+    from mid.work_extra_ids t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -367,9 +377,11 @@ create or replace view outs."PaperReferences_view" --- Paper references and, in 
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
         paper_reference_id as "PaperReferenceId"      --- FOREIGN KEY REFERENCES Papers.PaperId
-    from mid.citation
+    from mid.citation t1
+    join mid.without_patents_paper_ids_view without_patents1 on without_patents1.paper_id=t1.paper_id
+    join mid.without_patents_paper_ids_view without_patents2 on without_patents2.paper_id=t1.paper_reference_id
    )
 with no schema binding;
 
@@ -381,7 +393,7 @@ create or replace view outs."PaperUrls_view" --- Urls for the paper (mag/PaperUr
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",          --- FOREIGN KEY REFERENCES Papers.PaperId
+        t1.paper_id as "PaperId",          --- FOREIGN KEY REFERENCES Papers.PaperId
            source_type as "SourceType",       --- Possible values: 1=Html, 2=Text, 3=Pdf, 4=Doc, 5=Ppt, 6=Xls, 8=Rtf, 12=Xml, 13=Rss, 20=Swf, 27=Ics, 31=Pub, 33=Ods, 34=Odp, 35=Odt, 36=Zip, 40=Mp3, 0/999/NULL=unknown
            source_url as "SourceUrl",
            language_code as "LanguageCode",
@@ -392,7 +404,8 @@ as (
             license as "License",                --- NEW; license of the free-to-read URL (example: cc0, cc-by, publisher-specific)
             repository_institution as "RepositoryInstitution", --- NEW; name of repository host of URL
             pmh_id as "OaiPmhId"    --- NEW; OAH-PMH id of the repository record
-    from mid.location
+    from mid.location t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -405,9 +418,11 @@ create or replace view outs."PaperAbstractsInvertedIndex_view" --- Inverted abst
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",       --- FOREIGN KEY REFERENCES Papers.PapersId
+        t1.paper_id as "PaperId",       --- FOREIGN KEY REFERENCES Papers.PapersId
         indexed_abstract as "IndexedAbstract"    --- Inverted index, see https://en.wikipedia.org/wiki/Inverted_index
- from mid.abstract)
+    from mid.abstract t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
+ )
 with no schema binding;
 
 
@@ -419,10 +434,12 @@ create or replace view outs."PaperCitationContexts_view" --- FROZEN; citation co
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",     --- FOREIGN KEY REFERENCES Papers.PapersId
+        t1.paper_id as "PaperId",     --- FOREIGN KEY REFERENCES Papers.PapersId
         paper_reference_id as "PaperReferenceId",     --- FOREIGN KEY REFERENCES Papers.PapersId
         citation_context as "CitationContext"
- from legacy.mag_nlp_paper_citation_contexts)
+    from legacy.mag_nlp_paper_citation_contexts t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
+ )
 with no schema binding;
 
 
@@ -435,12 +452,14 @@ create or replace view outs."PaperResources_view" --- FROZEN; no longer updated.
 --- SORTKEY ("PaperId")
 as (
     select
-        paper_id as "PaperId",       --- FOREIGN KEY REFERENCES Papers.PapersId
+        t1.paper_id as "PaperId",       --- FOREIGN KEY REFERENCES Papers.PapersId
         resource_type as "ResourceType",  --- Bit flags: 1=Project, 2=Data, 4=Code
         resource_url as "ResourceUrl",   --- Url of resource
         source_url as "SourceUrl",     --- List of urls associated with the project, used to derive resource_url
         relationship_type as "RelationshipType"--- Bit flags: 1=Own, 2=Cite
- from legacy.mag_main_paper_resources)
+ from legacy.mag_main_paper_resources t1
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
+ )
 with no schema binding;
 
 
@@ -455,7 +474,7 @@ as (
         reference_count as (select paper_id as citing_paper_id, count(*) as n from mid.citation group by paper_id),
         citation_count as (select paper_reference_id as cited_paper_id, count(*) as n from mid.citation group by paper_reference_id)
     select
-        paper_id as "PaperId",       -- PRIMARY KEY
+        work.paper_id as "PaperId",       -- PRIMARY KEY
         rank as "Rank",           --- FROZEN; no new ranks are being added
         doi as "Doi",            --- Doi values are upper-cased per DOI standard at https://www.doi.org/doi_handbook/2_Numbering.html#2.4
         doc_type as "DocType",       --- Possible values: Book, BookChapter, Conference, Dataset, Journal, Patent, Repository, Thesis, NULL : unknown. Patent is FROZEN; no new Patents are being added.
@@ -492,5 +511,6 @@ as (
     from mid.work work
     left outer join reference_count on work.paper_id=reference_count.citing_paper_id
     left outer join citation_count on work.paper_id=citation_count.cited_paper_id
+    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=work.paper_id
 )
 with no schema binding;

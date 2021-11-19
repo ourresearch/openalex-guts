@@ -4,7 +4,7 @@ from app import db
 # truncate mid.journal
 # insert into mid.journal (select * from legacy.mag_main_journals)
 # update mid.journal set display_title=replace(display_title, '\\\\/', '/');
-
+# update mid.journal set publisher=replace(publisher, '\t', '') where publisher ~ '\t';
 
 class Journal(db.Model):
     __table_args__ = {'schema': 'mid'}
