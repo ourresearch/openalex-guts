@@ -16,6 +16,8 @@ from app import logger
 
 PART_SUFFIX = r'\d+_part_\d+$'
 SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
+# DUMP_DIR = "2021-10-11"
+DUMP_DIR = "qa-2021-10-11"
 
 ##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete
 ## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete --threads=10
@@ -196,30 +198,32 @@ def do_directory_cleanups(bucket_name):
 
     # do this before the listing
     try:
-        s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt').copy_from(
-            CopySource=f'{bucket_name}/data_dump_v1/2021-10-11/README.txt000')
-        s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt000').delete()
-    except Exception:
+        print(f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
+        s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt').copy_from(
+            CopySource=f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
+        s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt000').delete()
+    except Exception as e:
+        print(e)
         pass
 
     # do the listing
     my_string = ""
-    for object_summary in my_bucket.objects.filter(Prefix="data_dump_v1/2021-10-11/"):
+    for object_summary in my_bucket.objects.filter(Prefix=f"data_dump_v1/{DUMP_DIR}/"):
         filename = object_summary.key
         size_in_mb = round(my_bucket.Object(filename).content_length / (1000 * 1000))
         my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
 
-    s3.Object(bucket_name, "data_dump_v1/2021-10-11/LISTING.txt").put(Body=my_string.encode("utf-8"))
+    s3.Object(bucket_name, f"data_dump_v1/{DUMP_DIR}/LISTING.txt").put(Body=my_string.encode("utf-8"))
 
     # set content types
-    object = s3.Object(bucket_name, 'data_dump_v1/2021-10-11/README.txt')
+    object = s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt')
     object.copy_from(CopySource={'Bucket': bucket_name,
-                                 'Key': 'data_dump_v1/2021-10-11/README.txt'},
+                                 'Key': f'data_dump_v1/{DUMP_DIR}/README.txt'},
                      MetadataDirective="REPLACE",
                      ContentType="text/plain")
-    object = s3.Object(bucket_name, 'data_dump_v1/2021-10-11/LISTING.txt')
+    object = s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}1/LISTING.txt')
     object.copy_from(CopySource={'Bucket': bucket_name,
-                                 'Key': 'data_dump_v1/2021-10-11/LISTING.txt'},
+                                 'Key': f'data_dump_v1/{DUMP_DIR}/LISTING.txt'},
                      MetadataDirective="REPLACE",
                      ContentType="text/plain")
 
