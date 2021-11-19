@@ -9,8 +9,8 @@ GENERATE_COMMENTS = True
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-# DUMP_DIR = "2021-10-11"
-DUMP_DIR = "qa-2021-10-11"
+DUMP_DIR = "2021-10-11"
+# DUMP_DIR = "qa-2021-10-11"
 
 ##  cd sql
 ##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
