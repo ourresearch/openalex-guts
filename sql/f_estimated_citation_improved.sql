@@ -1,4 +1,4 @@
--- get estimated_citation based on Redshift ML model's function
+-- get estimated_citation based on Redshift ML model's function (f_estimated_citation_multipler)
 
 CREATE OR REPLACE FUNCTION utils.f_estimated_citation_improved ("citation_count" bigint, "year" int4, "reference_count" bigint) 
 RETURNS int4 
