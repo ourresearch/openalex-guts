@@ -2,7 +2,7 @@
 -- feature parameters: citation_count, years_old, reference_count
 -- output: multipler
 -- put iam role with permission to AWS Sagemaker and S3 bucket which would be used by SageMaker
--- it will create the function f_estimated_citation_multipler
+-- it takes 1 hour to deploy model and will create the function f_estimated_citation_multipler
 
 DROP MODEL IF EXISTS m_estimated_citation
 CREATE MODEL m_estimated_citation
