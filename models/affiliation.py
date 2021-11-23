@@ -23,8 +23,6 @@ class Affiliation(db.Model):
     author_sequence_number = db.Column(db.Numeric, primary_key=True)
     original_author = db.Column(db.Text)
     original_affiliation = db.Column(db.Text)
-    match_author = db.Column(db.Text)
-    match_institution_name = db.Column(db.Text)
 
     def to_dict(self, return_level="full"):
         if return_level == "full":

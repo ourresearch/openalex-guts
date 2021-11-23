@@ -17,11 +17,11 @@ class AuthorOrcid(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
-            return [self.orcid, self.orcid_url]
-        return [self.orcid, self.orcid_url]
+            return self.orcid
+        return self.orcid
 
     def __repr__(self):
-        return "<AuthorOrcid ( {} ) {}>".format(self.paper_id, self.orcid)
+        return "<AuthorOrcid ( {} ) {}>".format(self.author_id, self.orcid)
 
 # INSERTED THIS TO SEED IT
 # CROSSREF

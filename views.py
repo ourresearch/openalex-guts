@@ -112,16 +112,16 @@ def handle_no_result_exception(error):
     '''Return a custom not found error message and 404 status code'''
     return {'message': error.specific}, 404
 
-
-
 @app_api.route('/swagger.yml')
-class GetYaml(Resource):
+@app_api.hide
+class Yaml(Resource):
     def get(self):
        data = json.loads(json.dumps(app_api.__schema__))
        with open('yamldoc.yml', 'w') as yamlf:
             yaml.dump(data, yamlf, allow_unicode=True, default_flow_style=False)
             file = os.path.abspath(os.getcwd())
-            return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
+            # return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
+            return send_file(safe_join(file, 'yamldoc.yml'), mimetype='text/plain')
 
 
 
@@ -275,11 +275,6 @@ class AuthorId(Resource):
 class AuthorOrcid(Resource):
     def get(self, orcid):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_orcid(orcid)])
-
-@author_api_endpoint.route("/normalized_name/<string:normalized_name>")
-class AuthorNormalizedName(Resource):
-    def get(self, normalized_name):
-        return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_normalized_name(normalized_name)])
 
 
 #### Institution

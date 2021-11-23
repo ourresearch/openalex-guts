@@ -38,7 +38,8 @@ Affiliation.institution = db.relationship("Institution")
 
 Institution.ror = db.relationship("Ror", uselist=False)
 Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
-Author.orcids = db.relationship("AuthorOrcid")
+Author.orcids = db.relationship("AuthorOrcid", backref="author")
+Author.last_known_institution = db.relationship("Institution")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
@@ -47,17 +48,16 @@ WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
 
-def authors_from_orcid(author_id):
-    return Author.query.filter(Author.orcid==orcid).all()
-
-def authors_from_normalized_name(normalized_name):
-    return Author.query.filter(Author.orcid==normalized_name).all()
+def authors_from_orcid(orcid):
+    author_orcids = AuthorOrcid.query.filter(AuthorOrcid.orcid==orcid).all()
+    authors = [author_orcid.author for author_orcid in author_orcids]
+    return authors
 
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.concept_id==concept_id).first()
 
 def institution_from_id(institution_id):
-    return Institution.query.filter(Institution.institution_id==institution_id).first()
+    return Institution.query.filter(Institution.affiliation_id==institution_id).first()
 
 def institutions_from_ror(ror_id):
     return Institution.query.filter(Institution.ror_id==ror_id).all()
