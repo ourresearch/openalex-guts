@@ -22,9 +22,9 @@ class Ror(db.Model):
         if return_level=="full":
             keys = [col.name for col in self.__table__.columns]
         else:
-            keys = ["grid_id", "city", "country", "country_code"]
+            keys = ["city", "country", "country_code"]
         response = {key: getattr(self, key) for key in keys}
-        response["ror_id"] = [self.ror_id, f"https://ror.org/{self.ror_id}"]
+        response["ror_id"] = self.ror_id
         return response
 
     def __repr__(self):

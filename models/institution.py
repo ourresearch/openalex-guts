@@ -19,7 +19,6 @@ class Institution(db.Model):
     wiki_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
-    match_name = db.Column(db.Text)
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
     # latitude real,
@@ -36,6 +35,10 @@ class Institution(db.Model):
         return self.display_name
 
     @property
+    def ror_url(self):
+        return "https://ror.org/{}".format(self.ror_id)
+
+    @property
     def country_code(self):
         if not self.iso3166_code:
             return None
@@ -43,12 +46,13 @@ class Institution(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level=="full":
-            keys = ["institution_id", "display_name", "country_code", "official_page", "wiki_page", "match_name", "grid_id"]
+            keys = ["institution_id", "display_name", "country_code", "official_page", "wiki_page"]
         else:
-            keys = ["institution_id", "institution_display_name", "country_code","grid_id"]
+            keys = ["institution_id", "institution_display_name", "country_code"]
         response = {key: getattr(self, key) for key in keys}
         if self.ror_id:
-            response["ror_id"] = [self.ror_id, f"https://ror.org/{self.ror_id}"]
+            response["ror_id"] = self.ror_id
+            response["ror_url"] = self.ror_url
         if self.ror:
             response.update(self.ror.to_dict(return_level))
         return response

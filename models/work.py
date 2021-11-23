@@ -35,12 +35,8 @@ class Work(db.Model):
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
     citation_count = db.Column(db.BigInteger)
-    match_title = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
-
-    # for processing
-    match_title = db.Column(db.Text)
 
     # queues
     started = db.Column(db.DateTime)
