@@ -4,6 +4,9 @@ from flask import redirect
 from flask import abort
 from flask import render_template
 from flask import jsonify
+from flask import send_from_directory
+from flask import send_file
+from flask import safe_join
 from flask_restx import Api
 from flask_restx import Resource
 from flask_restx import fields
@@ -18,6 +21,7 @@ import os
 import sys
 import re
 import requests
+import yaml
 
 from app import app
 from app import db
@@ -34,9 +38,9 @@ from util import str2bool
 from util import TimingMessages
 from util import NoDoiException
 
-app_api = Api(app=app, version="0.0.1", title="OpenAlex", description="OpenAlex APIs", url_scheme="http", catch_all_404s=True, license="MIT", license_url="https://github.com/ourresearch/openalex-guts/blob/main/LICENSE")
-base_api_endpoint = app_api.namespace("about", description="Base endpoint")
-record_api_endpoint = app_api.namespace("record", description="A RecordThresher record")
+app_api = Api(app=app, version="0.0.1", doc=False, title="OpenAlex", description="OpenAlex APIs", url_scheme="http", catch_all_404s=True, license="MIT", license_url="https://github.com/ourresearch/openalex-guts/blob/main/LICENSE")
+# base_api_endpoint = app_api.namespace("about", description="Base endpoint")
+# record_api_endpoint = app_api.namespace("record", description="A RecordThresher record")
 work_api_endpoint = app_api.namespace("work", description="An OpenAlex work")
 author_api_endpoint = app_api.namespace("author", description="An OpenAlex author")
 institution_api_endpoint = app_api.namespace("institution", description="An OpenAlex institution")
@@ -109,38 +113,43 @@ def handle_no_result_exception(error):
     return {'message': error.specific}, 404
 
 
-# use this to play with the swagger CSS
-@app.route('/swaggerui/swagger-ui.css')
-def custom_css_theme():
-    from flask import send_file
-    return send_file('static/swagger-ui.css')
+
+@app_api.route('/swagger.yml')
+class GetYaml(Resource):
+    def get(self):
+       data = json.loads(json.dumps(app_api.__schema__))
+       with open('yamldoc.yml', 'w') as yamlf:
+            yaml.dump(data, yamlf, allow_unicode=True, default_flow_style=False)
+            file = os.path.abspath(os.getcwd())
+            return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
+
 
 
 #### Base
 
-@base_api_endpoint.route("/")
-class BaseEndpoint(Resource):
-    def get(self):
-        return jsonify_fast_no_sort({
-                "msg": "Welcome to OpenAlex Guts. Don't panic"
-            })
+# @base_api_endpoint.route("/")
+# class Base(Resource):
+#     def get(self):
+#         return jsonify_fast_no_sort({
+#                 "msg": "Welcome to OpenAlex Guts. Don't panic"
+#             })
 
 
 #### Record
 
-@app_api.deprecated
-@record_api_endpoint.route("/RANDOM")
-class RecordRandomEndpoint(Resource):
-    def get(self, record_id):
-        obj = models.Record.query.order_by(func.random()).first()
-        return jsonify_fast_no_sort(obj.to_dict())
-
-@app_api.deprecated
-@record_api_endpoint.route("/id/<string:record_id>")
-class RecordIdEndpoint(Resource):
-    def get(self, record_id):
-        return jsonify_fast_no_sort(models.record_from_id(record_id).to_dict())
-
+# @app_api.deprecated
+# @record_api_endpoint.route("/RANDOM")
+# class RecordRandom(Resource):
+#     def get(self):
+#         obj = models.Record.query.order_by(func.random()).first()
+#         return jsonify_fast_no_sort(obj.to_dict())
+#
+# @app_api.deprecated
+# @record_api_endpoint.route("/id/<string:record_id>")
+# class RecordId(Resource):
+#     def get(self, record_id):
+#         return jsonify_fast_no_sort(models.record_from_id(record_id).to_dict())
+#
 
 
 #### Work
@@ -171,7 +180,7 @@ my_model = app_api.model('Work', {
 
 
 @work_api_endpoint.route("/RANDOM")
-class WorkRandomEndpoint(Resource):
+class WorkRandom(Resource):
     def get(self):
         my_timing = TimingMessages()
         response = {"_timing": None}
@@ -200,7 +209,7 @@ class WorkRandomEndpoint(Resource):
 @app_api.response(200, 'Success', my_model)
 @app_api.response(400, 'Validation Error')
 @app_api.response(404, 'Not found')
-class WorkIdEndpoint(Resource):
+class WorkId(Resource):
     def get(self, work_id):
         my_timing = TimingMessages()
         response = {"_timing": None}
@@ -225,7 +234,7 @@ class WorkIdEndpoint(Resource):
 @app_api.response(200, 'Success', my_model)
 @app_api.response(400, 'Validation Error')
 @app_api.response(404, 'Not found')
-class WorkDoiEndpoint(Resource):
+class WorkDoi(Resource):
     def get(self, doi):
         from util import normalize_doi
         clean_doi = normalize_doi(doi)
@@ -244,7 +253,7 @@ class WorkDoiEndpoint(Resource):
         return jsonify_fast_no_sort(response)
 
 @work_api_endpoint.route("/pmid/<string:pmid>")
-class WorkPmidEndpoint(Resource):
+class WorkPmid(Resource):
     def get(self, pmid):
         return jsonify_fast_no_sort(models.work_from_pmid(pmid).to_dict())
 
@@ -252,23 +261,23 @@ class WorkPmidEndpoint(Resource):
 #### Author
 
 @author_api_endpoint.route("/RANDOM")
-class AuthorRandomEndpoint(Resource):
+class AuthorRandom(Resource):
     def get(self):
         obj = models.Author.query.order_by(func.random()).first()
         return jsonify_fast_no_sort(obj.to_dict())
 
 @author_api_endpoint.route("/id/<int:author_id>")
-class AuthorIdEndpoint(Resource):
+class AuthorId(Resource):
     def get(self, author_id):
         return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
 
 @author_api_endpoint.route("/orcid/<string:orcid>")
-class AuthorOrcidEndpoint(Resource):
+class AuthorOrcid(Resource):
     def get(self, orcid):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_orcid(orcid)])
 
 @author_api_endpoint.route("/normalized_name/<string:normalized_name>")
-class AuthorNormalizedNameEndpoint(Resource):
+class AuthorNormalizedName(Resource):
     def get(self, normalized_name):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_normalized_name(normalized_name)])
 
@@ -276,13 +285,13 @@ class AuthorNormalizedNameEndpoint(Resource):
 #### Institution
 
 @institution_api_endpoint.route("/RANDOM")
-class InstitutionRandomEndpoint(Resource):
+class InstitutionRandom(Resource):
     def get(self):
         obj = models.Institution.query.order_by(func.random()).first()
         return jsonify_fast_no_sort(obj.to_dict())
 
 @institution_api_endpoint.route("/id/<int:institution_id>")
-class InstitutionIdEndpoint(Resource):
+class InstitutionId(Resource):
     def get(self, institution_id):
         obj = models.institution_from_id(institution_id)
         if not obj:
@@ -290,12 +299,12 @@ class InstitutionIdEndpoint(Resource):
         return jsonify_fast_no_sort(obj.to_dict())
 
 @institution_api_endpoint.route("/ror/<string:ror_id>")
-class InstitutionRorEndpoint(Resource):
+class InstitutionRor(Resource):
     def get(self, ror_id):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
 
 @institution_api_endpoint.route("/grid/<string:grid_id>")
-class InstitutionRorEndpoint(Resource):
+class InstitutionRor(Resource):
     def get(self, grid_id):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_grid(grid_id)])
 
@@ -303,7 +312,7 @@ class InstitutionRorEndpoint(Resource):
 #### Journal
 
 @journal_api_endpoint.route("/RANDOM")
-class JournalRandomEndpoint(Resource):
+class JournalRandom(Resource):
     def get(self):
         obj = models.Journal.query.order_by(func.random()).first()
         if not obj:
@@ -315,12 +324,12 @@ class JournalRandomEndpoint(Resource):
 @app_api.response(200, 'Success', my_model)
 @app_api.response(400, 'Validation Error')
 @app_api.response(404, 'Not found')
-class JournalIdEndpoint(Resource):
+class JournalId(Resource):
     def get(self, journal_id):
         return jsonify_fast_no_sort(models.journal_from_id(journal_id).to_dict())
 
 @journal_api_endpoint.route("/issn/<string:issn>")
-class JournalIssnEndpoint(Resource):
+class JournalIssn(Resource):
     def get(self, issn):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.journals_from_issn(issn)])
 
@@ -328,18 +337,21 @@ class JournalIssnEndpoint(Resource):
 #### Concept
 
 @concept_api_endpoint.route("/RANDOM")
-class ConceptRandomEndpoint(Resource):
+class ConceptRandom(Resource):
     def get(self):
         obj = models.Concept.query.order_by(func.random()).first()
         return jsonify_fast_no_sort(obj.to_dict())
 
 @concept_api_endpoint.route("/id/<int:concept_id>")
-class ConceptIdEndpoint(Resource):
+class ConceptId(Resource):
     def get(self, concept_id):
         return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
 
 
 
+@app.route('/docs')
+def send_api_docs():
+    return send_from_directory("docs", "api_docs.html")
 
 
 if __name__ == "__main__":
