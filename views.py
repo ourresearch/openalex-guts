@@ -110,7 +110,6 @@ class Yaml(Resource):
 #### Work
 
 
-
 @doc.work_api_endpoint.route("/RANDOM")
 @app_api.doc(description= "An endpoint to get a random work, for exploration and testing")
 @app_api.response(200, 'Success', doc.WorkModel)
@@ -185,7 +184,10 @@ class WorkDoi(Resource):
 @app_api.response(404, 'Not found')
 class WorkPmid(Resource):
     def get(self, pmid):
-        return jsonify_fast_no_sort(models.work_from_pmid(pmid).to_dict())
+        response = models.work_from_pmid(pmid)
+        if not response:
+            abort(404)
+        return jsonify_fast_no_sort(response.to_dict())
 
 
 #### Author

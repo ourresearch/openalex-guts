@@ -129,31 +129,39 @@ class Work(db.Model):
         return lookup
 
     def to_dict(self, return_level="full"):
-        keys = ["work_id", "work_title", "year", "publication_date", "doc_type", "volume", "issue", "first_page", "last_page", "citation_count"]
-        response = {key: getattr(self, key) for key in keys}
-        response["ids"] = {}
+        response = {
+            "paper_id": self.work_id,
+            "paper_title": self.work_title,
+            "year": self.year,
+            "publication_date": self.publication_date,
+            "doc_type": self.doc_type,
+            "ids": {},
+            "volume": self.volume,
+            "issue": self.issue,
+            "first_page": self.first_page,
+            "last_page": self.last_page,
+            "citation_count": self.citation_count,
+            "created_date": self.created_date,
+            "journal_id": self.journal_id,
+            "affiliations": [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted],
+            "concepts": [concept.to_dict(return_level) for concept in self.concepts_sorted],
+            "locations": [location.to_dict(return_level) for location in self.locations_sorted],
+            "records": [record.to_dict(return_level) for record in self.records],
+            "mesh": [mesh.to_dict(return_level) for mesh in self.mesh],
+            "citations": [citation.to_dict(return_level) for citation in self.citations],
+            "abstract": self.abstract.to_dict(return_level) if self.abstract else None
+        }
         if self.doi:
-            response["ids"]["doi"] = [self.doi_lower, self.doi_url]
+            response["ids"]["doi"] = self.doi_lower
+            response["ids"]["doi_url"] = self.doi_url
         if self.extra_ids:
-            response["ids"].update({extra_id.id_type: extra_id.to_dict(return_level) for extra_id in self.extra_ids})
-
+            for extra_id in self.extra_ids:
+                response["ids"][extra_id.id_type] = extra_id.attribute_value
+                response["ids"][extra_id.id_type + "_url"] = extra_id.url
         if self.journal:
             response["journal"] = self.journal.to_dict(return_level)
         if self.unpaywall:
             response["unpaywall"] = self.unpaywall.to_dict(return_level)
-        response["affiliations"] = [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted]
-        response["concepts"] = [concept.to_dict(return_level) for concept in self.concepts_sorted]
-        response["locations"] = [location.to_dict(return_level) for location in self.locations_sorted]
-
-        if return_level == "full":
-            response["records"] = [record.to_dict(return_level) for record in self.records]
-            response["locations"] = [location.to_dict(return_level) for location in self.locations_sorted]
-            response["mesh"] = [mesh.to_dict(return_level) for mesh in self.mesh]
-            response["citations"] = [citation.to_dict(return_level) for citation in self.citations]
-            if self.abstract:
-                response["abstract"] = self.abstract.to_dict(return_level)
-            else:
-                response["abstract"] = None
 
         return response
 

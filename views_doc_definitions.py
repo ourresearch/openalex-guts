@@ -31,10 +31,10 @@ class DoiUrlModel(fields.String, fields.Raw):
     __schema_format__ = "url"
     __schema_example__ = "https://doi.org/10.123/abc.def"
 
-class PmidModel(fields.Integer, fields.Raw):
-    __schema_type__ = "long"
+class PmidModel(fields.String, fields.Raw):
+    __schema_type__ = "string"
     __schema_format__ = "pmid"
-    __schema_example__ = 21801268
+    __schema_example__ = "21801268"
 
 class AuthorIdModel(fields.Integer, fields.Raw):
     __schema_type__ = "long"
@@ -91,8 +91,48 @@ class ConceptIdModel(fields.Integer, fields.Raw):
     __schema_format__ = "institution_id"
     __schema_example__ = 6002401
 
+class IndexWordCount(fields.Integer, fields.Raw):
+    __schema_type__ = "int"
+    __schema_format__ = "int"
+    __schema_example__ = 42
 
+class ConceptLevelModel(fields.Integer, fields.Raw):
+    __schema_type__ = "int"
+    __schema_format__ = "int"
+    __schema_example__ = 2
 
+AbstractWordCount = fields.Wildcard(IndexWordCount)
+AbstractIndexModel = app_api.model('AbstractInvertedIndex', {
+    "*": AbstractWordCount
+})
+
+ParentConceptModel = app_api.model('ParentConcept', {
+    'field_of_study_id': ConceptIdModel,
+    'display_name': fields.String,
+    'level': ConceptLevelModel
+})
+
+PaperExternalIdModel = app_api.model('WorkExtraIds', {
+    'doi': DoiModel,
+    'doi_url': DoiUrlModel,
+    'pmid': PmidModel,
+    'pmid_url': fields.Url,
+})
+
+LocationModel = app_api.model('Location', {
+    'paper_id': PaperIdModel,
+    'source_url': fields.Url,
+    'source_type': fields.Integer,
+    'language_code': fields.String,
+})
+
+MeshModel = app_api.model('Mesh', {
+    'paper_id': PaperIdModel,
+    'descriptor_ui': fields.String,
+    'descriptor_name': fields.String,
+    'qualifier_ui': fields.String,
+    'qualifier_name': fields.String,
+})
 
 InstitutionModel = app_api.model('Institution', {
     'institution_id': InstitutionIdModel,
@@ -108,6 +148,11 @@ InstitutionModel = app_api.model('Institution', {
     "created_date": fields.Date(),
 })
 
+InstitutionSmallModel = app_api.model('InstitutionSmall', {
+    'institution_id': InstitutionIdModel,
+    'original_affiliation': fields.String,
+})
+
 AuthorModel = app_api.model('Author', {
     'author_id': AuthorIdModel,
     'display_name': AuthorDisplayNameModel(description="full name of the author"),
@@ -118,15 +163,29 @@ AuthorModel = app_api.model('Author', {
     "all_institutions": fields.List(InstitutionIdModel),
     "paper_count": fields.Integer(description="number of papers this author has published"),
     "citation_count": fields.Integer(description="number of times this author has been cited"),
-    "papers": fields.List(PaperIdModel),
-    "citations": fields.List(PaperIdModel),
+    # "papers": fields.List(PaperIdModel),
+    # "citations": fields.List(PaperIdModel),
     "created_date": fields.Date(),
     "updated_date": fields.Date()
 })
 
-WorkModel = app_api.model('Work', {
-    'paper_id': PaperIdModel,
+AffiliationModel = app_api.model('Affiliation', {
+    'author_sequence_number': fields.Integer(description="author order"),
+    "institution": fields.Nested(InstitutionSmallModel),
+    "author": fields.Nested(AuthorModel)
 })
+
+ConceptModel = app_api.model('Concept', {
+    'field_of_study_id': ConceptIdModel(description='unique concept ID'),
+    'display_name': fields.String(description="full name of the journal"),
+    'main_type': fields.String,
+    'level': ConceptLevelModel,
+    "paper_count": fields.Integer(description="number of papers associated with this concept"),
+    "citation_count": fields.Integer(description="number of times papers with this tag have been cited"),
+    "parent_concepts": fields.List(fields.Nested(ParentConceptModel)),
+    "created_date": fields.Date(),
+})
+
 
 JournalModel = app_api.model('Journal', {
     'journal_id': JournalIdModel(),
@@ -142,7 +201,27 @@ JournalModel = app_api.model('Journal', {
     "updated_date": fields.Date()
 })
 
-ConceptModel = app_api.model('Concept', {
-    'concept_id': ConceptIdModel(description='unique concept ID'),
+
+WorkModel = app_api.model('Work', {
+    'paper_id': PaperIdModel,
+    'paper_title': fields.String(description="title of the paper"),
+    'year': fields.Integer(description="year of publication"),
+    'publication_date': fields.Date(description="date of publication"),
+    'doc_type': fields.String(description="doc_type"),
+    'journal_id': JournalIdModel,
+    'volume': fields.String(),
+    'issue': fields.String(),
+    'first_page': fields.String(),
+    'last_page': fields.String(),
+    'journal': fields.Nested(JournalModel),
+    "citation_count": fields.Integer(description="number of times this paper has been cited"),
+    'ids': fields.Nested(PaperExternalIdModel),
+    'affiliations': fields.List(fields.Nested(AffiliationModel)),
+    'mesh': fields.List(fields.Nested(MeshModel)),
+    'locations': fields.List(fields.Nested(LocationModel)),
+    'citations': fields.List(PaperIdModel),
+    'abstract_inverted_index': fields.Nested(AbstractIndexModel),
+    'concepts': fields.List(fields.Nested(ConceptModel), description="concepts"),
+    "created_date": fields.Date()
 })
 
