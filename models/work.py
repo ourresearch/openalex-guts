@@ -154,7 +154,6 @@ class Work(db.Model):
             "affiliations": [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted],
             "concepts": [concept.to_dict(return_level) for concept in self.concepts_sorted],
             "locations": [location.to_dict(return_level) for location in self.locations_sorted],
-            "records": [record.to_dict(return_level) for record in self.records],
             "mesh": [mesh.to_dict(return_level) for mesh in self.mesh],
             "citations": [citation.to_dict(return_level) for citation in self.citations],
             "abstract": self.abstract.to_dict(return_level) if self.abstract else None

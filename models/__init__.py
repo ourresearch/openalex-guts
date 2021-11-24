@@ -1,3 +1,7 @@
+from sqlalchemy.orm import selectinload
+from sqlalchemy import orm
+
+
 from app import db
 
 from models.abstract import Abstract
@@ -81,11 +85,27 @@ def journals_from_issn(issn):
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
 
+def single_work_query():
+    return db.session.query(Work).options(
+         selectinload(Work.locations),
+         selectinload(Work.journal).selectinload(Journal.journalsdb),
+         selectinload(Work.unpaywall),
+         selectinload(Work.citations),
+         selectinload(Work.mesh),
+         selectinload(Work.abstract),
+         selectinload(Work.extra_ids),
+         selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
+         selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
+         selectinload(Work.concepts).selectinload(WorkConcept.concept),
+         orm.Load(Work).raiseload('*'))
+
 def work_from_id(work_id):
-    return Work.query.filter(Work.paper_id==work_id).first()
+    my_query = single_work_query()
+    return my_query.filter(Work.paper_id==work_id).first()
 
 def work_from_doi(doi):
-    return Work.query.filter(Work.doi_lower==doi).first()
+    my_query = single_work_query()
+    return my_query.filter(Work.doi_lower == doi).first()
 
 def work_from_pmid(pmid):
     pmid_attribute_type = 2
