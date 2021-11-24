@@ -35,7 +35,15 @@ class Work(db.Model):
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
+    updated_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
+    doc_sub_types = db.Column(db.Text)
+    genre = db.Column(db.Text)
+    is_paratext = db.Column(db.Boolean)
+    oa_status = db.Column(db.Text)
+    best_url = db.Column(db.Text)
+    best_free_url = db.Column(db.Text)
+    best_free_version = db.Column(db.Text)
 
     # queues
     started = db.Column(db.DateTime)
@@ -141,14 +149,13 @@ class Work(db.Model):
             "first_page": self.first_page,
             "last_page": self.last_page,
             "citation_count": len(self.citations),
-            "journal_is_oa": None,
-            "oa_status": None,
-            "has_green": None,
-            "is_oa_bool": None,
-            "best_version": None,
-            "best_license": None,
-            "best_host_type": None,
-            "best_url": None,
+            "doc_sub_types": self.doc_sub_types,
+            "oa_status": self.oa_status,
+            "best_free_version": self.best_free_version,
+            "best_free_url": self.best_free_url,
+            "best_url": self.best_url,
+            "is_paratext": self.is_paratext,
+            "genre": self.genre,
             "created_date": self.created_date,
             "journal_id": self.journal_id,
             "affiliations": [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted],
@@ -167,10 +174,6 @@ class Work(db.Model):
                 response["ids"][extra_id.id_type + "_url"] = extra_id.url
         if self.journal:
             response["journal"] = self.journal.to_dict(return_level)
-        if self.unpaywall:
-            response.update(self.unpaywall.to_dict(return_level))
-
-
 
         return response
 

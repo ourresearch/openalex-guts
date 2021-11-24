@@ -19,7 +19,6 @@ from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
 from models.ror import Ror
 from models.journalsdb import Journalsdb
-from models.unpaywall import Unpaywall
 from models.work_extra_ids import WorkExtraIds
 
 
@@ -30,7 +29,6 @@ Work.citations = db.relationship("Citation", lazy='selectin', backref="work")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False)
 Work.journal = db.relationship("Journal", lazy='selectin', backref="work", uselist=False)
-Work.unpaywall = db.relationship("Unpaywall", lazy='selectin', backref="work", uselist=False)
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work")
 
 # relationships with association tables
@@ -89,7 +87,6 @@ def single_work_query():
     return db.session.query(Work).options(
          selectinload(Work.locations),
          selectinload(Work.journal).selectinload(Journal.journalsdb),
-         selectinload(Work.unpaywall),
          selectinload(Work.citations),
          selectinload(Work.mesh),
          selectinload(Work.abstract),
