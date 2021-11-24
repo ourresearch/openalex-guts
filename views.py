@@ -147,10 +147,17 @@ class WorkId(Resource):
         my_timing.log_timing("after work_from_id()")
         if not my_obj:
             abort(404)
-        return_level = "full"
-        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
-            return_level = "elastic"
-        response["results"] = my_obj.to_dict(return_level)
+
+        if False:
+            response["results"] = my_obj.to_dict()
+        else:
+            from sqlalchemy import text
+            q = """select json_elastic 
+                from mid.work_json
+                where paper_id = :work_id;"""
+            row = db.session.execute(text(q), {"work_id": work_id}).first()
+            response["results"] = json.loads(row["json_elastic"])
+
         my_timing.log_timing("after to_dict()")
         response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
