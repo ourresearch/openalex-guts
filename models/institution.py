@@ -44,17 +44,38 @@ class Institution(db.Model):
             return None
         return self.iso3166_code.lower()
 
+    @classmethod
+    def to_dict_null(self):
+        response = {
+            "institution_id": self.institution_id,
+            "display_name": self.display_name,
+            "ror_id": None,
+            "country_code": self.country_code,
+            "official_page": self.official_page,
+            "wiki_page": self.wiki_page,
+            "created_date": self.created_date
+        }
+        return response
+
     def to_dict(self, return_level="full"):
-        if return_level=="full":
-            keys = ["institution_id", "display_name", "country_code", "official_page", "wiki_page"]
-        else:
-            keys = ["institution_id", "institution_display_name", "country_code"]
-        response = {key: getattr(self, key) for key in keys}
-        if self.ror_id:
-            response["ror_id"] = self.ror_id
-            response["ror_url"] = self.ror_url
+        from models import Ror
+
+        response = {
+            "institution_id": self.institution_id,
+            "display_name": self.display_name,
+            "ror_id": None,
+        }
         if self.ror:
             response.update(self.ror.to_dict(return_level))
+        else:
+            response.update(Ror.to_dict_null())
+
+        response.update({
+            "country_code": self.country_code,
+            "official_page": self.official_page,
+            "wiki_page": self.wiki_page,
+            "created_date": self.created_date
+        })
         return response
 
     def __repr__(self):

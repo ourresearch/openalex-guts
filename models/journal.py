@@ -1,3 +1,7 @@
+from cached_property import cached_property
+from sqlalchemy import text
+import json
+
 from app import db
 
 
@@ -15,26 +19,49 @@ class Journal(db.Model):
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
     issn = db.Column(db.Text)
+    issns = db.Column(db.Text)
+    is_oa = db.Column(db.Boolean)
+    is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
-    # paper_count bigint,
-    # paper_family_count bigint,
-    # citation_count bigint,
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
-    @property
-    def mag_journal(self):
-        return self.display_name
+    @cached_property
+    def paper_count(self):
+        q = """select count(distinct paper_id) as n
+            from mid.work work
+            where journal_id = :journal_id;"""
+        row = db.session.execute(text(q), {"journal_id": self.journal_id}).first()
+        return row[0]
+
+    @cached_property
+    def citation_count(self):
+        q = """select count(distinct citation.paper_id) as n
+            from mid.work work
+            join mid.citation citation on work.paper_id=citation.paper_reference_id
+            where journal_id = :journal_id;"""
+        row = db.session.execute(text(q), {"journal_id": self.journal_id}).first()
+        return row[0]
 
     def to_dict(self, return_level="full"):
-        if return_level=="full":
-            return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        keys = ["journal_id"]
-        response = {key: getattr(self, key) for key in keys}
-        if self.journalsdb:
-            response.update(self.journalsdb.to_dict(return_level))
+        response = {
+            "journal_id": self.journal_id,
+            "display_name": self.display_name,
+            "issn_l": self.issn,
+            "issns": json.loads(self.issns) if self.issns else None,
+            "is_oa": self.is_oa,
+            "is_in_doaj": self.is_in_doaj,
+            "publisher": self.publisher,
+            "webpage": self.webpage,
+            "paper_count": self.paper_count,
+            "citation_count": self.citation_count,
+            "created_date": self.created_date,
+            "updated_date": self.updated_date.isoformat()[0:10] if self.updated_date else None,
+        }
         return response
+
+
 
     def __repr__(self):
         return "<Journal ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)

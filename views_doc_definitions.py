@@ -96,14 +96,21 @@ class ConceptIdModel(fields.Integer, fields.Raw):
 
 InstitutionModel = app_api.model('Institution', {
     'institution_id': InstitutionIdModel,
-    'display_name': fields.String(description="name of the institution"),
+    'display_name': InstitutionDisplayNameModel,
     'ror_id': RorIdModel,
-    "country_code": fields.String(description='2-character country code')
+    'ror_url': RorUrlModel,
+    'grid_id': fields.String(description='GRID id (deprecated in favour of ROR id)'),
+    "city": fields.String(description='city of institution'),
+    "country_code": fields.String(description='2-character country code'),
+    "country": fields.String(description='name of country'),
+    "official_page": fields.Url(description='url of institution'),
+    "wiki_page": fields.Url(description='url of Wikipedia page of institution'),
+    "created_date": fields.Date(),
 })
 
 AuthorModel = app_api.model('Author', {
-    'author_id': fields.Integer(description='unique author ID'),
-    'display_name': fields.String(description="full name of the author"),
+    'author_id': AuthorIdModel,
+    'display_name': AuthorDisplayNameModel(description="full name of the author"),
     'orcid': OrcidModel,
     'orcid_url': OrcidUrlModel(),
     'last_known_institution_id': InstitutionIdModel,
@@ -122,12 +129,13 @@ WorkModel = app_api.model('Work', {
 })
 
 JournalModel = app_api.model('Journal', {
-    'author_id': fields.Integer(description='unique author ID'),
-    'display_name': fields.String(description="full name of the author"),
-    'orcid': OrcidModel,
-    'orcid_url': OrcidUrlModel(),
-    'last_known_institution_id': InstitutionIdModel,
-    "last_known_institutions": fields.List(fields.Nested(InstitutionModel)),
+    'journal_id': JournalIdModel(),
+    'display_name': fields.String(description="full name of the journal"),
+    'issn_l': IssnModel(description="linking ISSN for this journal"),
+    'issns': fields.List(IssnModel, description="all ISSNs for this journal, print and electronic"),
+    'is_oa': fields.Boolean(),
+    'is_in_doaj': fields.Boolean(),
+    "publisher": fields.String(),
     "paper_count": fields.Integer(description="number of papers this author has published"),
     "citation_count": fields.Integer(description="number of times this author has been cited"),
     "created_date": fields.Date(),

@@ -19,12 +19,35 @@ class Ror(db.Model):
         return "https://ror.org/{}".format(self.ror_id)
 
     def to_dict(self, return_level="full"):
-        if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
-        else:
-            keys = ["city", "country", "country_code"]
-        response = {key: getattr(self, key) for key in keys}
-        response["ror_id"] = self.ror_id
+        response = {}
+        if hasattr(self, "institution_id"):
+            response.update({"institution_id": None,
+                             "official_page": None,
+                             "wiki_page": None,
+                             "created_date": None
+                             })
+        response.update({
+            "ror_id": self.ror_id,
+            "ror_url": self.ror_url,
+            "display_name": self.name,
+            "grid_id": self.grid_id,
+            "city": self.city,
+            "country_code": self.country_code,
+            "country": self.country,
+        })
+        return response
+
+    @classmethod
+    def to_dict_null(self):
+        response = {
+            "ror_id": None,
+            "ror_url": None,
+            # "display_name": None, overrride with what is in institution
+            "grid_id": None,
+            "city": None,
+            # "country_code": None, overrride with what is in institution
+            "country": None,
+        }
         return response
 
     def __repr__(self):
