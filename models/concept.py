@@ -82,7 +82,7 @@ class Concept(db.Model):
             "level": self.level,
             # "paper_count": self.paper_count,   NO_CITATIONS_FOR_NOW
             # "citation_count": self.citation_count,   NO_CITATIONS_FOR_NOW
-            "parent_concepts": self.parents,
+            # "parent_concepts": self.parents, NO_CITATIONS_FOR_NOW
             "created_date": self.created_date,
         }
         return response
