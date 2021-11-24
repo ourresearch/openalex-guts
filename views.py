@@ -143,12 +143,13 @@ class WorkId(Resource):
     def get(self, work_id):
         my_timing = TimingMessages()
         response = {"_timing": None}
-        my_obj = models.work_from_id(work_id)
-        my_timing.log_timing("after work_from_id()")
-        if not my_obj:
-            abort(404)
 
-        if False:
+        COMPUTE_RESULT = False
+        if COMPUTE_RESULT:
+            my_obj = models.work_from_id(work_id)
+            my_timing.log_timing("after work_from_id()")
+            if not my_obj:
+                abort(404)
             response["results"] = my_obj.to_dict()
         else:
             from sqlalchemy import text
