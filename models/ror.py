@@ -4,7 +4,7 @@ from app import db
 
 class Ror(db.Model):
     __table_args__ = {'schema': 'ins'}
-    __tablename__ = "ror_summary_view"
+    __tablename__ = "ror_summary"
 
     ror_id = db.Column(db.Text, db.ForeignKey("mid.institution.ror_id"), primary_key=True)
     grid_id = db.Column(db.Text)
