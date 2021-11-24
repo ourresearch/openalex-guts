@@ -78,7 +78,6 @@ def journals_from_issn(issn):
         response = [response_journalsdb]
     return response
 
-
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
 
@@ -89,4 +88,6 @@ def work_from_doi(doi):
     return Work.query.filter(Work.doi_lower==doi).first()
 
 def work_from_pmid(pmid):
-    return Work.query.filter(Work.pmid==pmid).first()
+    pmid_attribute_type = 2
+    work_extra_id = WorkExtraIds.query.filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).first()
+    return work_extra_id.work if work_extra_id else None

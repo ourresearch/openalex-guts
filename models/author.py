@@ -77,8 +77,8 @@ class Author(db.Model):
                 "all_institutions": self.all_institutions if self.all_institutions else [],
                 "paper_count": len(self.papers),
                 "citation_count": len(self.citations),
-                "papers": self.papers,
-                "citations": self.citations,
+                # "papers": self.papers,
+                # "citations": self.citations,
                 "created_date": self.created_date,
                 "updated_date": self.updated_date
         }
