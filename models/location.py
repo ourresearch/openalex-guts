@@ -22,6 +22,13 @@ class Location(db.Model):
     source_url = db.Column(db.Text, primary_key=True)
     source_type = db.Column(db.Numeric)
     language_code = db.Column(db.Text)
+    url_for_landing_page = db.Column(db.Text)
+    url_for_pdf = db.Column(db.Text)
+    host_type = db.Column(db.Text)
+    version = db.Column(db.Text)
+    license = db.Column(db.Text)
+    repository_institution = db.Column(db.Text)
+    pmh_id = db.Column(db.Text)
 
     @property
     def source_description(self):
@@ -32,12 +39,20 @@ class Location(db.Model):
         return lookup.get(self.source_type, "unknown").lower()
 
     def to_dict(self, return_level="full"):
-        if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
-            return {key: getattr(self, key) for key in keys}
-        else:
-            return [self.source_description, self.source_url]
-
+        response = {
+            "paper_id": self.paper_id,
+            "source_url": self.source_url,
+            "source_type": self.source_type,
+            "source_description": self.source_description,
+            "language_code": self.language_code,
+            "url_for_landing_page": self.url_for_landing_page,
+            "url_for_pdf": self.url_for_pdf,
+            "host_type": self.host_type,
+            "version": self.version,
+            "license": self.license,
+            "repository_institution": self.repository_institution,
+            "oai_pmh_id": self.pmh_id
+        }
     def __repr__(self):
         return "<Location ( {} ) {}>".format(self.paper_id, self.source_url)
 

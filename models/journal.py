@@ -54,8 +54,8 @@ class Journal(db.Model):
             "is_in_doaj": self.is_in_doaj,
             "publisher": self.publisher,
             "webpage": self.webpage,
-            "paper_count": self.paper_count,
-            "citation_count": self.citation_count,
+            # "paper_count": self.paper_count,   NO_CITATIONS_FOR_NOW
+            # "citation_count": self.citation_count,   NO_CITATIONS_FOR_NOW
             "created_date": self.created_date,
             "updated_date": self.updated_date.isoformat()[0:10] if self.updated_date else None,
         }

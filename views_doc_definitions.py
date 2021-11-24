@@ -123,7 +123,15 @@ LocationModel = app_api.model('Location', {
     'paper_id': PaperIdModel,
     'source_url': fields.Url,
     'source_type': fields.Integer,
+    'source_description': fields.String,
     'language_code': fields.String,
+    'url_for_landing_page': fields.String,
+    'url_for_pdf': fields.String,
+    'host_type': fields.String,
+    'version': fields.String,
+    'license': fields.String,
+    'repository_institution': fields.String,
+    'oai_pmh_id': fields.String,
 })
 
 MeshModel = app_api.model('Mesh', {
@@ -208,12 +216,20 @@ WorkModel = app_api.model('Work', {
     'year': fields.Integer(description="year of publication"),
     'publication_date': fields.Date(description="date of publication"),
     'doc_type': fields.String(description="doc_type"),
+    'genre': fields.String(description="genre"),
     'journal_id': JournalIdModel,
     'volume': fields.String(),
     'issue': fields.String(),
     'first_page': fields.String(),
     'last_page': fields.String(),
     'journal': fields.Nested(JournalModel),
+    'journal_is_oa': fields.Boolean(),
+    'oa_status': fields.String(),
+    'has_green': fields.Boolean(),
+    'best_version': fields.String(),
+    'best_license': fields.String(),
+    'best_host_type': fields.String(),
+    'best_url': fields.Url(),
     "citation_count": fields.Integer(description="number of times this paper has been cited"),
     'ids': fields.Nested(PaperExternalIdModel),
     'affiliations': fields.List(fields.Nested(AffiliationModel)),
@@ -224,4 +240,3 @@ WorkModel = app_api.model('Work', {
     'concepts': fields.List(fields.Nested(ConceptModel), description="concepts"),
     "created_date": fields.Date()
 })
-

@@ -80,8 +80,8 @@ class Concept(db.Model):
             "display_name": self.display_name,
             "main_type": self.main_type,
             "level": self.level,
-            "paper_count": self.paper_count,
-            "citation_count": self.citation_count,
+            # "paper_count": self.paper_count,   NO_CITATIONS_FOR_NOW
+            # "citation_count": self.citation_count,   NO_CITATIONS_FOR_NOW
             "parent_concepts": self.parents,
             "created_date": self.created_date,
         }
