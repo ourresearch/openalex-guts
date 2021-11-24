@@ -19,11 +19,23 @@ class Journalsdb(db.Model):
 
 
     def to_dict(self, return_level="full"):
-        if return_level=="full":
-            keys = [col.name for col in self.__table__.columns]
-        else:
-            keys = ["all_issns", "title", "publisher"]
-        return {key: getattr(self, key) for key in keys}
+        response = {}
+        if hasattr(self, "journal_id"):
+            response.update({"journal_id": None,
+                             "display_name": None,
+                             "webpage": None,
+                             "paper_count": None,
+                             "citation_count": None,
+                             "created_date": None,
+                             "updated_date": None
+                             })
+        response.update({
+            "issn_l": self.issn_l,
+            "all_issns": self.all_issns,
+            "display_name": self.title,
+            "publisher": self.publisher,
+        })
+        return response
 
     def __repr__(self):
         return "<Journalsdb ( {} ) '{}' {}>".format(self.issn_l, self.title, self.publisher)

@@ -60,16 +60,24 @@ def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
 
 def institutions_from_ror(ror_id):
-    return Institution.query.filter(Institution.ror_id==ror_id).all()
-
-def institutions_from_grid(grid_id):
-    return Institution.query.filter(Institution.grid_id==grid_id).all()
+    response = Institution.query.filter(Institution.ror_id==ror_id).all()
+    if not response:
+        response_ror = Ror.query.filter(Ror.ror_id==ror_id).first()
+        response_ror.institution_id = None
+        response = [response_ror]
+    return response
 
 def journal_from_id(journal_id):
     return Journal.query.filter(Journal.journal_id==journal_id).first()
 
 def journals_from_issn(issn):
-    return Journal.query.filter(Journal.issn==issn).all()
+    response = Journal.query.filter(Journal.issns.ilike(f'%{issn}%')).all()
+    if not response:
+        response_journalsdb = Journalsdb.query.filter(Journalsdb.issn==issn).first()
+        response_journalsdb.journal_id = None
+        response = [response_journalsdb]
+    return response
+
 
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()

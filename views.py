@@ -263,7 +263,7 @@ class JournalRandom(Resource):
         return response
 
 @doc.journal_api_endpoint.route("/id/<int:journal_id>")
-@app_api.doc(params={'journal_id': {'description': 'ROR id of the institution', 'in': 'path', 'type': doc.JournalIdModel}},
+@app_api.doc(params={'journal_id': {'description': 'id of the journal', 'in': 'path', 'type': doc.JournalIdModel}},
              description="An endpoint to get journal from the id")
 @app_api.response(200, 'Success', doc.JournalModel)
 @app_api.response(404, 'Not found')
@@ -272,8 +272,8 @@ class JournalId(Resource):
         return jsonify_fast_no_sort(models.journal_from_id(journal_id).to_dict())
 
 @doc.journal_api_endpoint.route("/issn/<string:issn>")
-@app_api.doc(params={'issn': {'description': 'ROR id of the institution', 'in': 'path', 'type': doc.IssnModel}},
-             description="An endpoint to get journal from the id")
+@app_api.doc(params={'issn': {'description': 'ISSN of the journal', 'in': 'path', 'type': doc.IssnModel}},
+             description="An endpoint to get journal from an ISSN")
 @app_api.response(200, 'Success', doc.JournalModel)
 @app_api.response(404, 'Not found')
 class JournalIssn(Resource):
