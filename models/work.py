@@ -34,7 +34,6 @@ class Work(db.Model):
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
-    citation_count = db.Column(db.BigInteger)
     created_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
 
@@ -135,12 +134,21 @@ class Work(db.Model):
             "year": self.year,
             "publication_date": self.publication_date,
             "doc_type": self.doc_type,
+            "genre": None,
             "ids": {},
             "volume": self.volume,
             "issue": self.issue,
             "first_page": self.first_page,
             "last_page": self.last_page,
-            "citation_count": self.citation_count,
+            "citation_count": len(self.citations),
+            "journal_is_oa": None,
+            "oa_status": None,
+            "has_green": None,
+            "is_oa_bool": None,
+            "best_version": None,
+            "best_license": None,
+            "best_host_type": None,
+            "best_url": None,
             "created_date": self.created_date,
             "journal_id": self.journal_id,
             "affiliations": [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted],
@@ -161,7 +169,9 @@ class Work(db.Model):
         if self.journal:
             response["journal"] = self.journal.to_dict(return_level)
         if self.unpaywall:
-            response["unpaywall"] = self.unpaywall.to_dict(return_level)
+            response.update(self.unpaywall.to_dict(return_level))
+
+
 
         return response
 

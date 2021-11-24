@@ -111,6 +111,7 @@ class Yaml(Resource):
 
 
 @doc.work_api_endpoint.route("/RANDOM")
+@doc.work_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random work, for exploration and testing")
 @app_api.response(200, 'Success', doc.WorkModel)
 class WorkRandom(Resource):
@@ -134,7 +135,7 @@ class WorkRandom(Resource):
 
 
 @doc.work_api_endpoint.route("/id/<int:work_id>")
-@app_api.doc(params={'work_id': {'description': 'id of the work (eg 2741809807)', 'in': 'path', 'type': doc.PaperIdModel}},
+@app_api.doc(params={'work_id': {'description': 'OpenAlex id of the work (eg 2741809807)', 'in': 'path', 'type': doc.PaperIdModel}},
              description="An endpoint to get work from the id")
 @app_api.response(200, 'Success', doc.WorkModel)
 @app_api.response(404, 'Not found')
@@ -155,7 +156,7 @@ class WorkId(Resource):
         return jsonify_fast_no_sort(response)
 
 @doc.work_api_endpoint.route("/doi/<path:doi>")
-@app_api.doc(params={'doi': {'description': 'new DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': doc.DoiModel}},
+@app_api.doc(params={'doi': {'description': 'DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': doc.DoiModel}},
              description="An endpoint to get work from the doi")
 @app_api.response(200, 'Success', doc.WorkModel)
 @app_api.response(404, 'Not found')
@@ -178,8 +179,8 @@ class WorkDoi(Resource):
         return jsonify_fast_no_sort(response)
 
 @doc.work_api_endpoint.route("/pmid/<string:pmid>")
-@app_api.doc(params={'pmid': {'description': 'new DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': doc.PmidModel}},
-             description="An endpoint to get work from the pubmed id")
+@app_api.doc(params={'pmid': {'description': 'PMID of the work (eg 21801268)', 'in': 'path', 'type': doc.PmidModel}},
+             description="An endpoint to get work from the PubMed ID")
 @app_api.response(200, 'Success', doc.WorkModel)
 @app_api.response(404, 'Not found')
 class WorkPmid(Resource):
@@ -193,6 +194,7 @@ class WorkPmid(Resource):
 #### Author
 
 @doc.author_api_endpoint.route("/RANDOM")
+@doc.author_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random author, for exploration and testing")
 @app_api.response(200, 'Success', doc.AuthorModel)
 class AuthorRandom(Resource):
@@ -222,6 +224,7 @@ class AuthorOrcid(Resource):
 # #### Institution
 
 @doc.institution_api_endpoint.route("/RANDOM")
+@doc.institution_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random institution, for exploration and testing")
 @app_api.response(200, 'Success', doc.InstitutionModel)
 class InstitutionRandom(Resource):
@@ -230,7 +233,7 @@ class InstitutionRandom(Resource):
         return jsonify_fast_no_sort(obj.to_dict())
 
 @doc.institution_api_endpoint.route("/id/<int:institution_id>")
-@app_api.doc(params={'institution_id': {'description': 'id of the institution', 'in': 'path', 'type': doc.InstitutionIdModel}},
+@app_api.doc(params={'institution_id': {'description': 'OpenAlex id of the institution', 'in': 'path', 'type': doc.InstitutionIdModel}},
              description="An endpoint to get institution from the id")
 @app_api.response(200, 'Success', doc.InstitutionModel)
 @app_api.response(404, 'Not found')
@@ -254,6 +257,7 @@ class InstitutionRor(Resource):
 #### Journal
 
 @doc.journal_api_endpoint.route("/RANDOM")
+@doc.journal_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random journal, for exploration and testing")
 @app_api.response(200, 'Success', doc.JournalModel)
 class JournalRandom(Resource):
@@ -265,7 +269,7 @@ class JournalRandom(Resource):
         return response
 
 @doc.journal_api_endpoint.route("/id/<int:journal_id>")
-@app_api.doc(params={'journal_id': {'description': 'id of the journal', 'in': 'path', 'type': doc.JournalIdModel}},
+@app_api.doc(params={'journal_id': {'description': 'OpenAlex id of the journal', 'in': 'path', 'type': doc.JournalIdModel}},
              description="An endpoint to get journal from the id")
 @app_api.response(200, 'Success', doc.JournalModel)
 @app_api.response(404, 'Not found')
@@ -286,6 +290,7 @@ class JournalIssn(Resource):
 #### Concept
 
 @doc.concept_api_endpoint.route("/RANDOM")
+@doc.concept_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random concept, for exploration and testing")
 @app_api.response(200, 'Success', doc.ConceptModel)
 class ConceptRandom(Resource):
@@ -294,7 +299,7 @@ class ConceptRandom(Resource):
         return jsonify_fast_no_sort(obj.to_dict())
 
 @doc.concept_api_endpoint.route("/id/<int:concept_id>")
-@app_api.doc(params={'concept_id': {'description': 'id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
+@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
              description="An endpoint to get concept from the id")
 @app_api.response(200, 'Success', doc.ConceptModel)
 @app_api.response(404, 'Not found')
@@ -303,6 +308,11 @@ class ConceptId(Resource):
         return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
 
 
+@app.route('/loaderio-2dc2634ae02b4016d10e4085686d893d/')
+def looderio_verification():
+    response = make_response("loaderio-2dc2634ae02b4016d10e4085686d893d", 200)
+    response.mimetype = "text/plain"
+    return response
 
 @app.route('/docs')
 def send_api_docs():
