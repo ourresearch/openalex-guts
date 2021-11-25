@@ -72,3 +72,22 @@ if __name__ == "__main__":
     my_queue.parsed_vars = vars(parsed_args)
     job_type = "normal"  #should be an object attribute
     my_queue.run_right_thing(parsed_args, job_type)
+
+
+
+# unload ($$ select '["' || paper_id || '"],' as line from mid.work_json $$)
+# to 's3://unsub-public/loaderio/temp_loaderio_paper_ids.csv'
+# credentials CREDS
+# ALLOWOVERWRITE
+# parallel off
+# delimiter as '|'
+
+# head -n 100000 /Users/hpiwowar/Downloads/temp_loaderio_paper_ids.csv000 > /Users/hpiwowar/Downloads/temp_loaderio_paper_ids.csv002
+
+# {
+#   "version": 1,
+#   "variables": [{
+#     "names": ["paper_id"],
+#     "values": [
+
+# then make it public
