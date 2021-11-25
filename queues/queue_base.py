@@ -179,7 +179,9 @@ class DbQueue(object):
                         q = db.session.query(self.myclass).options(
                              selectinload(self.myclass.locations),
                              selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
-                             selectinload(self.myclass.unpaywall),
+                             selectinload(self.myclass.citations),
+                             selectinload(self.myclass.mesh),
+                             selectinload(self.myclass.abstract),
                              selectinload(self.myclass.extra_ids),
                              selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                              selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
