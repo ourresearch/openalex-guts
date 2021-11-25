@@ -305,3 +305,4 @@ class DbQueue(object):
 
     def table_name(self):
         pass
+

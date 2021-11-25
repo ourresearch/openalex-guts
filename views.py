@@ -144,7 +144,7 @@ class WorkId(Resource):
         my_timing = TimingMessages()
         response = {"_timing": None}
 
-        COMPUTE_RESULT = True
+        COMPUTE_RESULT = False
         if COMPUTE_RESULT:
             my_obj = models.work_from_id(work_id)
             my_timing.log_timing("after work_from_id()")
@@ -157,7 +157,11 @@ class WorkId(Resource):
                 from mid.work_json
                 where paper_id = :work_id;"""
             row = db.session.execute(text(q), {"work_id": work_id}).first()
-            response["results"] = json.loads(row["json_elastic"])
+            if not row:
+                abort(404)
+            paper_dict = json.loads(row["json_elastic"])
+            paper_dict["citation_count"] = 42
+            response["results"] = paper_dict
 
         my_timing.log_timing("after to_dict()")
         response["_timing"] = my_timing.to_dict()
