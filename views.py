@@ -144,7 +144,7 @@ class WorkId(Resource):
         my_timing = TimingMessages()
         response = {"_timing": None}
 
-        COMPUTE_RESULT = False
+        COMPUTE_RESULT = True
         if COMPUTE_RESULT:
             my_obj = models.work_from_id(work_id)
             my_timing.log_timing("after work_from_id()")
