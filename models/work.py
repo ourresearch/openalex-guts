@@ -109,10 +109,11 @@ class Work(db.Model):
         return "https://doi.org/{}".format(self.doi_lower)
 
     def process(self):
-        JSON_ELASTIC_VERSION_STRING = "includes some orcid"
+        VERSION_STRING = "full dict, no citations"
+
         # print("processing work! {}".format(self.id))
-        # self.json_full = jsonify_fast_no_sort_raw(self.to_dict())
-        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict(return_level="elastic"))
+        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict())
+
         # has to match order of get_insert_fieldnames
         json_elastic_escaped = self.json_elastic.replace("'", "''").replace("%", "%%").replace(":", "\:")
         if len(json_elastic_escaped) > 65000:
@@ -122,7 +123,7 @@ class Work(db.Model):
                                                                   paper_id=self.paper_id,
                                                                   updated=datetime.datetime.utcnow().isoformat(),
                                                                   json_elastic=json_elastic_escaped,
-                                                                  version=JSON_ELASTIC_VERSION_STRING
+                                                                  version=VERSION_STRING
                                                                 )}
 
         # print(self.json_elastic[0:100])
