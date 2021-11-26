@@ -96,7 +96,7 @@ class IndexWordCount(fields.Integer, fields.Raw):
     __schema_format__ = "int"
     __schema_example__ = 42
 
-class ConceptLevelModel(fields.Integer, fields.Raw):
+class ConceptLevel(fields.Integer, fields.Raw):
     __schema_type__ = "int"
     __schema_format__ = "int"
     __schema_example__ = 2
@@ -109,7 +109,7 @@ AbstractIndexModel = app_api.model('AbstractInvertedIndex', {
 ParentConceptModel = app_api.model('ParentConcept', {
     'field_of_study_id': ConceptIdModel,
     'display_name': fields.String,
-    'level': ConceptLevelModel
+    'level': ConceptLevel
 })
 
 PaperExternalIdModel = app_api.model('WorkExtraIds', {
@@ -119,16 +119,29 @@ PaperExternalIdModel = app_api.model('WorkExtraIds', {
     'pmid_url': fields.Url,
 })
 
+OaStatusModel = fields.String(description='Open Access status of the paper',
+                                 enum=['closed', 'green', 'gold', 'hybrid', 'bronze'])
+
+SourceDescriptionModel = fields.String(description='Type of resource at the Source URL',
+                                 enum=['html', 'text', 'pdf', 'doc', 'ppt', 'xls', 'ods', 'rtf', 'xml', 'rss', 'odp', 'mp3', 'odt', 'swf', 'zip', 'ics', 'pub'])
+
+HostTypeModel = fields.String(description='Host type',
+                                 enum=['repository', 'publisher'])
+
+VersionModel = fields.String(description='Version of the paper',
+                                 enum=['submittedVersion', 'acceptedVersion', 'publishedVersion'])
+
+
 LocationModel = app_api.model('Location', {
     'paper_id': PaperIdModel,
     'source_url': fields.Url,
     'source_type': fields.Integer,
-    'source_description': fields.String,
+    'source_description': SourceDescriptionModel,
     'language_code': fields.String,
     'url_for_landing_page': fields.String,
     'url_for_pdf': fields.String,
-    'host_type': fields.String,
-    'version': fields.String,
+    'host_type': HostTypeModel,
+    'version': VersionModel,
     'license': fields.String,
     'repository_institution': fields.String,
     'oai_pmh_id': fields.String,
@@ -187,7 +200,7 @@ ConceptModel = app_api.model('Concept', {
     'field_of_study_id': ConceptIdModel(description='unique concept ID'),
     'display_name': fields.String(description="full name of the journal"),
     'main_type': fields.String,
-    'level': ConceptLevelModel,
+    'level': ConceptLevel,
     "paper_count": fields.Integer(description="number of papers associated with this concept"),
     "citation_count": fields.Integer(description="number of times papers with this tag have been cited"),
     "parent_concepts": fields.List(fields.Nested(ParentConceptModel)),
@@ -224,11 +237,10 @@ WorkModel = app_api.model('Work', {
     'last_page': fields.String(),
     'journal': fields.Nested(JournalModel),
     'journal_is_oa': fields.Boolean(),
-    'oa_status': fields.String(),
-    'has_green': fields.Boolean(),
-    'best_version': fields.String(),
+    'oa_status': OaStatusModel,
+    'best_version': VersionModel,
     'best_license': fields.String(),
-    'best_host_type': fields.String(),
+    'best_host_type': HostTypeModel,
     'best_url': fields.Url(),
     "citation_count": fields.Integer(description="number of times this paper has been cited"),
     'ids': fields.Nested(PaperExternalIdModel),

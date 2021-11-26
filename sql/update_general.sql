@@ -38,3 +38,141 @@ alter table mid.institution rename column mag_normalized_name to normalized_name
 update mid.institution set match_name = f_matching_string(display_name)
 update mid.institution set normalized_name = f_mag_normalize_string(display_name)
 
+
+create table diff.till_zz20211108_mag_main_journals as (
+select journal_id, display_name, issn, publisher, webpage, created_date
+from zz20211108_mag_main_journals
+minus
+select journal_id, display_name, issn, publisher, webpage, created_date
+from zz20211025_mag_main_journals
+)
+
+create table diff.till_zz20211108_mag_advanced_entity_related_entities as (
+select * from zz20211108_mag_advanced_entity_related_entities
+minus
+select * from zz20211025_mag_advanced_entity_related_entities
+)
+
+create table diff.till_zz20211108_mag_advanced_field_of_study_children as (
+select * from zz20211108_mag_advanced_field_of_study_children
+minus
+select * from zz20211025_mag_advanced_field_of_study_children
+)
+
+create table diff.till_zz20211108_mag_advanced_field_of_study_extended_attributes as (
+select * from zz20211108_mag_advanced_field_of_study_extended_attributes
+minus
+select * from zz20211025_mag_advanced_field_of_study_extended_attributes
+)
+
+create table diff.till_zz20211108_mag_advanced_fields_of_study as (
+select field_of_study_id, display_name, main_type, level, create_date from zz20211108_mag_advanced_fields_of_study
+minus
+select field_of_study_id, display_name, main_type, level, create_date from zz20211025_mag_advanced_fields_of_study
+)
+
+create table diff.till_zz20211108_mag_advanced_paper_mesh as (
+select * from zz20211108_mag_advanced_paper_mesh
+minus
+select * from zz20211025_mag_advanced_paper_mesh
+)
+
+create table diff.till_zz20211108_mag_advanced_paper_mesh as (
+select paper_id, recommended_paper_id from zz20211108_mag_advanced_paper_recommendations
+minus
+select paper_id, recommended_paper_id from zz20211025_mag_advanced_paper_recommendations
+
+create table diff.till_zz20211108_mag_advanced_related_field_of_study as (
+select field_of_study_id1, type1, field_of_study_id2, type2 from zz20211108_mag_advanced_related_field_of_study
+minus
+select field_of_study_id1, type1, field_of_study_id2, type2 from zz20211025_mag_advanced_related_field_of_study
+)
+
+create table diff.till_zz20211108_mag_main_affiliations as (
+select affiliation_id, display_name, grid_id, official_page, wiki_page, iso3166_code, latitude, longitude, created_date from zz20211108_mag_main_affiliations
+minus
+select affiliation_id, display_name, grid_id, official_page, wiki_page, iso3166_code, latitude, longitude, created_date from zz20211025_mag_main_affiliations
+)
+
+create table diff.till_zz20211108_mag_main_author_extended_attributes as (
+select * from zz20211108_mag_main_author_extended_attributes
+minus
+select * from zz20211025_mag_main_author_extended_attributes
+)
+
+create table diff.till_zz20211108_mag_main_authors as (
+select author_id, display_name, last_known_affiliation_id, created_date from zz20211108_mag_main_authors
+minus
+select author_id, display_name, last_known_affiliation_id, created_date  from zz20211025_mag_main_authors
+)
+
+create table diff.till_zz20211108_mag_main_conference_instances as (
+select conference_instance_id, display_name, conference_series_id, location from zz20211108_mag_main_conference_instances
+minus
+select conference_instance_id, display_name, conference_series_id, location from zz20211025_mag_main_conference_instances
+)
+
+create table diff.till_zz20211108_mag_main_conference_series as (
+select conference_series_id, display_name from zz20211108_mag_main_conference_series
+minus
+select conference_series_id, display_name from zz20211025_mag_main_conference_series
+)
+
+create table diff.till_zz20211108_mag_main_paper_extended_attributes as (
+select * from zz20211108_mag_main_paper_extended_attributes
+minus
+select * from zz20211025_mag_main_paper_extended_attributes
+)
+
+create table diff.till_zz20211108_mag_main_paper_resources as (
+select * from zz20211108_mag_main_paper_resources
+minus
+select * from zz20211025_mag_main_paper_resources
+)
+
+create table diff.till_zz20211108_mag_main_papers as (
+select paper_id, doi, doc_type, paper_title, year, publication_date, publisher, journal_id, doc_sub_types from zz20211108_mag_main_papers
+minus
+select paper_id, doi, doc_type, paper_title, year, publication_date, publisher, journal_id, doc_sub_types from zz20211025_mag_main_papers
+)
+
+create table diff.till_zz20211108_mag_nlp_abstracts_inverted as (
+select paper_id from zz20211108_mag_nlp_abstracts_inverted
+minus
+select paper_id from zz20211025_mag_nlp_abstracts_inverted
+)
+
+
+
+
+## different, have bad formatting, look at them
+zz20211025_mag_main_journals, like 20, need matching to journalsdb when they have issns
+zz20211108_mag_main_affiliations like 10, need matching to rors when they have grids
+zz20211108_mag_main_authors like 1.6mil dont bother matching to orcid now
+zz20211025_mag_main_paper_urls merge with unpaywall, too many diffs, not sure how to handle this
+zz20211025_mag_main_papers about 1,618,704 (about 700k are new, about 50k new ones per day, about 400k of these are dois)
+
+
+# so many differences, no diff, just overwrite
+zz20211025_mag_advanced_paper_fields_of_study
+zz20211025_mag_advanced_paper_recommendations
+zz20211108_mag_advanced_related_field_of_study
+zz20211108_mag_main_paper_author_affiliations
+
+## some new ones, just add, or overwrite is ok
+zz20211108_mag_advanced_field_of_study_children
+zz20211108_mag_advanced_field_of_study_extended_attributes
+zz20211108_mag_advanced_fields_of_study
+zz20211025_mag_advanced_paper_fields_of_study
+zz20211108_mag_advanced_paper_mesh
+zz20211025_mag_main_author_extended_attributes
+zz20211108_mag_main_paper_extended_attributes
+zz20211108_mag_main_paper_references_id
+zz20211025_mag_main_paper_resources
+zz20211025_mag_nlp_abstracts_inverted
+zz20211025_mag_nlp_paper_citation_contexts
+
+## no changes:
+zz20211025_mag_advanced_entity_related_entities
+zz20211025_mag_main_conference_instances
+zz20211025_mag_main_conference_series

@@ -53,6 +53,8 @@ class Location(db.Model):
             "repository_institution": self.repository_institution,
             "oai_pmh_id": self.pmh_id
         }
+        return response
+
     def __repr__(self):
         return "<Location ( {} ) {}>".format(self.paper_id, self.source_url)
 
