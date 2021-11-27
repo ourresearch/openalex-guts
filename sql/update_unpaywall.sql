@@ -51,7 +51,7 @@ where t1.best_url is null
 
 create table mid.zz_bak_location as (select * from mid.location);
 
--- can't do it with an or, so do it twice for each url match
+-- can't do it with an or, so do it twice, once for each url match
 with location_with_paper_id as (select work.paper_id, u.* from ins.unpaywall_oa_location_raw u join mid.work work on u.doi=work.doi_lower)
 update mid.location set
     endpoint_id=u.endpoint_id,
@@ -93,7 +93,7 @@ where lower(replace(t1.source_url, 'https', 'http')) = lower(replace(u.url_for_p
 
 
 
--- first add anything not there already what we've got
+--  add anything not there already what we've got
 insert into mid.location (
     paper_id,
     source_type,
