@@ -20,7 +20,9 @@ DUMP_DIR = "2021-10-25"
 # DUMP_DIR = "qa-2021-10-25"
 
 ##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-25/mag  data_dump_v1/2021-10-25/advanced  data_dump_v1/2021-10-25/nlp --delete
-## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-25/mag  data_dump_v1/2021-10-25/advanced  data_dump_v1/2021-10-25/nlp --delete --threads=10
+## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-25/mag  data_dump_v1/2021-10-25/advanced  data_dump_v1/2021-10-25/nlp --delete --threads=20
+## takes about 15 minutes
+
 
 _num_threads = 1
 

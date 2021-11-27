@@ -2,6 +2,7 @@
 -- then run
 -- python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
 -- making the tables and comments currently takes about 20 minutes (1400 seconds)
+-- doing the unloads takes about 25 minutes (4000 seconds)
 
 set enable_case_sensitive_identifier=true;
 
