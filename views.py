@@ -125,10 +125,7 @@ class WorkRandom(Resource):
         my_timing.log_timing("after work_from_id()")
         if not my_obj:
             abort(404)
-        return_level = "full"
-        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
-            return_level = "elastic"
-        response["results"] = my_obj.to_dict(return_level)
+        response["results"] = my_obj.to_dict()
         my_timing.log_timing("after to_dict()")
         response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
@@ -144,14 +141,7 @@ class WorkId(Resource):
         my_timing = TimingMessages()
         response = {"_timing": None}
 
-        COMPUTE_RESULT = True
-        if COMPUTE_RESULT:
-            my_obj = models.work_from_id(work_id)
-            my_timing.log_timing("after work_from_id()")
-            if not my_obj:
-                abort(404)
-            response["results"] = my_obj.to_dict()
-        else:
+        if ("cached" in request.args):
             from sqlalchemy import text
             q = """select json_elastic 
                 from mid.work_json
@@ -162,6 +152,12 @@ class WorkId(Resource):
             paper_dict = json.loads(row["json_elastic"])
             paper_dict["citation_count"] = 42
             response["results"] = paper_dict
+        else:
+            my_obj = models.work_from_id(work_id)
+            my_timing.log_timing("after work_from_id()")
+            if not my_obj:
+                abort(404)
+            response["results"] = my_obj.to_dict()
 
         my_timing.log_timing("after to_dict()")
         response["_timing"] = my_timing.to_dict()
@@ -182,10 +178,7 @@ class WorkDoi(Resource):
         my_timing.log_timing("after work_from_doi()")
         if not my_obj:
             abort(404)
-        return_level = "full"
-        if ("return" in request.args) and (request.args.get("return", "full").lower() == "elastic"):
-            return_level = "elastic"
-        response["results"] = my_obj.to_dict(return_level)
+        response["results"] = my_obj.to_dict()
         my_timing.log_timing("after to_dict()")
         response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
