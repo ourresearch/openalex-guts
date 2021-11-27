@@ -92,7 +92,6 @@ as (
            score as "Score",                      --- Confidence range between 0 and 1. Bigger number representing higher confidence.
            1 as "AlgorithmVersion"                -- NEW; version of algorithm to assign fields. Possible values: 1=old MAG (FROZEN), 2=OpenAlex
     from mid.work_concept t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -112,7 +111,6 @@ as (
            qualifier_name as "QualifierName",    --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
            is_major_topic as "IsMajorTopic"     --- see https://en.wikipedia.org/wiki/Medical_Subject_Headings
     from mid.mesh t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -129,7 +127,6 @@ as (
            recommended_paper_id as "RecommendedPaperId",    --- FOREIGN KEY REFERENCES Papers.PaperId
            score as "Score"                    --- Confidence range between 0 and 1. Bigger number representing higher confidence.
     from legacy.mag_advanced_paper_recommendations t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -182,7 +179,6 @@ as (
     from mid.institution affil
         left outer join group_citations on group_citations.affiliation_id=affil.affiliation_id
         left outer join group_papers on group_papers.affiliation_id = affil.affiliation_id
-        join mid.without_patents_affiliation_ids_view without_patents on without_patents.affiliation_id=affil.affiliation_id
    )
 with no schema binding;
 
@@ -198,7 +194,6 @@ as (
            attribute_type as "AttributeType",       --- Possible values: 1=Alternative name
            attribute_value as "AttributeValue"
     from legacy.mag_main_author_extended_attributes t1
-    join mid.without_patents_author_ids_view without_patents on without_patents.author_id=t1.author_id
     )
 with no schema binding;
 
@@ -230,7 +225,6 @@ as (
         left outer join group_citations on group_citations.author_id=author.author_id
         left outer join group_papers on group_papers.author_id = author.author_id
         left outer join group_orcids on group_orcids.author_id = author.author_id
-        join mid.without_patents_author_ids_view without_patents on without_patents.author_id=author.author_id
    )
 with no schema binding;
 
@@ -345,9 +339,6 @@ as (
            original_author as "OriginalAuthor",
            original_affiliation as "OriginalAffiliation"
     from mid.affiliation t1
-    join mid.without_patents_paper_ids_view without_papers on without_papers.paper_id=t1.paper_id
-    join mid.without_patents_author_ids_view without_authors on without_authors.author_id=t1.author_id
-    join mid.without_patents_affiliation_ids_view without_affil on without_affil.affiliation_id=t1.affiliation_id
    )
 with no schema binding;
 
@@ -363,7 +354,6 @@ as (
            attribute_type as "AttributeType",       --- Possible values: 1=PatentId, 2=PubMedId, 3=PmcId, 4=Alternative Title
            attribute_value as "AttributeValue"
     from mid.work_extra_ids t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -380,8 +370,6 @@ as (
         t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
         paper_reference_id as "PaperReferenceId"      --- FOREIGN KEY REFERENCES Papers.PaperId
     from mid.citation t1
-    join mid.without_patents_paper_ids_view without_patents1 on without_patents1.paper_id=t1.paper_id
-    join mid.without_patents_paper_ids_view without_patents2 on without_patents2.paper_id=t1.paper_reference_id
    )
 with no schema binding;
 
@@ -405,7 +393,6 @@ as (
             repository_institution as "RepositoryInstitution", --- NEW; name of repository host of URL
             pmh_id as "OaiPmhId"    --- NEW; OAH-PMH id of the repository record
     from mid.location t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
    )
 with no schema binding;
 
@@ -421,7 +408,6 @@ as (
         t1.paper_id as "PaperId",       --- FOREIGN KEY REFERENCES Papers.PapersId
         indexed_abstract as "IndexedAbstract"    --- Inverted index, see https://en.wikipedia.org/wiki/Inverted_index
     from mid.abstract t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
  )
 with no schema binding;
 
@@ -438,7 +424,6 @@ as (
         paper_reference_id as "PaperReferenceId",     --- FOREIGN KEY REFERENCES Papers.PapersId
         citation_context as "CitationContext"
     from legacy.mag_nlp_paper_citation_contexts t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
  )
 with no schema binding;
 
@@ -458,7 +443,6 @@ as (
         source_url as "SourceUrl",     --- List of urls associated with the project, used to derive resource_url
         relationship_type as "RelationshipType"--- Bit flags: 1=Own, 2=Cite
  from legacy.mag_main_paper_resources t1
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=t1.paper_id
  )
 with no schema binding;
 
@@ -477,7 +461,7 @@ as (
         work.paper_id as "PaperId",       -- PRIMARY KEY
         rank as "Rank",           --- FROZEN; no new ranks are being added
         doi as "Doi",            --- Doi values are upper-cased per DOI standard at https://www.doi.org/doi_handbook/2_Numbering.html#2.4
-        doc_type as "DocType",       --- Possible values: Book, BookChapter, Conference, Dataset, Journal, Patent, Repository, Thesis, NULL : unknown. Patent is FROZEN; no new Patents are being added.
+        doc_type as "DocType",       --- Possible values: Book, BookChapter, Conference, Dataset, Journal, Repository, Thesis, NULL : unknown. Patent is FROZEN; no new Patents are being added.
         genre as "Genre",          --- NEW; Crossref ontology for work type such as journal-article, posted-content, dataset, or book-chapter
         is_paratext as "IsParatext",    --- NEW; indicates front-matter. See https://support.unpaywall.org/support/solutions/articles/44001894783
         paper_title as "PaperTitle",    --- UPDATED; slightly different normalization algorithm
@@ -511,6 +495,5 @@ as (
     from mid.work work
     left outer join reference_count on work.paper_id=reference_count.citing_paper_id
     left outer join citation_count on work.paper_id=citation_count.cited_paper_id
-    join mid.without_patents_paper_ids_view without_patents on without_patents.paper_id=work.paper_id
 )
 with no schema binding;

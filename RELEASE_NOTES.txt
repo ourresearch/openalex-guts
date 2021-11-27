@@ -1,7 +1,10 @@
 OPENALEX DATA DUMP RELEASE NOTES
 DATA DUMP V1
 
-RELEASE NOTES including data changes from previous version
+RELEASE 2021-10-25
+Released on November 26, 2021 at s3://openalex/data_dump_v1/2021-10-25/
+- based on MAG data release "2021-10-25" plus some data from Crossref, Unpaywall, PubMed, ROR as of Oct 31, 2021
+- data cleanup (remove tabs, double-quotes, null bytes from all fields)
 
 RELEASE 2021-10-11
 Released on November 19, 2021 at s3://openalex/data_dump_v1/2021-10-11/

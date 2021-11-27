@@ -4,16 +4,16 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = True
-GENERATE_COMMENTS = True
+GENERATE_CREATE_TABLE = False
+GENERATE_COMMENTS = False
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-DUMP_DIR = "2021-10-11"
-# DUMP_DIR = "qa-2021-10-11"
+DUMP_DIR = "2021-10-25"
+# DUMP_DIR = "qa-2021-10-25"
 
 ##  cd sql
-##  python sql_generate_export_tables.py  -i export_views.sql -o export_tables_generated.sql
+##  python -m sql.sql_generate_export_tables  -i export_views.sql -o export_tables_generated.sql
 
 lookup_export_filenames = {
     'outs.EntityRelatedEntities':       'advanced/EntityRelatedEntities',
