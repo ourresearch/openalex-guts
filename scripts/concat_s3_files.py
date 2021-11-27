@@ -16,11 +16,11 @@ from app import logger
 
 PART_SUFFIX = r'\d+_part_\d+$'
 SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
-DUMP_DIR = "2021-10-11"
-# DUMP_DIR = "qa-2021-10-11"
+DUMP_DIR = "2021-10-25"
+# DUMP_DIR = "qa-2021-10-25"
 
-##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete
-## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-11/mag  data_dump_v1/2021-10-11/advanced  data_dump_v1/2021-10-11/nlp --delete --threads=10
+##  python -m scripts.concat_s3_files  data_dump_v1/2021-10-25/mag  data_dump_v1/2021-10-25/advanced  data_dump_v1/2021-10-25/nlp --delete
+## heroku run --size=performance-l python -m scripts.concat_s3_files openalex data_dump_v1/2021-10-25/mag  data_dump_v1/2021-10-25/advanced  data_dump_v1/2021-10-25/nlp --delete --threads=10
 
 _num_threads = 1
 
