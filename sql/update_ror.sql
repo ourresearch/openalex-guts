@@ -32,6 +32,6 @@ update mid.institution set
        longitude=ror.longitude,
        updated_date=sysdate
 from mid.institution t1
-join ins.ror_summary_view ror on t1.ror_id=ror.ror_id
+join ins.ror_summary ror on t1.ror_id=ror.ror_id
 
 

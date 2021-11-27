@@ -152,6 +152,23 @@ zz20211108_mag_main_authors like 1.6mil dont bother matching to orcid now
 zz20211025_mag_main_paper_urls merge with unpaywall, too many diffs, not sure how to handle this
 zz20211025_mag_main_papers about 1,618,704 (about 700k are new, about 50k new ones per day, about 400k of these are dois)
 
+# needs tlc
+institution
+institution_ror
+journal
+author
+author_orcid
+location
+work
+
+## just copy over
+affiliation
+abstract
+citation
+concept
+mesh
+work_concept
+work_extra_ids
 
 # so many differences, no diff, just overwrite
 zz20211025_mag_advanced_paper_fields_of_study
@@ -171,6 +188,7 @@ zz20211108_mag_main_paper_references_id
 zz20211025_mag_main_paper_resources
 zz20211025_mag_nlp_abstracts_inverted
 zz20211025_mag_nlp_paper_citation_contexts
+
 
 ## no changes:
 zz20211025_mag_advanced_entity_related_entities

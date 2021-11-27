@@ -7,7 +7,6 @@ class Ror(db.Model):
     __tablename__ = "ror_summary"
 
     ror_id = db.Column(db.Text, db.ForeignKey("mid.institution.ror_id"), primary_key=True)
-    grid_id = db.Column(db.Text)
     name = db.Column(db.Text)
     city = db.Column(db.Text)
     country = db.Column(db.Text)
