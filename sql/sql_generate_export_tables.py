@@ -9,11 +9,10 @@ GENERATE_COMMENTS = False
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-DUMP_DIR = "2021-10-25"
-# DUMP_DIR = "qa-2021-10-25"
+DUMP_DIR = "2021-11-08"
 
-##  cd sql
-##  python -m sql.sql_generate_export_tables  -i export_views.sql -o export_tables_generated.sql
+
+##  python -m sql.sql_generate_export_tables  -i sql/export_views.sql -o sql/export_tables_generated.sql
 
 lookup_export_filenames = {
     'outs.EntityRelatedEntities':       'advanced/EntityRelatedEntities',
