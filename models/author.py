@@ -75,10 +75,10 @@ class Author(db.Model):
                 "last_known_institution_id": self.last_known_institution_id,
                 "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
                 # "all_institutions": self.all_institutions if self.all_institutions else [], NO_CITATIONS_FOR_NOW
-                # # "paper_count": len(self.papers), NO_CITATIONS_FOR_NOW
-                # "citation_count": len(self.citations),  NO_CITATIONS_FOR_NOW
-                # "papers": self.papers,
-                # "citations": self.citations,
+                "paper_count": len(self.papers), # NO_CITATIONS_FOR_NOW
+                "citation_count": len(self.citations),  #NO_CITATIONS_FOR_NOW
+                "papers": self.papers, #NO_CITATIONS_FOR_NOW
+                "citations": self.citations, #NO_CITATIONS_FOR_NOW
                 "created_date": self.created_date,
                 "updated_date": self.updated_date
         }
