@@ -38,16 +38,16 @@ class Affiliation(db.Model):
                 }
             }
             if self.author:
-                response["author"].update(self.author.to_dict(return_level))
+                response["author"].update(self.author.to_dict(return_level="minimum"))
             if self.institution:
-                response["institution"].update(self.institution.to_dict(return_level))
+                response["institution"].update(self.institution.to_dict(return_level="minimum"))
             return response
 
         else:
             response = {"author_sequence_number": self.author_sequence_number}
             response.update(self.author.to_dict(return_level))
             if self.institution:
-                response.update(self.institution.to_dict(return_level))
+                response.update(self.institution.to_dict(return_level="minimum"))
             return response
 
     def __repr__(self):

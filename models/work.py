@@ -159,7 +159,7 @@ class Work(db.Model):
             "genre": self.genre,
             "created_date": self.created_date,
             "journal_id": self.journal_id,
-            "affiliations": [affiliation.to_dict(return_level) for affiliation in self.affiliations_sorted],
+            "affiliations": [affiliation.to_dict(return_level="minimum") for affiliation in self.affiliations_sorted],
             "concepts": [concept.to_dict(return_level) for concept in self.concepts_sorted],
             "locations": [location.to_dict(return_level) for location in self.locations_sorted],
             "mesh": [mesh.to_dict(return_level) for mesh in self.mesh],
