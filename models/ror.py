@@ -11,6 +11,7 @@ class Ror(db.Model):
     city = db.Column(db.Text)
     country = db.Column(db.Text)
     country_code = db.Column(db.Text)
+    grid_id = db.Column(db.Text)
 
 
     @property

@@ -209,6 +209,7 @@ def do_directory_cleanups(bucket_name):
         pass
 
     # do the listing
+    print(f"Creating the LISTING.txt file at data_dump_v1/{DUMP_DIR}/LISTING.txt")
     my_string = ""
     for object_summary in my_bucket.objects.filter(Prefix=f"data_dump_v1/{DUMP_DIR}/"):
         filename = object_summary.key
@@ -218,6 +219,7 @@ def do_directory_cleanups(bucket_name):
     s3.Object(bucket_name, f"data_dump_v1/{DUMP_DIR}/LISTING.txt").put(Body=my_string.encode("utf-8"))
 
     # set content types
+    print(f"Setting the content types for data_dump_v1/{DUMP_DIR}/README.txt file and data_dump_v1/{DUMP_DIR}/LISTING.txt")
     object = s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt')
     object.copy_from(CopySource={'Bucket': bucket_name,
                                  'Key': f'data_dump_v1/{DUMP_DIR}/README.txt'},
