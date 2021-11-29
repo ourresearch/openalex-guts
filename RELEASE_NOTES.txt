@@ -4,11 +4,12 @@ DATA DUMP V1
 RELEASE 2021-11-08
 Released on November 28, 2021 at s3://openalex/data_dump_v1/2021-11-08/
 - based on MAG data release "2021-11-08" plus some data from Crossref, Unpaywall, PubMed, ROR as of Oct 31, 2021
+- data cleanup (removed newlines from urls in PaperUrls)
 
 RELEASE 2021-10-25
 Released on November 27, 2021 at s3://openalex/data_dump_v1/2021-10-25/
 - based on MAG data release "2021-10-25" plus some data from Crossref, Unpaywall, PubMed, ROR as of Oct 31, 2021
-- data cleanup (remove tabs, double-quotes, null bytes from all fields)
+- data cleanup (removed tabs, double-quotes, null bytes from all fields in many tables)
 - the previous release omitted rows in "PaperAuthorAffiliations" with NULL AffiliationIds.
     These rows are now included, approximately doubling the number of rows and the size of the PaperAuthorAffiliations table.
 

@@ -410,6 +410,8 @@ if True:
 # update mid.location set source_url=regexp_replace(source_url, '\tpt', ''), language_code='pt' where source_url ~ '\tpt';
 # update mid.location set source_url=regexp_replace(source_url, '\tfi', ''), language_code='fi' where source_url ~ '\tfi';
 # update mid.location set source_url=regexp_replace(source_url, '\t', '') where source_url ~ '\t';
+# update mid.location set url_for_landing_page=regexp_replace(url_for_landing_page, '\n', '') where url_for_landing_page ~ '\n';
+# update mid.location set source_url=regexp_replace(source_url, '\n', '') where source_url ~ '\n';
 # update mid.work set original_title=regexp_replace(original_title, '\\\\/', '/') where original_title ~ '\\\\/';
 #
 #
