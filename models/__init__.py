@@ -56,7 +56,7 @@ def authors_from_orcid(orcid):
     return authors
 
 def concept_from_id(concept_id):
-    return Concept.query.filter(Concept.concept_id==concept_id).first()
+    return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
 
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
