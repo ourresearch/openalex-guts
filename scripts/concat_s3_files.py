@@ -205,7 +205,7 @@ def do_directory_cleanups(bucket_name):
             CopySource=f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
         s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt000').delete()
     except Exception as e:
-        print(e)
+        print("Tried to rename README.txt000 file, but there wasn't one")
         pass
 
     # do the listing
