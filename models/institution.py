@@ -21,6 +21,8 @@ class Institution(db.Model):
     created_date = db.Column(db.DateTime)
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
     # latitude real,
     # longitude real,
 
@@ -53,6 +55,8 @@ class Institution(db.Model):
             "country_code": self.country_code,
             "official_page": self.official_page,
             "wiki_page": self.wiki_page,
+            "paper_count": None,
+            "citation_count": None,
             "created_date": self.created_date
         }
         return response
@@ -74,6 +78,8 @@ class Institution(db.Model):
             "country_code": self.country_code,
             "official_page": self.official_page,
             "wiki_page": self.wiki_page,
+            "paper_count": self.paper_count,
+            "citation_count": self.citation_count,
             "created_date": self.created_date
         })
         return response

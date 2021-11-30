@@ -15,6 +15,8 @@ class Author(db.Model):
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
     last_known_affiliation_id = db.Column(db.Numeric, db.ForeignKey("mid.institution.affiliation_id"))
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
 
@@ -74,14 +76,14 @@ class Author(db.Model):
                 "orcid_url": self.orcid_url,
                 "last_known_institution_id": self.last_known_institution_id,
                 "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
+                "paper_count": self.paper_count,
+                "citation_count": self.citation_count,
                 "created_date": self.created_date,
                 "updated_date": self.updated_date
         }
         if return_level != "minimum":
             response.update({
                 # "all_institutions": self.all_institutions if self.all_institutions else [], NO_CITATIONS_FOR_NOW
-                "paper_count": len(self.papers), # NO_CITATIONS_FOR_NOW
-                "citation_count": len(self.citations),  #NO_CITATIONS_FOR_NOW
                 "papers": self.papers, #NO_CITATIONS_FOR_NOW
                 "citations": self.citations, #NO_CITATIONS_FOR_NOW
             })
