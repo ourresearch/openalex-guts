@@ -117,7 +117,6 @@ class Yaml(Resource):
 class WorkRandom(Resource):
     def get(self):
         my_timing = TimingMessages()
-        response = {"_timing": None}
         work_id = db.session.query(models.Work.paper_id).filter(or_(models.Work.doc_type == None, models.Work.doc_type != 'Patent')).order_by(func.random()).first()
         work_id = work_id[0]
         my_timing.log_timing("after random()")
@@ -125,9 +124,9 @@ class WorkRandom(Resource):
         my_timing.log_timing("after work_from_id()")
         if not my_obj:
             abort(404)
-        response["results"] = my_obj.to_dict()
+        response = my_obj.to_dict()
         my_timing.log_timing("after to_dict()")
-        response["_timing"] = my_timing.to_dict()
+        # response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
 
 
@@ -139,7 +138,6 @@ class WorkRandom(Resource):
 class WorkId(Resource):
     def get(self, work_id):
         my_timing = TimingMessages()
-        response = {"_timing": None}
 
         if ("cached" in request.args):
             from sqlalchemy import text
@@ -151,16 +149,16 @@ class WorkId(Resource):
                 abort(404)
             paper_dict = json.loads(row["json_elastic"])
             paper_dict["citation_count"] = 42
-            response["results"] = paper_dict
+            response = paper_dict
         else:
             my_obj = models.work_from_id(work_id)
             my_timing.log_timing("after work_from_id()")
             if not my_obj:
                 abort(404)
-            response["results"] = my_obj.to_dict()
+            response = my_obj.to_dict()
 
         my_timing.log_timing("after to_dict()")
-        response["_timing"] = my_timing.to_dict()
+        # response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
 
 @doc.work_api_endpoint.route("/doi/<path:doi>")
@@ -173,14 +171,14 @@ class WorkDoi(Resource):
         from util import normalize_doi
         clean_doi = normalize_doi(doi)
         my_timing = TimingMessages()
-        response = {"_timing": None}
+        # response = {"_timing": None}
         my_obj = models.work_from_doi(clean_doi)
         my_timing.log_timing("after work_from_doi()")
         if not my_obj:
             abort(404)
-        response["results"] = my_obj.to_dict()
+        response = my_obj.to_dict()
         my_timing.log_timing("after to_dict()")
-        response["_timing"] = my_timing.to_dict()
+        # response["_timing"] = my_timing.to_dict()
         return jsonify_fast_no_sort(response)
 
 @doc.work_api_endpoint.route("/pmid/<string:pmid>")
