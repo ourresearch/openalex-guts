@@ -500,3 +500,28 @@ if True:
 #
 #
 #
+# refresh mid.citation_papers_mv;
+# update mid.work set reference_count=v.reference_count, citation_count=v.citation_count, estimated_citation=v.estimated_citation
+# from mid.work t1
+# join mid.citation_papers_mv v on t1.paper_id=v.paper_id;
+#
+# refresh mid.citation_authors_mv;
+# update mid.author set paper_count=v.paper_count, citation_count=v.citation_count
+# from mid.author t1
+# join mid.citation_authors_mv v on t1.author_id=v.author_id;
+#
+# refresh mid.citation_journals_mv;
+# update mid.journal set paper_count=v.paper_count, citation_count=v.citation_count
+# from mid.journal t1
+# join mid.citation_journals_mv v on t1.journal_id=v.journal_id;
+#
+# refresh mid.citation_institutions_mv;
+# update mid.institution set paper_count=v.paper_count, citation_count=v.citation_count
+# from mid.institution t1
+# join mid.citation_institutions_mv v on t1.affiliation_id=v.affiliation_id;
+#
+# refresh mid.citation_concepts_mv;
+# update mid.concept set paper_count=v.paper_count, citation_count=v.citation_count
+# from mid.concept t1
+# join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id;
+

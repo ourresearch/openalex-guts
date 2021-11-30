@@ -34,6 +34,9 @@ class Work(db.Model):
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
+    reference_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+    estimated_citation = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
@@ -149,7 +152,8 @@ class Work(db.Model):
             "issue": self.issue,
             "first_page": self.first_page,
             "last_page": self.last_page,
-            "citation_count": len(self.citations),
+            "reference_count": self.reference_count,
+            "citation_count": self.citation_count,
             "doc_sub_types": self.doc_sub_types,
             "oa_status": self.oa_status,
             "best_free_version": self.best_free_version,

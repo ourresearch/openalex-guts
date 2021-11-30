@@ -59,9 +59,6 @@ create or replace view outs."FieldsOfStudy_view" --- Base table for Fields of St
 --- DISTKEY ("FieldOfStudyId")
 --- SORTKEY ("FieldOfStudyId")
 as (
-    with
-        group_citations as (select field_of_study as field_of_study_id, count(*) as n from mid.citation cite join mid.work_concept work on work.paper_id = cite.paper_reference_id group by field_of_study),
-        group_papers as (select field_of_study as field_of_study_id, count(distinct paper_id) as n from mid.work_concept group by field_of_study)
     select
         concept.field_of_study_id as "FieldOfStudyId",      --- PRIMARY KEY
            rank as "Rank",                           --- FROZEN; no new ranks are being added.
@@ -69,13 +66,11 @@ as (
            display_name as "DisplayName",
            main_type as "MainType",
            level as "Level",                          --- Possible values: 0-5
-           group_papers.n as "PaperCount",
-           group_papers.n as "PaperFamilyCount",      --- FROZEN; same value as PaperCount.
+           paper_count as "PaperCount",
+           paper_count as "PaperFamilyCount",      --- FROZEN; same value as PaperCount.
            coalesce(group_citations.n, 0) as "CitationCount",
            created_date as "CreatedDate"
     from mid.concept concept
- left outer join group_citations on group_citations.field_of_study_id = concept.field_of_study_id
- left outer join group_papers on group_papers.field_of_study_id = concept.field_of_study_id
    )
 with no schema binding;
 
@@ -157,9 +152,6 @@ create or replace view outs."Affiliations_view" --- Base table for affiliations/
 --- DISTKEY ("AffiliationId")
 --- SORTKEY ("AffiliationId")
 as (
-        with
-            group_citations as (select affiliation_id, count(*) as n from mid.citation cite join mid.affiliation affil on affil.paper_id = cite.paper_reference_id group by affiliation_id),
-            group_papers as (select affiliation_id, count(distinct paper_id) as n from mid.affiliation group by affiliation_id)
     select
        affil.affiliation_id as "AffiliationId",    --- PRIMARY KEY
        rank as "Rank",                        --- FROZEN; no new ranks are being added.
@@ -169,17 +161,15 @@ as (
        ror_id as "RorId",                      --- NEW; ROR for this organization, see https://ror.org, https://ror.org/:RorId
        official_page as "OfficialPage",
        wiki_page as "WikiPage",
-       coalesce(group_papers.n, 0) as "PaperCount",
-       coalesce(group_papers.n, 0) as "PaperFamilyCount",  --- FROZEN; same value as PaperCount.
-       coalesce(group_citations.n, 0) as "CitationCount",
+       paper_count as "PaperCount",
+       paper_count as "PaperFamilyCount",  --- FROZEN; same value as PaperCount.
+       citation_count as "CitationCount",
        iso3166_code as "Iso3166Code",              --- Two-letter country codes, see https://en.wikipedia.org/wiki/ISO_3166-2
        latitude as "Latitude",
        longitude as "Longitude",
        created_date as "CreatedDate",
        updated_date as "UpdatedDate"              --- NEW; set values updated from new ror data
     from mid.institution affil
-        left outer join group_citations on group_citations.affiliation_id=affil.affiliation_id
-        left outer join group_papers on group_papers.affiliation_id = affil.affiliation_id
    )
 with no schema binding;
 
@@ -207,8 +197,6 @@ create or replace view outs."Authors_view" --- Base table for authors (mag/Autho
 --- SORTKEY ("AuthorId")
 as (
         with
-            group_citations as (select author_id, count(*) as n from mid.citation cite join mid.affiliation affil on affil.paper_id = cite.paper_reference_id group by author_id),
-            group_papers as (select author_id, count(distinct paper_id) as n from mid.affiliation group by author_id),
             group_orcids as (select author_id, max(orcid) as orcid from mid.author_orcid group by author_id)
     select
         author.author_id as "AuthorId",        --- PRIMARY KEY
@@ -217,14 +205,12 @@ as (
        display_name as "DisplayName",
        group_orcids.orcid as "Orcid",                        --- NEW; ORCID identifier for this author (see https://orcid.org)
        last_known_affiliation_id as "LastKnownAffiliationId",
-       coalesce(group_papers.n, 0) as "PaperCount",
-       coalesce(group_papers.n, 0) as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
-       coalesce(group_citations.n, 0) as "CitationCount",
+       paper_count as "PaperCount",
+       paper_count as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
+       citationcount as "CitationCount",
        created_date as "CreatedDate",
        updated_date as "UpdatedDate"              --- NEW; set when changes are made going forward
     from mid.author author
-        left outer join group_citations on group_citations.author_id=author.author_id
-        left outer join group_papers on group_papers.author_id = author.author_id
         left outer join group_orcids on group_orcids.author_id = author.author_id
    )
 with no schema binding;
@@ -237,9 +223,6 @@ create or replace view outs."ConferenceInstances_view" --- FROZEN; Base table fo
 --- DISTKEY ("ConferenceInstanceId")
 --- SORTKEY ("ConferenceInstanceId")
 as (
-        with
-            group_citations as (select conference_instance_id, count(*) as n from mid.work group by conference_instance_id),
-            group_papers as (select conference_instance_id, count(*) as n from mid.work group by conference_instance_id)
     select
         inst.conference_instance_id as "ConferenceInstanceId", --- PRIMARY KEY
            normalized_name as "NormalizedName",                 --- UPDATED; slightly different normalization algorithm
@@ -253,15 +236,13 @@ as (
            submission_deadline_date as "SubmissionDeadlineDate",
            notification_due_date as "NotificationDueDate",
            final_version_due_date as "FinalVersionDueDate",
-           coalesce(group_papers.n, 0) as "PaperCount",
-           coalesce(group_papers.n, 0) as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
-           coalesce(group_citations.n, 0) as "CitationCount",
+           paper_count as "PaperCount",
+           paper_count as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
+           citation_count as "CitationCount",
            latitude as "Latitude",
            longitude as "Longitude",
            created_date as "CreatedDate"
     from legacy.mag_main_conference_instances inst
-        left outer join group_citations on group_citations.conference_instance_id=inst.conference_instance_id
-        left outer join group_papers on group_papers.conference_instance_id = inst.conference_instance_id
    )
 with no schema binding;
 
@@ -273,21 +254,16 @@ create or replace view outs."ConferenceSeries_view" --- FROZEN; Base table for C
 --- DISTKEY ("ConferenceSeriesId")
 --- SORTKEY ("ConferenceSeriesId")
 as (
-        with
-            group_citations as (select conference_series_id, count(*) as n from mid.work group by conference_series_id),
-            group_papers as (select conference_series_id, count(*) as n from mid.work group by conference_series_id)
     select
         series.conference_series_id as "ConferenceSeriesId",     --- PRIMARY KEY
            rank as "Rank",                            --- FROZEN; no new ranks are being added
            normalized_name as "NormalizedName",                 --- UPDATED; slightly different normalization algorithm
            display_name as "DisplayName",
-           coalesce(group_papers.n, 0) as "PaperCount",
-           coalesce(group_papers.n, 0) as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
-           coalesce(group_citations.n, 0) as "CitationCount",
+           paper_count as "PaperCount",
+           paper_count as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
+           citation_count as "CitationCount",
            created_date as "CreatedDate"
     from legacy.mag_main_conference_series series
-        left outer join group_citations on group_citations.conference_series_id=series.conference_series_id
-        left outer join group_papers on group_papers.conference_series_id = series.conference_series_id
    )
 with no schema binding;
 
@@ -299,9 +275,6 @@ create or replace view outs."Journals_view" --- Base table for Journals (mag/Jou
 --- DISTKEY ("JournalId")
 --- SORTKEY ("JournalId")
 as (
-        with
-            group_citations as (select journal_id, count(*) as n from mid.citation cite join mid.work work on work.paper_id = cite.paper_reference_id group by journal_id),
-            group_papers as (select journal_id, count(distinct paper_id) as n from mid.work group by journal_id)
     select
         mid.journal.journal_id as "JournalId",     --- PRIMARY KEY
        rank as "Rank",                    --- FROZEN; no new ranks are being added
@@ -313,14 +286,12 @@ as (
        is_in_doaj as "IsInDoaj",              --- NEW; TRUE when the journal is in DOAJ (see https://doaj.org/)
        publisher as "Publisher",
        webpage as "Webpage",
-       coalesce(group_papers.n, 0) as "PaperCount",
-       coalesce(group_papers.n, 0) as "PaperFamilyCount", --- FROZEN; same value as PaperCount
-       coalesce(group_citations.n, 0) as "CitationCount",
+       paper_count as "PaperCount",
+       paper_count as "PaperFamilyCount", --- FROZEN; same value as PaperCount
+       citation_count as "CitationCount",
        created_date as "CreatedDate",
        updated_date as "UpdatedDate"              --- NEW; set when changes are made going forward
     from mid.journal
-        left outer join group_citations on group_citations.journal_id=mid.journal.journal_id
-        left outer join group_papers on group_papers.journal_id = mid.journal.journal_id
    )
 with no schema binding;
 
@@ -455,9 +426,6 @@ create or replace view outs."Papers_view" --- Main data for papers (mag/Papers.t
 --- DISTKEY ("PaperId")
 --- SORTKEY ("PaperId")
 as (
-    with
-        reference_count as (select paper_id as citing_paper_id, count(*) as n from mid.citation group by paper_id),
-        citation_count as (select paper_reference_id as cited_paper_id, count(*) as n from mid.citation group by paper_reference_id)
     select
         work.paper_id as "PaperId",       -- PRIMARY KEY
         rank as "Rank",           --- FROZEN; no new ranks are being added
@@ -479,9 +447,9 @@ as (
         issue as "Issue",
         first_page as "FirstPage",
         last_page as "LastPage",
-        coalesce(reference_count.n, 0) as "ReferenceCount",
-        coalesce(citation_count.n, 0) as "CitationCount",
-        util.f_estimated_citation(citation_count.n, publication_date, publisher) as "EstimatedCitation", --- UPDATED; new algorithm
+        reference_count as "ReferenceCount",
+        citation_count as "CitationCount",
+        estimated_citation as "EstimatedCitation", --- UPDATED; new algorithm
         original_venue as "OriginalVenue",
         family_id as "FamilyId",          --- FROZEN; no longer updated.
         family_rank as "FamilyRank",        --- FROZEN; no longer updated.
@@ -494,7 +462,5 @@ as (
         created_date as "CreatedDate",
         updated_date as "UpdatedDate"       --- NEW; set when changes are made going forward
     from mid.work work
-    left outer join reference_count on work.paper_id=reference_count.citing_paper_id
-    left outer join citation_count on work.paper_id=citation_count.cited_paper_id
 )
 with no schema binding;

@@ -16,6 +16,8 @@ class Concept(db.Model):
     display_name = db.Column(db.Text)
     main_type = db.Column(db.Text)
     level = db.Column(db.Numeric)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
 
     @cached_property
@@ -55,24 +57,7 @@ class Concept(db.Model):
         parents = sorted(parents, key=lambda x: (x["level"], x["display_name"]), reverse=True)
         return parents
 
-    @cached_property
-    def paper_count(self):
-        q = """select count(distinct paper_id) 
-            from mid.work_concept work_concept
-            where field_of_study = :concept_id;"""
-        row = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).first()
-        paper_count = row[0]
-        return paper_count
 
-    @cached_property
-    def citation_count(self):
-        q = """select count(distinct citation.paper_id) 
-            from mid.citation citation
-            join mid.work_concept work_concept on work_concept.paper_id=citation.paper_reference_id             
-            where field_of_study = :concept_id;"""
-        row = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).first()
-        citation_count = row[0]
-        return citation_count
 
     def to_dict(self, return_level="full"):
         response = {
@@ -80,9 +65,9 @@ class Concept(db.Model):
             "display_name": self.display_name,
             "main_type": self.main_type,
             "level": self.level,
-            "paper_count": self.paper_count,   # NO_CITATIONS_FOR_NOW
-            "citation_count": self.citation_count,   # NO_CITATIONS_FOR_NOW
-            "parent_concepts": self.parents, # NO_CITATIONS_FOR_NOW
+            "paper_count": self.paper_count,
+            "citation_count": self.citation_count,
+            "parent_concepts": self.parents,
             "created_date": self.created_date,
         }
         return response
