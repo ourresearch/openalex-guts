@@ -70,7 +70,7 @@ class Concept(db.Model):
         return extended_attributes
 
     @cached_property
-    def wikipedia_url(self):
+    def wikipedia_data_url(self):
         for attr_dict in self.extended_attributes:
             if attr_dict["attribute_type"] == 2:
                 wiki_url = attr_dict["attribute_value"]
@@ -131,7 +131,7 @@ class Concept(db.Model):
             "level": self.level,
             "paper_count": self.paper_count,
             "citation_count": self.citation_count,
-            "wikipedia_data_url": self.wikipedia_url,
+            "wikipedia_data_url": self.wikipedia_data_url,
             "ancestors": self.ancestors,
             "extended_attributes": self.extended_attributes,
             "related_fields1": self.related_fields1,

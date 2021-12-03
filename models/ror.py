@@ -9,6 +9,7 @@ class Ror(db.Model):
     ror_id = db.Column(db.Text, db.ForeignKey("mid.institution.ror_id"), primary_key=True)
     name = db.Column(db.Text)
     city = db.Column(db.Text)
+    state = db.Column(db.Text)
     country = db.Column(db.Text)
     country_code = db.Column(db.Text)
     grid_id = db.Column(db.Text)
@@ -22,8 +23,8 @@ class Ror(db.Model):
         response = {}
         if hasattr(self, "institution_id"):
             response.update({"institution_id": None,
-                             "official_page": None,
-                             "wiki_page": None,
+                             "official_url": None,
+                             "wikipedia_url": None,
                              "created_date": None
                              })
         response.update({
@@ -32,6 +33,7 @@ class Ror(db.Model):
             "display_name": self.name,
             "grid_id": self.grid_id,
             "city": self.city,
+            "state": self.state,
             "country_code": self.country_code,
             "country": self.country,
         })
