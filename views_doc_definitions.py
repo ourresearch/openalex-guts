@@ -89,7 +89,7 @@ class IssnModel(fields.String, fields.Raw):
 class ConceptIdModel(fields.Integer, fields.Raw):
     __schema_type__ = "long"
     __schema_format__ = "institution_id"
-    __schema_example__ = 6002401
+    __schema_example__ = 2778407487
 
 class IndexWordCount(fields.Integer, fields.Raw):
     __schema_type__ = "int"
@@ -106,8 +106,8 @@ AbstractIndexModel = app_api.model('AbstractInvertedIndex', {
     "*": AbstractWordCount
 })
 
-ParentConceptModel = app_api.model('ParentConcept', {
-    'field_of_study_id': ConceptIdModel,
+AncestorConceptModel = app_api.model('AncestorConcept', {
+    'id': ConceptIdModel,
     'display_name': fields.String,
     'level': ConceptLevel
 })
@@ -133,7 +133,6 @@ VersionModel = fields.String(description='Version of the paper',
 
 
 LocationModel = app_api.model('Location', {
-    'paper_id': PaperIdModel,
     'source_url': fields.Url,
     'source_type': fields.Integer,
     'source_description': SourceDescriptionModel,
@@ -148,7 +147,6 @@ LocationModel = app_api.model('Location', {
 })
 
 MeshModel = app_api.model('Mesh', {
-    'paper_id': PaperIdModel,
     'descriptor_ui': fields.String,
     'descriptor_name': fields.String,
     'qualifier_ui': fields.String,
@@ -156,7 +154,7 @@ MeshModel = app_api.model('Mesh', {
 })
 
 InstitutionModel = app_api.model('Institution', {
-    'institution_id': InstitutionIdModel,
+    'id': InstitutionIdModel,
     'display_name': InstitutionDisplayNameModel,
     'ror_id': RorIdModel,
     'ror_url': RorUrlModel,
@@ -170,12 +168,12 @@ InstitutionModel = app_api.model('Institution', {
 })
 
 InstitutionSmallModel = app_api.model('InstitutionSmall', {
-    'institution_id': InstitutionIdModel,
+    'id': InstitutionIdModel,
     'original_affiliation': fields.String,
 })
 
 AuthorModel = app_api.model('Author', {
-    'author_id': AuthorIdModel,
+    'id': AuthorIdModel,
     'display_name': AuthorDisplayNameModel(description="full name of the author"),
     'orcid': OrcidModel,
     'orcid_url': OrcidUrlModel(),
@@ -197,19 +195,19 @@ AffiliationModel = app_api.model('Affiliation', {
 })
 
 ConceptModel = app_api.model('Concept', {
-    'field_of_study_id': ConceptIdModel(description='unique concept ID'),
+    'id': ConceptIdModel(description='unique concept ID'),
     'display_name': fields.String(description="full name of the journal"),
     'main_type': fields.String,
     'level': ConceptLevel,
     "paper_count": fields.Integer(description="number of papers associated with this concept"),
     "citation_count": fields.Integer(description="number of times papers with this tag have been cited"),
-    "parent_concepts": fields.List(fields.Nested(ParentConceptModel)),
+    "ancestors": fields.List(fields.Nested(AncestorConceptModel)),
     "created_date": fields.Date(),
 })
 
 
 JournalModel = app_api.model('Journal', {
-    'journal_id': JournalIdModel(),
+    'id': JournalIdModel(),
     'display_name': fields.String(description="full name of the journal"),
     'issn_l': IssnModel(description="linking ISSN for this journal"),
     'issns': fields.List(IssnModel, description="all ISSNs for this journal, print and electronic"),
@@ -224,19 +222,17 @@ JournalModel = app_api.model('Journal', {
 
 
 WorkModel = app_api.model('Work', {
-    'paper_id': PaperIdModel,
+    'id': PaperIdModel,
     'paper_title': fields.String(description="title of the paper"),
     'year': fields.Integer(description="year of publication"),
     'publication_date': fields.Date(description="date of publication"),
     'doc_type': fields.String(description="doc_type"),
     'genre': fields.String(description="genre"),
-    'journal_id': JournalIdModel,
     'volume': fields.String(),
     'issue': fields.String(),
     'first_page': fields.String(),
     'last_page': fields.String(),
     'journal': fields.Nested(JournalModel),
-    'journal_is_oa': fields.Boolean(),
     'oa_status': OaStatusModel,
     'best_version': VersionModel,
     'best_license': fields.String(),

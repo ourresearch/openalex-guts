@@ -141,13 +141,13 @@ class Work(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "paper_id": self.work_id,
+            "id": self.work_id,
             "paper_title": self.work_title,
             "year": self.year,
             "publication_date": self.publication_date,
             "doc_type": self.doc_type,
             "genre": None,
-            "ids": {},
+            "external_ids": {},
             "volume": self.volume,
             "issue": self.issue,
             "first_page": self.first_page,
@@ -162,7 +162,6 @@ class Work(db.Model):
             "is_paratext": self.is_paratext,
             "genre": self.genre,
             "created_date": self.created_date,
-            "journal_id": self.journal_id,
             "affiliations": [affiliation.to_dict(return_level="minimum") for affiliation in self.affiliations_sorted],
             "concepts": [concept.to_dict(return_level) for concept in self.concepts_sorted],
             "locations": [location.to_dict(return_level) for location in self.locations_sorted],
@@ -171,12 +170,12 @@ class Work(db.Model):
             "abstract": self.abstract.to_dict(return_level) if self.abstract else None
         }
         if self.doi:
-            response["ids"]["doi"] = self.doi_lower
-            response["ids"]["doi_url"] = self.doi_url
+            response["external_ids"]["doi"] = self.doi_lower
+            response["external_ids"]["doi_url"] = self.doi_url
         if self.extra_ids:
             for extra_id in self.extra_ids:
-                response["ids"][extra_id.id_type] = extra_id.attribute_value
-                response["ids"][extra_id.id_type + "_url"] = extra_id.url
+                response["external_ids"][extra_id.id_type] = extra_id.attribute_value
+                response["external_ids"][extra_id.id_type + "_url"] = extra_id.url
         if self.journal:
             response["journal"] = self.journal.to_dict(return_level)
 
