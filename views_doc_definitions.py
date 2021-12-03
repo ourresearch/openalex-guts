@@ -162,8 +162,8 @@ InstitutionModel = app_api.model('Institution', {
     "city": fields.String(description='city of institution'),
     "country_code": fields.String(description='2-character country code'),
     "country": fields.String(description='name of country'),
-    "official_page": fields.Url(description='url of institution'),
-    "wiki_page": fields.Url(description='url of Wikipedia page of institution'),
+    "official_url": fields.Url(description='url of institution'),
+    "wikipedia_url": fields.Url(description='url of Wikipedia page of institution'),
     "created_date": fields.Date(),
 })
 

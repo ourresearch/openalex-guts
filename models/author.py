@@ -1,5 +1,6 @@
 from cached_property import cached_property
 from sqlalchemy import text
+import json
 
 from app import db
 
@@ -69,6 +70,39 @@ class Author(db.Model):
         response = list(set([row[0] for row in rows]))
         return response
 
+    @cached_property
+    def orcid_data_person(self):
+        if not self.orcid:
+            return None
+
+        q = """
+        select api_json
+        from orcid_raw_from_s3
+        WHERE api_json."orcid-identifier".path::text = :orcid
+        """
+        row = db.session.execute(text(q), {"orcid": self.orcid}).first()
+        if row:
+            my_data = json.loads(row[0])
+            return my_data.get("person", None)
+        return None
+
+    @cached_property
+    def orcid_data_works(self):
+        if not self.orcid:
+            return None
+
+        q = """
+        select api_json
+        from orcid_raw_from_s3
+        WHERE api_json."orcid-identifier".path::text = :orcid
+        """
+        row = db.session.execute(text(q), {"orcid": self.orcid}).first()
+        if row:
+            my_data = json.loads(row[0])
+            return my_data.get("works", None)
+        return None
+
+
     def to_dict(self, return_level="full"):
         response = {"author_id": self.author_id,
                 "display_name": self.display_name,
@@ -78,6 +112,8 @@ class Author(db.Model):
                 "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
                 "paper_count": self.paper_count,
                 "citation_count": self.citation_count,
+                "orcid_data_person": self.orcid_data_person,
+                # "orcid_data_works": self.orcid_data_works,
                 "created_date": self.created_date,
                 "updated_date": self.updated_date
         }
