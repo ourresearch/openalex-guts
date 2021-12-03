@@ -40,7 +40,6 @@ class Location(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "paper_id": self.paper_id,
             "source_url": self.source_url,
             "source_type": self.source_type,
             "source_description": self.source_description,
