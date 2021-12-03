@@ -1,6 +1,12 @@
 OPENALEX DATA DUMP RELEASE NOTES
 DATA DUMP V1
 
+RELEASE 2021-11-08b
+Released on December 3, 2021 at s3://openalex/data_dump_v1/2021-11-08b/
+- data content same as RELEASE 2021-11-08, but with some extra data cleanup
+- removed backspaces from fields in Papers, PaperAuthorAffiliations, and PaperCitationContexts,
+- adding missing double-quotes to PaperAbstractsInvertedIndex so all rows successfully parse as JSON
+
 RELEASE 2021-11-08
 Released on November 28, 2021 at s3://openalex/data_dump_v1/2021-11-08/
 - based on MAG data release "2021-11-08" plus some data from Crossref, Unpaywall, PubMed, ROR as of Oct 31, 2021
