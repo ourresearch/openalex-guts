@@ -68,7 +68,7 @@ as (
            level as "Level",                          --- Possible values: 0-5
            paper_count as "PaperCount",
            paper_count as "PaperFamilyCount",      --- FROZEN; same value as PaperCount.
-           coalesce(group_citations.n, 0) as "CitationCount",
+           citation_count as "CitationCount",
            created_date as "CreatedDate"
     from mid.concept concept
    )
@@ -207,7 +207,7 @@ as (
        last_known_affiliation_id as "LastKnownAffiliationId",
        paper_count as "PaperCount",
        paper_count as "PaperFamilyCount",  --- FROZEN; same value as PaperCount
-       citationcount as "CitationCount",
+       citation_count as "CitationCount",
        created_date as "CreatedDate",
        updated_date as "UpdatedDate"              --- NEW; set when changes are made going forward
     from mid.author author

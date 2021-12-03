@@ -13,7 +13,7 @@ update legacy.mag_main_paper_extended_attributes set attribute_value=replace(att
 alter table mid.affiliation rename column normalized_author to match_author;
 alter table mid.affiliation rename column normalized_institution_name to match_institution_name;
 -- has no normalized columns in mag
-update mid.affiliation set match_institution_name = f_matching_string(original_affiliation) where original_affiliation is not null; -- took 1500
+update mid.affiliation set match_institution_name = f_matching_string(original_affiliation) where original_affiliation is not null; -- took 1245
 update mid.affiliation set match_author = f_matching_author_string(original_author);  -- running now 5336
 
 727,725,796
@@ -36,7 +36,8 @@ alter table mid.institution add column match_name varchar(65000);
 alter table mid.institution drop column normalized_name;
 alter table mid.institution rename column mag_normalized_name to normalized_name;
 update mid.institution set match_name = f_matching_string(display_name)
-update mid.institution set normalized_name = f_mag_normalize_string(display_name)
+--update mid.institution set normalized_name = f_mag_normalize_string(display_name)
+
 
 
 create table diff.till_zz20211108_mag_main_journals as (

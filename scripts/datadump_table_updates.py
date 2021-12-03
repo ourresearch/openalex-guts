@@ -4,8 +4,11 @@ from app import db
 
 #  python -m scripts.datadump_table_updates
 
-date_of_old_release = "20211025"
-date_of_new_release = "20211108"
+# date_of_old_release = "20211025"
+# date_of_new_release = "20211108"
+
+date_of_old_release = "20211108"
+date_of_new_release = "20211108b"
 
 
 ## run this every release
@@ -121,7 +124,7 @@ if False:
 
 ### run this every release
 ##  fills the mid tables with new data from the legacy tables
-if True:
+if False:
     q_list = []
     q_list.append("""
         truncate table mid.affiliation;
@@ -203,7 +206,7 @@ if True:
         db.session.commit()
 
 #### use this every release
-if True:
+if False:
     # this should be the date of the previous release, the date we copy previous data from
     q_list = []
     q_list.append(f"""
@@ -415,6 +418,12 @@ if True:
 # update mid.location set url=regexp_replace(url, '\n', '') where url ~ '\n';
 # update mid.location set url_for_pdf=regexp_replace(url_for_pdf, '\n', '') where url_for_pdf ~ '\n';
 
+# update mid.work set original_venue=regexp_replace(original_venue, '\b', '') where original_venue ~ '\b';
+# update mid.affiliation set original_affiliation=regexp_replace(original_affiliation, '\b', '') where original_affiliation ~ '\b';
+# update legacy.mag_nlp_paper_citation_contexts set citation_context=regexp_replace(citation_context, '\b', '') where citation_context ~ '\b';
+
+# update mid.abstract set indexed_abstract=regexp_replace(indexed_abstract, '\\\\:\\[', '":\\[') where indexed_abstract ilike '%\\\\:[%';
+
 # update mid.work set original_title=regexp_replace(original_title, '\\\\/', '/') where original_title ~ '\\\\/';
 #
 #
@@ -525,3 +534,13 @@ if True:
 # from mid.concept t1
 # join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id;
 
+# update mid.institution set match_name = f_matching_string(display_name)
+# update mid.journal set match_name = f_matching_string(display_name)
+#
+# update mid.affiliation set match_author = f_matching_author_string(original_author);  -- running now 3830.2
+# update mid.affiliation set match_institution_name = f_matching_string(original_affiliation) where original_affiliation is not null; -- took 1500
+#
+# running this one now:
+# update mid.work set match_title = f_matching_string(original_title); -- took 1122.8 seconds
+#
+# update mid.author set match_name = f_matching_author_string(display_name); -- took 1270.5 seconds
