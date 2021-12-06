@@ -190,8 +190,8 @@ class DbQueue(object):
                     if self.myclass == models.Record:
                         # q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
                         q = db.session.query(self.myclass).options(
-                             selectinload(self.myclass.work_matches_by_title),
-                             selectinload(self.myclass.work_matches_by_doi),
+                             selectinload(self.myclass.work_matches_by_title).raiseload('*'),
+                             selectinload(self.myclass.work_matches_by_doi).raiseload('*'),
                              orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                     objects = q.all()
