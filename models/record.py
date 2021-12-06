@@ -94,13 +94,13 @@ class Record(db.Model):
             # try to match by pmid
 
         if not paper_ids:
-            q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
+            q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(match_title) > 3) limit 20;"
             rows = db.session.execute(text(q), {"title": self.title}).fetchall()
             paper_ids = [row[0] for row in rows]
             print(f"work paper_ids that match title: {paper_ids}")
 
         if paper_ids:
-            matching_work = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).order_by(Work.citation_count).first()
+            matching_work = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).order_by(Work.citation_count.desc()).first()
             matching_work_id = matching_work.id
             url = f"https://openalex-guts.herokuapp.com/work/id/{matching_work_id}"
             print(f"found a match for this work: {url}")
