@@ -15,7 +15,7 @@ class Mesh(db.Model):
     qualifier_name = db.Column(db.Text)
     qualifier_name = db.Column(db.Boolean)
 
-    def to_dict(self):
+    def to_dict(self, return_level=None):
         response = {
             "descriptor_ui": self.descriptor_ui,
             "descriptor_name": self.descriptor_name,
