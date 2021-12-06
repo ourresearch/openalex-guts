@@ -101,6 +101,7 @@ class DbQueue(object):
 
         return None  # important for if we use this on RQ
 
+
     def worker_run(self, **kwargs):
         single_obj_id = kwargs.get("id", None)
         chunk = kwargs.get("chunk", 100)
@@ -131,11 +132,10 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select {id_field_name} 
                     from ins.recordthresher_record
-                    where record_type='pmh_record' 
-                    and doi is null
-                    and published_date is not null
-                    and published_date > '2021-06-01'
-                    order by random() limit {chunk};
+                    where 
+                    updated >= '2021-11-30'
+                    -- order by random() 
+                    limit {chunk};
                 """
             else:
                 raise("myclass not known")

@@ -3,6 +3,7 @@ from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 from collections import defaultdict
 from time import sleep
+import datetime
 
 from app import db
 
@@ -67,8 +68,58 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
+
+    def get_insert_fieldnames(self, table_name=None):
+        lookup = {
+            "mid.record_match": ["record_id", "updated", "matching_work_id", "added"]
+        }
+        if table_name:
+            return lookup[table_name]
+        return lookup
+
+
     def get_or_mint_work(self):
-        pass
+        from models.work import Work
+
+        paper_ids = []
+        print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
+        if self.doi:
+            q = "select paper_id from mid.work where doi_lower=:doi;"
+            rows = db.session.execute(text(q), {"doi": self.doi}).fetchall()
+            paper_ids = [row[0] for row in rows]
+            print(f"work paper_ids that match doi: {paper_ids}")
+
+        if not paper_ids:
+            pass
+            # try to match by pmid
+
+        if not paper_ids:
+            q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
+            rows = db.session.execute(text(q), {"title": self.title}).fetchall()
+            paper_ids = [row[0] for row in rows]
+            print(f"work paper_ids that match title: {paper_ids}")
+
+        if paper_ids:
+            matching_work = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).order_by(Work.citation_count).first()
+            matching_work_id = matching_work.id
+            url = f"https://openalex-guts.herokuapp.com/work/id/{matching_work_id}"
+            print(f"found a match for this work: {url}")
+            # sleep(10)
+        else:
+            print("no match")
+            # mint a work
+            matching_work = None
+            matching_work_id = "null"
+
+        self.insert_dict = {"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
+                              record_id=self.id,
+                              updated=self.updated,
+                              matching_work_id=matching_work_id,
+                              added=datetime.datetime.utcnow().isoformat()
+                            )}
+
+        return matching_work
+
 
 
     def process(self):
@@ -76,19 +127,11 @@ class Record(db.Model):
 
         self.insert_dict = {}
         print("processing record! {}".format(self.id))
-        # self.work = self.get_or_mint_work()
+
+        self.work = self.get_or_mint_work()
         # self.work.refresh()
-        q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(f_normalize_title(:title)) > 3) limit 20;"
-        print(f"this record: {self.record_webpage_url} {self.title}")
-        rows = db.session.execute(text(q), {"title": self.title}).fetchall()
-        paper_ids = [row[0] for row in rows]
-        print(f"work paper_ids that match title: {paper_ids}")
-        if paper_ids:
-            matching_works = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).all()
-            urls = ["https://openalex-guts.herokuapp.com/work/id/{}".format(w.paper_id) for w in matching_works]
-            print(f"works: {urls}")
-            print("...... ")
-            # sleep(10)
+
+
 
 
     def to_dict(self, return_level="full"):
