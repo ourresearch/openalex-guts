@@ -134,7 +134,7 @@ class DbQueue(object):
                     from ins.recordthresher_record
                     where 
                     updated >= '2021-11-30'
-                    -- order by random() 
+                    order by random() 
                     limit {chunk};
                 """
             else:
@@ -188,7 +188,11 @@ class DbQueue(object):
                              selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
                              orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
                     if self.myclass == models.Record:
-                        q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                        # q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                        q = db.session.query(self.myclass).options(
+                             selectinload(self.myclass.work_matches_by_title),
+                             selectinload(self.myclass.work_matches_by_doi),
+                             orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                     objects = q.all()
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))

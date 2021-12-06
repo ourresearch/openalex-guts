@@ -1,6 +1,7 @@
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.expression import func
 from collections import defaultdict
 from time import sleep
 import datetime
@@ -60,6 +61,9 @@ class Record(db.Model):
     open_license = db.Column(db.Text)
     open_version = db.Column(db.Text)
 
+    # set by Xplenty
+    match_title = db.Column(db.Text)
+
     # queues
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
@@ -68,6 +72,21 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
+    work_matches_by_title = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        foreign_keys="Work.match_title",
+        primaryjoin="and_(func.length(Record.match_title) > 20, Record.match_title == Work.match_title)"
+    )
+
+    work_matches_by_doi = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        foreign_keys="Work.doi_lower",
+        primaryjoin="and_(Record.doi != None, Record.doi == Work.doi_lower)"
+    )
 
     def get_insert_fieldnames(self, table_name=None):
         lookup = {
@@ -81,27 +100,30 @@ class Record(db.Model):
     def get_or_mint_work(self):
         from models.work import Work
 
-        paper_ids = []
+        matching_works = []
         print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
-        if self.doi:
-            q = "select paper_id from mid.work where doi_lower=:doi;"
-            rows = db.session.execute(text(q), {"doi": self.doi}).fetchall()
-            paper_ids = [row[0] for row in rows]
-            print(f"work paper_ids that match doi: {paper_ids}")
+        # if self.doi:
+        #     q = "select paper_id from mid.work where doi_lower=:doi;"
+        #     matching_works = db.session.execute(text(q), {"doi": self.doi}).fetchall()
+        #     print(f"works that match doi: {matching_works}")
+        if self.work_matches_by_doi:
+            matching_works = self.work_matches_by_doi
 
-        if not paper_ids:
+        if not matching_works:
             pass
             # try to match by pmid
 
-        if not paper_ids:
-            if self.title:
-                q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(match_title) > 3) limit 20;"
-                rows = db.session.execute(text(q), {"title": self.title}).fetchall()
-                paper_ids = [row[0] for row in rows]
-                print(f"work paper_ids that match title: {paper_ids}")
+        if not matching_works:
+            # if self.title:
+            #     q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(match_title) > 3) limit 20;"
+            #     matching_works = db.session.execute(text(q), {"title": self.title}).fetchall()
+            #     print(f"works that match title: {matching_works}")
+            if self.work_matches_by_title:
+                matching_works = self.work_matches_by_title
 
-        if paper_ids:
-            matching_work = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).order_by(Work.citation_count.desc()).first()
+        if matching_works:
+            sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
+            matching_work = sorted_matching_works[0]
             matching_work_id = matching_work.id
             url = f"https://openalex-guts.herokuapp.com/work/id/{matching_work_id}"
             print(f"found a match for this work: {url}")
