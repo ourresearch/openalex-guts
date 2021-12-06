@@ -94,10 +94,11 @@ class Record(db.Model):
             # try to match by pmid
 
         if not paper_ids:
-            q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(match_title) > 3) limit 20;"
-            rows = db.session.execute(text(q), {"title": self.title}).fetchall()
-            paper_ids = [row[0] for row in rows]
-            print(f"work paper_ids that match title: {paper_ids}")
+            if self.title:
+                q = "select paper_id from mid.work where match_title = f_matching_string(:title) and (len(match_title) > 3) limit 20;"
+                rows = db.session.execute(text(q), {"title": self.title}).fetchall()
+                paper_ids = [row[0] for row in rows]
+                print(f"work paper_ids that match title: {paper_ids}")
 
         if paper_ids:
             matching_work = Work.query.options(orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(paper_ids)).order_by(Work.citation_count.desc()).first()
