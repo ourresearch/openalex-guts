@@ -48,6 +48,8 @@ class Work(db.Model):
     best_free_url = db.Column(db.Text)
     best_free_version = db.Column(db.Text)
 
+    match_title = db.Column(db.Text)
+
     # queues
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
