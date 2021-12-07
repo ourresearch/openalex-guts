@@ -116,7 +116,12 @@ class Concept(db.Model):
                             } for row in rows]
 
         related_fields_all = related_fields1 + related_fields2
-        related_fields_all = sorted(related_fields_all, key=lambda x: (x["rank"]), reverse=True)
+
+        related_fields_dict = {}
+        for row in related_fields_all:
+            related_fields_dict[row["id"]] = row
+        #do it this way to dedup
+        related_fields_all = sorted(related_fields_dict.values(), key=lambda x: (x["rank"]), reverse=True)
         return related_fields_all
 
     def to_dict(self, return_level="full"):
