@@ -71,6 +71,17 @@ class Author(db.Model):
         return response
 
     @cached_property
+    def alternative_names(self):
+        q = """
+        select attribute_value
+        from legacy.mag_main_author_extended_attributes
+        WHERE author_id = :author_id
+        """
+        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
+        response = [row[0] for row in rows]
+        return response
+
+    @cached_property
     def orcid_data_person(self):
         if not self.orcid:
             return None
@@ -113,6 +124,8 @@ class Author(db.Model):
             response.update({
                 # "last_known_institution_id": self.last_known_institution_id,
                 # "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
+                "alternative_names": self.alternative_names,
+                "external_ids": [],
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
                 "orcid_data_person": self.orcid_data_person,
