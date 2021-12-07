@@ -122,6 +122,8 @@ class Concept(db.Model):
             related_fields_dict[row["id"]] = row
         #do it this way to dedup
         related_fields_all = sorted(related_fields_dict.values(), key=lambda x: (x["rank"]), reverse=True)
+        # the ones with poor rank aren't good enough to include
+        related_fields_all = [field for field in related_fields_all if field["rank"] >= 0.75]
         return related_fields_all
 
     def to_dict(self, return_level="full"):
