@@ -30,22 +30,24 @@ class Affiliation(db.Model):
                 "author_sequence_number": self.author_sequence_number,
                 "author": {
                     "id": self.author_id,
-                    "original_author": self.original_author
+                    "display_name": self.original_author
                 },
                 "institution": {
                     "id": self.affiliation_id,
-                    "original_affiliation": self.original_affiliation
+                    "display_name": self.original_affiliation
                 }
             }
+            # overwrite display name with better ones from these dicts if we have them
             if self.author:
                 response["author"].update(self.author.to_dict(return_level="minimum"))
             if self.institution:
                 response["institution"].update(self.institution.to_dict(return_level="minimum"))
         else:
             response = {"author_sequence_number": self.author_sequence_number}
-            response["author"] = {"original_author": self.original_author}
+            response["author"] = {"display_name": self.original_author}
+            response["institution"] = {"display_name": self.original_affiliation}
+            # overwrite display name with better ones from these dicts if we have them
             response["author"] = self.author.to_dict(return_level)
-            response["institution"] = {"original_affiliation": self.original_affiliation}
             if self.institution:
                 response["institution"] = self.institution.to_dict(return_level)
         return response
