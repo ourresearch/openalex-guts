@@ -50,7 +50,7 @@ class Concept(db.Model):
         )
         SELECT distinct field_of_study_id, parent_field, parent_level FROM leaf;
         """
-        rows = db.session.execute(text(q), {"id": self.field_of_study_id}).fetchall()
+        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
         ancestors = [{"id": row["field_of_study_id"],
                     "display_name": row["parent_field"],
                     "level": row["parent_level"]} for row in rows]
