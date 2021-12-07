@@ -131,12 +131,12 @@ class Concept(db.Model):
             "id": self.field_of_study_id,
             "display_name": self.display_name,
             "level": self.level,
-            "works_count": self.paper_count,
-            "cited_by_count": self.citation_count,
             "wikipedia_data_url": self.wikipedia_data_url
         }
         if return_level == "full":
             response.update({
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
                 "main_type": self.main_type,
                 "ancestors": self.ancestors,
                 "extended_attributes": self.extended_attributes,

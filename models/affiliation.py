@@ -26,8 +26,8 @@ class Affiliation(db.Model):
 
     def to_dict(self, return_level="full"):
         if return_level == "full":
+            response = {}
             response = {
-                "author_sequence_number": self.author_sequence_number,
                 "author": {
                     "id": self.author_id,
                     "display_name": self.original_author
@@ -43,13 +43,18 @@ class Affiliation(db.Model):
             if self.institution:
                 response["institution"].update(self.institution.to_dict(return_level="minimum"))
         else:
-            response = {"author_sequence_number": self.author_sequence_number}
+            response = {}
             response["author"] = {"display_name": self.original_author}
             response["institution"] = {"display_name": self.original_affiliation}
             # overwrite display name with better ones from these dicts if we have them
             response["author"] = self.author.to_dict(return_level)
             if self.institution:
                 response["institution"] = self.institution.to_dict(return_level)
+        # author_position set in works
+        response["author_sequence_number"] = self.author_sequence_number
+        if hasattr(self, "author_position"):
+            response["author_position"] = self.author_position
+
         return response
 
     def __repr__(self):

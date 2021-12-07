@@ -85,9 +85,21 @@ class Work(db.Model):
         self.updated = datetime.datetime.utcnow().isoformat()
         print("done! {}".format(self.id))
 
-    @property
+    @cached_property
     def affiliations_sorted(self):
         return sorted(self.affiliations, key=lambda x: x.author_sequence_number)
+
+    @cached_property
+    def affiliations_list(self):
+        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
+        last_author_sequence_number = max([affil.author_sequence_number for affil in affiliations])
+        for affil in affiliations:
+            affil.author_position = "middle"
+            if affil.author_sequence_number == 1:
+                affil.author_position = "first"
+            elif affil.author_sequence_number == last_author_sequence_number:
+                affil.author_position = "last"
+        return [affiliation.to_dict("minimum") for affiliation in affiliations]
 
     @property
     def concepts_sorted(self):
@@ -161,29 +173,28 @@ class Work(db.Model):
             "year": self.year,
             "publication_date": self.publication_date,
             "doc_type": self.doc_type,
-            "genre": None,
+            "genre": self.genre,
+            "doc_sub_types": self.doc_sub_types,
+            "is_paratext": self.is_paratext,
             "external_ids": {},
+            "best_url": self.best_url,
+            "oa_status": self.oa_status,
+            "best_free_url": self.best_free_url,
+            "best_free_version": self.best_free_version,
+            "venue": self.journal.to_dict("minimum") if self.journal else None,
             "volume": self.volume,
             "issue": self.issue,
             "first_page": self.first_page,
             "last_page": self.last_page,
             "reference_count": self.reference_count,
             "cited_by_count": self.citation_count,
-            "doc_sub_types": self.doc_sub_types,
-            "oa_status": self.oa_status,
-            "best_free_version": self.best_free_version,
-            "best_free_url": self.best_free_url,
-            "best_url": self.best_url,
-            "is_paratext": self.is_paratext,
-            "genre": self.genre,
-            "venue": self.journal.to_dict("minimum") if self.journal else None,
-            "affiliations": [affiliation.to_dict("minimum") for affiliation in self.affiliations_sorted[:100]],
+            "affiliations": self.affiliations_list,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
-            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "related_papers": self.related_papers,
+            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
             "references": [reference.paper_reference_id for reference in self.references],
-            "abstract": self.abstract.to_dict("minimum") if self.abstract else None
+            "abstract": self.abstract.to_dict("minimum") if self.abstract else None,
+            "related_papers": self.related_papers,
         }
         if self.doi:
             response["external_ids"]["doi"] = self.doi_url

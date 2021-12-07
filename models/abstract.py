@@ -13,7 +13,8 @@ class Abstract(db.Model):
     indexed_abstract = db.Column(db.Text)
 
     def to_dict(self, return_level="full"):
-        return {"abstract_inverted": json.loads(self.indexed_abstract)}
+        indexed_abstract_dict = json.loads(self.indexed_abstract)
+        return indexed_abstract_dict["InvertedIndex"]
 
     def __repr__(self):
         return "<Abstract ( {} ) {}>".format(self.paper_id, self.indexed_abstract[0:100])
