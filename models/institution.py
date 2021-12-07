@@ -41,7 +41,9 @@ class Institution(db.Model):
 
     @property
     def ror_url(self):
-        return "https://ror.org/{}".format(self.ror_id)
+        if self.ror_id:
+            return "https://ror.org/{}".format(self.ror_id)
+        return None
 
     @property
     def country_code(self):
@@ -166,7 +168,7 @@ class Institution(db.Model):
         response = {
             "id": self.institution_id,
             "display_name": self.display_name,
-            "ror": None,
+            "ror": self.ror_url,
         }
 
         if return_level == "full":
