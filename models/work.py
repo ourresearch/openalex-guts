@@ -93,7 +93,7 @@ class Work(db.Model):
 
     @property
     def locations_sorted(self):
-        return sorted(self.locations, key=lambda x: (x.source_description, x.source_url))
+        return sorted(self.locations, key=lambda x: (x.is_oa == True, x.source_url), reverse=True)
 
     @property
     def mag_publisher(self):
@@ -163,11 +163,12 @@ class Work(db.Model):
             "best_url": self.best_url,
             "is_paratext": self.is_paratext,
             "genre": self.genre,
+            "venue": self.journal.to_dict("minimum") if self.journal else None,
             "affiliations": [affiliation.to_dict("minimum") for affiliation in self.affiliations_sorted[:100]],
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
             "locations": [location.to_dict("minimum") for location in self.locations_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "citations": [citation.to_dict("minimum") for citation in self.citations],
+            "references": [reference.paper_reference_id for reference in self.references],
             "abstract": self.abstract.to_dict("minimum") if self.abstract else None
         }
         if self.doi:
@@ -177,8 +178,6 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["external_ids"][extra_id.id_type] = extra_id.attribute_value
                 response["external_ids"][extra_id.id_type + "_url"] = extra_id.url
-        if self.journal:
-            response["journal"] = self.journal.to_dict(return_level)
 
         return response
 

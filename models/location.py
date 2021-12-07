@@ -31,6 +31,12 @@ class Location(db.Model):
     pmh_id = db.Column(db.Text)
 
     @property
+    def is_oa(self):
+        if self.version != None:
+            return True
+        return None
+
+    @property
     def source_description(self):
         # from https://docs.microsoft.com/en-us/academic-services/graph/reference-data-schema#paper-urls
         lookup = {1: "Html", 2: "Text", 3: "Pdf", 4: "Doc", 5: "Ppt", 6: "Xls", 8: "Rtf", 12: "Xml", 13: "Rss", 20: "Swf", 27: "Ics", 31: "Pub", 33: "Ods", 34: "Odp", 35: "Odt", 36: "Zip", 40: "Mp3"}
@@ -42,7 +48,8 @@ class Location(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "url": self.source_url
+            "url": self.source_url,
+            "is_oa": self.is_oa
         }
         if return_level == "full":
             response.update({

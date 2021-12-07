@@ -239,7 +239,7 @@ WorkModel = app_api.model('Work', {
     'affiliations': fields.List(fields.Nested(AffiliationModel)),
     'mesh': fields.List(fields.Nested(MeshModel)),
     'locations': fields.List(fields.Nested(LocationModel)),
-    'citations': fields.List(PaperIdModel),
+    'references': fields.List(PaperIdModel),
     'abstract_inverted_index': fields.Nested(AbstractIndexModel),
     'concepts': fields.List(fields.Nested(ConceptModel), description="concepts")
 })

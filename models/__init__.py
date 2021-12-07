@@ -25,7 +25,7 @@ from models.work_extra_ids import WorkExtraIds
 # relationships without association tables
 Work.records = db.relationship("Record", lazy='selectin', backref="work")
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work")
-Work.citations = db.relationship("Citation", lazy='selectin', backref="work")
+Work.references = db.relationship("Citation", lazy='selectin', backref="work")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False)
 Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False)
@@ -87,7 +87,7 @@ def single_work_query():
     return db.session.query(Work).options(
          selectinload(Work.locations),
          selectinload(Work.journal).selectinload(Venue.journalsdb),
-         selectinload(Work.citations),
+         selectinload(Work.references),
          selectinload(Work.mesh),
          selectinload(Work.abstract),
          selectinload(Work.extra_ids),
