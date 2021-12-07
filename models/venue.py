@@ -10,7 +10,7 @@ from app import db
 # update mid.journal set display_title=replace(display_title, '\\\\/', '/');
 # update mid.journal set publisher=replace(publisher, '\t', '') where publisher ~ '\t';
 
-class Journal(db.Model):
+class Venue(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "journal"
 
@@ -32,24 +32,26 @@ class Journal(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "journal_id": self.journal_id,
+            "id": self.journal_id,
             "display_name": self.display_name,
-            "issn_l": self.issn,
-            "issns": json.loads(self.issns) if self.issns else None,
-            "is_oa": self.is_oa,
-            "is_in_doaj": self.is_in_doaj,
-            "publisher": self.publisher,
-            "webpage": self.webpage,
-            "paper_count": self.paper_count,
-            "citation_count": self.citation_count,
-            "created_date": self.created_date,
-            "updated_date": self.updated_date.isoformat()[0:10] if self.updated_date else None,
+            "issn_l": self.issn
         }
+        if return_level == "full":
+            response.update({
+                "issns": json.loads(self.issns) if self.issns else None,
+                "is_oa": self.is_oa,
+                "is_in_doaj": self.is_in_doaj,
+                "publisher": self.publisher,
+                "webpage": self.webpage,
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
+                "updated_date": self.updated_date.isoformat()[0:10] if self.updated_date else None,
+            })
         return response
 
 
 
     def __repr__(self):
-        return "<Journal ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)
+        return "<Venue ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)
 
 

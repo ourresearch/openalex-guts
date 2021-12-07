@@ -164,50 +164,49 @@ class Institution(db.Model):
         from models import Ror
 
         response = {
-            "institution_id": self.institution_id,
+            "id": self.institution_id,
             "display_name": self.display_name,
-            "ror_id": None,
+            "ror": None,
         }
-        if self.ror:
-            response.update(self.ror.to_dict(return_level))
-        else:
-            response.update(Ror.to_dict_null())
 
-        response.update({
-            "country_code": self.country_code,
-            "official_url": self.official_page,
-            "wikipedia_url": self.wiki_page,
-            "wikipedia_data_url": self.wikipedia_data_url,
-            "wikidata_url": self.wikidata_url,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "acroynyms": self.acroynyms,
-            "aliases": self.aliases,
-            "labels": self.labels,
-            "links": self.links,
-            "relationships": self.relationships,
-            "types": self.types,
-            "external_ids": self.external_ids,
-            "geonames": self.geonames,
-            "paper_count": self.paper_count,
-            "citation_count": self.citation_count,
-            "created_date": self.created_date
-        })
+        if return_level == "full":
+            if self.ror:
+                response.update(self.ror.to_dict(return_level))
+            else:
+                response.update(Ror.to_dict_null())
+            response.update({
+                "country_code": self.country_code,
+                "official_url": self.official_page,
+                "wikipedia_url": self.wiki_page,
+                "wikipedia_data_url": self.wikipedia_data_url,
+                "wikidata_url": self.wikidata_url,
+                "latitude": self.latitude,
+                "longitude": self.longitude,
+                "acroynyms": self.acroynyms,
+                "aliases": self.aliases,
+                "labels": self.labels,
+                "links": self.links,
+                "relationships": self.relationships,
+                "types": self.types,
+                "external_ids": self.external_ids,
+                "geonames": self.geonames,
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
+            })
         return response
 
 
     @classmethod
     def to_dict_null(self):
         response = {
-            "institution_id": self.institution_id,
+            "id": self.institution_id,
             "display_name": self.display_name,
-            "ror_id": None,
+            "ror": None,
             "country_code": self.country_code,
             "official_page": self.official_page,
             "wikipedia_page": self.wiki_page,
-            "paper_count": None,
-            "citation_count": None,
-            "created_date": self.created_date
+            "works_count": None,
+            "cited_by_count": None,
         }
         return response
 

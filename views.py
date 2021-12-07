@@ -148,7 +148,7 @@ class WorkId(Resource):
             if not row:
                 abort(404)
             paper_dict = json.loads(row["json_elastic"])
-            paper_dict["citation_count"] = 42
+            paper_dict["cited_by_count"] = 42
             response = paper_dict
         else:
             my_obj = models.work_from_id(work_id)
@@ -257,7 +257,7 @@ class InstitutionRor(Resource):
         return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
 
 
-#### Journal
+#### Venue
 
 @doc.journal_api_endpoint.route("/RANDOM")
 @doc.journal_api_endpoint.hide
@@ -265,7 +265,7 @@ class InstitutionRor(Resource):
 @app_api.response(200, 'Success', doc.JournalModel)
 class JournalRandom(Resource):
     def get(self):
-        obj = models.Journal.query.order_by(func.random()).first()
+        obj = models.Venue.query.order_by(func.random()).first()
         if not obj:
             raise NoResultFound
         response = obj.to_dict()

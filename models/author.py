@@ -104,24 +104,22 @@ class Author(db.Model):
 
 
     def to_dict(self, return_level="full"):
-        response = {"author_id": self.author_id,
+        response = {
+                "id": self.author_id,
                 "display_name": self.display_name,
-                "orcid": self.orcid,
-                "orcid_url": self.orcid_url,
-                "last_known_institution_id": self.last_known_institution_id,
-                "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
-                "paper_count": self.paper_count,
-                "citation_count": self.citation_count,
-                "orcid_data_person": self.orcid_data_person,
-                # "orcid_data_works": self.orcid_data_works,
-                "created_date": self.created_date,
-                "updated_date": self.updated_date
-        }
-        if return_level != "minimum":
+                "orcid": self.orcid_url
+                    }
+        if return_level == "full":
             response.update({
+                # "last_known_institution_id": self.last_known_institution_id,
+                # "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
+                "orcid_data_person": self.orcid_data_person,
+                "updated_date": self.updated_date
                 # "all_institutions": self.all_institutions if self.all_institutions else [], NO_CITATIONS_FOR_NOW
-                "papers": self.papers, #NO_CITATIONS_FOR_NOW
-                "citations": self.citations, #NO_CITATIONS_FOR_NOW
+                # "works": self.papers, #NO_CITATIONS_FOR_NOW
+                # "citations": self.citations, #NO_CITATIONS_FOR_NOW
             })
         return response
 

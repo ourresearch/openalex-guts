@@ -178,7 +178,7 @@ class DbQueue(object):
                     if self.myclass == models.Work:
                         q = db.session.query(self.myclass).options(
                              selectinload(self.myclass.locations),
-                             selectinload(self.myclass.journal).selectinload(models.Journal.journalsdb),
+                             selectinload(self.myclass.journal).selectinload(models.Venue.journalsdb),
                              selectinload(self.myclass.citations),
                              selectinload(self.myclass.mesh),
                              selectinload(self.myclass.abstract),

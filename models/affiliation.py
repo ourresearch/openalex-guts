@@ -28,27 +28,27 @@ class Affiliation(db.Model):
         if return_level == "full":
             response = {
                 "author_sequence_number": self.author_sequence_number,
-                "institution": {
-                    "institution_id": self.affiliation_id,
-                    "original_affiliation": self.original_affiliation
-                },
                 "author": {
-                    "author_id": self.author_id,
+                    "id": self.author_id,
                     "original_author": self.original_author
+                },
+                "institution": {
+                    "id": self.affiliation_id,
+                    "original_affiliation": self.original_affiliation
                 }
             }
             if self.author:
                 response["author"].update(self.author.to_dict(return_level="minimum"))
             if self.institution:
                 response["institution"].update(self.institution.to_dict(return_level="minimum"))
-            return response
-
         else:
             response = {"author_sequence_number": self.author_sequence_number}
-            response.update(self.author.to_dict(return_level))
+            response["author"] = {"original_author": self.original_author}
+            response["author"] = self.author.to_dict(return_level)
+            response["institution"] = {"original_affiliation": self.original_affiliation}
             if self.institution:
-                response.update(self.institution.to_dict(return_level="minimum"))
-            return response
+                response["institution"] = self.institution.to_dict(return_level)
+        return response
 
     def __repr__(self):
         return "<Affiliation ( {} ) {} {}>".format(self.paper_id, self.author_id, self.affiliation_id)

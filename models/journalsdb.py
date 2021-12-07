@@ -21,12 +21,11 @@ class Journalsdb(db.Model):
     def to_dict(self, return_level="full"):
         response = {}
         if hasattr(self, "journal_id"):
-            response.update({"journal_id": None,
+            response.update({"id": None,
                              "display_name": None,
                              "webpage": None,
-                             "paper_count": None,
-                             "citation_count": None,
-                             "created_date": None,
+                             "works_count": None,
+                             "cited_by_count": None,
                              "updated_date": None
                              })
         response.update({
