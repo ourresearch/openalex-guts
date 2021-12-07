@@ -1,3 +1,5 @@
+from cached_property import cached_property
+from sqlalchemy import text
 import datetime
 
 import shortuuid
@@ -113,6 +115,17 @@ class Work(db.Model):
             return None
         return "https://doi.org/{}".format(self.doi_lower)
 
+    @cached_property
+    def related_papers(self):
+        q = """
+        select recommended_paper_id, score
+        from legacy.mag_advanced_paper_recommendations
+        WHERE paper_id = :paper_id
+        """
+        rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
+        response = [dict(row) for row in rows]
+        return sorted(response, key=lambda x: x["score"], reverse=True)
+
     def process(self):
         VERSION_STRING = "full dict, no citations"
 
@@ -168,16 +181,15 @@ class Work(db.Model):
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
             "locations": [location.to_dict("minimum") for location in self.locations_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
+            "related_papers": self.related_papers,
             "references": [reference.paper_reference_id for reference in self.references],
             "abstract": self.abstract.to_dict("minimum") if self.abstract else None
         }
         if self.doi:
-            response["external_ids"]["doi"] = self.doi_lower
-            response["external_ids"]["doi_url"] = self.doi_url
+            response["external_ids"]["doi"] = self.doi_url
         if self.extra_ids:
             for extra_id in self.extra_ids:
-                response["external_ids"][extra_id.id_type] = extra_id.attribute_value
-                response["external_ids"][extra_id.id_type + "_url"] = extra_id.url
+                response["external_ids"][extra_id.id_type] = extra_id.url
 
         return response
 
