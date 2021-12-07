@@ -130,7 +130,7 @@ class Work(db.Model):
     @cached_property
     def related_papers(self):
         q = """
-        select recommended_paper_id, score
+        select recommended_paper_id as id, score
         from legacy.mag_advanced_paper_recommendations
         WHERE paper_id = :paper_id
         """
