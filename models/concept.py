@@ -50,7 +50,7 @@ class Concept(db.Model):
         )
         SELECT distinct field_of_study_id, parent_field, parent_level FROM leaf;
         """
-        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
+        rows = db.session.execute(text(q), {"id": self.field_of_study_id}).fetchall()
         ancestors = [{"id": row["field_of_study_id"],
                     "display_name": row["parent_field"],
                     "level": row["parent_level"]} for row in rows]
@@ -80,9 +80,9 @@ class Concept(db.Model):
         return None
 
     @cached_property
-    def related_fields1(self):
+    def related_fields(self):
         q = """
-        select type1, field_of_study_id2, type2, 
+        select type2, field_of_study_id2, 
         concept2.display_name as field_of_study_id2_display_name,
         concept2.level as field_of_study_id2_level,
         related.rank        
@@ -91,20 +91,15 @@ class Concept(db.Model):
         WHERE field_of_study_id1 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-        related_fields1 = [{"type1": row["type1"],
-                    "id": row["field_of_study_id2"],
-                    "display_name": row["field_of_study_id2_display_name"],
-                    "level": row["field_of_study_id2_level"],
-                    "type2": row["type2"],
-                    "rank": row["rank"]
+        related_fields1 = [{"id": row["field_of_study_id2"],
+                            "type": row["type2"],
+                            "display_name": row["field_of_study_id2_display_name"],
+                            "level": row["field_of_study_id2_level"],
+                            "rank": row["rank"]
                             } for row in rows]
-        related_fields1 = sorted(related_fields1, key=lambda x: (x["rank"]), reverse=True)
-        return related_fields1
 
-    @cached_property
-    def related_fields2(self):
         q = """
-        select type1, field_of_study_id1, type2, 
+        select type1, field_of_study_id1, 
         concept1.display_name as field_of_study_id1_display_name,
         concept1.level as field_of_study_id1_level,        
         related.rank       
@@ -113,31 +108,33 @@ class Concept(db.Model):
         WHERE field_of_study_id2 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-        related_fields2 = [{"type1": row["type1"],
-                    "id": row["field_of_study_id1"],
-                    "display_name": row["field_of_study_id1_display_name"],
-                    "level": row["field_of_study_id1_level"],
-                    "type2": row["type2"],
-                    "rank": row["rank"]
+        related_fields2 = [{"id": row["field_of_study_id1"],
+                            "type": row["type1"],
+                            "display_name": row["field_of_study_id1_display_name"],
+                            "level": row["field_of_study_id1_level"],
+                            "rank": row["rank"]
                             } for row in rows]
-        related_fields2 = sorted(related_fields2, key=lambda x: (x["rank"]), reverse=True)
-        return related_fields2
+
+        related_fields_all = related_fields1 + related_fields2
+        related_fields_all = sorted(related_fields_all, key=lambda x: (x["rank"]), reverse=True)
+        return related_fields_all
 
     def to_dict(self, return_level="full"):
         response = {
-            "field_of_study_id": self.field_of_study_id,
+            "id": self.field_of_study_id,
             "display_name": self.display_name,
-            "main_type": self.main_type,
             "level": self.level,
-            "paper_count": self.paper_count,
-            "citation_count": self.citation_count,
-            "wikipedia_data_url": self.wikipedia_data_url,
-            "ancestors": self.ancestors,
-            "extended_attributes": self.extended_attributes,
-            "related_fields1": self.related_fields1,
-            "related_fields2": self.related_fields2,
-            "created_date": self.created_date,
+            "works_count": self.paper_count,
+            "cited_by_count": self.citation_count,
+            "wikipedia_data_url": self.wikipedia_data_url
         }
+        if return_level == "full":
+            response.update({
+                "main_type": self.main_type,
+                "ancestors": self.ancestors,
+                "extended_attributes": self.extended_attributes,
+                "related_fields": self.related_fields,
+            })
         return response
 
     def __repr__(self):

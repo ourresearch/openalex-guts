@@ -10,7 +10,7 @@ from models.author_orcid import AuthorOrcid
 from models.citation import Citation
 from models.concept import Concept
 from models.institution import Institution
-from models.journal import Journal
+from models.venue import Venue
 from models.location import Location
 from models.mesh import Mesh
 from models.record import Record
@@ -28,7 +28,7 @@ Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work")
 Work.citations = db.relationship("Citation", lazy='selectin', backref="work")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False)
-Work.journal = db.relationship("Journal", lazy='selectin', backref="work", uselist=False)
+Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False)
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work")
 
 # relationships with association tables
@@ -39,7 +39,7 @@ Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
 Institution.ror = db.relationship("Ror", uselist=False)
-Journal.journalsdb = db.relationship("Journalsdb", uselist=False)
+Venue.journalsdb = db.relationship("Journalsdb", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author")
 Author.last_known_institution = db.relationship("Institution")
 
@@ -70,10 +70,10 @@ def institutions_from_ror(ror_id):
     return response
 
 def journal_from_id(journal_id):
-    return Journal.query.filter(Journal.journal_id==journal_id).first()
+    return Venue.query.filter(Venue.journal_id == journal_id).first()
 
 def journals_from_issn(issn):
-    response = Journal.query.filter(Journal.issns.ilike(f'%{issn}%')).all()
+    response = Venue.query.filter(Venue.issns.ilike(f'%{issn}%')).all()
     if not response:
         response_journalsdb = Journalsdb.query.filter(Journalsdb.issn==issn).first()
         response_journalsdb.journal_id = None
@@ -86,7 +86,7 @@ def record_from_id(record_id):
 def single_work_query():
     return db.session.query(Work).options(
          selectinload(Work.locations),
-         selectinload(Work.journal).selectinload(Journal.journalsdb),
+         selectinload(Work.journal).selectinload(Venue.journalsdb),
          selectinload(Work.citations),
          selectinload(Work.mesh),
          selectinload(Work.abstract),

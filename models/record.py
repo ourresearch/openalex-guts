@@ -125,7 +125,7 @@ class Record(db.Model):
             sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
             matching_work = sorted_matching_works[0]
             matching_work_id = matching_work.id
-            url = f"https://openalex-guts.herokuapp.com/work/id/{matching_work_id}"
+            url = f"https://openalex-guts.herokuapp.com/works/id/{matching_work_id}"
             print(f"found a match for this work: {url}")
             # sleep(10)
         else:

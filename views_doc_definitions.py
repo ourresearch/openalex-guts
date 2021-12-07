@@ -6,11 +6,11 @@ from flask_restx import inputs
 from app import app
 
 app_api = Api(app=app, version="0.0.1", doc=False, title="OpenAlex", description="OpenAlex APIs", url_scheme="http", catch_all_404s=True, license="MIT", license_url="https://github.com/ourresearch/openalex-guts/blob/main/LICENSE")
-work_api_endpoint = app_api.namespace("work", description="An OpenAlex work")
-author_api_endpoint = app_api.namespace("author", description="An OpenAlex author")
-institution_api_endpoint = app_api.namespace("institution", description="An OpenAlex institution")
-journal_api_endpoint = app_api.namespace("journal", description="An OpenAlex journal")
-concept_api_endpoint = app_api.namespace("concept", description="An OpenAlex concept")
+work_api_endpoint = app_api.namespace("works", description="OpenAlex works")
+author_api_endpoint = app_api.namespace("authors", description="OpenAlex authors")
+institution_api_endpoint = app_api.namespace("institutions", description="OpenAlex institutions")
+journal_api_endpoint = app_api.namespace("venues", description="OpenAlex venues")
+concept_api_endpoint = app_api.namespace("concepts", description="OpenAlex concepts")
 
 class BigIntegerModel(fields.Integer, fields.Raw):
     __schema_type__ = "long"
@@ -164,7 +164,6 @@ InstitutionModel = app_api.model('Institution', {
     "country": fields.String(description='name of country'),
     "official_url": fields.Url(description='url of institution'),
     "wikipedia_url": fields.Url(description='url of Wikipedia page of institution'),
-    "created_date": fields.Date(),
 })
 
 InstitutionSmallModel = app_api.model('InstitutionSmall', {
@@ -180,11 +179,10 @@ AuthorModel = app_api.model('Author', {
     'last_known_institution_id': InstitutionIdModel,
     "last_known_institution": fields.Nested(InstitutionModel),
     "all_institutions": fields.List(InstitutionIdModel),
-    "paper_count": fields.Integer(description="number of papers this author has published"),
+    "works_count": fields.Integer(description="number of papers this author has published"),
     "citation_count": fields.Integer(description="number of times this author has been cited"),
     # "papers": fields.List(PaperIdModel),
     # "citations": fields.List(PaperIdModel),
-    "created_date": fields.Date(),
     "updated_date": fields.Date()
 })
 
@@ -199,14 +197,13 @@ ConceptModel = app_api.model('Concept', {
     'display_name': fields.String(description="full name of the journal"),
     'main_type': fields.String,
     'level': ConceptLevel,
-    "paper_count": fields.Integer(description="number of papers associated with this concept"),
+    "works_count": fields.Integer(description="number of papers associated with this concept"),
     "citation_count": fields.Integer(description="number of times papers with this tag have been cited"),
     "ancestors": fields.List(fields.Nested(AncestorConceptModel)),
-    "created_date": fields.Date(),
 })
 
 
-JournalModel = app_api.model('Journal', {
+JournalModel = app_api.model('Venue', {
     'id': JournalIdModel(),
     'display_name': fields.String(description="full name of the journal"),
     'issn_l': IssnModel(description="linking ISSN for this journal"),
@@ -214,9 +211,8 @@ JournalModel = app_api.model('Journal', {
     'is_oa': fields.Boolean(),
     'is_in_doaj': fields.Boolean(),
     "publisher": fields.String(),
-    "paper_count": fields.Integer(description="number of papers this author has published"),
+    "works_count": fields.Integer(description="number of papers this author has published"),
     "citation_count": fields.Integer(description="number of times this author has been cited"),
-    "created_date": fields.Date(),
     "updated_date": fields.Date()
 })
 
@@ -245,6 +241,6 @@ WorkModel = app_api.model('Work', {
     'locations': fields.List(fields.Nested(LocationModel)),
     'citations': fields.List(PaperIdModel),
     'abstract_inverted_index': fields.Nested(AbstractIndexModel),
-    'concepts': fields.List(fields.Nested(ConceptModel), description="concepts"),
-    "created_date": fields.Date()
+    'concepts': fields.List(fields.Nested(ConceptModel), description="concepts")
 })
+

@@ -22,14 +22,12 @@ class Ror(db.Model):
     def to_dict(self, return_level="full"):
         response = {}
         if hasattr(self, "institution_id"):
-            response.update({"institution_id": None,
+            response.update({"id": None,
                              "official_url": None,
                              "wikipedia_url": None,
-                             "created_date": None
                              })
         response.update({
-            "ror_id": self.ror_id,
-            "ror_url": self.ror_url,
+            "ror": self.ror_url,
             "display_name": self.name,
             "grid_id": self.grid_id,
             "city": self.city,
@@ -42,8 +40,7 @@ class Ror(db.Model):
     @classmethod
     def to_dict_null(self):
         response = {
-            "ror_id": None,
-            "ror_url": None,
+            "ror": None,
             # "display_name": None, overrride with what is in institution
             "grid_id": None,
             "city": None,

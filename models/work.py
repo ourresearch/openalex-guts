@@ -155,7 +155,7 @@ class Work(db.Model):
             "first_page": self.first_page,
             "last_page": self.last_page,
             "reference_count": self.reference_count,
-            "citation_count": self.citation_count,
+            "cited_by_count": self.citation_count,
             "doc_sub_types": self.doc_sub_types,
             "oa_status": self.oa_status,
             "best_free_version": self.best_free_version,
@@ -163,13 +163,12 @@ class Work(db.Model):
             "best_url": self.best_url,
             "is_paratext": self.is_paratext,
             "genre": self.genre,
-            "created_date": self.created_date,
-            "affiliations": [affiliation.to_dict(return_level="minimum") for affiliation in self.affiliations_sorted],
-            "concepts": [concept.to_dict(return_level) for concept in self.concepts_sorted],
-            "locations": [location.to_dict(return_level) for location in self.locations_sorted],
-            "mesh": [mesh.to_dict(return_level) for mesh in self.mesh],
-            "citations": [citation.to_dict(return_level) for citation in self.citations],
-            "abstract": self.abstract.to_dict(return_level) if self.abstract else None
+            "affiliations": [affiliation.to_dict("minimum") for affiliation in self.affiliations_sorted[:100]],
+            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
+            "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
+            "citations": [citation.to_dict("minimum") for citation in self.citations],
+            "abstract": self.abstract.to_dict("minimum") if self.abstract else None
         }
         if self.doi:
             response["external_ids"]["doi"] = self.doi_lower

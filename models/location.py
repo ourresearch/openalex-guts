@@ -32,26 +32,29 @@ class Location(db.Model):
 
     @property
     def source_description(self):
-        if not self.source_type:
-            return "unknown"
         # from https://docs.microsoft.com/en-us/academic-services/graph/reference-data-schema#paper-urls
         lookup = {1: "Html", 2: "Text", 3: "Pdf", 4: "Doc", 5: "Ppt", 6: "Xls", 8: "Rtf", 12: "Xml", 13: "Rss", 20: "Swf", 27: "Ics", 31: "Pub", 33: "Ods", 34: "Odp", 35: "Odt", 36: "Zip", 40: "Mp3"}
+        if not self.source_type:
+            if self.url_for_pdf:
+                return lookup[4]
+            return "unknown"
         return lookup.get(self.source_type, "unknown").lower()
 
     def to_dict(self, return_level="full"):
         response = {
-            "source_url": self.source_url,
-            "source_type": self.source_type,
-            "source_description": self.source_description,
-            "language_code": self.language_code,
-            "url_for_landing_page": self.url_for_landing_page,
-            "url_for_pdf": self.url_for_pdf,
-            "host_type": self.host_type,
-            "version": self.version,
-            "license": self.license,
-            "repository_institution": self.repository_institution,
-            "oai_pmh_id": self.pmh_id
+            "url": self.source_url
         }
+        if return_level == "full":
+            response.update({
+                "url_for_landing_page": self.url_for_landing_page,
+                "url_for_pdf": self.url_for_pdf,
+                "url_type": self.source_description,
+                "host_type": self.host_type,
+                "version": self.version,
+                "license": self.license,
+                "repository_institution": self.repository_institution,
+                "oai_pmh_id": self.pmh_id
+            })
         return response
 
     def __repr__(self):
