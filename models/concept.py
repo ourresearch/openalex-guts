@@ -290,10 +290,10 @@ class Concept(db.Model):
         for ancestor in ancestors:
             self.insert_dicts += [{"mid.concept_ancestors": "({id}, '{name}', {level}, {ancestor_id}, '{ancestor_name}', {ancestor_level})".format(
                                   id=self.field_of_study_id,
-                                  name=self.display_name,
+                                  name=self.display_name.replace("'", ""),
                                   level=self.level,
                                   ancestor_id=ancestor["ancestor_id"],
-                                  ancestor_name=ancestor["ancestor_name"],
+                                  ancestor_name=ancestor["ancestor_name"].replace("'", ""),
                                   ancestor_level=ancestor["ancestor_level"],
                                 )}]
 
