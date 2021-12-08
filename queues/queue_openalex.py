@@ -23,6 +23,8 @@ class DbQueueOpenAlex(DbQueue):
             myclass = models.Record
         elif table == "work":
             myclass = models.Work
+        elif table == "concept":
+            myclass = models.Concept
         return myclass
 
     @property
@@ -34,6 +36,8 @@ class DbQueueOpenAlex(DbQueue):
             myid = models.Record.id
         elif table == "work":
             myid = models.Work.paper_id
+        elif table == "concept":
+            myid = models.Concept.field_of_study_id
         return myid
 
     @property

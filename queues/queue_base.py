@@ -77,9 +77,15 @@ class DbQueue(object):
 
 
         insert_dict_all_objects = defaultdict(list)
+
         for count, obj in enumerate(objects):
-            for table_name, insert_string in obj.insert_dict.items():
-                insert_dict_all_objects[table_name] += [insert_string]
+            if hasattr(obj, "insert_dicts"):
+                for row in obj.insert_dicts:
+                    for table_name, insert_string in row.items():
+                        insert_dict_all_objects[table_name] += [insert_string]
+            else:
+                for table_name, insert_string in obj.insert_dict.items():
+                    insert_dict_all_objects[table_name] += [insert_string]
 
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             fields = obj.get_insert_fieldnames(table_name)
@@ -137,6 +143,14 @@ class DbQueue(object):
                     order by random() 
                     limit {chunk};
                 """
+            elif self.myclass == models.Concept:
+                text_query_pattern_select = """
+                    select field_of_study_id from mid.concept
+                        where field_of_study_id not in
+                            (select id from mid.concept_ancestors)
+                        order by random()
+                        limit {chunk};
+                """
             else:
                 raise("myclass not known")
 
@@ -193,6 +207,8 @@ class DbQueue(object):
                              selectinload(self.myclass.work_matches_by_title).raiseload('*'),
                              selectinload(self.myclass.work_matches_by_doi).raiseload('*'),
                              orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                    if self.myclass == models.Concept:
+                        q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                     objects = q.all()
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
