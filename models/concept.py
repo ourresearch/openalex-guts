@@ -24,7 +24,12 @@ class Concept(db.Model):
     updated_date = db.Column(db.DateTime)
 
     @cached_property
-    def ancestors(self):
+    def id(self):
+        return self.field_of_study_id
+
+
+    @cached_property
+    def ancestors_raw(self):
         q = """
         WITH RECURSIVE leaf (child_field_of_study_id, child_field, child_level, field_of_study_id, parent_field, parent_level) AS (
         SELECT  linking.child_field_of_study_id,
@@ -51,12 +56,18 @@ class Concept(db.Model):
         INNER JOIN leaf l 
         On l.field_of_study_id = linking2.child_field_of_study_id
         )
-        SELECT distinct field_of_study_id, parent_field, parent_level FROM leaf;
+        SELECT distinct child_field_of_study_id as id, child_field as name, child_level as level, field_of_study_id as ancestor_id, parent_field as ancestor_name, parent_level as ancestor_level FROM leaf
+
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-        ancestors = [{"id": row["field_of_study_id"],
-                    "display_name": row["parent_field"],
-                    "level": row["parent_level"]} for row in rows]
+        return rows
+
+    @cached_property
+    def ancestors(self):
+        row = self.ancestors_raw
+        ancestors = [{"id": row["ancestor_id"],
+                    "display_name": row["ancestor_name"],
+                    "level": row["ancestor_level"]} for row in rows]
         ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
         return ancestors
 
@@ -73,11 +84,8 @@ class Concept(db.Model):
         return extended_attributes
 
     @cached_property
-    def umls_aui_url(self):
-        for attr in self.extended_attributes:
-            if attr["attribute_type"]==1:
-                return attr["attribute_value"]
-        return None
+    def umls_aui_urls(self):
+        return [attr["attribute_value"] for attr in self.extended_attributes if attr["attribute_type"]==1]
 
     @cached_property
     def wikipedia_url(self):
@@ -88,11 +96,8 @@ class Concept(db.Model):
         return f"http://en.wikipedia.org/wiki/{encoded}"
 
     @cached_property
-    def umls_cui_url(self):
-        for attr in self.extended_attributes:
-            if attr["attribute_type"]==3:
-                return attr["attribute_value"]
-        return None
+    def umls_cui_urls(self):
+        return [attr["attribute_value"] for attr in self.extended_attributes if attr["attribute_type"]==3]
 
     @cached_property
     def wikipedia_data_url(self):
@@ -270,6 +275,28 @@ class Concept(db.Model):
         # print(r.json())
         return r.json()
 
+    def get_insert_fieldnames(self, table_name=None):
+        lookup = {
+            "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"]
+        }
+        if table_name:
+            return lookup[table_name]
+        return lookup
+
+    def process(self):
+        ancestors = self.ancestors_raw
+        if not hasattr(self, "insert_dicts"):
+            self.insert_dicts = []
+        for ancestor in ancestors:
+            self.insert_dicts += [{"mid.concept_ancestors": "({id}, '{name}', {level}, {ancestor_id}, '{ancestor_name}', {ancestor_level})".format(
+                                  id=self.field_of_study_id,
+                                  name=self.display_name,
+                                  level=self.level,
+                                  ancestor_id=ancestor["ancestor_id"],
+                                  ancestor_name=ancestor["ancestor_name"],
+                                  ancestor_level=ancestor["ancestor_level"],
+                                )}]
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.field_of_study_id,
@@ -282,8 +309,8 @@ class Concept(db.Model):
                 "cited_by_count": self.citation_count,
                 "wikipedia_url": self.wikipedia_url_canonical,
                 "wikipedia_pageid": self.wikipedia_pageid,
-                "umls_aui": self.umls_aui_url,
-                "umls_cui": self.umls_cui_url,
+                "umls_aui_urls": self.umls_aui_urls,
+                "umls_cui_urls": self.umls_cui_urls,
                 "wikidata_id": self.wikidata_id,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
