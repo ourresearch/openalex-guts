@@ -92,7 +92,10 @@ def after_request_stuff(resp):
 @app_api.errorhandler(NoResultFound)
 def handle_no_result_exception(error):
     '''Return a custom not found error message and 404 status code'''
-    return {'message': error.specific}, 404
+    if hasattr(error, "specific"):
+        return {'message': error.specific}, 404
+    return {'message': error}, 404
+
 
 @app_api.route('/swagger.yml')
 @app_api.hide
@@ -309,6 +312,19 @@ class ConceptRandom(Resource):
 class ConceptId(Resource):
     def get(self, concept_id):
         return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
+
+@doc.concept_api_endpoint.route("/name/<string:name>")
+@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
+             description="An endpoint to get concept from the id")
+@app_api.response(200, 'Success', doc.ConceptModel)
+@app_api.response(404, 'Not found')
+class ConceptName(Resource):
+    def get(self, name):
+        obj = models.concept_from_name(name)
+        if not obj:
+            abort(404)
+        return jsonify_fast_no_sort(obj.to_dict())
+
 
 
 @app.route('/loaderio-2dc2634ae02b4016d10e4085686d893d/')
