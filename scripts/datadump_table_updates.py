@@ -510,29 +510,45 @@ if False:
 #
 #
 # refresh mid.citation_papers_mv;
-# update mid.work set reference_count=v.reference_count, citation_count=v.citation_count, estimated_citation=v.estimated_citation
+# update mid.work set reference_count=v.reference_count, citation_count=v.citation_count, estimated_citation=v.estimated_citation, updated_date=sysdate
 # from mid.work t1
-# join mid.citation_papers_mv v on t1.paper_id=v.paper_id;
+# join mid.citation_papers_mv v on t1.paper_id=v.paper_id
+# where (v.reference_count != t1.reference_count) or (v.citation_count != t1.citation_count) or (v.estimated_citation != t1.estimated_citation);
+# update mid.work set updated_date = created_date::timestamp where updated_date is null;
+
 #
 # refresh mid.citation_authors_mv;
-# update mid.author set paper_count=v.paper_count, citation_count=v.citation_count
+# update mid.author set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.author t1
-# join mid.citation_authors_mv v on t1.author_id=v.author_id;
+# join mid.citation_authors_mv v on t1.author_id=v.author_id
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# update mid.author set updated_date = created_date::timestamp where updated_date is null;
+
 #
 # refresh mid.citation_journals_mv;
-# update mid.journal set paper_count=v.paper_count, citation_count=v.citation_count
+# update mid.journal set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.journal t1
-# join mid.citation_journals_mv v on t1.journal_id=v.journal_id;
+# join mid.citation_journals_mv v on t1.journal_id=v.journal_id
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# update mid.journal set updated_date = created_date::timestamp where updated_date is null;
+
 #
 # refresh mid.citation_institutions_mv;
-# update mid.institution set paper_count=v.paper_count, citation_count=v.citation_count
+# update mid.institution set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.institution t1
-# join mid.citation_institutions_mv v on t1.affiliation_id=v.affiliation_id;
+# join mid.citation_institutions_mv v on t1.affiliation_id=v.affiliation_id
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# update mid.institution set updated_date = created_date::timestamp where updated_date is null;
+
 #
 # refresh mid.citation_concepts_mv;
-# update mid.concept set paper_count=v.paper_count, citation_count=v.citation_count
+# update mid.concept set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.concept t1
-# join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id;
+# join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# update mid.concept set updated_date = created_date::timestamp where updated_date is null;
+
+
 
 # update mid.institution set match_name = f_matching_string(display_name)
 # update mid.journal set match_name = f_matching_string(display_name)

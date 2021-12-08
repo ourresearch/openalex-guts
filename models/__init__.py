@@ -1,6 +1,6 @@
 from sqlalchemy.orm import selectinload
 from sqlalchemy import orm
-
+from sqlalchemy.sql.expression import func
 
 from app import db
 
@@ -57,6 +57,9 @@ def authors_from_orcid(orcid):
 
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
+
+def concept_from_name(name):
+    return Concept.query.filter(Concept.display_name.ilike(f'{name}')).order_by(func.length(Concept.display_name)).first()
 
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
