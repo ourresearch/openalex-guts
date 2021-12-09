@@ -65,10 +65,11 @@ class Concept(db.Model):
     @cached_property
     def ancestors(self):
         rows = self.ancestors_raw
+        row_dict = {row["ancestor_id"]: row for row in rows}
         ancestors = [{"id": row["ancestor_id"],
                     "display_name": row["ancestor_name"],
-                    "level": row["ancestor_level"]} for row in rows]
-        ancestors = sorted(list(set(ancestors)), key=lambda x: (x["level"], x["display_name"]), reverse=True)
+                    "level": row["ancestor_level"]} for row in row_dict.values()]
+        ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
         return ancestors
 
     @cached_property
