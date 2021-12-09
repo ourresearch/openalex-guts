@@ -170,7 +170,7 @@ class Work(db.Model):
         response = {
             "id": self.work_id,
             "paper_title": self.work_title,
-            "year": self.year,
+            "publication_year": self.year,
             "publication_date": self.publication_date,
             "doc_type": self.doc_type,
             "genre": self.genre,
@@ -193,8 +193,8 @@ class Work(db.Model):
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "locations": [location.to_dict("minimum") for location in self.locations_sorted],
             "references": [reference.paper_reference_id for reference in self.references],
-            "abstract": self.abstract.to_dict("minimum") if self.abstract else None,
-            "related_papers": self.related_papers,
+            "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
+            "related_works": self.related_papers
         }
         if self.doi:
             response["external_ids"]["doi"] = self.doi_url

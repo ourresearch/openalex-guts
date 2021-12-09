@@ -307,10 +307,10 @@ class Concept(db.Model):
             response.update({
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "wikipedia_url": self.wikipedia_url_canonical,
-                "wikipedia_pageid": self.wikipedia_pageid,
                 "umls_aui_urls": self.umls_aui_urls,
                 "umls_cui_urls": self.umls_cui_urls,
+                "wikipedia_url": self.wikipedia_url_canonical,
+                "wikipedia_pageid": self.wikipedia_pageid,
                 "wikidata_id": self.wikidata_id,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,

@@ -1,5 +1,10 @@
 from cached_property import cached_property
 from sqlalchemy import text
+from sqlalchemy import orm
+from sqlalchemy.orm import selectinload
+import requests
+import urllib.parse
+
 
 from app import db
 
@@ -20,7 +25,6 @@ class Institution(db.Model):
     display_name = db.Column(db.Text)
     official_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
-    created_date = db.Column(db.DateTime)
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
     paper_count = db.Column(db.Numeric)
@@ -28,6 +32,8 @@ class Institution(db.Model):
     wiki_page = db.Column(db.Text)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
+    updated_date = db.Column(db.DateTime)
+    created_date = db.Column(db.DateTime)
 
     @property
     def institution_id(self):
@@ -51,13 +57,13 @@ class Institution(db.Model):
             return None
         return self.iso3166_code.lower()
 
-    @cached_property
-    def wikipedia_data_url(self):
-        if self.wiki_page:
-            page_title = self.wiki_page.rsplit("/", 1)[-1]
-            url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
-            return url
-        return None
+    # @cached_property
+    # def wikipedia_data_url(self):
+    #     if self.wiki_page:
+    #         page_title = self.wiki_page.rsplit("/", 1)[-1]
+    #         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
+    #         return url
+    #     return None
 
     @cached_property
     def acroynyms(self):
@@ -93,16 +99,22 @@ class Institution(db.Model):
         return response
 
     @cached_property
-    def geonames(self):
+    def geonames_city_id(self):
+        # q = """
+        # select geonames_city_id
+        # from ins.ror_geonames
+        # join ins.ror_addresses on ror_addresses.geonames_city_id = ror_geonames.geonames_city_id
+        # WHERE ror_id = :ror_id
+        # """
         q = """
-        select *
-        from ins.ror_geonames
-        join ins.ror_addresses on ror_addresses.geonames_city_id = ror_geonames.geonames_city_id
+        select geonames_city_id
+        from ins.ror_addresses
         WHERE ror_id = :ror_id
         """
-        rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
-        response = [dict(row) for row in rows]
-        return response
+        row = db.session.execute(text(q), {"ror_id": self.ror_id}).first()
+        if not row:
+            return None
+        return row[0]
 
     @cached_property
     def labels(self):
@@ -127,89 +139,201 @@ class Institution(db.Model):
         return response
 
     @cached_property
-    def relationships(self):
+    def relationship_dicts(self):
         q = """
-        select relationship_type, 
-        ror_grid_equivalents.ror_id, 
-        related_grid_id as grid_id, 
-        name,
-        country_code 
-        from ins.ror_relationships
-        join ins.ror_grid_equivalents on ror_grid_equivalents.grid_id = ror_relationships.related_grid_id        
-        WHERE ror_relationships.ror_id = :ror_id
-        """
+           select relationship_type, ror_grid_equivalents.ror_id as related_ror_id 
+            from ins.ror_relationships
+            join ins.ror_grid_equivalents on ror_grid_equivalents.grid_id = ror_relationships.related_grid_id
+            WHERE ror_relationships.ror_id = :ror_id        
+            """
         rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
-        response = [dict(row) for row in rows]
+        relationship_dict = {}
+        for row in rows:
+            relationship_dict[row["related_ror_id"]] = row["relationship_type"].lower()
+        ror_ids = relationship_dict.keys()
+        objs = db.session.query(Institution).options(selectinload(Institution.ror), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
+        for obj in objs:
+            obj.relationship_status = relationship_dict[obj.ror_id]
+        objs = sorted(objs, key=lambda x: (x.relationship_status, x.display_name))
+        response = [obj.to_dict("minimum") for obj in objs]
         return response
 
     @cached_property
-    def types(self):
+    def type(self):
         q = """
         select type
         from ins.ror_types
         WHERE ror_id = :ror_id
         """
-        rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
-        response = [row[0] for row in rows]
-        return response
+        row = db.session.execute(text(q), {"ror_id": self.ror_id}).first()
+        return row[0].lower() if row else None
+
+    # @cached_property
+    # def wikidata_url(self):
+    #     for attr_dict in self.external_ids:
+    #         if attr_dict["type"] == "Wikidata":
+    #             wikidata_id = attr_dict["id"]
+    #             url = f"https://www.wikidata.org/wiki/{wikidata_id}"
+    #             return url
+    #     return None
+
 
     @cached_property
-    def wikidata_url(self):
-        for attr_dict in self.external_ids:
-            if attr_dict["type"] == "Wikidata":
-                wikidata_id = attr_dict["id"]
-                url = f"https://www.wikidata.org/wiki/{wikidata_id}"
-                return url
-        return None
+    def wikipedia_pageid(self):
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        try:
+            page_id = data["query"]["pages"][0]["pageid"]
+        except KeyError:
+            return None
+
+        return page_id
+
+    @cached_property
+    def image_url(self):
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        image_url = None
+        try:
+            image_url = data["query"]["pages"][0]["original"]["source"]
+        except KeyError:
+            pass
+        return image_url
+
+    @cached_property
+    def image_thumbnail_url(self):
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        try:
+            page_id = data["query"]["pages"][0]["thumbnail"]["source"]
+        except KeyError:
+            return None
+
+        return page_id
+
+    @cached_property
+    def wikipedia_title(self):
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        # print(data)
+        try:
+            return data["query"]["pages"][0]["title"]
+        except KeyError:
+            return None
+
+    @cached_property
+    def wikidata_id(self):
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        try:
+            page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
+        except KeyError:
+            return None
+
+        return page_id
+
+    @cached_property
+    def wikipedia_data(self):
+        if not self.wiki_page:
+            return None
+        wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
+        url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
+        print(url)
+        r = requests.get(url)
+        # print(r.json())
+        return r.json()
+
+    # is whatever the wikipedia url redirects to
+    @cached_property
+    def wikipedia_url_canonical(self):
+        if not self.wikipedia_title:
+            return None
+        encoded = urllib.parse.quote(self.wikipedia_title)
+        return f"http://en.wikipedia.org/wiki/{encoded}"
+
+    @cached_property
+    def display_name_international(self):
+        if not self.wikidata_data:
+            return None
+        data = self.wikidata_data
+        try:
+            response = data["entities"][self.wikidata_id]["labels"]
+            return dict(sorted(response.items()))
+        except KeyError:
+            return None
+
+    @cached_property
+    def wikidata_data(self):
+        if not self.wikidata_id:
+            return None
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
+        r = requests.get(url)
+        # print(r.json())
+        return r.json()
+
+
+    @cached_property
+    def concepts(self):
+        q = """
+            select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
+            from mid.institution institution 
+            join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
+            join mid.work_concept wc on wc.paper_id=affil.paper_id
+            join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
+            where affil.affiliation_id=:institution_id
+            group by ancestor_id, ancestor_name, ancestor_level, institution.paper_count
+            order by score desc
+            """
+        rows = db.session.execute(text(q), {"institution_id": self.institution_id}).fetchall()
+        response = [dict(row) for row in rows if row["score"] > 10]
+        return response
 
     def to_dict(self, return_level="full"):
-        from models import Ror
-
         response = {
             "id": self.institution_id,
             "display_name": self.display_name,
-            "ror": self.ror_url
+            "ror_id": self.ror_url,
+            "country_code": self.ror.country_code if self.ror else self.country_code,
+            "country": self.ror.country if self.ror else None,
+            "type": self.type,
         }
-        if self.ror:
-            response.update(self.ror.to_dict(return_level))
-        else:
-            response.update(Ror.to_dict_null())
-        response["country_code"] = self.country_code
+        # true for embedded related institutions
+        if hasattr(self, "relationship_status"):
+            response["relationship"] = self.relationship_status
 
         if return_level == "full":
             response.update({
                 "homepage_url": self.official_page,
-                "wikipedia_url": self.wiki_page,
-                "wikipedia_data_url": self.wikipedia_data_url,
-                "wikidata_url": self.wikidata_url,
+                "wikipedia_url": self.wikipedia_url_canonical,
+                "wikipedia_pageid": self.wikipedia_pageid,
+                "wikidata_id": self.wikidata_id,
+                "image_url": self.image_url,
+                "image_thumbnail_url": self.image_thumbnail_url,
+                "display_name_international": self.display_name_international,
+                "geonames_city_id": self.geonames_city_id,
                 "latitude": self.latitude,
                 "longitude": self.longitude,
-                "acroynyms": self.acroynyms,
-                "aliases": self.aliases,
-                "labels": self.labels,
-                "links": self.links,
-                "relationships": self.relationships,
-                "types": self.types,
-                "external_ids": self.external_ids,
-                "geonames": self.geonames,
+                "city": self.ror.city if self.ror else None,
+                "state": self.ror.state if self.ror else None,
+                "grid_id": self.ror.grid_id if self.ror else None,
+                "display_name_acroynyms": self.acroynyms,
+                "display_name_alternatives": self.aliases,
+                # "labels": self.labels,
+                # "links": self.links,
+                "associated_insitutions": self.relationship_dicts,
+                # "external_ids": self.external_ids,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
+                "concepts": self.concepts,
+                "works_api_url": f"https://elastic.api.openalex.org/works?filter=institution_id:{self.institution_id}&details=true",
+                "updated_date": self.updated_date,
             })
-        return response
 
-
-    @classmethod
-    def to_dict_null(self):
-        response = {
-            "id": self.institution_id,
-            "display_name": self.display_name,
-            "ror": None,
-            "country_code": self.country_code,
-            "official_page": self.official_page,
-            "wikipedia_page": self.wiki_page,
-            "works_count": None,
-            "cited_by_count": None,
-        }
         return response
 
     def __repr__(self):
