@@ -64,7 +64,7 @@ class Concept(db.Model):
 
     @cached_property
     def ancestors(self):
-        row = self.ancestors_raw
+        rows = self.ancestors_raw
         ancestors = [{"id": row["ancestor_id"],
                     "display_name": row["ancestor_name"],
                     "level": row["ancestor_level"]} for row in rows]
