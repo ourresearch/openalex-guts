@@ -79,7 +79,49 @@ class Author(db.Model):
         """
         rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
         response = [row[0] for row in rows]
+
+        # add what we get from orcid
+        if self.orcid_data_person:
+            try:
+                other_name_dicts = self.orcid_data_person["other-names"]["other-name"]
+                other_name_dicts = sorted(other_name_dicts, key=lambda x: x["display-index"])
+                response += [name["content"] for name in other_name_dicts if name["content"] not in other_name_dicts]
+            except TypeError:
+                pass
         return response
+
+    @cached_property
+    def scopus_url(self):
+        if not self.orcid_data_person:
+            return None
+        for key, value in self.orcid_data_person["external-identifiers"].items():
+            if key=="external-identifier":
+                for identifier in value:
+                    if identifier["external-id-type"] == 'Scopus Author ID':
+                        return identifier["external-id-url"]["value"]
+        return None
+
+    @cached_property
+    def twitter_url(self):
+        if not self.orcid_data_person:
+            return None
+        for key, value in self.orcid_data_person["researcher-urls"].items():
+            if key=="researcher-url":
+                for identifier in value:
+                    if identifier["url-name"] == 'twitter':
+                        return identifier["url"]["value"]
+        return None
+
+    @cached_property
+    def wikipedia_url(self):
+        if not self.orcid_data_person:
+            return None
+        for key, value in self.orcid_data_person["researcher-urls"].items():
+            if key=="researcher-url":
+                for identifier in value:
+                    if identifier["url-name"] == 'Wikipedia Entry':
+                        return identifier["url"]["value"]
+        return None
 
     @cached_property
     def orcid_data_person(self):
@@ -118,21 +160,20 @@ class Author(db.Model):
         response = {
                 "id": self.author_id,
                 "display_name": self.display_name,
-                "orcid": self.orcid_url
-                    }
+                "orcid": self.orcid_url,
+                "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
+              }
         if return_level == "full":
             response.update({
-                # "last_known_institution_id": self.last_known_institution_id,
-                # "last_known_institution": self.last_known_institution.to_dict() if self.last_known_institution else None,
                 "alternative_names": self.alternative_names,
-                "external_ids": [],
+                "scopus_url": self.scopus_url,
+                "twitter_url": self.twitter_url,
+                "wikipedia_url": self.wikipedia_url,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "orcid_data_person": self.orcid_data_person,
+                # "orcid_data_person": self.orcid_data_person,
+                "works_api_url": f"https://elastic.api.openalex.org/works?filter=author_id:{self.author_id}&details=true",
                 "updated_date": self.updated_date
-                # "all_institutions": self.all_institutions if self.all_institutions else [], NO_CITATIONS_FOR_NOW
-                # "works": self.papers, #NO_CITATIONS_FOR_NOW
-                # "citations": self.citations, #NO_CITATIONS_FOR_NOW
             })
         return response
 

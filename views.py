@@ -224,7 +224,7 @@ class AuthorId(Resource):
 @app_api.response(404, 'Not found')
 class AuthorOrcid(Resource):
     def get(self, orcid):
-        return jsonify_fast_no_sort([obj.to_dict() for obj in models.authors_from_orcid(orcid)])
+        return jsonify_fast_no_sort(models.author_from_orcid(orcid).to_dict())
 
 
 # #### Institution
@@ -281,7 +281,10 @@ class JournalRandom(Resource):
 @app_api.response(404, 'Not found')
 class JournalId(Resource):
     def get(self, journal_id):
-        return jsonify_fast_no_sort(models.journal_from_id(journal_id).to_dict())
+        obj = models.journal_from_id(journal_id)
+        if not obj:
+            abort(404)
+        return jsonify_fast_no_sort(obj.to_dict())
 
 @doc.journal_api_endpoint.route("/issn/<string:issn>")
 @app_api.doc(params={'issn': {'description': 'ISSN of the journal', 'in': 'path', 'type': doc.IssnModel}},
@@ -290,7 +293,10 @@ class JournalId(Resource):
 @app_api.response(404, 'Not found')
 class JournalIssn(Resource):
     def get(self, issn):
-        return jsonify_fast_no_sort([obj.to_dict() for obj in models.journals_from_issn(issn)])
+        obj = models.journal_from_issn(issn)
+        if not obj:
+            abort(404)
+        return jsonify_fast_no_sort(obj.to_dict())
 
 
 #### Concept

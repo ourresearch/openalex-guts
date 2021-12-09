@@ -168,17 +168,17 @@ class Institution(db.Model):
         response = {
             "id": self.institution_id,
             "display_name": self.display_name,
-            "ror": self.ror_url,
+            "ror": self.ror_url
         }
+        if self.ror:
+            response.update(self.ror.to_dict(return_level))
+        else:
+            response.update(Ror.to_dict_null())
+        response["country_code"] = self.country_code
 
         if return_level == "full":
-            if self.ror:
-                response.update(self.ror.to_dict(return_level))
-            else:
-                response.update(Ror.to_dict_null())
             response.update({
-                "country_code": self.country_code,
-                "official_url": self.official_page,
+                "homepage_url": self.official_page,
                 "wikipedia_url": self.wiki_page,
                 "wikipedia_data_url": self.wikipedia_data_url,
                 "wikidata_url": self.wikidata_url,

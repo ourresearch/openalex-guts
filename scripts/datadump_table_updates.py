@@ -274,6 +274,12 @@ if False:
 # from mid.journal t1
 # join mid.journalsdb_flat jdb on t1.issn=jdb.issn
 # where t1.issns is null
+
+ # update mid.journal set
+ #        publisher=coalesce(jdb.publisher, t1.publisher)
+ # from mid.journal t1
+ # join mid.journalsdb_flat jdb on t1.issn=jdb.issn
+
 #
 # # just need to do this for ones with grid_ids we haven't seen before (have grid_id but no ror)
 # update mid.institution set

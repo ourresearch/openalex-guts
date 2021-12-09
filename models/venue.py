@@ -34,18 +34,19 @@ class Venue(db.Model):
         response = {
             "id": self.journal_id,
             "display_name": self.display_name,
-            "issn_l": self.issn
+            "issn_l": self.issn,
+            "issns": json.loads(self.issns) if self.issns else None,
+            "publisher": self.publisher,
         }
         if return_level == "full":
             response.update({
-                "issns": json.loads(self.issns) if self.issns else None,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
-                "publisher": self.publisher,
                 "webpage": self.webpage,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "updated_date": self.updated_date.isoformat()[0:10] if self.updated_date else None,
+                "works_api_url": f"https://elastic.api.openalex.org/works?filter=issn:{self.issn}&details=true",
+                "updated_date": self.updated_date
             })
         return response
 
@@ -54,4 +55,19 @@ class Venue(db.Model):
     def __repr__(self):
         return "<Venue ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)
 
+
+# select count(distinct work.paper_id)
+# from mid.journal journal
+# join mid.work work on work.journal_id=journal.journal_id
+# where issn='0138-9130' -- peerjissn='2167-8359'
+#
+# select ancestor_level, ancestor_name, count(distinct work.paper_id) as n, count(distinct work.paper_id)/6599.0 as prop
+# from mid.journal journal
+# join mid.work work on work.journal_id=journal.journal_id
+# join mid.work_concept wc on wc.paper_id=work.paper_id
+# join mid.concept concept on concept.field_of_study_id=wc.field_of_study
+# join mid.concept_self_and_ancestors_view ancestors on ancestors.id=concept.field_of_study_id
+# where issn='0138-9130' -- peerjissn='2167-8359'
+# group by ancestor_name, ancestor_level
+# order by n desc
 

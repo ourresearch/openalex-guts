@@ -50,10 +50,11 @@ WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
 
-def authors_from_orcid(orcid):
-    author_orcids = AuthorOrcid.query.filter(AuthorOrcid.orcid==orcid).all()
-    authors = [author_orcid.author for author_orcid in author_orcids]
-    return authors
+def author_from_orcid(orcid):
+    author_orcid = AuthorOrcid.query.filter(AuthorOrcid.orcid==orcid).first()
+    if not author_orcid:
+        return None
+    return author_orcid.author
 
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
@@ -75,13 +76,8 @@ def institutions_from_ror(ror_id):
 def journal_from_id(journal_id):
     return Venue.query.filter(Venue.journal_id == journal_id).first()
 
-def journals_from_issn(issn):
-    response = Venue.query.filter(Venue.issns.ilike(f'%{issn}%')).all()
-    if not response:
-        response_journalsdb = Journalsdb.query.filter(Journalsdb.issn==issn).first()
-        response_journalsdb.journal_id = None
-        response = [response_journalsdb]
-    return response
+def journal_from_issn(issn):
+    return Venue.query.filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).first()
 
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
