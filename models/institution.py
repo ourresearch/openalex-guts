@@ -226,6 +226,12 @@ class Institution(db.Model):
             return None
 
     @cached_property
+    def wikidata_url(self):
+        if not self.wikidata_id:
+            return None
+        return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
+
+    @cached_property
     def wikidata_id(self):
         if not self.wikipedia_data:
             return None
@@ -234,7 +240,6 @@ class Institution(db.Model):
             page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
         except KeyError:
             return None
-
         return page_id
 
     @cached_property
@@ -311,7 +316,7 @@ class Institution(db.Model):
                 "homepage_url": self.official_page,
                 "wikipedia_url": self.wikipedia_url_canonical,
                 "wikipedia_pageid": self.wikipedia_pageid,
-                "wikidata_id": self.wikidata_id,
+                "wikidata_id": self.wikidata_url,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
                 "display_name_international": self.display_name_international,
