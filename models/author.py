@@ -95,7 +95,7 @@ class Author(db.Model):
         if not self.orcid_data_person:
             return None
         for key, value in self.orcid_data_person["external-identifiers"].items():
-            if key=="external-identifier":
+            if key=="external-identifier" and value:
                 for identifier in value:
                     if identifier["external-id-type"] == 'Scopus Author ID':
                         return identifier["external-id-url"]["value"]
@@ -106,18 +106,19 @@ class Author(db.Model):
         if not self.orcid_data_person:
             return None
         for key, value in self.orcid_data_person["researcher-urls"].items():
-            if key=="researcher-url":
+            if key=="researcher-url" and value:
                 for identifier in value:
                     if identifier["url-name"] == 'twitter':
                         return identifier["url"]["value"]
         return None
+
 
     @cached_property
     def wikipedia_url(self):
         if not self.orcid_data_person:
             return None
         for key, value in self.orcid_data_person["researcher-urls"].items():
-            if key=="researcher-url":
+            if key=="researcher-url" and value:
                 for identifier in value:
                     if identifier["url-name"] == 'Wikipedia Entry':
                         return identifier["url"]["value"]
@@ -155,6 +156,21 @@ class Author(db.Model):
             return my_data.get("works", None)
         return None
 
+    @cached_property
+    def concepts(self):
+        q = """
+            ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/author.paper_count::float, 1) as score
+            from mid.author author
+            join mid.affiliation affil on affil.author_id=author.author_id
+            join mid.work_concept wc on wc.paper_id=affil.paper_id
+            join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
+            where author.author_id=:author_id
+            group by ancestor_id, ancestor_name, ancestor_level, author.paper_count
+            order by score desc"""
+        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
+        response = [dict(row) for row in rows if row["score"] > 10]
+        return response
+
 
     def to_dict(self, return_level="full"):
         response = {
@@ -165,13 +181,14 @@ class Author(db.Model):
               }
         if return_level == "full":
             response.update({
-                "alternative_names": self.alternative_names,
+                "display_name_alternatives": self.alternative_names,
                 "scopus_url": self.scopus_url,
                 "twitter_url": self.twitter_url,
                 "wikipedia_url": self.wikipedia_url,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
                 # "orcid_data_person": self.orcid_data_person,
+                "concepts": self.concepts,
                 "works_api_url": f"https://elastic.api.openalex.org/works?filter=author_id:{self.author_id}&details=true",
                 "updated_date": self.updated_date
             })
