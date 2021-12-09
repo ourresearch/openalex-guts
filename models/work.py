@@ -216,7 +216,7 @@ class Work(db.Model):
             "oa_status": self.oa_status,
             "best_free_url": self.best_free_url,
             "venue": self.journal.to_dict("minimum") if self.journal else None,
-            "affiliations": self.affiliations_list,
+            "author_institutions": self.affiliations_list,
         }
         if self.doi:
             response["external_ids"]["doi"] = self.doi_url
