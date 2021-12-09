@@ -319,7 +319,7 @@ class Concept(db.Model):
                 # "description": self.description,
                 "ancestors": self.ancestors,
                 "related_concepts": self.related_concepts,
-                "works_api_url": "https://api.openalex.org/works?filter=concept:2778407487",
+                "works_api_url": f"https://api.openalex.org/works?filter=concept:{self.field_of_study_id}",
                 "updated_date": self.updated_date
             })
         return response
