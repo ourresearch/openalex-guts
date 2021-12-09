@@ -248,7 +248,7 @@ class Institution(db.Model):
             return None
         wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-        print(url)
+        # print(url)
         r = requests.get(url)
         # print(r.json())
         return r.json()

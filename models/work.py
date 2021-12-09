@@ -1,6 +1,9 @@
 from cached_property import cached_property
 from sqlalchemy import text
+from sqlalchemy import orm
+from sqlalchemy.orm import selectinload
 import datetime
+from collections import defaultdict
 
 import shortuuid
 import random
@@ -86,6 +89,12 @@ class Work(db.Model):
         print("done! {}".format(self.id))
 
     @cached_property
+    def is_retracted(self):
+        if self.doc_sub_types != None:
+            return True
+        return False
+
+    @cached_property
     def affiliations_sorted(self):
         return sorted(self.affiliations, key=lambda x: x.author_sequence_number)
 
@@ -93,13 +102,22 @@ class Work(db.Model):
     def affiliations_list(self):
         affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
         last_author_sequence_number = max([affil.author_sequence_number for affil in affiliations])
+        affiliation_dict = defaultdict(list)
         for affil in affiliations:
             affil.author_position = "middle"
             if affil.author_sequence_number == 1:
                 affil.author_position = "first"
             elif affil.author_sequence_number == last_author_sequence_number:
                 affil.author_position = "last"
-        return [affiliation.to_dict("minimum") for affiliation in affiliations]
+            affiliation_dict[affil.author_sequence_number] += [affil.to_dict("minimum")]
+        response = []
+        for seq, affil_list in affiliation_dict.items():
+            response_dict = {"author_position": affil_list[0]["author_position"],
+                             "author": affil_list[0]["author"],
+                             "institutions": [a["institution"] for a in affil_list],
+                     }
+            response.append(response_dict)
+        return response
 
     @property
     def concepts_sorted(self):
@@ -128,15 +146,35 @@ class Work(db.Model):
         return "https://doi.org/{}".format(self.doi_lower)
 
     @cached_property
-    def related_papers(self):
+    def references_list(self):
+        import models
+
+        reference_paper_ids = [reference.paper_reference_id for reference in self.references]
+        objs = db.session.query(Work).options(
+             selectinload(Work.journal).selectinload(models.Venue.journalsdb),
+             selectinload(Work.extra_ids),
+             selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+             selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+             orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(reference_paper_ids)).all()
+        response = [obj.to_dict("minimum") for obj in objs]
+        return response
+
+    @cached_property
+    def related_paper_list(self):
+        import models
         q = """
-        select recommended_paper_id as id, score
-        from legacy.mag_advanced_paper_recommendations
-        WHERE paper_id = :paper_id
+        select recommended_paper_id as id from legacy.mag_advanced_paper_recommendations WHERE paper_id = :paper_id order by score desc
         """
         rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
-        response = [dict(row) for row in rows]
-        return sorted(response, key=lambda x: x["score"], reverse=True)
+        related_paper_ids = [row[0] for row in rows]
+        objs = db.session.query(Work).options(
+             selectinload(Work.journal).selectinload(models.Venue.journalsdb),
+             selectinload(Work.extra_ids),
+             selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+             selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+             orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(related_paper_ids)).all()
+        response = [obj.to_dict("minimum") for obj in objs]
+        return response
 
     def process(self):
         VERSION_STRING = "full dict, no citations"
@@ -172,29 +210,13 @@ class Work(db.Model):
             "paper_title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
-            "doc_type": self.doc_type,
-            "genre": self.genre,
-            "doc_sub_types": self.doc_sub_types,
-            "is_paratext": self.is_paratext,
             "external_ids": {},
+            "genre": self.genre,
             "best_url": self.best_url,
             "oa_status": self.oa_status,
             "best_free_url": self.best_free_url,
-            "best_free_version": self.best_free_version,
             "venue": self.journal.to_dict("minimum") if self.journal else None,
-            "volume": self.volume,
-            "issue": self.issue,
-            "first_page": self.first_page,
-            "last_page": self.last_page,
-            "reference_count": self.reference_count,
-            "cited_by_count": self.citation_count,
             "affiliations": self.affiliations_list,
-            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
-            "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
-            "references": [reference.paper_reference_id for reference in self.references],
-            "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            "related_works": self.related_papers
         }
         if self.doi:
             response["external_ids"]["doi"] = self.doi_url
@@ -202,6 +224,30 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["external_ids"][extra_id.id_type] = extra_id.url
 
+        if return_level == "full":
+            response.update({
+            # "doc_type": self.doc_type,
+            "is_retracted": self.is_retracted,
+            "is_paratext": self.is_paratext,
+            "best_url": self.best_url,
+            "oa_status": self.oa_status,
+            "best_free_url": self.best_free_url,
+            "best_free_version": self.best_free_version,
+            "volume": self.volume,
+            "issue": self.issue,
+            "first_page": self.first_page,
+            "last_page": self.last_page,
+            "references_count": self.reference_count,
+            "cited_by_count": self.citation_count,
+            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+            "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
+            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
+            "references": self.references_list,
+            "related_works": self.related_paper_list,
+            "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
+            "cited_by_api_url": f"https://elastic.api.openalex.org/works?filter=cites:{self.paper_id}&details=true",
+            "updated_date": self.updated_date,
+        })
         return response
 
 

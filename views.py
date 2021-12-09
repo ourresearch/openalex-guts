@@ -120,7 +120,7 @@ class Yaml(Resource):
 class WorkRandom(Resource):
     def get(self):
         my_timing = TimingMessages()
-        work_id = db.session.query(models.Work.paper_id).filter(or_(models.Work.doc_type == None, models.Work.doc_type != 'Patent')).order_by(func.random()).first()
+        work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
         work_id = work_id[0]
         my_timing.log_timing("after random()")
         my_obj = models.work_from_id(work_id)
