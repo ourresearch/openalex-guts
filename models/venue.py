@@ -62,7 +62,7 @@ class Venue(db.Model):
                 "cited_by_count": self.citation_count,
                 "concepts": self.concepts,
                 "works_api_url": f"https://elastic.api.openalex.org/works?filter=issn:{self.issn}&details=true",
-                "updated_date": self.updated_date
+                "updated_date": self.updated_date.isoformat()
             })
         return response
 
