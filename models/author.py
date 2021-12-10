@@ -168,7 +168,7 @@ class Author(db.Model):
             group by ancestor_id, ancestor_name, ancestor_level, author.paper_count
             order by score desc"""
         rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] > 10]
+        response = [dict(row) for row in rows if row["score"] > 20]
         return response
 
 

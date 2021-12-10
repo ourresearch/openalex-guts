@@ -49,7 +49,10 @@ class Location(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "url": self.source_url,
-            "is_oa": self.is_oa
+            "is_oa": self.is_oa,
+            "version": self.version,
+            "license": self.license,
+            "repository_institution": self.repository_institution,
         }
         if return_level == "full":
             response.update({
@@ -57,9 +60,6 @@ class Location(db.Model):
                 "url_for_pdf": self.url_for_pdf,
                 "url_type": self.source_description,
                 "host_type": self.host_type,
-                "version": self.version,
-                "license": self.license,
-                "repository_institution": self.repository_institution,
                 "oai_pmh_id": self.pmh_id
             })
         return response

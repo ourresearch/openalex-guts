@@ -295,7 +295,7 @@ class Institution(db.Model):
             order by score desc
             """
         rows = db.session.execute(text(q), {"institution_id": self.institution_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] > 10]
+        response = [dict(row) for row in rows if row["score"] > 20]
         return response
 
     def to_dict(self, return_level="full"):
