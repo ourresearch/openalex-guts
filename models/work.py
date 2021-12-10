@@ -150,14 +150,16 @@ class Work(db.Model):
         import models
 
         reference_paper_ids = [reference.paper_reference_id for reference in self.references]
-        objs = db.session.query(Work).options(
-             selectinload(Work.journal).selectinload(models.Venue.journalsdb),
-             selectinload(Work.extra_ids),
-             selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-             selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-             orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(reference_paper_ids)).all()
-        response = [obj.to_dict("minimum") for obj in objs]
-        return response
+        return reference_paper_ids
+
+        # objs = db.session.query(Work).options(
+        #      selectinload(Work.journal).selectinload(models.Venue.journalsdb),
+        #      selectinload(Work.extra_ids),
+        #      selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+        #      selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+        #      orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(reference_paper_ids)).all()
+        # response = [obj.to_dict("minimum") for obj in objs]
+        # return response
 
     @cached_property
     def related_paper_list(self):
@@ -167,14 +169,16 @@ class Work(db.Model):
         """
         rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
         related_paper_ids = [row[0] for row in rows]
-        objs = db.session.query(Work).options(
-             selectinload(Work.journal).selectinload(models.Venue.journalsdb),
-             selectinload(Work.extra_ids),
-             selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-             selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-             orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(related_paper_ids)).all()
-        response = [obj.to_dict("minimum") for obj in objs]
-        return response
+        return related_paper_ids
+
+        # objs = db.session.query(Work).options(
+        #      selectinload(Work.journal).selectinload(models.Venue.journalsdb),
+        #      selectinload(Work.extra_ids),
+        #      selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+        #      selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+        #      orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(related_paper_ids)).all()
+        # response = [obj.to_dict("minimum") for obj in objs]
+        # return response
 
     def process(self):
         VERSION_STRING = "full dict, no citations"
@@ -241,7 +245,7 @@ class Work(db.Model):
             "cited_by_count": self.citation_count,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "locations": [location.to_dict("minimum") for location in self.locations_sorted],
+            "locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],
             "references": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
