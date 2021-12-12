@@ -7,9 +7,6 @@ from flask import jsonify
 from flask import send_from_directory
 from flask import send_file
 from flask import safe_join
-from flask_restx import Resource
-from flask_restx import fields
-from flask_restx import inputs
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import NoResultFound
@@ -24,8 +21,6 @@ from app import app
 from app import db
 from app import logger
 import models
-import views_doc_definitions as doc
-from views_doc_definitions import app_api
 
 from util import jsonify_fast_no_sort
 from util import TimingMessages
@@ -89,51 +84,54 @@ def after_request_stuff(resp):
     return resp
 
 
-@app_api.errorhandler(NoResultFound)
-def handle_no_result_exception(error):
-    '''Return a custom not found error message and 404 status code'''
-    if hasattr(error, "specific"):
-        return {'message': error.specific}, 404
-    return {'message': error}, 404
-
 
 def is_work_openalex_id(id):
+    if isinstance(id, int):
+        return False
     return id.upper().startswith("W")
+
 def is_author_openalex_id(id):
+    if isinstance(id, int):
+        return False
     return id.upper().startswith("A")
+
 def is_venue_openalex_id(id):
+    if isinstance(id, int):
+        return False
     return id.upper().startswith("V")
+
 def is_institution_openalex_id(id):
+    if isinstance(id, int):
+        return False
     return id.upper().startswith("I")
+
 def is_concept_openalex_id(id):
+    if isinstance(id, int):
+        return False
     return id.upper().startswith("C")
 
-@app_api.route('/<string:openalex_id>')
-@app_api.hide
-class UniversalOpenAlex(Resource):
-    def get(self, openalex_id):
-        if is_work_openalex_id(openalex_id):
-            return WorkId(Resource).get(openalex_id)
-        elif is_author_openalex_id(openalex_id):
-            return AuthorId(Resource).get(openalex_id)
-        elif is_venue_openalex_id(openalex_id):
-            return VenueId(Resource).get(openalex_id)
-        elif is_institution_openalex_id(openalex_id):
-            return InstitutionId(Resource).get(openalex_id)
-        elif is_concept_openalex_id(openalex_id):
-            return ConceptId(Resource).get(openalex_id)
-        return {'message': "OpenAlex ID format not recognized"}, 404
+@app.route('/<string:openalex_id>')
+def universal_get(openalex_id):
+    if is_work_openalex_id(openalex_id):
+        return works_id_get(openalex_id)
+    elif is_author_openalex_id(openalex_id):
+        return authors_id_get(openalex_id)
+    elif is_venue_openalex_id(openalex_id):
+        return venues_id_get(openalex_id)
+    elif is_institution_openalex_id(openalex_id):
+        return institutions_id_get(openalex_id)
+    elif is_concept_openalex_id(openalex_id):
+        return concepts_id_get(openalex_id)
+    return {'message': "OpenAlex ID format not recognized"}, 404
 
-@app_api.route('/swagger.yml')
-@app_api.hide
-class Yaml(Resource):
-    def get(self):
-       data = json.loads(json.dumps(app_api.__schema__))
-       with open('yamldoc.yml', 'w') as yamlf:
-            yaml.dump(data, yamlf, allow_unicode=True, default_flow_style=False)
-            file = os.path.abspath(os.getcwd())
-            # return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
-            return send_file(safe_join(file, 'yamldoc.yml'), mimetype='text/plain')
+@app.route('/swagger.yml')
+def yaml_get():
+   data = json.loads(json.dumps(app.__schema__))
+   with open('yamldoc.yml', 'w') as yamlf:
+        yaml.dump(data, yamlf, allow_unicode=True, default_flow_style=False)
+        file = os.path.abspath(os.getcwd())
+        # return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
+        return send_file(safe_join(file, 'yamldoc.yml'), mimetype='text/plain')
 
 
 
@@ -141,247 +139,154 @@ class Yaml(Resource):
 #### Work
 
 
-@doc.work_api_endpoint.route("/RANDOM")
-@doc.work_api_endpoint.hide
-@app_api.doc(description= "An endpoint to get a random work, for exploration and testing")
-@app_api.response(200, 'Success', doc.WorkModel)
-class WorkRandom(Resource):
-    def get(self):
-        my_timing = TimingMessages()
-        work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
-        work_id = work_id[0]
-        my_timing.log_timing("after random()")
+@app.route("/works/RANDOM")
+def works_random_get():
+    my_timing = TimingMessages()
+    work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
+    work_id = work_id[0]
+    my_timing.log_timing("after random()")
+    my_obj = models.work_from_id(work_id)
+    my_timing.log_timing("after work_from_id()")
+    if not my_obj:
+        abort(404)
+    response = my_obj.to_dict()
+    my_timing.log_timing("after to_dict()")
+    # response["_timing"] = my_timing.to_dict()
+    return jsonify_fast_no_sort(response)
+
+
+@app.route("/works/id/<work_id>")
+def works_id_get(work_id):
+    my_timing = TimingMessages()
+
+    if is_work_openalex_id(work_id):
+        work_id = int(work_id[1:])
+
+    if ("cached" in request.args):
+        from sqlalchemy import text
+        q = """select json_elastic 
+            from mid.work_json
+            where paper_id = :work_id;"""
+        row = db.session.execute(text(q), {"work_id": work_id}).first()
+        if not row:
+            abort(404)
+        paper_dict = json.loads(row["json_elastic"])
+        paper_dict["cited_by_count"] = 42
+        response = paper_dict
+    else:
         my_obj = models.work_from_id(work_id)
         my_timing.log_timing("after work_from_id()")
         if not my_obj:
             abort(404)
         response = my_obj.to_dict()
-        my_timing.log_timing("after to_dict()")
-        # response["_timing"] = my_timing.to_dict()
-        return jsonify_fast_no_sort(response)
+    my_timing.log_timing("after to_dict()")
+    # response["_timing"] = my_timing.to_dict()
+    return jsonify_fast_no_sort(response)
 
-
-@doc.work_api_endpoint.route("/id/<int:work_id>")
-@app_api.doc(params={'work_id': {'description': 'OpenAlex id of the work (eg 2741809807)', 'in': 'path', 'type': doc.PaperIdModel}},
-             description="An endpoint to get work from the id")
-@app_api.response(200, 'Success', doc.WorkModel)
-@app_api.response(404, 'Not found')
-class WorkId(Resource):
-    def get(self, work_id):
-        my_timing = TimingMessages()
-
-        if work_id.startswith("C"):
-            work_id = int(work_id[1:])
-
-        if ("cached" in request.args):
-            from sqlalchemy import text
-            q = """select json_elastic 
-                from mid.work_json
-                where paper_id = :work_id;"""
-            row = db.session.execute(text(q), {"work_id": work_id}).first()
-            if not row:
-                abort(404)
-            paper_dict = json.loads(row["json_elastic"])
-            paper_dict["cited_by_count"] = 42
-            response = paper_dict
-        else:
-            my_obj = models.work_from_id(work_id)
-            my_timing.log_timing("after work_from_id()")
-            if not my_obj:
-                abort(404)
-            response = my_obj.to_dict()
-
-        my_timing.log_timing("after to_dict()")
-        # response["_timing"] = my_timing.to_dict()
-        return jsonify_fast_no_sort(response)
-
-@doc.work_api_endpoint.route("/doi/<path:doi>")
-@app_api.doc(params={'doi': {'description': 'DOI of the work (eg 10.7717/peerj.4375)', 'in': 'path', 'type': doc.DoiModel}},
-             description="An endpoint to get work from the doi")
-@app_api.response(200, 'Success', doc.WorkModel)
-@app_api.response(404, 'Not found')
-class WorkDoi(Resource):
-    def get(self, doi):
-        from util import normalize_doi
-        clean_doi = normalize_doi(doi)
-        my_timing = TimingMessages()
-        # response = {"_timing": None}
-        my_obj = models.work_from_doi(clean_doi)
-        my_timing.log_timing("after work_from_doi()")
-        if not my_obj:
-            abort(404)
-        response = my_obj.to_dict()
-        my_timing.log_timing("after to_dict()")
-        # response["_timing"] = my_timing.to_dict()
-        return jsonify_fast_no_sort(response)
-
-@doc.work_api_endpoint.route("/pmid/<string:pmid>")
-@app_api.doc(params={'pmid': {'description': 'PMID of the work (eg 21801268)', 'in': 'path', 'type': doc.PmidModel}},
-             description="An endpoint to get work from the PubMed ID")
-@app_api.response(200, 'Success', doc.WorkModel)
-@app_api.response(404, 'Not found')
-class WorkPmid(Resource):
-    def get(self, pmid):
-        response = models.work_from_pmid(pmid)
-        if not response:
-            abort(404)
-        return jsonify_fast_no_sort(response.to_dict())
+@app.route("/works/doi/<path:doi>")
+def works_get(self, doi):
+    from util import normalize_doi
+    clean_doi = normalize_doi(doi)
+    my_timing = TimingMessages()
+    my_obj = models.work_from_doi(clean_doi)
+    my_timing.log_timing("after work_from_doi()")
+    if not my_obj:
+        abort(404)
+    response = my_obj.to_dict()
+    my_timing.log_timing("after to_dict()")
+    return jsonify_fast_no_sort(response)
 
 
 #### Author
 
-@doc.author_api_endpoint.route("/RANDOM")
-@doc.author_api_endpoint.hide
-@app_api.doc(description= "An endpoint to get a random author, for exploration and testing")
-@app_api.response(200, 'Success', doc.AuthorModel)
-class AuthorRandom(Resource):
-    def get(self):
-        obj = models.Author.query.order_by(func.random()).first()
-        return jsonify_fast_no_sort(obj.to_dict())
+@app.route("/authors/RANDOM")
+def authors_random_get():
+    obj = models.Author.query.order_by(func.random()).first()
+    return jsonify_fast_no_sort(obj.to_dict())
 
-@doc.author_api_endpoint.route("/id/<int:author_id>")
-@app_api.doc(params={'author_id': {'description': 'Author ID', 'in': 'path', 'type': doc.AuthorIdModel},},
-             description="An endpoint to get an author from the author_id")
-@app_api.response(200, 'Success', doc.AuthorModel)
-@app_api.response(404, 'Not found')
-class AuthorId(Resource):
-    def get(self, author_id):
-        if author_id.startswith("A"):
-            author_id = int(author_id[1:])
+@app.route("/authors/id/<author_id>")
+def authors_id_get(author_id):
+    if is_author_openalex_id(author_id):
+        author_id = int(author_id[1:])
+    return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
 
-        return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
-
-@doc.author_api_endpoint.route("/orcid/<string:orcid>")
-@app_api.doc(params={'orcid': {'description': 'ORCID of the author (eg 0000-0002-6133-2581)', 'in': 'path', 'type': doc.OrcidModel},},
-             description="An endpoint to get an author from the orcid")
-@app_api.response(200, 'Success', doc.AuthorModel)
-@app_api.response(404, 'Not found')
-class AuthorOrcid(Resource):
-    def get(self, orcid):
-        return jsonify_fast_no_sort(models.author_from_orcid(orcid).to_dict())
+@app.route("/authors/orcid/<string:orcid>")
+def authors_orcid_get(orcid):
+    return jsonify_fast_no_sort(models.author_from_orcid(orcid).to_dict())
 
 
 # #### Institution
 
-@doc.institution_api_endpoint.route("/RANDOM")
-@doc.institution_api_endpoint.hide
-@app_api.doc(description= "An endpoint to get a random institution, for exploration and testing")
-@app_api.response(200, 'Success', doc.InstitutionModel)
-class InstitutionRandom(Resource):
-    def get(self):
-        obj = models.Institution.query.order_by(func.random()).first()
-        return jsonify_fast_no_sort(obj.to_dict())
+@app.route("/institutions/RANDOM")
+def institutions_random_get():
+    obj = models.Institution.query.order_by(func.random()).first()
+    return jsonify_fast_no_sort(obj.to_dict())
 
-@doc.institution_api_endpoint.route("/id/<int:institution_id>")
-@app_api.doc(params={'institution_id': {'description': 'OpenAlex id of the institution', 'in': 'path', 'type': doc.InstitutionIdModel}},
-             description="An endpoint to get institution from the id")
-@app_api.response(200, 'Success', doc.InstitutionModel)
-@app_api.response(404, 'Not found')
-class InstitutionId(Resource):
-    def get(self, institution_id):
-        if institution_id.startswith("I"):
-            institution_id = int(institution_id[1:])
+@app.route("/institutions/id/<institution_id>")
+def institutions_id_get(institution_id):
+    if is_institution_openalex_id(institution_id):
+        institution_id = int(institution_id[1:])
+    obj = models.institution_from_id(institution_id)
+    if not obj:
+        return abort_json(404, "not found"), 404
+    return jsonify_fast_no_sort(obj.to_dict())
 
-        obj = models.institution_from_id(institution_id)
-        if not obj:
-            return abort_json(404, "not found"), 404
-        return jsonify_fast_no_sort(obj.to_dict())
-
-@doc.institution_api_endpoint.route("/ror/<string:ror_id>")
-@app_api.doc(params={'ror_id': {'description': 'ROR id of the institution', 'in': 'path', 'type': doc.RorIdModel}},
-             description="An endpoint to get institution from the ROR id")
-@app_api.response(200, 'Success', doc.InstitutionModel)
-@app_api.response(404, 'Not found')
-class InstitutionRor(Resource):
-    def get(self, ror_id):
-        return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
+@app.route("/institutions/ror/<string:ror_id>")
+def institutions_ror_get(ror_id):
+    return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
 
 
 #### Venue
 
-@doc.venue_api_endpoint.route("/RANDOM")
-@doc.venue_api_endpoint.hide
-@app_api.doc(description= "An endpoint to get a random journal, for exploration and testing")
-@app_api.response(200, 'Success', doc.JournalModel)
-class VenueRandom(Resource):
-    def get(self):
-        obj = models.Venue.query.order_by(func.random()).first()
-        if not obj:
-            raise NoResultFound
-        response = obj.to_dict()
-        return response
+@app.route("/venues/RANDOM")
+def venues_random_get():
+    obj = models.Venue.query.order_by(func.random()).first()
+    if not obj:
+        raise NoResultFound
+    response = obj.to_dict()
+    return response
 
-@doc.venue_api_endpoint.route("/id/<int:journal_id>")
-@app_api.doc(params={'journal_id': {'description': 'OpenAlex id of the journal', 'in': 'path', 'type': doc.JournalIdModel}},
-             description="An endpoint to get journal from the id")
-@app_api.response(200, 'Success', doc.JournalModel)
-@app_api.response(404, 'Not found')
-class VenueId(Resource):
-    def get(self, journal_id):
-        if journal_id.startswith("V"):
-            journal_id = int(journal_id[1:])
+@app.route("/venues/id/<journal_id>")
+def venues_id_get(journal_id):
+    if is_venue_openalex_id(journal_id):
+        journal_id = int(journal_id[1:])
+    obj = models.journal_from_id(journal_id)
+    if not obj:
+        abort(404)
+    return jsonify_fast_no_sort(obj.to_dict())
 
-        obj = models.journal_from_id(journal_id)
-        if not obj:
-            abort(404)
-        return jsonify_fast_no_sort(obj.to_dict())
-
-@doc.venue_api_endpoint.route("/issn/<string:issn>")
-@app_api.doc(params={'issn': {'description': 'ISSN of the journal', 'in': 'path', 'type': doc.IssnModel}},
-             description="An endpoint to get journal from an ISSN")
-@app_api.response(200, 'Success', doc.JournalModel)
-@app_api.response(404, 'Not found')
-class VenueIssn(Resource):
-    def get(self, issn):
-        obj = models.journal_from_issn(issn)
-        if not obj:
-            abort(404)
-        return jsonify_fast_no_sort(obj.to_dict())
+@app.route("/venues/issn/<string:issn>")
+def venues_issn_get(issn):
+    obj = models.journal_from_issn(issn)
+    if not obj:
+        abort(404)
+    return jsonify_fast_no_sort(obj.to_dict())
 
 
 #### Concept
 
-@doc.concept_api_endpoint.route("/RANDOM")
-@doc.concept_api_endpoint.hide
-@app_api.doc(description= "An endpoint to get a random concept, for exploration and testing")
-@app_api.response(200, 'Success', doc.ConceptModel)
-class ConceptRandom(Resource):
-    def get(self):
-        obj = models.Concept.query.order_by(func.random()).first()
-        return jsonify_fast_no_sort(obj.to_dict())
+@app.route("/concepts/RANDOM")
+def concepts_random_get():
+    obj = models.Concept.query.order_by(func.random()).first()
+    return jsonify_fast_no_sort(obj.to_dict())
 
-@doc.concept_api_endpoint.route("/id/<int:concept_id>")
-@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
-             description="An endpoint to get concept from the id")
-@app_api.response(200, 'Success', doc.ConceptModel)
-@app_api.response(404, 'Not found')
-class ConceptId(Resource):
-    def get(self, concept_id):
-        if concept_id.startswith("C"):
-            concept_id = int(concept_id[1:])
-        return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
+@app.route("/concepts/id/<concept_id>")
+def concepts_id_get(concept_id):
+    if is_concept_openalex_id(concept_id):
+        concept_id = int(concept_id[1:])
+    return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
 
-@doc.concept_api_endpoint.route("/wikidata/<int:wikidata_id>")
-@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
-             description="An endpoint to get concept from the id")
-@app_api.response(200, 'Success', doc.ConceptModel)
-@app_api.response(404, 'Not found')
-class ConceptWikidata(Resource):
-    def get(self, wikidata_id):
-        print("need to implement this")
-        return 1/0
+@app.route("/concepts/wikidata/<wikidata_id>")
+def concepts_wikidata_get(wikidata_id):
+    print("need to implement this")
+    return 1/0
 
-@doc.concept_api_endpoint.route("/name/<string:name>")
-@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
-             description="An endpoint to get concept from the id")
-@app_api.response(200, 'Success', doc.ConceptModel)
-@app_api.response(404, 'Not found')
-class ConceptName(Resource):
-    def get(self, name):
-        obj = models.concept_from_name(name)
-        if not obj:
-            abort(404)
-        return jsonify_fast_no_sort(obj.to_dict())
+@app.route("/concepts/name/<string:name>")
+def concepts_name_get(name):
+    obj = models.concept_from_name(name)
+    if not obj:
+        abort(404)
+    return jsonify_fast_no_sort(obj.to_dict())
 
 
 
