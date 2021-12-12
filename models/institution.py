@@ -176,16 +176,6 @@ class Institution(db.Model):
         row = db.session.execute(text(q), {"ror_id": self.ror_id}).first()
         return row[0].lower() if row else None
 
-    # @cached_property
-    # def wikidata_url(self):
-    #     for attr_dict in self.external_ids:
-    #         if attr_dict["type"] == "Wikidata":
-    #             wikidata_id = attr_dict["id"]
-    #             url = f"https://www.wikidata.org/wiki/{wikidata_id}"
-    #             return url
-    #     return None
-
-
     @cached_property
     def wikipedia_pageid(self):
         if not self.wikipedia_data:
@@ -267,7 +257,7 @@ class Institution(db.Model):
         if not self.wikipedia_title:
             return None
         encoded = urllib.parse.quote(self.wikipedia_title)
-        return f"http://en.wikipedia.org/wiki/{encoded}"
+        return f"https://en.wikipedia.org/wiki/{encoded}"
 
     @cached_property
     def display_name_international(self):
@@ -288,8 +278,11 @@ class Institution(db.Model):
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
         r = requests.get(url)
         # print(r.json())
-        return r.json()
-
+        r = requests.get(url)
+        response = r.json()
+        # are claims too big?
+        # del response["entities"][self.wikidata_id]["claims"]
+        return response
 
     @cached_property
     def concepts(self):

@@ -7,12 +7,16 @@ from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 from collections import defaultdict
+import argparse
+import logging
+import os
 
 from app import db
 from app import logger
 import models
 from util import elapsed
-from util import safe_commit
+
+
 
 
 class DbQueue(object):
@@ -143,12 +147,20 @@ class DbQueue(object):
                     order by random() 
                     limit {chunk};
                 """
-            elif self.myclass == models.Concept:
+            elif self.myclass == models.Concept and run_method=="process":
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
-                        where field_of_study_id not in
-                            (select id from mid.concept_ancestors)
+                        where 
+                        field_of_study_id not in (select id from mid.concept_ancestors)
                         and field_of_study_id in (select child_field_of_study_id from legacy.mag_advanced_field_of_study_children)                            
+                        order by random()
+                        limit {chunk};
+                """
+            elif self.myclass == models.Concept and run_method=="save_wiki":
+                text_query_pattern_select = """
+                    select field_of_study_id from mid.concept
+                        where 
+                        field_of_study_id not in (select field_of_study_id from ins.wiki_concept)
                         order by random()
                         limit {chunk};
                 """
@@ -262,7 +274,7 @@ class DbQueue(object):
                         self.print_update(new_loop_start_time, chunk, limit, start_time, index)
 
 
-    def run(self, parsed_args, job_type):
+    def run(self, parsed_args):
         start = time()
 
         try:
@@ -272,11 +284,6 @@ class DbQueue(object):
 
 
         logger.info("finished update in {} seconds".format(elapsed(start)))
-        # resp = None
-        # if job_type in ["normal"]:
-        #     my_location = Page.query.get(parsed_args.id)
-        #     resp = my_location.__dict__
-        #     pprint(resp)
 
         print("done")
         return
@@ -307,23 +314,103 @@ class DbQueue(object):
             logger.info(".")
 
 
-    def run_right_thing(self, parsed_args, job_type):
+    def run_right_thing(self, parsed_args):
         if parsed_args.id or parsed_args.doi or parsed_args.run:
             if parsed_args.randstart:
                 sleep_time = round(random.random(), 2) * 10
                 print("Sleeping to randomize start for {} seconds".format(sleep_time))
                 sleep(sleep_time)
-            self.run(parsed_args, job_type)
+            self.run(parsed_args)
 
 
-    ## these are overwritten by main class
-
-    def process_name(self, job_type):
-        pass
-
-    def myclass(self):
-        pass
-
+    @property
     def table_name(self):
-        pass
+        schema = getattr(self.myclass, "__table_args__")["schema"]
+        table = getattr(self.myclass, "__tablename__")
+        return "{}.{}".format(schema, table)
 
+    @property
+    def myclass(self):
+        import models
+
+        table = self.parsed_vars.get("table")
+        if table == "record":
+            myclass = models.Record
+        elif table == "work":
+            myclass = models.Work
+        elif table == "concept":
+            myclass = models.Concept
+        return myclass
+
+    @property
+    def myid(self):
+        import models
+
+        table = self.parsed_vars.get("table")
+        if table == "record":
+            myid = models.Record.id
+        elif table == "work":
+            myid = models.Work.paper_id
+        elif table == "concept":
+            myid = models.Concept.field_of_study_id
+        return myid
+
+    @property
+    def id_field_name(self):
+        table = self.parsed_vars.get("table")
+        if table == "work":
+            return "paper_id"
+        return "id"
+
+    def process_name(self):
+        if self.parsed_vars:
+            process_name = self.parsed_vars.get("method")
+        return process_name
+
+
+
+if __name__ == "__main__":
+    if os.getenv('OADOI_LOG_SQL'):
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+        db.session.configure()
+
+    parser = argparse.ArgumentParser(description="Run stuff.")
+    parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
+    parser.add_argument('--doi', nargs="?", type=str, help="id of the one thing you want to update (case insensitive)")
+    parser.add_argument('--table', nargs="?", type=str, default="record", help="method name to run")
+    parser.add_argument('--method', nargs="?", type=str, default="process", help="method name to run")
+    parser.add_argument('--run', default=True, action='store_true', help="to run the queues")
+    parser.add_argument('--chunk', "-ch", nargs="?", default=5, type=int, help="how many to take off db at once")
+    parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many jobs to do")
+    parser.add_argument('--name', nargs="?", default="myworker", type=str, help="worker name")
+    parser.add_argument('--randstart', default=False, action='store_true', help="randomize the start time")
+
+    parsed_args = parser.parse_args()
+
+    my_queue = DbQueue()
+    my_queue.parsed_vars = vars(parsed_args)
+    my_queue.run_right_thing(parsed_args)
+
+
+
+# unload ($$ select '["' || paper_id || '"],' as line from mid.work_json $$)
+# to 's3://unsub-public/loaderio/temp_loaderio_paper_ids.csv'
+# credentials CREDS
+# ALLOWOVERWRITE
+# parallel off
+# delimiter as '|'
+
+# head -n 100000 /Users/hpiwowar/Downloads/temp_loaderio_paper_ids.csv000 > /Users/hpiwowar/Downloads/temp_loaderio_paper_ids.csv002
+
+# {
+#   "version": 1,
+#   "variables": [{
+#     "names": ["paper_id"],
+#     "values": [
+
+# at bottom
+#   ]}
+#   ]
+# }
+
+# then make it public
