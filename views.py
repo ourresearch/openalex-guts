@@ -184,7 +184,7 @@ def works_id_get(work_id):
     return jsonify_fast_no_sort(response)
 
 @app.route("/works/doi/<path:doi>")
-def works_get(self, doi):
+def works_get(doi):
     from util import normalize_doi
     clean_doi = normalize_doi(doi)
     my_timing = TimingMessages()
