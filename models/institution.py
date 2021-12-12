@@ -5,8 +5,8 @@ from sqlalchemy.orm import selectinload
 import requests
 import urllib.parse
 
-
 from app import db
+from app import USER_AGENT
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -247,7 +247,7 @@ class Institution(db.Model):
         wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
         # print(url)
-        r = requests.get(url)
+        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         # print(r.json())
         return r.json()
 
@@ -276,9 +276,9 @@ class Institution(db.Model):
         if not self.wikidata_id:
             return None
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
-        r = requests.get(url)
+        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         # print(r.json())
-        r = requests.get(url)
+        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # are claims too big?
         # del response["entities"][self.wikidata_id]["claims"]

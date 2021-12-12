@@ -5,6 +5,7 @@ import json
 import urllib.parse
 
 from app import db
+from app import USER_AGENT
 
 
 # truncate mid.concept
@@ -247,7 +248,7 @@ class Concept(db.Model):
         print(f"\noriginal: {self.wikipedia_url} for name {self.display_name}")
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&titles={wikipedia_page_name}&pithumbsize=100&redirects="
         print(f"calling {url}")
-        r = requests.get(url)
+        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         # print(r.json())
         return r.json()
 
@@ -295,7 +296,7 @@ class Concept(db.Model):
             return None
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
         print(f"calling {url}")
-        r = requests.get(url)
+        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
         del response["entities"][self.wikidata_id]["claims"]
