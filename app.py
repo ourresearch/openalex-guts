@@ -26,6 +26,7 @@ from util import elapsed
 from util import HTTPMethodOverrideMiddleware
 
 HEROKU_APP_NAME = "openalex-guts"
+USER_AGENT = {"User-Agent": "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"}
 
 # set up logging
 # see http://wiki.pylonshq.com/display/pylonscookbook/Alternative+logging+configuration
