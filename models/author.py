@@ -187,17 +187,21 @@ class Author(db.Model):
     def to_dict(self, return_level="full"):
         response = {
                 "id": self.openalex_id,
-                "display_name": self.display_name,
                 "orcid": self.orcid_url,
+                "display_name": self.display_name,
               }
         if return_level == "full":
             response.update({
                 "display_name_alternatives": self.alternative_names,
-                "scopus_url": self.scopus_url,
-                "twitter_url": self.twitter_url,
-                "wikipedia_url": self.wikipedia_url,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
+                "external_ids": {
+                    "openalex": self.openalex_id,
+                    "orcid": self.orcid_url,
+                    "scopus": self.scopus_url,
+                    "twitter": self.twitter_url,
+                    "wikipedia": self.wikipedia_url
+                },
                 # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "concepts": self.concepts,

@@ -113,15 +113,15 @@ def is_concept_openalex_id(id):
 class UniversalOpenAlex(Resource):
     def get(self, openalex_id):
         if is_work_openalex_id(openalex_id):
-            return WorkId(Resource).get(openalex_id[1:])
+            return WorkId(Resource).get(openalex_id)
         elif is_author_openalex_id(openalex_id):
-            return AuthorId(Resource).get(openalex_id[1:])
+            return AuthorId(Resource).get(openalex_id)
         elif is_venue_openalex_id(openalex_id):
-            return VenueId(Resource).get(openalex_id[1:])
+            return VenueId(Resource).get(openalex_id)
         elif is_institution_openalex_id(openalex_id):
-            return InstitutionId(Resource).get(openalex_id[1:])
+            return InstitutionId(Resource).get(openalex_id)
         elif is_concept_openalex_id(openalex_id):
-            return ConceptId(Resource).get(openalex_id[1:])
+            return ConceptId(Resource).get(openalex_id)
         return {'message': "OpenAlex ID format not recognized"}, 404
 
 @app_api.route('/swagger.yml')
@@ -169,6 +169,9 @@ class WorkRandom(Resource):
 class WorkId(Resource):
     def get(self, work_id):
         my_timing = TimingMessages()
+
+        if work_id.startswith("C"):
+            work_id = int(work_id[1:])
 
         if ("cached" in request.args):
             from sqlalchemy import text
@@ -243,6 +246,9 @@ class AuthorRandom(Resource):
 @app_api.response(404, 'Not found')
 class AuthorId(Resource):
     def get(self, author_id):
+        if author_id.startswith("A"):
+            author_id = int(author_id[1:])
+
         return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
 
 @doc.author_api_endpoint.route("/orcid/<string:orcid>")
@@ -273,6 +279,9 @@ class InstitutionRandom(Resource):
 @app_api.response(404, 'Not found')
 class InstitutionId(Resource):
     def get(self, institution_id):
+        if institution_id.startswith("I"):
+            institution_id = int(institution_id[1:])
+
         obj = models.institution_from_id(institution_id)
         if not obj:
             return abort_json(404, "not found"), 404
@@ -309,6 +318,9 @@ class VenueRandom(Resource):
 @app_api.response(404, 'Not found')
 class VenueId(Resource):
     def get(self, journal_id):
+        if journal_id.startswith("V"):
+            journal_id = int(journal_id[1:])
+
         obj = models.journal_from_id(journal_id)
         if not obj:
             abort(404)
@@ -345,7 +357,19 @@ class ConceptRandom(Resource):
 @app_api.response(404, 'Not found')
 class ConceptId(Resource):
     def get(self, concept_id):
+        if concept_id.startswith("C"):
+            concept_id = int(concept_id[1:])
         return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
+
+@doc.concept_api_endpoint.route("/wikidata/<int:wikidata_id>")
+@app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
+             description="An endpoint to get concept from the id")
+@app_api.response(200, 'Success', doc.ConceptModel)
+@app_api.response(404, 'Not found')
+class ConceptWikidata(Resource):
+    def get(self, wikidata_id):
+        print("need to implement this")
+        return 1/0
 
 @doc.concept_api_endpoint.route("/name/<string:name>")
 @app_api.doc(params={'concept_id': {'description': 'OpenAlex id of the concept', 'in': 'path', 'type': doc.ConceptIdModel}},
