@@ -9,6 +9,10 @@ from app import db
 # insert into mid.author (select * from legacy.mag_main_authors)
 # update mid.author set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
+def as_author_openalex_id(id):
+    from app import API_HOST
+    return f"{API_HOST}/A{id}"
+
 class Author(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "author"
@@ -24,6 +28,10 @@ class Author(db.Model):
     @property
     def last_known_institution_id(self):
         return self.last_known_affiliation_id
+
+    @property
+    def openalex_id(self):
+        return as_author_openalex_id(self.author_id)
 
     @property
     def last_known_institution_api_url(self):
@@ -158,6 +166,8 @@ class Author(db.Model):
 
     @cached_property
     def concepts(self):
+        from models.concept import as_concept_openalex_id
+
         q = """
             select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/author.paper_count::float, 1) as score
             from mid.author author
@@ -169,12 +179,14 @@ class Author(db.Model):
             order by score desc"""
         rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
         response = [dict(row) for row in rows if row["score"] > 20]
+        for row in response:
+            row["id"] = as_concept_openalex_id(row["id"])
         return response
 
 
     def to_dict(self, return_level="full"):
         response = {
-                "id": self.author_id,
+                "id": self.openalex_id,
                 "display_name": self.display_name,
                 "orcid": self.orcid_url,
               }
@@ -195,6 +207,6 @@ class Author(db.Model):
         return response
 
     def __repr__(self):
-        return "<Author ( {} ) {}>".format(self.author_id, self.display_name)
+        return "<Author ( {} ) {}>".format(self.openalex_id, self.display_name)
 
 

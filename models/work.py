@@ -20,6 +20,10 @@ from util import jsonify_fast_no_sort_raw
 
 # update work set match_title = f_matching_string(original_title)
 
+def as_work_openalex_id(id):
+    from app import API_HOST
+    return f"{API_HOST}/W{id}"
+
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
@@ -71,6 +75,10 @@ class Work(db.Model):
     @property
     def id(self):
         return self.paper_id
+
+    @property
+    def openalex_id(self):
+        return as_work_openalex_id(self.paper_id)
 
     def refresh(self):
         print("refreshing! {}".format(self.id))
@@ -210,7 +218,7 @@ class Work(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.work_id,
+            "id": self.openalex_id,
             "paper_title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
@@ -256,7 +264,7 @@ class Work(db.Model):
 
 
     def __repr__(self):
-        return "<Work ( {} ) {} '{}...'>".format(self.paper_id, self.doi, self.paper_title[0:20])
+        return "<Work ( {} ) {} '{}...'>".format(self.openalex_id, self.doi, self.paper_title[0:20])
 
 
 

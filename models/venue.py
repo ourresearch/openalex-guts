@@ -10,6 +10,10 @@ from app import db
 # update mid.journal set display_title=replace(display_title, '\\\\/', '/');
 # update mid.journal set publisher=replace(publisher, '\t', '') where publisher ~ '\t';
 
+def as_venue_openalex_id(id):
+    from app import API_HOST
+    return f"{API_HOST}/V{id}"
+
 class Venue(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "journal"
@@ -29,8 +33,14 @@ class Venue(db.Model):
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
+    @property
+    def openalex_id(self):
+        return as_venue_openalex_id(self.journal_id)
+
     @cached_property
     def concepts(self):
+        from models.concept import as_concept_openalex_id
+
         q = """
             select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct wc.paper_id)/journal.paper_count::float, 1) as score
             from mid.journal journal 
@@ -43,11 +53,13 @@ class Venue(db.Model):
             """
         rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
         response = [dict(row) for row in rows if row["score"] > 20]
+        for row in response:
+            row["id"] = as_concept_openalex_id(row["id"])
         return response
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.journal_id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
             "issn_l": self.issn,
             "issns": json.loads(self.issns) if self.issns else None,
@@ -69,7 +81,7 @@ class Venue(db.Model):
 
 
     def __repr__(self):
-        return "<Venue ( {} ) {}>".format(self.id, self.doi, self.pmh_id, self.pmid)
+        return "<Venue ( {} ) {}>".format(self.openalex_id, self.doi, self.pmh_id, self.pmid)
 
 
 # select count(distinct work.paper_id)

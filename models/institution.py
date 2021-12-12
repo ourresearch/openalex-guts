@@ -16,6 +16,10 @@ from app import db
 # insert into mid.institution (select * from legacy.mag_main_affiliations)
 # update mid.institution set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
+def as_institution_openalex_id(id):
+    from app import API_HOST
+    return f"{API_HOST}/I{id}"
+
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "institution"
@@ -34,6 +38,10 @@ class Institution(db.Model):
     longitude = db.Column(db.Float)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
+
+    @property
+    def openalex_id(self):
+        return as_institution_openalex_id(self.affiliation_id)
 
     @property
     def institution_id(self):
@@ -284,6 +292,8 @@ class Institution(db.Model):
 
     @cached_property
     def concepts(self):
+        from models.concept import as_concept_openalex_id
+
         q = """
             select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
             from mid.institution institution 
@@ -296,11 +306,13 @@ class Institution(db.Model):
             """
         rows = db.session.execute(text(q), {"institution_id": self.institution_id}).fetchall()
         response = [dict(row) for row in rows if row["score"] > 20]
+        for row in response:
+            row["id"] = as_concept_openalex_id(row["id"])
         return response
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.institution_id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
             "ror_id": self.ror_url,
             "country_code": self.ror.country_code if self.ror else self.country_code,
@@ -342,6 +354,6 @@ class Institution(db.Model):
         return response
 
     def __repr__(self):
-        return "<Institution ( {} ) {}>".format(self.affiliation_id, self.display_name)
+        return "<Institution ( {} ) {}>".format(self.openalex_id, self.display_name)
 
 
