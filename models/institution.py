@@ -304,7 +304,6 @@ class Institution(db.Model):
             "display_name": self.display_name,
             "ror_id": self.ror_url,
             "country_code": self.ror.country_code if self.ror else self.country_code,
-            "country": self.ror.country if self.ror else None,
             "type": self.type,
         }
         # true for embedded related institutions
@@ -313,6 +312,7 @@ class Institution(db.Model):
 
         if return_level == "full":
             response.update({
+                "country": self.ror.country if self.ror else None,
                 "homepage_url": self.official_page,
                 "wikipedia_url": self.wikipedia_url_canonical,
                 "wikipedia_pageid": self.wikipedia_pageid,

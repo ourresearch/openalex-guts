@@ -148,6 +148,7 @@ class DbQueue(object):
                     select field_of_study_id from mid.concept
                         where field_of_study_id not in
                             (select id from mid.concept_ancestors)
+                        and field_of_study_id in (select field_of_study_id from legacy.mag_advanced_field_of_study_children)                            
                         order by random()
                         limit {chunk};
                 """

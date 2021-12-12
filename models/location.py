@@ -53,15 +53,16 @@ class Location(db.Model):
             "version": self.version,
             "license": self.license,
             "repository_institution": self.repository_institution,
+            "venue": None
         }
-        if return_level == "full":
-            response.update({
-                "url_for_landing_page": self.url_for_landing_page,
-                "url_for_pdf": self.url_for_pdf,
-                "url_type": self.source_description,
-                "host_type": self.host_type,
-                "oai_pmh_id": self.pmh_id
-            })
+        # if return_level == "full":
+        #     response.update({
+        #         "url_for_landing_page": self.url_for_landing_page,
+        #         "url_for_pdf": self.url_for_pdf,
+        #         "url_type": self.source_description,
+        #         "host_type": self.host_type,
+        #         "oai_pmh_id": self.pmh_id
+        #     })
         return response
 
     def __repr__(self):
