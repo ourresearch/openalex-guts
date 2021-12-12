@@ -219,19 +219,22 @@ class Work(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
+            "doi": self.doi_url,
             "paper_title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
-            "external_ids": {},
+            "external_ids": {
+                "openalex": self.openalex_id,
+                "doi": self.doi_url,
+            },
             "genre": self.genre,
-            "best_url": self.best_url,
+            "venue": self.journal.to_dict("minimum") if self.journal else None,
+            "url": self.best_url,
             "oa_status": self.oa_status,
             "best_free_url": self.best_free_url,
-            "venue": self.journal.to_dict("minimum") if self.journal else None,
+            "best_free_version": self.best_free_version,
             "author_institutions": self.affiliations_list,
         }
-        if self.doi:
-            response["external_ids"]["doi"] = self.doi_url
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["external_ids"][extra_id.id_type] = extra_id.url
@@ -239,18 +242,16 @@ class Work(db.Model):
         if return_level == "full":
             response.update({
             # "doc_type": self.doc_type,
-            "is_retracted": self.is_retracted,
-            "is_paratext": self.is_paratext,
-            "best_url": self.best_url,
-            "oa_status": self.oa_status,
-            "best_free_url": self.best_free_url,
-            "best_free_version": self.best_free_version,
-            "volume": self.volume,
-            "issue": self.issue,
-            "first_page": self.first_page,
-            "last_page": self.last_page,
             "references_count": self.reference_count,
             "cited_by_count": self.citation_count,
+            "bibio": {
+                "volume": self.volume,
+                "issue": self.issue,
+                "first_page": self.first_page,
+                "last_page": self.last_page
+            },
+            "is_retracted": self.is_retracted,
+            "is_paratext": self.is_paratext,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "alternate_locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],

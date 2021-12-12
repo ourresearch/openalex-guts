@@ -60,18 +60,23 @@ class Venue(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "display_name": self.display_name,
             "issn_l": self.issn,
-            "issns": json.loads(self.issns) if self.issns else None,
+            "display_name": self.display_name,
+            "issn_list": json.loads(self.issns) if self.issns else None,
             "publisher": self.publisher,
         }
         if return_level == "full":
             response.update({
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
                 "webpage": self.webpage,
-                "works_count": self.paper_count,
-                "cited_by_count": self.citation_count,
+                "external_ids": {
+                    "openalex": self.openalex_id,
+                    "issn_l": self.issn,
+                    "issn_list": json.loads(self.issns) if self.issns else None,
+                },
                 "concepts": self.concepts,
                 "works_api_url": f"https://elastic.api.openalex.org/works?filter=issn:{self.issn}&details=true",
                 "updated_date": self.updated_date.isoformat()

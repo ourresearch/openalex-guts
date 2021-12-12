@@ -276,7 +276,7 @@ class Institution(db.Model):
         data = self.wikidata_data
         try:
             response = data["entities"][self.wikidata_id]["labels"]
-            return dict(sorted(response.items()))
+            return {d["language"]:d["value"] for d in response.values()}
         except KeyError:
             return None
 
@@ -313,8 +313,8 @@ class Institution(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
+            "ror": self.ror_url,
             "display_name": self.display_name,
-            "ror_id": self.ror_url,
             "country_code": self.ror.country_code if self.ror else self.country_code,
             "type": self.type,
         }
@@ -324,28 +324,34 @@ class Institution(db.Model):
 
         if return_level == "full":
             response.update({
-                "country": self.ror.country if self.ror else None,
                 "homepage_url": self.official_page,
-                "wikipedia_url": self.wikipedia_url_canonical,
-                "wikipedia_pageid": self.wikipedia_pageid,
-                "wikidata_id": self.wikidata_url,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
-                "display_name_international": self.display_name_international,
-                "geonames_city_id": self.geonames_city_id,
-                "latitude": self.latitude,
-                "longitude": self.longitude,
-                "city": self.ror.city if self.ror else None,
-                "state": self.ror.state if self.ror else None,
-                "grid_id": self.ror.grid_id if self.ror else None,
                 "display_name_acroynyms": self.acroynyms,
                 "display_name_alternatives": self.aliases,
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
+                "exernal_ids": {
+                    "openalex": self.openalex_id,
+                    "ror": self.ror_url,
+                    "grid": self.ror.grid_id if self.ror else None,
+                    "wikipedia": self.wikipedia_url_canonical,
+                    "wikidata": self.wikidata_url
+                },
+                "geo": {
+                    "city": self.ror.city if self.ror else None,
+                    "geonames_city_id": self.geonames_city_id,
+                    "state": self.ror.state if self.ror else None,
+                    "country_code": self.ror.country_code if self.ror else self.country_code,
+                    "country": self.ror.country if self.ror else None,
+                    "latitude": self.latitude,
+                    "longitude": self.longitude,
+                },
+                "international": {"display_name": self.display_name_international},
                 # "labels": self.labels,
                 # "links": self.links,
                 "associated_insitutions": self.relationship_dicts,
                 # "external_ids": self.external_ids,
-                "works_count": self.paper_count,
-                "cited_by_count": self.citation_count,
                 "concepts": self.concepts,
                 "works_api_url": f"https://elastic.api.openalex.org/works?filter=institution_id:{self.institution_id}&details=true",
                 "updated_date": self.updated_date,

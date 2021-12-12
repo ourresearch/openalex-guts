@@ -259,7 +259,7 @@ class Concept(db.Model):
         data = self.wikidata_data
         try:
             response = data["entities"][self.wikidata_id]["labels"]
-            return dict(sorted(response.items()))
+            return {d["language"]:d["value"] for d in response.values()}
         except KeyError:
             return None
 
@@ -267,7 +267,7 @@ class Concept(db.Model):
     def description(self):
         if not self.description_international:
             return None
-        return self.description_international["en"]["value"]
+        return self.description_international["en"]
 
     @cached_property
     def description_international(self):
@@ -276,7 +276,7 @@ class Concept(db.Model):
         data = self.wikidata_data
         try:
             response = data["entities"][self.wikidata_id]["descriptions"]
-            return dict(sorted(response.items()))
+            return {d["language"]:d["value"] for d in response.values()}
         except KeyError:
             return None
 
@@ -314,7 +314,7 @@ class Concept(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "wikidata_id": self.wikidata_id,
+            "wikidata": self.wikidata_id,
             "display_name": self.display_name,
             "level": self.level,
         }
@@ -323,15 +323,19 @@ class Concept(db.Model):
                 "description": self.description,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "umls_aui_urls": self.umls_aui_urls,
-                "umls_cui_urls": self.umls_cui_urls,
-                "wikipedia_url": self.wikipedia_url_canonical,
-                "wikipedia_pageid": self.wikipedia_pageid,
+                "external_ids": {
+                    "openalex": self.openalex_id,
+                    "wikidata": self.wikidata_id,
+                    "wikipedia": self.wikipedia_url_canonical,
+                    "umls_aui_list": self.umls_aui_urls,
+                    "umls_cui_list": self.umls_cui_urls,
+                },
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
-                "display_name_international": self.display_name_international,
-                "description_international": self.description_international,
-                # "description": self.description,
+                "international": {
+                    "display_name": self.display_name_international,
+                    "description": self.description_international
+                },
                 "ancestors": self.ancestors,
                 "related_concepts": self.related_concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=concept:{self.field_of_study_id}",
