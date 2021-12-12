@@ -9,7 +9,7 @@ app_api = Api(app=app, version="0.0.1", doc=False, title="OpenAlex", description
 work_api_endpoint = app_api.namespace("works", description="OpenAlex works")
 author_api_endpoint = app_api.namespace("authors", description="OpenAlex authors")
 institution_api_endpoint = app_api.namespace("institutions", description="OpenAlex institutions")
-journal_api_endpoint = app_api.namespace("venues", description="OpenAlex venues")
+venue_api_endpoint = app_api.namespace("venues", description="OpenAlex venues")
 concept_api_endpoint = app_api.namespace("concepts", description="OpenAlex concepts")
 
 class BigIntegerModel(fields.Integer, fields.Raw):

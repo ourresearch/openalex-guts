@@ -97,6 +97,33 @@ def handle_no_result_exception(error):
     return {'message': error}, 404
 
 
+def is_work_openalex_id(id):
+    return id.upper().startswith("W")
+def is_author_openalex_id(id):
+    return id.upper().startswith("A")
+def is_venue_openalex_id(id):
+    return id.upper().startswith("V")
+def is_institution_openalex_id(id):
+    return id.upper().startswith("I")
+def is_concept_openalex_id(id):
+    return id.upper().startswith("C")
+
+@app_api.route('/<string:openalex_id>')
+@app_api.hide
+class UniversalOpenAlex(Resource):
+    def get(self, openalex_id):
+        if is_work_openalex_id(openalex_id):
+            return WorkId(Resource).get(openalex_id[1:])
+        elif is_author_openalex_id(openalex_id):
+            return AuthorId(Resource).get(openalex_id[1:])
+        elif is_venue_openalex_id(openalex_id):
+            return VenueId(Resource).get(openalex_id[1:])
+        elif is_institution_openalex_id(openalex_id):
+            return InstitutionId(Resource).get(openalex_id[1:])
+        elif is_concept_openalex_id(openalex_id):
+            return ConceptId(Resource).get(openalex_id[1:])
+        return {'message': "OpenAlex ID format not recognized"}, 404
+
 @app_api.route('/swagger.yml')
 @app_api.hide
 class Yaml(Resource):
@@ -107,6 +134,7 @@ class Yaml(Resource):
             file = os.path.abspath(os.getcwd())
             # return send_file(safe_join(file, 'yamldoc.yml'), as_attachment=True, attachment_filename='yamldoc.yml', mimetype='application/x-yaml')
             return send_file(safe_join(file, 'yamldoc.yml'), mimetype='text/plain')
+
 
 
 
@@ -262,11 +290,11 @@ class InstitutionRor(Resource):
 
 #### Venue
 
-@doc.journal_api_endpoint.route("/RANDOM")
-@doc.journal_api_endpoint.hide
+@doc.venue_api_endpoint.route("/RANDOM")
+@doc.venue_api_endpoint.hide
 @app_api.doc(description= "An endpoint to get a random journal, for exploration and testing")
 @app_api.response(200, 'Success', doc.JournalModel)
-class JournalRandom(Resource):
+class VenueRandom(Resource):
     def get(self):
         obj = models.Venue.query.order_by(func.random()).first()
         if not obj:
@@ -274,24 +302,24 @@ class JournalRandom(Resource):
         response = obj.to_dict()
         return response
 
-@doc.journal_api_endpoint.route("/id/<int:journal_id>")
+@doc.venue_api_endpoint.route("/id/<int:journal_id>")
 @app_api.doc(params={'journal_id': {'description': 'OpenAlex id of the journal', 'in': 'path', 'type': doc.JournalIdModel}},
              description="An endpoint to get journal from the id")
 @app_api.response(200, 'Success', doc.JournalModel)
 @app_api.response(404, 'Not found')
-class JournalId(Resource):
+class VenueId(Resource):
     def get(self, journal_id):
         obj = models.journal_from_id(journal_id)
         if not obj:
             abort(404)
         return jsonify_fast_no_sort(obj.to_dict())
 
-@doc.journal_api_endpoint.route("/issn/<string:issn>")
+@doc.venue_api_endpoint.route("/issn/<string:issn>")
 @app_api.doc(params={'issn': {'description': 'ISSN of the journal', 'in': 'path', 'type': doc.IssnModel}},
              description="An endpoint to get journal from an ISSN")
 @app_api.response(200, 'Success', doc.JournalModel)
 @app_api.response(404, 'Not found')
-class JournalIssn(Resource):
+class VenueIssn(Resource):
     def get(self, issn):
         obj = models.journal_from_issn(issn)
         if not obj:

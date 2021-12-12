@@ -36,6 +36,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("oadoi")
 
+API_HOST = os.getenv("API_HOST")
+
 libraries_to_mum = [
     "requests",
     "urllib3",

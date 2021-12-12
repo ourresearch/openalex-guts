@@ -9,6 +9,10 @@ from app import db
 # truncate mid.concept
 # insert into mid.concept (select * from legacy.mag_advanced_fields_of_study)
 
+def as_concept_openalex_id(id):
+    from app import API_HOST
+    return f"{API_HOST}/C{id}"
+
 class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept"
@@ -27,6 +31,9 @@ class Concept(db.Model):
     def id(self):
         return self.field_of_study_id
 
+    @property
+    def openalex_id(self):
+        return as_concept_openalex_id(self.field_of_study_id)
 
     @cached_property
     def ancestors_raw(self):
@@ -66,7 +73,7 @@ class Concept(db.Model):
     def ancestors(self):
         rows = self.ancestors_raw
         row_dict = {row["ancestor_id"]: row for row in rows}
-        ancestors = [{"id": row["ancestor_id"],
+        ancestors = [{"id": as_concept_openalex_id(row["ancestor_id"]),
                     "display_name": row["ancestor_name"],
                     "level": row["ancestor_level"]} for row in row_dict.values()]
         ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
@@ -123,7 +130,7 @@ class Concept(db.Model):
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
         # not including type on purpose
-        related_concepts1 = [{"id": row["field_of_study_id2"],
+        related_concepts1 = [{"id": as_concept_openalex_id(row["field_of_study_id2"]),
                             "display_name": row["field_of_study_id2_display_name"],
                             "level": row["field_of_study_id2_level"],
                             "score": row["rank"]
@@ -140,7 +147,7 @@ class Concept(db.Model):
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
         # not including type on purpose
-        related_concepts2 = [{"id": row["field_of_study_id1"],
+        related_concepts2 = [{"id": as_concept_openalex_id(row["field_of_study_id1"]),
                             "display_name": row["field_of_study_id1_display_name"],
                             "level": row["field_of_study_id1_level"],
                             "score": row["rank"]
@@ -257,6 +264,12 @@ class Concept(db.Model):
             return None
 
     @cached_property
+    def description(self):
+        if not self.description_international:
+            return None
+        return self.description_international["en"]["value"]
+
+    @cached_property
     def description_international(self):
         if not self.wikidata_data:
             return None
@@ -300,19 +313,20 @@ class Concept(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.field_of_study_id,
+            "id": self.openalex_id,
+            "wikidata_id": self.wikidata_id,
             "display_name": self.display_name,
             "level": self.level,
         }
         if return_level == "full":
             response.update({
+                "description": self.description,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
                 "umls_aui_urls": self.umls_aui_urls,
                 "umls_cui_urls": self.umls_cui_urls,
                 "wikipedia_url": self.wikipedia_url_canonical,
                 "wikipedia_pageid": self.wikipedia_pageid,
-                "wikidata_id": self.wikidata_id,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
                 "display_name_international": self.display_name_international,
@@ -326,6 +340,6 @@ class Concept(db.Model):
         return response
 
     def __repr__(self):
-        return "<Concept ( {} ) {}>".format(self.field_of_study_id, self.display_name)
+        return "<Concept ( {} ) {}>".format(self.openalex_id, self.display_name)
 
 
