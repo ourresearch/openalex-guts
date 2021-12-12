@@ -145,52 +145,31 @@ def works_random_get():
     work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
     work_id = work_id[0]
     my_timing.log_timing("after random()")
-    my_obj = models.work_from_id(work_id)
+    obj = models.work_from_id(work_id)
     my_timing.log_timing("after work_from_id()")
-    if not my_obj:
+    if not obj:
         abort(404)
-    response = my_obj.to_dict()
+    response = obj.to_dict()
     my_timing.log_timing("after to_dict()")
     # response["_timing"] = my_timing.to_dict()
     return jsonify_fast_no_sort(response)
 
 
-@app.route("/works/id/<work_id>")
-def works_id_get(work_id):
-    my_timing = TimingMessages()
-
-    if is_work_openalex_id(work_id):
-        work_id = int(work_id[1:])
-
-    if ("cached" in request.args):
-        from sqlalchemy import text
-        q = """select json_elastic 
-            from mid.work_json
-            where paper_id = :work_id;"""
-        row = db.session.execute(text(q), {"work_id": work_id}).first()
-        if not row:
-            abort(404)
-        paper_dict = json.loads(row["json_elastic"])
-        paper_dict["cited_by_count"] = 42
-        response = paper_dict
-    else:
-        my_obj = models.work_from_id(work_id)
-        my_timing.log_timing("after work_from_id()")
-        if not my_obj:
-            abort(404)
-        response = my_obj.to_dict()
-    my_timing.log_timing("after to_dict()")
-    # response["_timing"] = my_timing.to_dict()
-    return jsonify_fast_no_sort(response)
-
-@app.route("/works/doi/<path:doi>")
-def works_get(doi):
+@app.route("/works/<path:id>")
+def works_id_get(id):
     from util import normalize_doi
-    clean_doi = normalize_doi(doi)
-    my_obj = models.work_from_doi(clean_doi)
-    if not my_obj:
+
+    if is_work_openalex_id(id):
+        id = int(id[1:])
+        obj = models.work_from_id(id)
+    else:
+        clean_doi = normalize_doi(id)
+        if not clean_doi:
+            abort(404)
+        obj = models.work_from_doi(clean_doi)
+    if not obj:
         abort(404)
-    response = my_obj.to_dict()
+    response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
 
@@ -201,22 +180,20 @@ def authors_random_get():
     obj = models.Author.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
 
-@app.route("/authors/id/<author_id>")
-def authors_id_get(author_id):
-    if is_author_openalex_id(author_id):
-        author_id = int(author_id[1:])
-    return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
-
-@app.route("/authors/orcid/<path:orcid>")
-def authors_orcid_get(orcid):
+@app.route("/authors/<path:id>")
+def authors_id_get(id):
     from util import normalize_orcid
-    clean_orcid = normalize_orcid(orcid)
-    if not clean_orcid:
+    if is_author_openalex_id(id):
+        author_id = int(id[1:])
+        obj = models.author_from_id(author_id)
+    else:
+        clean_orcid = normalize_orcid(id)
+        if not clean_orcid:
+            abort(404)
+        obj = models.author_from_orcid(clean_orcid)
+    if not obj:
         abort(404)
-    my_obj = models.author_from_orcid(clean_orcid)
-    if not my_obj:
-        abort(404)
-    response = my_obj.to_dict()
+    response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
 
@@ -228,26 +205,20 @@ def institutions_random_get():
     obj = models.Institution.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
 
-@app.route("/institutions/id/<institution_id>")
-def institutions_id_get(institution_id):
-    if is_institution_openalex_id(institution_id):
-        institution_id = int(institution_id[1:])
-    obj = models.institution_from_id(institution_id)
-    if not obj:
-        return abort_json(404, "not found"), 404
-    return jsonify_fast_no_sort(obj.to_dict())
-
-@app.route("/institutions/ror/<path:ror>")
-def institutions_ror_get(ror):
+@app.route("/institutions/<path:id>")
+def institutions_id_get(id):
     from util import normalize_ror
-
-    clean_ror = normalize_ror(ror)
-    if not clean_ror:
+    if is_institution_openalex_id(id):
+        id = int(id[1:])
+        obj = models.institution_from_id(id)
+    else:
+        clean_ror = normalize_ror(id)
+        if not clean_ror:
+            abort(404)
+        obj = models.institution_from_ror(clean_ror)
+    if not obj:
         abort(404)
-    my_obj = models.institution_from_ror(clean_ror)
-    if not my_obj:
-        abort(404)
-    response = my_obj.to_dict()
+    response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
 #### Venue
@@ -260,26 +231,20 @@ def venues_random_get():
     response = obj.to_dict()
     return response
 
-@app.route("/venues/id/<journal_id>")
-def venues_id_get(journal_id):
-    if is_venue_openalex_id(journal_id):
-        journal_id = int(journal_id[1:])
-    obj = models.journal_from_id(journal_id)
+@app.route("/venues/<path:id>")
+def venues_id_get(id):
+    from util import normalize_issn
+    if is_venue_openalex_id(id):
+        id = int(id[1:])
+        obj = models.journal_from_id(id)
+    else:
+        clean_issn = normalize_issn(id)
+        if not clean_issn:
+            abort(404)
+        obj = models.journal_from_issn(clean_issn)
     if not obj:
         abort(404)
-    return jsonify_fast_no_sort(obj.to_dict())
-
-@app.route("/venues/issn/<path:issn>")
-def venues_issn_get(issn):
-    from util import normalize_issn
-
-    clean_issn = normalize_issn(issn)
-    if not clean_issn:
-        abort(404)
-    my_obj = models.journal_from_issn(clean_issn)
-    if not my_obj:
-        abort(404)
-    response = my_obj.to_dict()
+    response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
 
@@ -290,11 +255,11 @@ def concepts_random_get():
     obj = models.Concept.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
 
-@app.route("/concepts/id/<concept_id>")
-def concepts_id_get(concept_id):
-    if is_concept_openalex_id(concept_id):
-        concept_id = int(concept_id[1:])
-    return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
+@app.route("/concepts/<path:id>")
+def concepts_id_get(id):
+    if is_concept_openalex_id(id):
+        id = int(id[1:])
+    return jsonify_fast_no_sort(models.concept_from_id(id).to_dict())
 
 @app.route("/concepts/wikidata/<path:wikidata_id>")
 def concepts_wikidata_get(wikidata_id):
@@ -303,10 +268,10 @@ def concepts_wikidata_get(wikidata_id):
     # clean_ror = normalize_ror(ror)
     # if not clean_ror:
     #     abort(404)
-    # my_obj = models.institutions_from_ror(clean_ror)
-    # if not my_obj:
+    # obj = models.institutions_from_ror(clean_ror)
+    # if not obj:
     #     abort(404)
-    # response = my_obj.to_dict()
+    # response = obj.to_dict()
     # return jsonify_fast_no_sort(response)
 
 @app.route("/concepts/name/<string:name>")
