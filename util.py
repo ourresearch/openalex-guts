@@ -131,6 +131,44 @@ def normalize_doi(doi, return_none_if_error=False):
 
     return doi.replace('\0', '')
 
+
+def normalize_orcid(orcid):
+    if not orcid:
+        return None
+    orcid = orcid.strip().upper()
+    p = re.compile(r'(\d{4}-\d{4}-\d{4}-\d{3}[\dX])')
+    matches = re.findall(p, orcid)
+    if len(matches) == 0:
+        return None
+    orcid = matches[0]
+    orcid = orcid.replace('\0', '')
+    return orcid
+
+def normalize_ror(ror):
+    if not ror:
+        return None
+    ror = ror.strip().lower()
+    p = re.compile(r'([a-z\d]*$)')
+    matches = re.findall(p, ror)
+    if len(matches) == 0:
+        return None
+    ror = matches[0]
+    ror = ror.replace('\0', '')
+    return ror
+
+def normalize_issn(issn):
+    if not issn:
+        return None
+    issn = issn.strip().lower()
+    p = re.compile("[\dx]{4}-[\dx]{4}")
+    matches = re.findall(p, issn)
+    if len(matches) == 0:
+        return None
+    issn = matches[0]
+    issn = issn.replace('\0', '')
+    return issn
+
+
 def remove_everything_but_alphas(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
     only_alphas = input_string
