@@ -242,7 +242,6 @@ def institutions_ror_get(ror):
     from util import normalize_ror
 
     clean_ror = normalize_ror(ror)
-    print(clean_ror)
     if not clean_ror:
         abort(404)
     my_obj = models.institution_from_ror(clean_ror)
