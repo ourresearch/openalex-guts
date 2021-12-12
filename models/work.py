@@ -227,9 +227,9 @@ class Work(db.Model):
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
             },
-            "genre": self.genre,
             "venue": self.journal.to_dict("minimum") if self.journal else None,
             "url": self.best_url,
+            "genre": self.genre,
             "oa_status": self.oa_status,
             "best_free_url": self.best_free_url,
             "best_free_version": self.best_free_version,
@@ -258,7 +258,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            "cited_by_api_url": f"https://elastic.api.openalex.org/works?filter=cites:{self.paper_id}&details=true",
+            "cited_by_api_url": f"https://api.openalex.org/works?filter=cites:{self.paper_id}&details=true",
             "updated_date": self.updated_date,
         })
         return response

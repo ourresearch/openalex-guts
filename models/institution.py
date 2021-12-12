@@ -354,7 +354,7 @@ class Institution(db.Model):
                 "associated_insitutions": self.relationship_dicts,
                 # "external_ids": self.external_ids,
                 "concepts": self.concepts,
-                "works_api_url": f"https://elastic.api.openalex.org/works?filter=institution_id:{self.institution_id}&details=true",
+                "works_api_url": f"https://api.openalex.org/works?filter=institution_id:{self.institution_id}&details=true",
                 "updated_date": self.updated_date,
             })
 
