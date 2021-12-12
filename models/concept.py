@@ -1,6 +1,7 @@
 from cached_property import cached_property
 from sqlalchemy import text
 import requests
+import json
 import urllib.parse
 
 from app import db
@@ -101,7 +102,7 @@ class Concept(db.Model):
             if attr["attribute_type"]==2:
                 return attr["attribute_value"]
         encoded = urllib.parse.quote(self.display_name)
-        return f"http://en.wikipedia.org/wiki/{encoded}"
+        return f"https://en.wikipedia.org/wiki/{encoded}"
 
     @cached_property
     def umls_cui_urls(self):
@@ -230,16 +231,22 @@ class Concept(db.Model):
             page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
         except KeyError:
             return None
-
         return page_id
+
+    @cached_property
+    def wikidata_url(self):
+        if not self.wikidata_id:
+            return None
+        return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
 
     @cached_property
     def wikipedia_data(self):
         if not self.wikipedia_url:
             return None
         wikipedia_page_name = self.wikipedia_url.rsplit("/", 1)[-1]
+        print(f"\noriginal: {self.wikipedia_url} for name {self.display_name}")
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-        # print(url)
+        print(f"calling {url}")
         r = requests.get(url)
         # print(r.json())
         return r.json()
@@ -250,7 +257,7 @@ class Concept(db.Model):
         if not self.wikipedia_title:
             return None
         encoded = urllib.parse.quote(self.wikipedia_title)
-        return f"http://en.wikipedia.org/wiki/{encoded}"
+        return f"https://en.wikipedia.org/wiki/{encoded}"
 
     @cached_property
     def display_name_international(self):
@@ -287,17 +294,32 @@ class Concept(db.Model):
         if not self.wikidata_id:
             return None
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
+        print(f"calling {url}")
         r = requests.get(url)
-        # print(r.json())
-        return r.json()
+        response = r.json()
+        # claims are too big
+        del response["entities"][self.wikidata_id]["claims"]
+        return response
 
     def get_insert_fieldnames(self, table_name=None):
         lookup = {
-            "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"]
+            "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
+            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"]
         }
         if table_name:
             return lookup[table_name]
         return lookup
+
+    def save_wiki(self):
+        if not hasattr(self, "insert_dicts"):
+            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}')".format(
+                                  id=self.field_of_study_id,
+                                  wikipedia_id=self.wikipedia_url_canonical,
+                                  wikidata_id=self.wikidata_url,
+                                  wikipedia_data=json.dumps(self.wikipedia_data).replace("'", "''"),
+                                  wikidata_data=json.dumps(self.wikidata_data).replace("'", "''"),
+                                )}]
+
 
     def process(self):
         ancestors = self.ancestors_raw
@@ -316,7 +338,7 @@ class Concept(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "wikidata": self.wikidata_id,
+            "wikidata": self.wikidata_url,
             "display_name": self.display_name,
             "level": self.level,
         }
@@ -327,7 +349,7 @@ class Concept(db.Model):
                 "cited_by_count": self.citation_count,
                 "external_ids": {
                     "openalex": self.openalex_id,
-                    "wikidata": self.wikidata_id,
+                    "wikidata": self.wikidata_url,
                     "wikipedia": self.wikipedia_url_canonical,
                     "umls_aui_list": self.umls_aui_urls,
                     "umls_cui_list": self.umls_cui_urls,
