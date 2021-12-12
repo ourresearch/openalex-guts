@@ -7,6 +7,7 @@ from flask import jsonify
 from flask import send_from_directory
 from flask import send_file
 from flask import safe_join
+from flask import url_for
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import NoResultFound
@@ -24,6 +25,9 @@ import models
 
 from util import jsonify_fast_no_sort
 from util import TimingMessages
+from util import is_openalex_id
+from util import normalize_openalex_id
+
 
 def json_dumper(obj):
     """
@@ -110,19 +114,24 @@ def is_concept_openalex_id(id):
         return False
     return id.upper().startswith("C")
 
-@app.route('/<string:openalex_id>')
+@app.route('/<path:openalex_id>')
 def universal_get(openalex_id):
+    if not is_openalex_id(openalex_id):
+        return {'message': "OpenAlex ID format not recognized"}, 404
+
+    openalex_id = normalize_openalex_id(openalex_id)
     if is_work_openalex_id(openalex_id):
-        return works_id_get(openalex_id)
+        return redirect(url_for("works_id_get", id=openalex_id))
     elif is_author_openalex_id(openalex_id):
-        return authors_id_get(openalex_id)
+        return redirect(url_for("authors_id_get", id=openalex_id))
     elif is_venue_openalex_id(openalex_id):
-        return venues_id_get(openalex_id)
+        return redirect(url_for("venues_id_get", id=openalex_id))
     elif is_institution_openalex_id(openalex_id):
-        return institutions_id_get(openalex_id)
+        return redirect(url_for("institutions_id_get", id=openalex_id))
     elif is_concept_openalex_id(openalex_id):
-        return concepts_id_get(openalex_id)
+        return redirect(url_for("concepts_id_get", id=openalex_id))
     return {'message': "OpenAlex ID format not recognized"}, 404
+
 
 @app.route('/swagger.yml')
 def yaml_get():
@@ -158,10 +167,10 @@ def works_random_get():
 @app.route("/works/<path:id>")
 def works_id_get(id):
     from util import normalize_doi
-
-    if is_work_openalex_id(id):
-        id = int(id[1:])
-        obj = models.work_from_id(id)
+    if is_openalex_id(id):
+        id = normalize_openalex_id(id)
+        paper_id = int(id[1:])
+        obj = models.work_from_id(paper_id)
     else:
         clean_doi = normalize_doi(id)
         if not clean_doi:
@@ -183,7 +192,8 @@ def authors_random_get():
 @app.route("/authors/<path:id>")
 def authors_id_get(id):
     from util import normalize_orcid
-    if is_author_openalex_id(id):
+    if is_openalex_id(id):
+        id = normalize_openalex_id(id)
         author_id = int(id[1:])
         obj = models.author_from_id(author_id)
     else:
@@ -208,7 +218,8 @@ def institutions_random_get():
 @app.route("/institutions/<path:id>")
 def institutions_id_get(id):
     from util import normalize_ror
-    if is_institution_openalex_id(id):
+    if is_openalex_id(id):
+        id = normalize_openalex_id(id)
         id = int(id[1:])
         obj = models.institution_from_id(id)
     else:
@@ -234,7 +245,8 @@ def venues_random_get():
 @app.route("/venues/<path:id>")
 def venues_id_get(id):
     from util import normalize_issn
-    if is_venue_openalex_id(id):
+    if is_openalex_id(id):
+        id = normalize_openalex_id(id)
         id = int(id[1:])
         obj = models.journal_from_id(id)
     else:
@@ -257,7 +269,8 @@ def concepts_random_get():
 
 @app.route("/concepts/<path:id>")
 def concepts_id_get(id):
-    if is_concept_openalex_id(id):
+    if is_openalex_id(id):
+        id = normalize_openalex_id(id)
         id = int(id[1:])
     return jsonify_fast_no_sort(models.concept_from_id(id).to_dict())
 
@@ -289,9 +302,6 @@ def looderio_verification():
     response.mimetype = "text/plain"
     return response
 
-@app.route('/docs')
-def send_api_docs():
-    return send_from_directory("docs", "api_docs.html")
 
 
 if __name__ == "__main__":
