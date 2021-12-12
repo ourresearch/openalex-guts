@@ -69,6 +69,8 @@ def institution_from_ror(ror_id):
     response = Institution.query.filter(Institution.ror_id==ror_id).order_by(Institution.citation_count.desc()).first()
     if not response:
         response_ror = Ror.query.filter(Ror.ror_id==ror_id).first()
+        if not response_ror:
+            return None
         response_ror.institution_id = None
         response = response_ror
     return response
