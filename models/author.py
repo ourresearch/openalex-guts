@@ -205,7 +205,7 @@ class Author(db.Model):
                 # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "concepts": self.concepts,
-                "works_api_url": f"https://elastic.api.openalex.org/works?filter=author_id:{self.author_id}&details=true",
+                "works_api_url": f"https://api.openalex.org/works?filter=author_id:{self.author_id}&details=true",
                 "updated_date": self.updated_date
             })
         return response
