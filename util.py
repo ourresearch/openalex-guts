@@ -168,6 +168,27 @@ def normalize_issn(issn):
     issn = issn.replace('\0', '')
     return issn
 
+def is_openalex_id(openalex_id):
+    if not openalex_id:
+        return False
+    openalex_id = openalex_id.lower()
+    if re.findall("http[s]://openalex.org/([waicv]\d{2,})", openalex_id):
+        return True
+    if re.findall("([waicv]\d*)", openalex_id):
+        return True
+    return False
+
+def normalize_openalex_id(openalex_id):
+    if not openalex_id:
+        return None
+    openalex_id = openalex_id.strip().upper()
+    p = re.compile("([WAICV]\d{2,})")
+    matches = re.findall(p, openalex_id)
+    if len(matches) == 0:
+        return None
+    clean_openalex_id = matches[0]
+    clean_openalex_id = clean_openalex_id.replace('\0', '')
+    return clean_openalex_id
 
 def remove_everything_but_alphas(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
