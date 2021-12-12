@@ -65,12 +65,12 @@ def concept_from_name(name):
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
 
-def institutions_from_ror(ror_id):
-    response = Institution.query.filter(Institution.ror_id==ror_id).all()
+def institution_from_ror(ror_id):
+    response = Institution.query.filter(Institution.ror_id==ror_id).order_by(Institution.citation_count.desc()).first()
     if not response:
         response_ror = Ror.query.filter(Ror.ror_id==ror_id).first()
         response_ror.institution_id = None
-        response = [response_ror]
+        response = response_ror
     return response
 
 def journal_from_id(journal_id):

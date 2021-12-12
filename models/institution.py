@@ -276,7 +276,8 @@ class Institution(db.Model):
         data = self.wikidata_data
         try:
             response = data["entities"][self.wikidata_id]["labels"]
-            return {d["language"]:d["value"] for d in response.values()}
+            response = {d["language"]: d["value"] for d in response.values()}
+            return dict(sorted(response.items()))
         except KeyError:
             return None
 

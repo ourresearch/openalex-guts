@@ -187,13 +187,10 @@ def works_id_get(work_id):
 def works_get(doi):
     from util import normalize_doi
     clean_doi = normalize_doi(doi)
-    my_timing = TimingMessages()
     my_obj = models.work_from_doi(clean_doi)
-    my_timing.log_timing("after work_from_doi()")
     if not my_obj:
         abort(404)
     response = my_obj.to_dict()
-    my_timing.log_timing("after to_dict()")
     return jsonify_fast_no_sort(response)
 
 
@@ -210,9 +207,18 @@ def authors_id_get(author_id):
         author_id = int(author_id[1:])
     return jsonify_fast_no_sort(models.author_from_id(author_id).to_dict())
 
-@app.route("/authors/orcid/<string:orcid>")
+@app.route("/authors/orcid/<path:orcid>")
 def authors_orcid_get(orcid):
-    return jsonify_fast_no_sort(models.author_from_orcid(orcid).to_dict())
+    from util import normalize_orcid
+    clean_orcid = normalize_orcid(orcid)
+    if not clean_orcid:
+        abort(404)
+    my_obj = models.author_from_orcid(clean_orcid)
+    if not my_obj:
+        abort(404)
+    response = my_obj.to_dict()
+    return jsonify_fast_no_sort(response)
+
 
 
 # #### Institution
@@ -231,10 +237,19 @@ def institutions_id_get(institution_id):
         return abort_json(404, "not found"), 404
     return jsonify_fast_no_sort(obj.to_dict())
 
-@app.route("/institutions/ror/<string:ror_id>")
-def institutions_ror_get(ror_id):
-    return jsonify_fast_no_sort([obj.to_dict() for obj in models.institutions_from_ror(ror_id)])
+@app.route("/institutions/ror/<path:ror>")
+def institutions_ror_get(ror):
+    from util import normalize_ror
 
+    clean_ror = normalize_ror(ror)
+    print(clean_ror)
+    if not clean_ror:
+        abort(404)
+    my_obj = models.institution_from_ror(clean_ror)
+    if not my_obj:
+        abort(404)
+    response = my_obj.to_dict()
+    return jsonify_fast_no_sort(response)
 
 #### Venue
 
@@ -255,12 +270,18 @@ def venues_id_get(journal_id):
         abort(404)
     return jsonify_fast_no_sort(obj.to_dict())
 
-@app.route("/venues/issn/<string:issn>")
+@app.route("/venues/issn/<path:issn>")
 def venues_issn_get(issn):
-    obj = models.journal_from_issn(issn)
-    if not obj:
+    from util import normalize_issn
+
+    clean_issn = normalize_issn(issn)
+    if not clean_issn:
         abort(404)
-    return jsonify_fast_no_sort(obj.to_dict())
+    my_obj = models.journal_from_issn(clean_issn)
+    if not my_obj:
+        abort(404)
+    response = my_obj.to_dict()
+    return jsonify_fast_no_sort(response)
 
 
 #### Concept
@@ -276,10 +297,18 @@ def concepts_id_get(concept_id):
         concept_id = int(concept_id[1:])
     return jsonify_fast_no_sort(models.concept_from_id(concept_id).to_dict())
 
-@app.route("/concepts/wikidata/<wikidata_id>")
+@app.route("/concepts/wikidata/<path:wikidata_id>")
 def concepts_wikidata_get(wikidata_id):
-    print("need to implement this")
-    return 1/0
+    pass
+    # from util import normalize_wikidata_id
+    # clean_ror = normalize_ror(ror)
+    # if not clean_ror:
+    #     abort(404)
+    # my_obj = models.institutions_from_ror(clean_ror)
+    # if not my_obj:
+    #     abort(404)
+    # response = my_obj.to_dict()
+    # return jsonify_fast_no_sort(response)
 
 @app.route("/concepts/name/<string:name>")
 def concepts_name_get(name):
