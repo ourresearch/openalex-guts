@@ -63,7 +63,7 @@ class Institution(db.Model):
     def country_code(self):
         if not self.iso3166_code:
             return None
-        return self.iso3166_code.lower()
+        return self.iso3166_code.upper()
 
     # @cached_property
     # def wikipedia_data_url(self):
