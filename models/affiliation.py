@@ -32,7 +32,7 @@ class Affiliation(db.Model):
         if self.original_author:
             response["author"] = {"id": self.author_id, "display_name": self.original_author}
         if self.original_affiliation:
-            response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation}
+            response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
         # overwrite display name with better ones from these dicts if we have them
         if self.author:
             response["author"].update(self.author.to_dict(return_level="minimum"))
@@ -44,5 +44,3 @@ class Affiliation(db.Model):
 
     def __repr__(self):
         return "<Affiliation ( {} ) {} {}>".format(self.paper_id, self.author_id, self.affiliation_id)
-
-
