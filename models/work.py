@@ -166,7 +166,7 @@ class Work(db.Model):
     def references_list(self):
         import models
 
-        reference_paper_ids = [reference.paper_reference_id for reference in self.references]
+        reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
         return reference_paper_ids
 
         # objs = db.session.query(Work).options(
@@ -185,7 +185,7 @@ class Work(db.Model):
         select recommended_paper_id as id from legacy.mag_advanced_paper_recommendations WHERE paper_id = :paper_id order by score desc
         """
         rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
-        related_paper_ids = [row[0] for row in rows]
+        related_paper_ids = [as_work_openalex_id(row[0]) for row in rows]
         return related_paper_ids
 
         # objs = db.session.query(Work).options(
