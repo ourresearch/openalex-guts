@@ -114,24 +114,6 @@ def is_concept_openalex_id(id):
         return False
     return id.upper().startswith("C")
 
-@app.route('/<path:openalex_id>')
-def universal_get(openalex_id):
-    if not is_openalex_id(openalex_id):
-        return {'message': "OpenAlex ID format not recognized"}, 404
-
-    openalex_id = normalize_openalex_id(openalex_id)
-    if is_work_openalex_id(openalex_id):
-        return redirect(url_for("works_id_get", id=openalex_id))
-    elif is_author_openalex_id(openalex_id):
-        return redirect(url_for("authors_id_get", id=openalex_id))
-    elif is_venue_openalex_id(openalex_id):
-        return redirect(url_for("venues_id_get", id=openalex_id))
-    elif is_institution_openalex_id(openalex_id):
-        return redirect(url_for("institutions_id_get", id=openalex_id))
-    elif is_concept_openalex_id(openalex_id):
-        return redirect(url_for("concepts_id_get", id=openalex_id))
-    return {'message': "OpenAlex ID format not recognized"}, 404
-
 
 @app.route('/swagger.yml')
 def yaml_get():
@@ -143,6 +125,25 @@ def yaml_get():
         return send_file(safe_join(file, 'yamldoc.yml'), mimetype='text/plain')
 
 
+#### Record
+
+@app.route('/records/RANDOM')
+def records_random_get():
+    from models import Record
+    obj = db.session.query(Record).order_by(func.random()).first()
+    if not obj:
+        abort(404)
+    return jsonify_fast_no_sort({"n": len(obj.siblings), "siblings": obj.siblings})
+
+
+
+@app.route('/records/<id>')
+def records_id_get(id):
+    from models import Record
+    obj = Record.query.get(id)
+    return jsonify_fast_no_sort({"n": len(obj.siblings), "siblings": obj.siblings})
+
+
 
 
 #### Work
@@ -150,17 +151,12 @@ def yaml_get():
 
 @app.route("/works/RANDOM")
 def works_random_get():
-    my_timing = TimingMessages()
     work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
     work_id = work_id[0]
-    my_timing.log_timing("after random()")
     obj = models.work_from_id(work_id)
-    my_timing.log_timing("after work_from_id()")
     if not obj:
         abort(404)
     response = obj.to_dict()
-    my_timing.log_timing("after to_dict()")
-    # response["_timing"] = my_timing.to_dict()
     return jsonify_fast_no_sort(response)
 
 
@@ -294,6 +290,29 @@ def concepts_name_get(name):
         abort(404)
     return jsonify_fast_no_sort(obj.to_dict())
 
+######
+
+
+@app.route('/<path:openalex_id>')
+def universal_get(openalex_id):
+    if not openalex_id:
+        return {'message': "Don't panic"}, 404
+
+    if not is_openalex_id(openalex_id):
+        return {'message': "OpenAlex ID format not recognized"}, 404
+
+    openalex_id = normalize_openalex_id(openalex_id)
+    if is_work_openalex_id(openalex_id):
+        return redirect(url_for("works_id_get", id=openalex_id))
+    elif is_author_openalex_id(openalex_id):
+        return redirect(url_for("authors_id_get", id=openalex_id))
+    elif is_venue_openalex_id(openalex_id):
+        return redirect(url_for("venues_id_get", id=openalex_id))
+    elif is_institution_openalex_id(openalex_id):
+        return redirect(url_for("institutions_id_get", id=openalex_id))
+    elif is_concept_openalex_id(openalex_id):
+        return redirect(url_for("concepts_id_get", id=openalex_id))
+    return {'message': "OpenAlex ID format not recognized"}, 404
 
 
 @app.route('/loaderio-2dc2634ae02b4016d10e4085686d893d/')
