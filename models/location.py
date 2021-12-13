@@ -52,7 +52,7 @@ class Location(db.Model):
             "is_oa": self.is_oa,
             "version": self.version,
             "license": self.license,
-            "repository_institution": self.repository_institution,
+            # "repository_institution": self.repository_institution,
             "venue": None
         }
         # if return_level == "full":

@@ -84,14 +84,20 @@ class Work(db.Model):
         print("refreshing! {}".format(self.id))
         self.title = self.records[0].title
 
+        # throw out components
+
+        # build easy metadata (mesh, biblio)
+        # get abstract, build its index
+        # extract paper urls, join with unpaywall
+        # assign paper recommendations
         # build citations list (combine crossref + pubmed via some way, look up IDs)
-        # build concept list (call concept API)
-        # build author list
+        # build author list (has to be after citations list)
         # build institution list
-        # build easy metadata (abstract, mesh, etc)
-        # extract paper urls
+
+        # later
+        # build concept list (call concept API)
         # maybe
-        # assign paper recommendations, PaperExtendedAttributes, etc
+        # assign PaperExtendedAttributes, etc, look up other things in schema
 
         self.updated = datetime.datetime.utcnow().isoformat()
         print("done! {}".format(self.id))
@@ -120,9 +126,12 @@ class Work(db.Model):
             affiliation_dict[affil.author_sequence_number] += [affil.to_dict("minimum")]
         response = []
         for seq, affil_list in affiliation_dict.items():
+            institution_list = [a["institution"] for a in affil_list]
+            if institution_list == [None]:
+                institution_list = []
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
-                             "institutions": [a["institution"] for a in affil_list],
+                             "institutions": institution_list,
                      }
             response.append(response_dict)
         return response
@@ -233,6 +242,7 @@ class Work(db.Model):
             "oa_status": self.oa_status,
             "best_free_url": self.best_free_url,
             "best_free_version": self.best_free_version,
+            "best_free_license": None,
             "author_institutions": self.affiliations_list,
         }
         if self.extra_ids:

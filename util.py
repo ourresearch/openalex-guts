@@ -172,9 +172,9 @@ def is_openalex_id(openalex_id):
     if not openalex_id:
         return False
     openalex_id = openalex_id.lower()
-    if re.findall("http[s]://openalex.org/([waicv]\d{2,})", openalex_id):
+    if re.findall(r"http[s]://openalex.org/([waicv]\d{2,})", openalex_id):
         return True
-    if re.findall("([waicv]\d*)", openalex_id):
+    if re.findall(r"([waicv]\d{2,})", openalex_id):
         return True
     return False
 
