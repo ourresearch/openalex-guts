@@ -243,7 +243,7 @@ class Work(db.Model):
             "best_free_url": self.best_free_url,
             "best_free_version": self.best_free_version,
             "best_free_license": None,
-            "author_institutions": self.affiliations_list,
+            "authorships": self.affiliations_list,
         }
         if self.extra_ids:
             for extra_id in self.extra_ids:
