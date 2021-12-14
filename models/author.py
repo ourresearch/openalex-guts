@@ -195,7 +195,7 @@ class Author(db.Model):
                 "display_name_alternatives": self.alternative_names,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "external_ids": {
+                "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,
                     "scopus": self.scopus_url,

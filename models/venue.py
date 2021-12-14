@@ -72,7 +72,7 @@ class Venue(db.Model):
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
                 "webpage": self.webpage,
-                "external_ids": {
+                "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
                     "issn_list": json.loads(self.issns) if self.issns else None,
