@@ -4,6 +4,7 @@ from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 import requests
 import urllib.parse
+import json
 
 from app import db
 from app import USER_AGENT
@@ -38,6 +39,10 @@ class Institution(db.Model):
     longitude = db.Column(db.Float)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
+
+    @cached_property
+    def id(self):
+        return self.affiliation_id
 
     @property
     def openalex_id(self):
@@ -283,6 +288,31 @@ class Institution(db.Model):
         # are claims too big?
         # del response["entities"][self.wikidata_id]["claims"]
         return response
+
+    def get_insert_fieldnames(self, table_name=None):
+        lookup = {
+            "ins.wiki_institution": ["affiliation_id", "ror_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"]
+        }
+        if table_name:
+            return lookup[table_name]
+        return lookup
+
+    def save_wiki(self):
+        if not hasattr(self, "insert_dicts"):
+            wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            if len(wikipedia_data) > 64000:
+                wikipedia_data = None
+            wikidata_data = json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            if len(wikidata_data) > 64000:
+                wikidata_data = None
+            self.insert_dicts = [{"ins.wiki_institution": "({id}, '{ror_id}', '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}')".format(
+                                  id=self.affiliation_id,
+                                  ror_id=self.ror_id,
+                                  wikipedia_id=self.wikipedia_url_canonical,
+                                  wikidata_id=self.wikidata_url,
+                                  wikipedia_data=wikipedia_data,
+                                  wikidata_data=wikidata_data
+                                )}]
 
     @cached_property
     def concepts(self):

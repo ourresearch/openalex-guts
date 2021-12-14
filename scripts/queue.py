@@ -172,6 +172,14 @@ class DbQueue(object):
                         order by random()
                         limit {chunk};
                 """
+            elif self.myclass == models.Institution and run_method=="save_wiki":
+                text_query_pattern_select = """
+                    select affiliation_id from mid.institution
+                        where 
+                        affiliation_id not in (select affiliation_id from ins.wiki_institution)
+                        order by random()
+                        limit {chunk};
+                """
             else:
                 raise("myclass not known")
 
@@ -204,31 +212,24 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    # q = db.session.query(self.myclass).filter(self.myclass.id.in_(object_ids))
-                    # q = db.session.query(self.myclass).options(orm.undefer('*')).filter(self.myclass.id.in_(object_ids))
-
-                    # q = db.session.query(self.myclass).options(orm.noload('*')).filter(self.myid.in_(object_ids))
-                    # most recent q = db.session.query(self.myclass).filter(self.myid.in_(object_ids))
-
                     if self.myclass == models.Work:
-                        q = db.session.query(self.myclass).options(
-                             selectinload(self.myclass.locations),
-                             selectinload(self.myclass.journal).selectinload(models.Venue.journalsdb),
-                             selectinload(self.myclass.citations),
-                             selectinload(self.myclass.mesh),
-                             selectinload(self.myclass.abstract),
-                             selectinload(self.myclass.extra_ids),
-                             selectinload(self.myclass.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                             selectinload(self.myclass.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                             selectinload(self.myclass.concepts).selectinload(models.WorkConcept.concept),
-                             orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
-                    if self.myclass == models.Record:
-                        # q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
-                        q = db.session.query(self.myclass).options(
-                             selectinload(self.myclass.work_matches_by_title).raiseload('*'),
-                             selectinload(self.myclass.work_matches_by_doi).raiseload('*'),
-                             orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
-                    if self.myclass == models.Concept:
+                        q = db.session.query(models.Work).options(
+                             selectinload(models.Work.locations),
+                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                             selectinload(models.Work.citations),
+                             selectinload(models.Work.mesh),
+                             selectinload(models.Work.abstract),
+                             selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
+                    elif self.myclass == models.Record:
+                        q = db.session.query(models.Record).options(
+                             selectinload(models.Record.work_matches_by_title).raiseload('*'),
+                             selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids))
+                    elif self.myclass in [models.Concept, models.Institution]:
                         q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
 
                     objects = q.all()
@@ -348,6 +349,8 @@ class DbQueue(object):
             myclass = models.Work
         elif table == "concept":
             myclass = models.Concept
+        elif table == "institution":
+            myclass = models.Institution
         return myclass
 
     @property
@@ -361,6 +364,8 @@ class DbQueue(object):
             myid = models.Work.paper_id
         elif table == "concept":
             myid = models.Concept.field_of_study_id
+        elif table == "institution":
+            myid = models.Institution.affiliation_id
         return myid
 
     @property
