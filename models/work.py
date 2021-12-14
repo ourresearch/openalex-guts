@@ -163,6 +163,12 @@ class Work(db.Model):
         return "https://doi.org/{}".format(self.doi_lower)
 
     @cached_property
+    def is_oa(self):
+        if self.best_free_url != None:
+            return True
+        return False
+
+    @cached_property
     def references_list(self):
         import models
 

@@ -1,3 +1,4 @@
+from cached_property import cached_property
 from app import db
 
 
@@ -12,6 +13,9 @@ class WorkConcept(db.Model):
     field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept.field_of_study_id"), primary_key=True)
     score = db.Column(db.Float)
 
+    @cached_property
+    def is_valid(self):
+        return self.concept.is_valid
 
     def to_dict(self, return_level="full"):
         response = self.concept.to_dict(return_level)
