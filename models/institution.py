@@ -167,7 +167,7 @@ class Institution(db.Model):
         objs = db.session.query(Institution).options(selectinload(Institution.ror), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
         for obj in objs:
             obj.relationship_status = relationship_dict[obj.ror_id]
-        objs = sorted(objs, key=lambda x: (x.relationship_status, x.display_name))
+        objs = sorted(objs, key=lambda x: (x.relationship_status if x.relationship_status else "", x.display_name if x.display_name else ""))
         response = [obj.to_dict("minimum") for obj in objs]
         return response
 
