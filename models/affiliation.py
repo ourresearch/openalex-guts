@@ -26,20 +26,26 @@ class Affiliation(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {}
+
+        # author_position set in works
         if hasattr(self, "author_position"):
             response["author_position"] = self.author_position
+        # keep in this order so author_position is at the top
         response.update({"author": None, "institution": None})
+
         if self.original_author:
             response["author"] = {"id": self.author_id, "display_name": self.original_author}
         if self.original_affiliation:
             response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
+
         # overwrite display name with better ones from these dicts if we have them
         if self.author:
             response["author"].update(self.author.to_dict(return_level="minimum"))
         if self.institution:
             response["institution"].update(self.institution.to_dict(return_level="minimum"))
-        # author_position set in works
+
         response["author_sequence_number"] = self.author_sequence_number
+
         return response
 
     def __repr__(self):
