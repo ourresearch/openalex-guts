@@ -81,11 +81,15 @@ class Work(db.Model):
 
     @property
     def cited_by_api_url(self):
-        return f"https://api.openalex.org/works?filter=cites:{self.as_work_openalex_id_short}&details=true",
+        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id_short}&details=true",
 
     @property
     def openalex_id(self):
         return as_work_openalex_id(self.paper_id)
+
+    @property
+    def openalex_id_short(self):
+        return as_work_openalex_id_short(self.paper_id)
 
     def refresh(self):
         print("refreshing! {}".format(self.id))
