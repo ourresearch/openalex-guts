@@ -137,7 +137,7 @@ class DbQueue(object):
                         order by random()
                         limit {chunk};
                 """
-                insert_table = "mid.work_json"
+                insert_table = "mid.json_works"
             elif self.myclass == models.Record:
                 # text_query_pattern_select = """
                 #     select {id_field_name}
@@ -216,7 +216,7 @@ class DbQueue(object):
                         q = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                             selectinload(models.Work.citations),
+                             selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.extra_ids),
@@ -406,7 +406,7 @@ if __name__ == "__main__":
 
 
 
-# unload ($$ select '["' || paper_id || '"],' as line from mid.work_json $$)
+# unload ($$ select '["' || paper_id || '"],' as line from mid.json_works $$)
 # to 's3://unsub-public/loaderio/temp_loaderio_paper_ids.csv'
 # credentials CREDS
 # ALLOWOVERWRITE

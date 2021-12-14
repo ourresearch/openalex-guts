@@ -215,28 +215,28 @@ class Work(db.Model):
         # return response
 
     def process(self):
-        VERSION_STRING = "full dict, no citations"
+        VERSION_STRING = "sent to casey"
 
         # print("processing work! {}".format(self.id))
-        self.json_elastic = jsonify_fast_no_sort_raw(self.to_dict())
+        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
         # has to match order of get_insert_fieldnames
-        json_elastic_escaped = self.json_elastic.replace("'", "''").replace("%", "%%").replace(":", "\:")
-        if len(json_elastic_escaped) > 65000:
-            print("Error: json_elastic_escaped too long for paper_id {}, skipping".format(self.work_id))
-            json_elastic_escaped = None
-        self.insert_dict = {"mid.work_json": "({paper_id}, '{updated}', '{json_elastic}', '{version}')".format(
-                                                                  paper_id=self.paper_id,
+        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
+        if len(json_save_escaped) > 65000:
+            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.work_id))
+            json_save_escaped = None
+        self.insert_dict = {"mid.json_works": "({id}, '{updated}', '{json_save}', '{version}')".format(
+                                                                  id=self.id,
                                                                   updated=datetime.datetime.utcnow().isoformat(),
-                                                                  json_elastic=json_elastic_escaped,
+                                                                  json_save=json_save_escaped,
                                                                   version=VERSION_STRING
                                                                 )}
 
-        # print(self.json_elastic[0:100])
+        # print(self.json_save[0:100])
 
     def get_insert_fieldnames(self, table_name=None):
         lookup = {
-            "mid.work_json": ["paper_id", "updated", "json_elastic", "version"]
+            "mid.json_works": ["id", "updated", "json_save", "version"]
         }
         if table_name:
             return lookup[table_name]
