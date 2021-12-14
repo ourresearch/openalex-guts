@@ -337,10 +337,10 @@ class Concept(db.Model):
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
             wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikipedia_data) > 500000:
+            if len(wikipedia_data) > 64000:
                 wikipedia_data = None
             wikidata_data = json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikidata_data) > 500000:
+            if len(wikidata_data) > 64000:
                 wikidata_data = None
             self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}')".format(
                                   id=self.field_of_study_id,
