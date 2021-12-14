@@ -229,7 +229,7 @@ class Work(db.Model):
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
-            "paper_title": self.work_title,
+            "title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
             "external_ids": {
