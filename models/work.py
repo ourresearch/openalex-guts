@@ -245,7 +245,7 @@ class Work(db.Model):
             "title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
-            "external_ids": {
+            "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
             },
@@ -259,7 +259,7 @@ class Work(db.Model):
         }
         if self.extra_ids:
             for extra_id in self.extra_ids:
-                response["external_ids"][extra_id.id_type] = extra_id.url
+                response["ids"][extra_id.id_type] = extra_id.url
 
         if return_level == "full":
             response.update({

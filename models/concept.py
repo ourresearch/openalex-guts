@@ -381,7 +381,7 @@ class Concept(db.Model):
                 "description": self.description,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "external_ids": {
+                "ids": {
                     "openalex": self.openalex_id,
                     "wikidata": self.wikidata_url,
                     "wikipedia": self.wikipedia_url_canonical,
