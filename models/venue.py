@@ -71,7 +71,7 @@ class Venue(db.Model):
                 "cited_by_count": self.citation_count,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
-                "webpage": self.webpage,
+                "homepage_url": self.webpage,
                 "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,

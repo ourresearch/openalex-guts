@@ -23,7 +23,7 @@ class Journalsdb(db.Model):
         if hasattr(self, "journal_id"):
             response.update({"id": None,
                              "display_name": None,
-                             "webpage": None,
+                             "homepage_url": None,
                              "works_count": None,
                              "cited_by_count": None,
                              "updated_date": None
