@@ -24,6 +24,9 @@ def as_work_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/W{id}"
 
+def as_work_openalex_id_short(id):
+    return f"W{id}"
+
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
@@ -78,7 +81,7 @@ class Work(db.Model):
 
     @property
     def cited_by_api_url(self):
-        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id}&details=true",
+        return f"https://api.openalex.org/works?filter=cites:{self.as_work_openalex_id_short}&details=true",
 
     @property
     def openalex_id(self):
