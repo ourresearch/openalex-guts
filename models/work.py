@@ -77,6 +77,10 @@ class Work(db.Model):
         return self.paper_id
 
     @property
+    def cited_by_api_url(self):
+        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id}&details=true",
+
+    @property
     def openalex_id(self):
         return as_work_openalex_id(self.paper_id)
 
@@ -273,7 +277,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            "cited_by_api_url": f"https://api.openalex.org/works?filter=cites:{self.paper_id}&details=true",
+            "cited_by_api_url": self.cited_by_api_url,
             "updated_date": self.updated_date,
         })
         return response

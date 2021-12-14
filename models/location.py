@@ -53,7 +53,7 @@ class Location(db.Model):
             "version": self.version,
             "license": self.license,
             # "repository_institution": self.repository_institution,
-            "venue": None,
+            "venue_id": None,
             "is_best": None
         }
         # if return_level == "full":
