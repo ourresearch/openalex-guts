@@ -355,7 +355,7 @@ class Institution(db.Model):
                 "display_name_alternatives": self.aliases,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "exernal_ids": {
+                "ids": {
                     "openalex": self.openalex_id,
                     "ror": self.ror_url,
                     "grid": self.ror.grid_id if self.ror else None,
