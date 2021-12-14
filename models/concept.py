@@ -322,7 +322,11 @@ class Concept(db.Model):
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
-        del response["entities"][self.wikidata_id]["claims"]
+        try:
+            del response["entities"][self.wikidata_id]["claims"]
+        except KeyError:
+            # not here for some reason, doesn't matter
+            pass
         return response
 
     def get_insert_fieldnames(self, table_name=None):
