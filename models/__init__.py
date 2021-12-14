@@ -46,7 +46,6 @@ Author.last_known_institution = db.relationship("Institution")
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 
-
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
 

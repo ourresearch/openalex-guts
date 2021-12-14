@@ -239,10 +239,9 @@ class Work(db.Model):
             "venue": self.journal.to_dict("minimum") if self.journal else None,
             "url": self.best_url,
             "genre": self.genre,
+            "is_oa": self.is_oa,
             "oa_status": self.oa_status,
-            "best_free_url": self.best_free_url,
-            "best_free_version": self.best_free_version,
-            "best_free_license": None,
+            "oa_url": self.best_free_url,
             "authorships": self.affiliations_list,
         }
         if self.extra_ids:
@@ -262,7 +261,7 @@ class Work(db.Model):
             },
             "is_retracted": self.is_retracted,
             "is_paratext": self.is_paratext,
-            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "alternate_locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],
             "referenced_works": self.references_list,

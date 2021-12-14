@@ -53,7 +53,8 @@ class Location(db.Model):
             "version": self.version,
             "license": self.license,
             # "repository_institution": self.repository_institution,
-            "venue": None
+            "venue": None,
+            "is_best_oa_location": None
         }
         # if return_level == "full":
         #     response.update({
