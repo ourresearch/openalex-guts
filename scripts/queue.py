@@ -139,12 +139,20 @@ class DbQueue(object):
                 """
                 insert_table = "mid.work_json"
             elif self.myclass == models.Record:
-                text_query_pattern_select = """
-                    select {id_field_name} 
-                    from ins.recordthresher_record
-                    where 
-                    updated >= '2021-11-30'
-                    order by random() 
+                # text_query_pattern_select = """
+                #     select {id_field_name}
+                #     from ins.recordthresher_record
+                #     where
+                #     updated >= '2021-11-30'
+                #     order by random()
+                #     limit {chunk};
+                # """
+               text_query_pattern_select = """
+                    select record_id from mid.record_match 
+                    join ins.recordthresher_record on ins.recordthresher_record.id=mid.record_match.record_id
+                    where matching_work_id is null
+                    and doi is null
+                    order by random()
                     limit {chunk};
                 """
             elif self.myclass == models.Concept and run_method=="process":

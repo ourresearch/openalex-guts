@@ -38,6 +38,29 @@ class Concept(db.Model):
         return as_concept_openalex_id(self.field_of_study_id)
 
     @cached_property
+    def is_valid(self):
+        q = """
+        select field_of_study_id
+        from mid.concept_deprecated_concepts
+        WHERE field_of_study_id = :concept_id
+        """
+        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
+        if rows:
+            return False
+        return True
+
+    def filter_for_valid_concepts(concept_id_list):
+        q = """
+        select field_of_study_id
+        from mid.concept_deprecated_concepts
+        WHERE field_of_study_id in :concept_id_list
+        """
+        rows = db.session.execute(text(q), {"concept_id_list": concept_id_list}).fetchall()
+        invalid_ids = [row[0] for row in rows]
+        response = [id for id in concept_id_list if id not in invalid_ids]
+        return response
+
+    @cached_property
     def ancestors_raw(self):
         q = """
         WITH RECURSIVE leaf (child_field_of_study_id, child_field, child_level, field_of_study_id, parent_field, parent_level) AS (
@@ -317,8 +340,8 @@ class Concept(db.Model):
                                   id=self.field_of_study_id,
                                   wikipedia_id=self.wikipedia_url_canonical,
                                   wikidata_id=self.wikidata_url,
-                                  wikipedia_data=json.dumps(self.wikipedia_data).replace("'", "''"),
-                                  wikidata_data=json.dumps(self.wikidata_data).replace("'", "''"),
+                                  wikipedia_data=json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:"),
+                                  wikidata_data=json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:"),
                                 )}]
 
 
