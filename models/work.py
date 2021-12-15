@@ -30,6 +30,47 @@ def as_work_openalex_id(id):
 def as_work_openalex_id_short(id):
     return f"W{id}"
 
+def call_sagemaker_bulk_lookup_new_work_concepts(rows):
+    insert_dicts = []
+    data_list = []
+    for row in rows:
+        data_list += [{
+            "title": row["paper_title"].lower(),
+            "doc_type": row["doc_type"],
+            "journal": row["journal_title"].lower() if row["journal_title"] else None
+        }]
+
+    class ConceptLookupResponse:
+        def get_insert_dict_fieldnames(self, table_name):
+            return ["paper_id", "concept_name_lower", "updated"]
+        pass
+
+    api_key = os.getenv("SAGEMAKER_API_KEY")
+    headers = {"X-API-Key": api_key}
+    api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
+    r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
+    api_json = r.json()
+    for row, api_dict in zip(rows, api_json):
+        concept_names = api_dict["tags"]
+        if concept_names:
+            for concept_name in concept_names:
+                insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+                                      paper_id=row["paper_id"],
+                                      concept_name_lower=concept_name,
+                                      updated=datetime.datetime.utcnow().isoformat(),
+                                    )}]
+        else:
+            matching_ids = []
+            insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+                                      paper_id=row["paper_id"],
+                                      concept_name_lower=None,
+                                      updated=datetime.datetime.utcnow().isoformat(),
+                                    )}]
+    response = ConceptLookupResponse()
+    response.insert_dicts = insert_dicts
+    return [response]
+
+
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
