@@ -118,7 +118,7 @@ class Record(db.Model):
         response = sorted(response, key=lambda x: x["score"], reverse=True)
         return response
 
-    def get_insert_fieldnames(self, table_name=None):
+    def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.record_match": ["record_id", "updated", "matching_work_id", "added"]
         }
@@ -185,12 +185,12 @@ class Record(db.Model):
             # mint a work
             matching_work_id = "null"
 
-        self.insert_dict = {"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
+        self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
                               record_id=self.id,
                               updated=self.updated,
                               matching_work_id=matching_work_id,
                               added=datetime.datetime.utcnow().isoformat()
-                            )}
+                            )}]
 
         return matching_work
 
@@ -199,7 +199,7 @@ class Record(db.Model):
     def process(self):
         from models import Work
 
-        self.insert_dict = {}
+        self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
         if self.genre != "component":

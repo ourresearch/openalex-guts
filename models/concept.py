@@ -329,7 +329,7 @@ class Concept(db.Model):
             pass
         return response
 
-    def get_insert_fieldnames(self, table_name=None):
+    def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
             "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"]

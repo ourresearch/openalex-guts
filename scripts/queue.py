@@ -87,12 +87,9 @@ class DbQueue(object):
                 for row in obj.insert_dicts:
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
-            else:
-                for table_name, insert_string in obj.insert_dict.items():
-                    insert_dict_all_objects[table_name] += [insert_string]
 
         for table_name, all_insert_strings in insert_dict_all_objects.items():
-            fields = obj.get_insert_fieldnames(table_name)
+            fields = obj.get_insert_dict_fieldnames(table_name)
 
             sql_command = u"INSERT INTO {} ({}) VALUES {};".format(
                 table_name, ', '.join(fields), ', '.join(all_insert_strings))
@@ -129,11 +126,18 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if self.myclass == models.Work:
+            if self.myclass == models.Work and run_method=="save_wiki":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select {id_field_name} from {insert_table})
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = "mid.json_works"
+            elif self.myclass == models.Work and run_method=="new_concepts":
+                text_query_pattern_select = """
+                    select {id_field_name} from mid.work
                         order by random()
                         limit {chunk};
                 """
@@ -212,7 +216,7 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if self.myclass == models.Work:
+                    if self.myclass == models.Work and run_method != "new_concepts":
                         q = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
@@ -223,6 +227,10 @@ class DbQueue(object):
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
+                    elif self.myclass == models.Work and run_method=="new_concepts":
+                        q = db.session.query(models.Work).options(
+                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
                     elif self.myclass == models.Record:
                         q = db.session.query(models.Record).options(
