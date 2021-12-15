@@ -50,7 +50,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
-        print("error: status code {r}")
+        print(f"error: status code {r}")
         return []
 
     api_json = r.json()
