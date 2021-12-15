@@ -146,6 +146,7 @@ class DbQueue(object):
                     select field_of_study_id from mid.concept
                         where 
                         field_of_study_id not in (select field_of_study_id from ins.wiki_concept)
+                        and paper_count >= 400
                         order by random()
                         limit {chunk};
                 """

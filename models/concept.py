@@ -3,9 +3,11 @@ from sqlalchemy import text
 import requests
 import json
 import urllib.parse
+import datetime
 
 from app import db
 from app import USER_AGENT
+from util import jsonify_fast_no_sort_raw
 
 
 # truncate mid.concept
@@ -122,11 +124,11 @@ class Concept(db.Model):
 
     @cached_property
     def wikipedia_url(self):
-        for attr in self.extended_attributes:
-            if attr["attribute_type"]==2:
-                return attr["attribute_value"]
-        encoded = urllib.parse.quote(self.display_name)
-        return f"https://en.wikipedia.org/wiki/{encoded}"
+        # for attr in self.extended_attributes:
+        #     if attr["attribute_type"]==2:
+        #         return attr["attribute_value"]
+        page_title = urllib.parse.quote(self.display_name)
+        return f"https://en.wikipedia.org/wiki/{page_title}"
 
     @cached_property
     def umls_cui_urls(self):
@@ -134,13 +136,15 @@ class Concept(db.Model):
 
     @cached_property
     def wikipedia_data_url(self):
-        for attr_dict in self.extended_attributes:
-            if attr_dict["attribute_type"] == 2:
-                wiki_url = attr_dict["attribute_value"]
-                page_title = wiki_url.rsplit("/", 1)[-1]
-                url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
-                return url
-        return None
+        # for attr_dict in self.extended_attributes:
+        #     if attr_dict["attribute_type"] == 2:
+        #         wiki_url = attr_dict["attribute_value"]
+        #         page_title = wiki_url.rsplit("/", 1)[-1]
+        #         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
+        #         return url
+        page_title = urllib.parse.quote(self.display_name)
+        url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
+        return url
 
     @cached_property
     def related_concepts(self):
@@ -337,7 +341,7 @@ class Concept(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
-            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"],
+            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json", "updated"],
             "mid.json_concepts": ["id", "updated", "json_save", "version"]
         }
         if table_name:
@@ -345,8 +349,6 @@ class Concept(db.Model):
         return lookup
 
     def store(self):
-        import datetime
-        from util import jsonify_fast_no_sort_raw
         VERSION_STRING = "sent to casey"
 
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
@@ -371,12 +373,13 @@ class Concept(db.Model):
             wikidata_data = json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
             if len(wikidata_data) > 64000:
                 wikidata_data = None
-            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}')".format(
+            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}', '{updated}')".format(
                                   id=self.field_of_study_id,
                                   wikipedia_id=self.wikipedia_url_canonical,
                                   wikidata_id=self.wikidata_url,
                                   wikipedia_data=wikipedia_data,
-                                  wikidata_data=wikidata_data
+                                  wikidata_data=wikidata_data,
+                                  updated=datetime.datetime.utcnow().isoformat()
                                 )}]
 
 
