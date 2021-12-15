@@ -96,15 +96,15 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if self.myclass == models.Work and run_method=="process":
+            if run_method=="store":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
-                            (select {id_field_name} from {insert_table})
+                            (select id from {insert_table})
                         order by random()
                         limit {chunk};
                 """
-                insert_table = "mid.json_works"
+                insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
@@ -132,7 +132,7 @@ class DbQueue(object):
                     order by random()
                     limit {chunk};
                 """
-            elif self.myclass == models.Concept and run_method=="process":
+            elif self.myclass == models.Concept and run_method=="store_ancestors":
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
                         where 
@@ -178,6 +178,7 @@ class DbQueue(object):
             else:
                 logger.info("{}: looking for new jobs".format(worker_name))
                 job_time = time()
+                print(text_query_select)
                 row_list = db.session.execute(text(text_query_select)).fetchall()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
@@ -216,7 +217,19 @@ class DbQueue(object):
                              selectinload(models.Record.work_matches_by_title).raiseload('*'),
                              selectinload(models.Record.work_matches_by_doi).raiseload('*'),
                              orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass in [models.Concept, models.Institution]:
+                    elif self.myclass == models.Author:
+                        objects = db.session.query(models.Author).options(
+                             selectinload(models.Author.orcids).raiseload('*'),
+                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    elif self.myclass == models.Institution:
+                        objects = db.session.query(models.Institution).options(
+                             selectinload(models.Institution.ror).raiseload('*'),
+                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    elif self.myclass == models.Concept:
+                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    elif self.myclass == models.Venue:
+                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    else:
                         objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
@@ -303,6 +316,10 @@ class DbQueue(object):
             myclass = models.Concept
         elif table == "institution":
             myclass = models.Institution
+        elif table == "author":
+            myclass = models.Author
+        elif table == "venue":
+            myclass = models.Venue
         return myclass
 
     @property
@@ -318,14 +335,32 @@ class DbQueue(object):
             myid = models.Concept.field_of_study_id
         elif table == "institution":
             myid = models.Institution.affiliation_id
+        elif table == "venue":
+            myid = models.Venue.journal_id
+        elif table == "author":
+            myid = models.Author.author_id
         return myid
 
     @property
+    def store_json_insert_tablename(self):
+        table = self.parsed_vars.get("table")
+        return f"mid.json_{table}s"
+
+    @property
     def id_field_name(self):
+        myid = "id"
         table = self.parsed_vars.get("table")
         if table == "work":
-            return "paper_id"
-        return "id"
+            myid = "paper_id"
+        elif table == "concept":
+            myid = "field_of_study_id"
+        elif table == "institution":
+            myid = "affiliation_id"
+        elif table == "venue":
+            myid = "journal_id"
+        elif table == "author":
+            myid = "author_id"
+        return myid
 
     def process_name(self):
         if self.parsed_vars:

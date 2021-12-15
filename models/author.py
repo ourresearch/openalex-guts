@@ -164,6 +164,28 @@ class Author(db.Model):
             return my_data.get("works", None)
         return None
 
+    def get_insert_dict_fieldnames(self, table_name=None):
+        return ["id", "updated", "json_save", "version"]
+
+    def store(self):
+        import datetime
+        from util import jsonify_fast_no_sort_raw
+        VERSION_STRING = "sent to casey"
+
+        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
+
+        # has to match order of get_insert_dict_fieldnames
+        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
+        if len(json_save_escaped) > 65000:
+            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.work_id))
+            json_save_escaped = None
+        self.insert_dicts = [{"mid.json_authors": "({id}, '{updated}', '{json_save}', '{version}')".format(
+                                                                  id=self.author_id,
+                                                                  updated=datetime.datetime.utcnow().isoformat(),
+                                                                  json_save=json_save_escaped,
+                                                                  version=VERSION_STRING
+                                                                )}]
+
     @cached_property
     def concepts(self):
         from models.concept import as_concept_openalex_id
