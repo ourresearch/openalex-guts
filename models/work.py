@@ -246,6 +246,7 @@ class Work(db.Model):
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
+            "display_name": self.work_title,
             "title": self.work_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
@@ -278,7 +279,7 @@ class Work(db.Model):
             },
             "is_retracted": self.is_retracted,
             "is_paratext": self.is_paratext,
-            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
+            "x_concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "alternate_locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],
             "referenced_works": self.references_list,
