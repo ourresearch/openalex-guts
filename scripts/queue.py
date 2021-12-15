@@ -27,83 +27,53 @@ class DbQueue(object):
 
 
     def update_fn(self, cls, method_name, objects, index=1):
-
         # we are in a fork!  dispose of our engine.
-        # will get a new one automatically
-        # if is pooling, need to do .dispose() instead
+        # will get a new one automatically. if is pooling, need to do .dispose() instead
         db.engine.dispose()
 
         start = time()
         num_obj_rows = len(objects)
 
-        # logger.info(u"{pid} {repr}.{method_name}() got {num_obj_rows} objects in {elapsed} seconds".format(
-        #     pid=os.getpid(),
-        #     repr=cls.__name__,
-        #     method_name=method_name,
-        #     num_obj_rows=num_obj_rows,
-        #     elapsed=elapsed(start)
-        # ))
+        if method_name == "new_work_concepts":
+            from models.work import call_sagemaker_bulk_lookup_new_work_concepts
+            objects = call_sagemaker_bulk_lookup_new_work_concepts(objects)
+        else:
+            for count, obj in enumerate(objects):
+                start_time = time()
+                if obj is None:
+                    return None
+                # logger.info(u"***")
+                logger.info("*** #{count} starting {repr}.{method_name}() method".format(
+                    count=count + (num_obj_rows*index),
+                    repr=obj,
+                    method_name=method_name))
 
-        for count, obj in enumerate(objects):
-            start_time = time()
+                method_to_run = getattr(obj, method_name)
+                method_to_run()
 
-            if obj is None:
-                return None
-
-            method_to_run = getattr(obj, method_name)
-
-            # logger.info(u"***")
-            logger.info("*** #{count} starting {repr}.{method_name}() method".format(
-                count=count + (num_obj_rows*index),
-                repr=obj,
-                method_name=method_name
-            ))
-
-            method_to_run()
-
-            logger.info("finished {repr}.{method_name}(). took {elapsed} seconds".format(
-                repr=obj,
-                method_name=method_name,
-                elapsed=elapsed(start_time, 4)
-            ))
-
-            # for handling the queues
-            # if not (method_name == "update" and obj.__class__.__name__ == "Pub"):
-            #     obj.finished = datetime.datetime.utcnow().isoformat()
-
-            # db.session.merge(obj)
-
-
-        # start_time = time()
-        # commit_success = safe_commit(db)
-        # if not commit_success:
-        #     logger.info("COMMIT fail")
-
+                logger.info("finished {repr}.{method_name}(). took {elapsed} seconds".format(
+                    repr=obj,
+                    method_name=method_name,
+                    elapsed=elapsed(start_time, 4)))
 
         insert_dict_all_objects = defaultdict(list)
-
         for count, obj in enumerate(objects):
             if hasattr(obj, "insert_dicts"):
                 for row in obj.insert_dicts:
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
 
+        start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             fields = obj.get_insert_dict_fieldnames(table_name)
-
             sql_command = u"INSERT INTO {} ({}) VALUES {};".format(
                 table_name, ', '.join(fields), ', '.join(all_insert_strings))
-            # print(sql_command)
             db.session.remove()
-
-            # try not using text() because it interprets things as bind params etc
-            # db.session.execute(text(sql_command))
             db.session.execute(sql_command)
-
             db.session.commit()
 
         if insert_dict_all_objects:
-            logger.info("commit took {} seconds".format(elapsed(start_time, 2)))
+            logger.info("insert and commit took {} seconds".format(elapsed(start_time, 2)))
             # db.session.remove()  # close connection nicely
 
         return None  # important for if we use this on RQ
@@ -220,7 +190,7 @@ class DbQueue(object):
                     job_time = time()
                     print(object_ids)
                     if self.myclass == models.Work and run_method != "new_work_concepts":
-                        q = db.session.query(models.Work).options(
+                        objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              selectinload(models.Work.references),
@@ -230,62 +200,33 @@ class DbQueue(object):
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
-                        q = db.session.query(models.Work).options(
-                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
+                        # objects = db.session.query(models.Work).options(
+                        #      selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                        #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
+                            from mid.work work
+                            left outer join mid.journal journal on journal.journal_id=work.journal_id 
+                            where paper_id in ({})
+                        """.format(",".join(str(paper_id) for paper_id in object_ids))
+                        objects = db.session.execute(text(q)).fetchall()
                     elif self.myclass == models.Record:
-                        q = db.session.query(models.Record).options(
+                        objects = db.session.query(models.Record).options(
                              selectinload(models.Record.work_matches_by_title).raiseload('*'),
                              selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids))
+                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass in [models.Concept, models.Institution]:
-                        q = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids))
+                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
-                    objects = q.all()
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
-
-                    # shuffle them or they sort by doi order
-                    # random.shuffle(objects)
-
-                    # text_query = "select * from recordthresher_record limit 10; "
-                    # objects = self.myclass.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
-
-
-                    # objects = run_class.query.from_statement(text(text_query)).execution_options(autocommit=True).all()
-                    # print(objects)
-                    # id_rows =  db.engine.execute(text(text_query)).fetchall()
-                    # ids = [row[0] for row in id_rows]
-                    #
-                    # job_time = time()
-                    # objects = run_class.query.filter(run_class.id.in_(ids)).all()
-
-                    # logger.info(u"{}: finished get-new-objects query in {} seconds".format(worker_name, elapsed(job_time)))
-
 
                     if not objects:
                         logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
                         sleep(5)
                         continue
 
-                    object_ids = [obj.id for obj in objects]
                     self.update_fn(run_class, run_method, objects, index=index)
-
-                    # logger.info(u"{}: finished update_fn".format(worker_name)
-                    if queue_table:
-                        update_time = time()
-
-                        # object_ids_str = ",".join(["'{}'".format(id.replace("'", "''")) for id in object_ids])
-                        # object_ids_str = object_ids_str.replace("%", "%%")  #sql escaping
-                        # object_ids_str = ",".join(["'{}'".format(id) for id in object_ids])
-                        # object_ids_str = ",".join(["{}".format(id) for id in object_ids])
-
-                        # sql_command = "update {queue_table} set finished=sysdate, started=null where {id_field_name} in ({ids})".format(
-                        #     queue_table=queue_table, id_field_name=self.id_field_name, ids=object_ids_str)
-
-                        # db.session.execute(text(sql_command))
-                        # logger.info(u"{}: sql command to update finished in {} seconds".format(worker_name, elapsed(update_time, 2)))
 
                     index += 1
                     if single_obj_id:
