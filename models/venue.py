@@ -108,7 +108,7 @@ class Venue(db.Model):
 
 
     def __repr__(self):
-        return "<Venue ( {} ) {}>".format(self.openalex_id, self.doi, self.pmh_id, self.pmid)
+        return "<Venue ( {} ) {}>".format(self.openalex_id, self.display_name)
 
 
 # select count(distinct work.paper_id)
