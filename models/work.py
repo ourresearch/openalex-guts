@@ -51,7 +51,13 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     api_json = r.json()
     for row, api_dict in zip(rows, api_json):
-        concept_names = api_dict["tags"]
+        concept_names = None
+        try:
+            concept_names = api_dict["tags"]
+        except TypeError:
+            print(f"warning: no tags for {row} in response {r}")
+            pass
+
         if concept_names:
             for concept_name in concept_names:
                 insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
