@@ -301,7 +301,10 @@ class Concept(db.Model):
     def description(self):
         if not self.description_international:
             return None
-        return self.description_international["en"]
+        try:
+            return self.description_international["en"]
+        except KeyError:
+            return None
 
     @cached_property
     def description_international(self):
