@@ -135,13 +135,15 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = "mid.json_works"
-            elif self.myclass == models.Work and run_method=="new_concepts":
+            elif self.myclass == models.Work and run_method=="new_work_concepts":
                 text_query_pattern_select = """
-                    select {id_field_name} from mid.work
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select {id_field_name} from {insert_table})
                         order by random()
                         limit {chunk};
                 """
-                insert_table = "mid.json_works"
+                insert_table = "mid.new_work_concepts"
             elif self.myclass == models.Record:
                 # text_query_pattern_select = """
                 #     select {id_field_name}
@@ -216,7 +218,7 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if self.myclass == models.Work and run_method != "new_concepts":
+                    if self.myclass == models.Work and run_method != "new_work_concepts":
                         q = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
@@ -228,7 +230,7 @@ class DbQueue(object):
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
                              orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
-                    elif self.myclass == models.Work and run_method=="new_concepts":
+                    elif self.myclass == models.Work and run_method=="new_work_concepts":
                         q = db.session.query(models.Work).options(
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids))
