@@ -94,7 +94,7 @@ class Work(db.Model):
     def openalex_id_short(self):
         return as_work_openalex_id_short(self.paper_id)
 
-    def new_concepts(self):
+    def new_work_concepts(self):
         self.insert_dicts = []
         print("get_new_concepts! {}".format(self.id))
         api_key = os.getenv("SAGEMAKER_API_KEY")
