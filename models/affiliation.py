@@ -46,7 +46,8 @@ class Affiliation(db.Model):
             if self.institution:
                 response["institution"].update(self.institution.to_dict(return_level="minimum"))
         else:
-            response["institution"] = self.institution.to_dict(return_level="minimum")
+            if self.institution:
+                response["institution"] = self.institution.to_dict(return_level="minimum")
 
         response["author_sequence_number"] = self.author_sequence_number
 
