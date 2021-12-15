@@ -96,7 +96,6 @@ class Work(db.Model):
 
     def new_work_concepts(self):
         self.insert_dicts = []
-        print("get_new_concepts! {}".format(self.id))
         api_key = os.getenv("SAGEMAKER_API_KEY")
         data = {
             "title": self.work_title.lower(),

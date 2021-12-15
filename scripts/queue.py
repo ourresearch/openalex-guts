@@ -140,6 +140,7 @@ class DbQueue(object):
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select {id_field_name} from {insert_table})
+                        and year = 2019
                         order by random()
                         limit {chunk};
                 """
