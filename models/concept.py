@@ -268,11 +268,13 @@ class Concept(db.Model):
         if not self.wikipedia_url:
             return None
         wikipedia_page_name = self.wikipedia_url.rsplit("/", 1)[-1]
+
         # print(f"\noriginal: {self.wikipedia_url} for name {self.display_name}")
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&titles={wikipedia_page_name}&pithumbsize=100&redirects="
         # print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         # print(r.json())
+
         return r.json()
 
     # is whatever the wikipedia url redirects to
