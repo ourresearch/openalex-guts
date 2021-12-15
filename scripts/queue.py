@@ -96,7 +96,7 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if self.myclass == models.Work and run_method=="save_wiki":
+            if self.myclass == models.Work and run_method=="process":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
