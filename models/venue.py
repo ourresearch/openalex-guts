@@ -62,7 +62,7 @@ class Venue(db.Model):
             "id": self.openalex_id,
             "issn_l": self.issn,
             "display_name": self.display_name,
-            "issn_list": json.loads(self.issns) if self.issns else None,
+            "issn": json.loads(self.issns) if self.issns else None,
             "publisher": self.publisher,
         }
         if return_level == "full":
@@ -75,9 +75,9 @@ class Venue(db.Model):
                 "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
-                    "issn_list": json.loads(self.issns) if self.issns else None,
+                    "issn": json.loads(self.issns) if self.issns else None,
                 },
-                "concepts": self.concepts,
+                "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=issn:{self.issn}&details=true",
                 "updated_date": self.updated_date.isoformat()
             })
