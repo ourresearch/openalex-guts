@@ -306,7 +306,7 @@ class Work(db.Model):
         # response = [obj.to_dict("minimum") for obj in objs]
         # return response
 
-    def process(self):
+    def store(self):
         VERSION_STRING = "sent to casey"
 
         # print("processing work! {}".format(self.id))

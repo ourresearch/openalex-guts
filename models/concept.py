@@ -334,11 +334,31 @@ class Concept(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.concept_ancestors": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
-            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"]
+            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"],
+            "mid.json_concepts": ["id", "updated", "json_save", "version"]
         }
         if table_name:
             return lookup[table_name]
         return lookup
+
+    def store(self):
+        import datetime
+        from util import jsonify_fast_no_sort_raw
+        VERSION_STRING = "sent to casey"
+
+        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
+
+        # has to match order of get_insert_dict_fieldnames
+        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
+        if len(json_save_escaped) > 65000:
+            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.work_id))
+            json_save_escaped = None
+        self.insert_dicts = [{"mid.json_concepts": "({id}, '{updated}', '{json_save}', '{version}')".format(
+                                                                  id=self.field_of_study_id,
+                                                                  updated=datetime.datetime.utcnow().isoformat(),
+                                                                  json_save=json_save_escaped,
+                                                                  version=VERSION_STRING
+                                                                )}]
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
@@ -357,7 +377,7 @@ class Concept(db.Model):
                                 )}]
 
 
-    def process(self):
+    def store_ancestors(self):
         ancestors = self.ancestors_raw
         if not hasattr(self, "insert_dicts"):
             self.insert_dicts = []
