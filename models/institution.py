@@ -289,7 +289,7 @@ class Institution(db.Model):
         # del response["entities"][self.wikidata_id]["claims"]
         return response
 
-    def get_insert_fieldnames(self, table_name=None):
+    def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "ins.wiki_institution": ["affiliation_id", "ror_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"]
         }

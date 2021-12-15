@@ -4,6 +4,9 @@ from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 import datetime
 from collections import defaultdict
+import requests
+import os
+import json
 
 import shortuuid
 import random
@@ -90,6 +93,45 @@ class Work(db.Model):
     @property
     def openalex_id_short(self):
         return as_work_openalex_id_short(self.paper_id)
+
+    def new_concepts(self):
+        self.insert_dicts = []
+        print("get_new_concepts! {}".format(self.id))
+        api_key = os.getenv("SAGEMAKER_API_KEY")
+        data = {
+            "title": self.work_title.lower(),
+            "doc_type": self.doc_type,
+            "journal": self.journal.display_name.lower() if self.journal else None
+        }
+        headers = {"X-API-Key": api_key}
+        api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
+        r = requests.post(api_url, json=json.dumps([data]), headers=headers)
+        response_json = r.json()
+        concept_names = response_json[0]["tags"]
+        if concept_names:
+            # concept_names_string = "({})".format(", ".join(["'{}'".format(concept_name) for concept_name in concept_names]))
+            # q = """
+            # select field_of_study_id, display_name
+            # from mid.concept
+            # where lower(display_name) in {concept_names_string}
+            # """.format(concept_names_string=concept_names_string)
+            # matching_concepts = db.session.execute(text(q)).all()
+            # print(f"concepts that match: {matching_concepts}")
+            # matching_ids = [concept[0] for concept in matching_concepts]
+            for concept_name in concept_names:
+                self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+                                      paper_id=self.id,
+                                      concept_name_lower=concept_name,
+                                      updated=datetime.datetime.utcnow().isoformat(),
+                                    )}]
+        else:
+            matching_ids = []
+            self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+                                      paper_id=self.id,
+                                      concept_name_lower=None,
+                                      updated=datetime.datetime.utcnow().isoformat(),
+                                    )}]
+
 
     def refresh(self):
         print("refreshing! {}".format(self.id))
@@ -220,27 +262,29 @@ class Work(db.Model):
         # print("processing work! {}".format(self.id))
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
-        # has to match order of get_insert_fieldnames
+        # has to match order of get_insert_dict_fieldnames
         json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
         if len(json_save_escaped) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.work_id))
             json_save_escaped = None
-        self.insert_dict = {"mid.json_works": "({id}, '{updated}', '{json_save}', '{version}')".format(
+        self.insert_dicts = [{"mid.json_works": "({id}, '{updated}', '{json_save}', '{version}')".format(
                                                                   id=self.id,
                                                                   updated=datetime.datetime.utcnow().isoformat(),
                                                                   json_save=json_save_escaped,
                                                                   version=VERSION_STRING
-                                                                )}
+                                                                )}]
 
         # print(self.json_save[0:100])
 
-    def get_insert_fieldnames(self, table_name=None):
+    def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
-            "mid.json_works": ["id", "updated", "json_save", "version"]
+            "mid.json_works": ["id", "updated", "json_save", "version"],
+            "mid.new_work_concepts": ["paper_id", "concept_name_lower", "updated"]
         }
         if table_name:
             return lookup[table_name]
         return lookup
+
 
     def to_dict(self, return_level="full"):
         response = {
