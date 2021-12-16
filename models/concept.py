@@ -127,7 +127,10 @@ class Concept(db.Model):
         # for attr in self.extended_attributes:
         #     if attr["attribute_type"]==2:
         #         return attr["attribute_value"]
-        page_title = urllib.parse.quote(self.display_name)
+
+        # temporary
+        # page_title = urllib.parse.quote(self.display_name)
+        page_title = urllib.parse.quote(self.display_name.replace(" ", "_"))
         return f"https://en.wikipedia.org/wiki/{page_title}"
 
     @cached_property
@@ -142,7 +145,10 @@ class Concept(db.Model):
         #         page_title = wiki_url.rsplit("/", 1)[-1]
         #         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
         #         return url
-        page_title = urllib.parse.quote(self.display_name)
+
+        # temporary
+        # page_title = urllib.parse.quote(self.display_name)
+        page_title = urllib.parse.quote(self.display_name.replace(" ", "_"))
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
         return url
 
