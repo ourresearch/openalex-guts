@@ -130,7 +130,7 @@ class Concept(db.Model):
 
         # temporary
         # page_title = urllib.parse.quote(self.display_name)
-        page_title = urllib.parse.quote(self.display_name.replace(" ", "_"))
+        page_title = urllib.parse.quote(self.display_name.lower().replace(" ", "_"))
         return f"https://en.wikipedia.org/wiki/{page_title}"
 
     @cached_property
@@ -148,7 +148,7 @@ class Concept(db.Model):
 
         # temporary
         # page_title = urllib.parse.quote(self.display_name)
-        page_title = urllib.parse.quote(self.display_name.replace(" ", "_"))
+        page_title = urllib.parse.quote(self.display_name.lower().replace(" ", "_"))
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
         return url
 
