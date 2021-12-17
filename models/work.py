@@ -365,7 +365,7 @@ class Work(db.Model):
             # "doc_type": self.doc_type,
             "references_count": self.reference_count,
             "cited_by_count": self.citation_count,
-            "bibio": {
+            "biblio": {
                 "volume": self.volume,
                 "issue": self.issue,
                 "first_page": self.first_page,
