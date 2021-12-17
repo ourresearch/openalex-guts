@@ -363,7 +363,6 @@ class Work(db.Model):
         if return_level == "full":
             response.update({
             # "doc_type": self.doc_type,
-            "references_count": self.reference_count,
             "cited_by_count": self.citation_count,
             "biblio": {
                 "volume": self.volume,
