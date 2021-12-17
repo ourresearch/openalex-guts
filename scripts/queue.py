@@ -110,7 +110,6 @@ class DbQueue(object):
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select {id_field_name} from {insert_table})
-                        and year = 2019
                         order by random()
                         limit {chunk};
                 """
@@ -212,7 +211,10 @@ class DbQueue(object):
                             left outer join mid.journal journal on journal.journal_id=work.journal_id 
                             where paper_id in ({})
                         """.format(",".join(str(paper_id) for paper_id in object_ids))
-                        objects = db.session.execute(text(q)).fetchall()
+                        try:
+                            objects = db.session.execute(text(q)).fetchall()
+                        except:
+                            objects = []
                     elif self.myclass == models.Record:
                         objects = db.session.query(models.Record).options(
                              selectinload(models.Record.work_matches_by_title).raiseload('*'),
