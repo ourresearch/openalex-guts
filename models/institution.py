@@ -433,7 +433,7 @@ class Institution(db.Model):
                 # "links": self.links,
                 "associated_insitutions": self.relationship_dicts,
                 # "ids": self.external_ids,
-                "counts_by_year": self.counts_by_year,
+                # "counts_by_year": self.counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=institution_id:{self.institution_id}",
                 "updated_date": self.updated_date,

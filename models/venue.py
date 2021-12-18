@@ -133,7 +133,7 @@ class Venue(db.Model):
                     "issn_l": self.issn,
                     "issn": json.loads(self.issns) if self.issns else None,
                 },
-                "counts_by_year": self.counts_by_year,
+                # "counts_by_year": self.counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=issn:{self.issn}",
                 "updated_date": self.updated_date.isoformat()
