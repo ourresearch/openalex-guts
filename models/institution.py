@@ -355,6 +355,42 @@ class Institution(db.Model):
             row["id"] = as_concept_openalex_id(row["id"])
         return response
 
+    @cached_property
+    def counts_by_year(self):
+        response = {}
+        q = """
+        select work.year, count(distinct work.paper_id) as works_count
+        from mid.work work
+        join mid.affiliation affil on work.paper_id = affil.paper_id
+        where work.year >= 2012
+        and affil.affiliation_id = :affiliation_id
+        group by work.year
+        order by work.year desc
+        """
+        works_count_rows = db.session.execute(text(q), {"affiliation_id": self.affiliation_id}).fetchall()
+        for row in works_count_rows:
+            response[row["year"]] = {"year": row["year"], "works_count": row["works_count"], "cited_by_count": 0}
+
+        q = """
+        select citing_work.year, count(*) as cited_by_count
+        from mid.work citing_work
+        join mid.citation citation on citing_work.paper_id = citation.paper_id
+        join mid.affiliation affil on citation.paper_reference_id = affil.paper_id
+        where citing_work.year >= 2012
+        and affil.affiliation_id = :affiliation_id
+        group by citing_work.year
+        order by citing_work.year desc
+        """
+        cited_by_count_rows = db.session.execute(text(q), {"affiliation_id": self.affiliation_id}).fetchall()
+        for row in cited_by_count_rows:
+            if row["year"] in response:
+                response[row["year"]]["cited_by_count"] = row["cited_by_count"]
+            else:
+                response[row["year"]] = {"year": row["year"], "works_count": 0, "cited_by_count": row["cited_by_count"]}
+
+        response = sorted(response.values(), key=lambda x: x["year"], reverse=True)
+        return response
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -397,8 +433,9 @@ class Institution(db.Model):
                 # "links": self.links,
                 "associated_insitutions": self.relationship_dicts,
                 # "ids": self.external_ids,
+                "counts_by_year": self.counts_by_year,
                 "x_concepts": self.concepts,
-                "works_api_url": f"https://api.openalex.org/works?filter=institution_id:{self.institution_id}&details=true",
+                "works_api_url": f"https://api.openalex.org/works?filter=institution_id:{self.institution_id}",
                 "updated_date": self.updated_date,
             })
 
