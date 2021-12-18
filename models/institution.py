@@ -360,7 +360,7 @@ class Institution(db.Model):
             "id": self.openalex_id,
             "ror": self.ror_url,
             "display_name": self.display_name,
-            "country_code": self.ror.country_code if self.ror else self.country_code,
+            "country_code": self.ror.country_code_upper if self.ror else self.country_code,
             "type": self.type,
         }
         # true for embedded related institutions
@@ -386,8 +386,8 @@ class Institution(db.Model):
                 "geo": {
                     "city": self.ror.city if self.ror else None,
                     "geonames_city_id": self.geonames_city_id,
-                    "state": self.ror.state if self.ror else None,
-                    "country_code": self.ror.country_code if self.ror else self.country_code,
+                    "region": self.ror.state if self.ror else None,
+                    "country_code": self.ror.country_code_upper if self.ror else self.country_code,
                     "country": self.ror.country if self.ror else None,
                     "latitude": self.latitude,
                     "longitude": self.longitude,

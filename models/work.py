@@ -350,7 +350,7 @@ class Work(db.Model):
             },
             "venue": self.journal.to_dict("minimum") if self.journal else None,
             "url": self.best_url,
-            "genre": self.genre,
+            "type": self.genre,
             "is_oa": self.is_oa,
             "oa_status": self.oa_status,
             "oa_url": self.best_free_url,

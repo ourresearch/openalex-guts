@@ -20,6 +20,12 @@ class Ror(db.Model):
     def ror_url(self):
         return "https://ror.org/{}".format(self.ror_id)
 
+    @property
+    def country_code_upper(self):
+        if not self.country_code:
+            return None
+        return self.country_code.upper()
+
     def __repr__(self):
         return "<Ror ( {} ) {}>".format(self.ror_id, self.name)
 
