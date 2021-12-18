@@ -42,7 +42,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
 
     class ConceptLookupResponse:
         def get_insert_dict_fieldnames(self, table_name):
-            return ["paper_id", "concept_name_lower", "updated"]
+            return ["paper_id", "concept_name_lower", "concept_id", "score", "updated"]
         pass
 
     api_key = os.getenv("SAGEMAKER_API_KEY")
@@ -55,25 +55,22 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
 
     api_json = r.json()
     for row, api_dict in zip(rows, api_json):
-        concept_names = None
-        try:
-            concept_names = api_dict["tags"]
-        except TypeError:
-            print(f"warning: no tags for {row} in response {r}")
-            pass
-
-        if concept_names:
-            for concept_name in concept_names:
-                insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+        if api_dict["tags"] != []:
+            for i, concept_name in enumerate(api_dict["tags"]):
+                insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=row["paper_id"],
-                                      concept_name_lower=concept_name,
+                                      concept_name_lower=api_dict["tags"][i],
+                                      concept_id=api_dict["tag_ids"][i],
+                                      score=api_dict["scores"][i],
                                       updated=datetime.datetime.utcnow().isoformat(),
                                     )}]
         else:
             matching_ids = []
-            insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+            insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=row["paper_id"],
                                       concept_name_lower=None,
+                                      concept_id="NULL",
+                                      score="NULL",
                                       updated=datetime.datetime.utcnow().isoformat(),
                                     )}]
     response = ConceptLookupResponse()
@@ -168,17 +165,21 @@ class Work(db.Model):
             # matching_concepts = db.session.execute(text(q)).all()
             # print(f"concepts that match: {matching_concepts}")
             # matching_ids = [concept[0] for concept in matching_concepts]
-            for concept_name in concept_names:
-                self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+            for i, concept_name in enumerate(concept_names):
+                self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=self.id,
-                                      concept_name_lower=concept_name,
+                                      concept_name_lower=response_json[0]["tags"][i],
+                                      concept_id=response_json[0]["tag_ids"][i],
+                                      score=response_json[0]["scores"][i],
                                       updated=datetime.datetime.utcnow().isoformat(),
                                     )}]
         else:
             matching_ids = []
-            self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', '{updated}')".format(
+            self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=self.id,
                                       concept_name_lower=None,
+                                      concept_id="NULL",
+                                      score="NULL",
                                       updated=datetime.datetime.utcnow().isoformat(),
                                     )}]
 
@@ -329,7 +330,7 @@ class Work(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.json_works": ["id", "updated", "json_save", "version"],
-            "mid.new_work_concepts": ["paper_id", "concept_name_lower", "updated"]
+            "mid.new_work_concepts": ["paper_id", "concept_name_lower", "concept_id", "score", "updated"]
         }
         if table_name:
             return lookup[table_name]

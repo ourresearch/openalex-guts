@@ -403,6 +403,25 @@ class Concept(db.Model):
                                   ancestor_level=ancestor["ancestor_level"],
                                 )}]
 
+    @cached_property
+    def counts_by_year(self):
+        q = """
+        select year, count(distinct work.paper_id) as works_count, sum(concept.citation_count) as cited_by_count
+        from mid.concept concept
+        join mid.work_concept work_citation on work_citation.field_of_study = concept.field_of_study_id
+        join mid.work work on work.paper_id = work_citation.paper_id
+        where concept.field_of_study_id = :concept_id
+        and year >= 2012
+        group by year
+        order by year desc
+        """
+        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
+        response = {}
+        response = [dict(row) for row in rows]
+        # response["works_count"] = dict([(int(row["year_int"]), row["paper_count"]) for row in rows])
+        # response["cited_by_count"] = dict([(int(row["year_int"]), row["citation_count"]) for row in rows])
+        return response
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -430,6 +449,7 @@ class Concept(db.Model):
                 },
                 "ancestors": self.ancestors,
                 "related_concepts": self.related_concepts,
+                "counts_by_year": self.counts_by_year,
                 "works_api_url": f"https://api.openalex.org/works?filter=concept:{self.field_of_study_id}",
                 "updated_date": self.updated_date
             })
