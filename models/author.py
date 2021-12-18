@@ -262,7 +262,7 @@ class Author(db.Model):
                 # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "x_concepts": self.concepts,
-                "counts_by_year": self.counts_by_year,
+                # "counts_by_year": self.counts_by_year,
                 "works_api_url": f"https://api.openalex.org/works?filter=author_id:{self.author_id}",
                 "updated_date": self.updated_date
             })
