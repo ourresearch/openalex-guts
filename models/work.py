@@ -132,7 +132,7 @@ class Work(db.Model):
 
     @property
     def cited_by_api_url(self):
-        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id_short}&details=true",
+        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id_short}",
 
     @property
     def openalex_id(self):
@@ -337,6 +337,21 @@ class Work(db.Model):
         return lookup
 
 
+    @cached_property
+    def counts_by_year(self):
+        q = """
+        select citing_work.year, count(*) as cited_by_count
+        from mid.work citing_work
+        join mid.citation citation on citing_work.paper_id = citation.paper_id
+        where citing_work.year >= 2012
+        and citation.paper_reference_id = :paper_id    
+        group by citing_work.year
+        order by citing_work.year desc
+        """
+        rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
+        response = [dict(row) for row in rows]
+        return response
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -379,6 +394,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
+            "counts_by_year": self.counts_by_year,
             "cited_by_api_url": self.cited_by_api_url,
             "updated_date": self.updated_date,
         })
