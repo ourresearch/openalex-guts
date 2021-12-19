@@ -420,7 +420,7 @@ class Concept(db.Model):
             else:
                 response_dict[count_row.year]["works_count"] = count_row.n
 
-        my_dicts = [counts for counts in response_dict.values() if counts["year"] >= 2012]
+        my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
