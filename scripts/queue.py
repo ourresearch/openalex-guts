@@ -199,6 +199,7 @@ class DbQueue(object):
                              selectinload(models.Work.counts_by_year),
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.related_works),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),

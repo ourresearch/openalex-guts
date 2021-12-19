@@ -22,6 +22,7 @@ from models.journalsdb import Journalsdb
 from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
+from models.work_related_work import WorkRelatedWork
 
 
 # relationships without association tables
@@ -32,6 +33,7 @@ Work.locations = db.relationship("Location", lazy='selectin', backref="work")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False)
 Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False)
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work")
+Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work")
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work")
@@ -103,6 +105,7 @@ def single_work_query():
          selectinload(Work.counts_by_year),
          selectinload(Work.abstract),
          selectinload(Work.extra_ids),
+         selectinload(Work.related_works),
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
