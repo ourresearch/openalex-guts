@@ -289,25 +289,6 @@ class Work(db.Model):
         # response = [obj.to_dict("minimum") for obj in objs]
         # return response
 
-    @cached_property
-    def related_paper_list(self):
-        import models
-        q = """
-        select recommended_paper_id as id from legacy.mag_advanced_paper_recommendations WHERE paper_id = :paper_id order by score desc
-        """
-        rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
-        related_paper_ids = [as_work_openalex_id(row[0]) for row in rows]
-        return related_paper_ids
-
-        # objs = db.session.query(Work).options(
-        #      selectinload(Work.journal).selectinload(models.Venue.journalsdb),
-        #      selectinload(Work.extra_ids),
-        #      selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-        #      selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-        #      orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(related_paper_ids)).all()
-        # response = [obj.to_dict("minimum") for obj in objs]
-        # return response
-
     def store(self):
         VERSION_STRING = "sent to casey"
 
@@ -392,7 +373,7 @@ class Work(db.Model):
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "alternate_locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],
             "referenced_works": self.references_list,
-            "related_works": self.related_paper_list,
+            "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
             "counts_by_year": self.display_counts_by_year,
             "cited_by_api_url": self.cited_by_api_url,

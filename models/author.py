@@ -57,33 +57,6 @@ class Author(db.Model):
         return "https://orcid.org/{}".format(self.orcid)
 
     @cached_property
-    def papers(self):
-        q = "select paper_id from mid.affiliation where author_id = :author_id;"
-        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        paper_ids = [row[0] for row in rows]
-        return paper_ids
-
-    @cached_property
-    def citations(self):
-        q = """select citation.paper_id as cited_paper_id 
-            from mid.affiliation affil
-            join mid.citation citation on affil.paper_id=citation.paper_reference_id
-            where author_id = :author_id;"""
-        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        cited_paper_ids = [row[0] for row in rows]
-        return cited_paper_ids
-
-    @cached_property
-    def all_institutions(self):
-        q = """select distinct institution.affiliation_id
-            from mid.affiliation affil
-            join mid.institution institution on affil.affiliation_id=institution.affiliation_id
-            where author_id = :author_id;"""
-        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        response = list(set([row[0] for row in rows]))
-        return response
-
-    @cached_property
     def alternative_names(self):
         q = """
         select attribute_value
