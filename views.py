@@ -93,7 +93,7 @@ def after_request_override_urls_for_debugging(response):
     wants_apiurls = ("apiurls" in request.args)
     if wants_apiurls:
         json_response_data = response.get_data().decode('utf-8')
-        json_response_data = json_response_data.replace("https://openalex.org/", "https://api.openalex.org/")
+        json_response_data = json_response_data.replace("https://openalex.org/", "https://openalex-guts.herokuapp.com/")
         response.set_data(json_response_data.encode())
     return response
 
