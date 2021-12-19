@@ -347,7 +347,7 @@ class Work(db.Model):
             if count_row.type == "citation_count":
                 response_dict[count_row.year]["cited_by_count"] = count_row.n
 
-        my_dicts = [counts for counts in response_dict.values() if counts["year"] >= 2012]
+        my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
