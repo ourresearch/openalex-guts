@@ -19,8 +19,9 @@ from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
 from models.ror import Ror
 from models.journalsdb import Journalsdb
-from models.work_extra_ids import WorkExtraIds
+from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
+from models.concept_ancestor import ConceptAncestor
 
 
 # relationships without association tables
@@ -52,7 +53,6 @@ Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin',
 Institution.counts_by_year = db.relationship("InstitutionCountsByYear", lazy='selectin', backref="work")
 Venue.counts_by_year = db.relationship("VenueCountsByYear", lazy='selectin', backref="work")
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")
-
 
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()

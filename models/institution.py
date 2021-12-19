@@ -345,7 +345,7 @@ class Institution(db.Model):
         from models.concept import as_concept_openalex_id
 
         q = """
-            select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
+            select ancestor_id as id, null as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
             from mid.institution institution 
             join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
             join mid.work_concept wc on wc.paper_id=affil.paper_id
