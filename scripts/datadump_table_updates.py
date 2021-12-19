@@ -436,6 +436,8 @@ if False:
 # select * from mid.author_orcid where orcid not ilike '0%'
 # delete from mid.author_orcid where orcid not ilike '0%'
 #
+# delete from mid.concept where level is null
+#
 # select * from mid.affiliation where original_author ~ '\t'
 # update mid.affiliation set original_author=regexp_replace(original_author, '\t', '') where original_author ~ '\t';
 # select * from mid.work where original_title ~ '\t' none
