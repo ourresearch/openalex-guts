@@ -9,7 +9,6 @@ class AuthorCountsByYear(db.Model):
     year = db.Column(db.Numeric, primary_key=True)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
 
     def to_dict(self):
         response = {
@@ -31,7 +30,6 @@ class ConceptCountsByYear(db.Model):
     year = db.Column(db.Numeric, primary_key=True)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
 
     def to_dict(self):
         response = {
@@ -53,7 +51,6 @@ class InstitutionCountsByYear(db.Model):
     year = db.Column(db.Numeric, primary_key=True)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
 
     def to_dict(self):
         response = {
@@ -75,7 +72,6 @@ class VenueCountsByYear(db.Model):
     year = db.Column(db.Numeric, primary_key=True)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
 
     def to_dict(self):
         response = {
@@ -97,7 +93,6 @@ class WorkCountsByYear(db.Model):
     year = db.Column(db.Numeric, primary_key=True)
     citation_count = db.Column(db.Numeric)
     estimated_citation = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
 
     def to_dict(self):
         response = {
