@@ -85,7 +85,7 @@ class Venue(db.Model):
         from models.concept import as_concept_openalex_id
 
         q = """
-            select ancestor_id as id, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct wc.paper_id)/journal.paper_count::float, 1) as score
+            select ancestor_id as id, null as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct wc.paper_id)/journal.paper_count::float, 1) as score
             from mid.journal journal 
             join mid.work work on work.journal_id=journal.journal_id
             join mid.work_concept wc on wc.paper_id=work.paper_id

@@ -568,3 +568,11 @@ if False:
 # update mid.work set match_title = f_matching_string(original_title); -- took 1122.8 seconds
 #
 # update mid.author set match_name = f_matching_author_string(display_name); -- took 1270.5 seconds
+
+# refresh mid.citation_authors_by_year_mv
+# refresh mid.citation_journals_by_year_mv
+# refresh mid.citation_institutions_by_year_mv
+# refresh mid.citation_concepts_by_year_mv
+# refresh mid.citation_works_by_year_mv
+
+

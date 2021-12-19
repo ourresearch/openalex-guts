@@ -135,7 +135,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
                         where 
-                        field_of_study_id not in (select id from mid.concept_ancestors)
+                        field_of_study_id not in (select id from mid.concept_ancestor)
                         and field_of_study_id in (select child_field_of_study_id from legacy.mag_advanced_field_of_study_children)                            
                         order by random()
                         limit {chunk};
