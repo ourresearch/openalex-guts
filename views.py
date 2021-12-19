@@ -88,6 +88,15 @@ def after_request_stuff(resp):
     return resp
 
 
+@app.after_request
+def after_request_override_urls_for_debugging(response):
+    wants_apiurls = ("apiurls" in request.args)
+    if wants_apiurls:
+        json_response_data = response.get_data().decode('utf-8')
+        json_response_data = json_response_data.replace("https://openalex.org/", "https://api.openalex.org/")
+        response.set_data(json_response_data.encode())
+    return response
+
 
 def is_work_openalex_id(id):
     if isinstance(id, int):
