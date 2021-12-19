@@ -34,6 +34,11 @@ class Author(db.Model):
         return as_author_openalex_id(self.author_id)
 
     @property
+    def openalex_id_short(self):
+        from models import short_openalex_id
+        return short_openalex_id(self.openalex_id)
+
+    @property
     def last_known_institution_api_url(self):
         if not self.last_known_affiliation_id:
             return None
@@ -263,7 +268,7 @@ class Author(db.Model):
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "x_concepts": self.concepts,
                 # "counts_by_year": self.counts_by_year,
-                "works_api_url": f"https://api.openalex.org/works?filter=author_id:{self.author_id}",
+                "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })
         return response

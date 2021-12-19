@@ -49,6 +49,11 @@ class Institution(db.Model):
         return as_institution_openalex_id(self.affiliation_id)
 
     @property
+    def openalex_id_short(self):
+        from models import short_openalex_id
+        return short_openalex_id(self.openalex_id)
+
+    @property
     def institution_id(self):
         return self.affiliation_id
 
@@ -435,7 +440,7 @@ class Institution(db.Model):
                 # "ids": self.external_ids,
                 # "counts_by_year": self.counts_by_year,
                 "x_concepts": self.concepts,
-                "works_api_url": f"https://api.openalex.org/works?filter=institution_id:{self.institution_id}",
+                "works_api_url": f"https://api.openalex.org/works?filter=institution.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date,
             })
 
