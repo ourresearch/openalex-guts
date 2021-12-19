@@ -182,7 +182,7 @@ class Author(db.Model):
         # has to match order of get_insert_dict_fieldnames
         json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
         if len(json_save_escaped) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.work_id))
+            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             json_save_escaped = None
         self.insert_dicts = [{"mid.json_authors": "({id}, '{updated}', '{json_save}', '{version}')".format(
                                                                   id=self.author_id,
