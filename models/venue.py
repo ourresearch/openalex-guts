@@ -37,6 +37,11 @@ class Venue(db.Model):
     def openalex_id(self):
         return as_venue_openalex_id(self.journal_id)
 
+    @property
+    def openalex_id_short(self):
+        from models import short_openalex_id
+        return short_openalex_id(self.openalex_id)
+
     def get_insert_dict_fieldnames(self, table_name=None):
         return ["id", "updated", "json_save", "version"]
 
@@ -135,8 +140,8 @@ class Venue(db.Model):
                 },
                 # "counts_by_year": self.counts_by_year,
                 "x_concepts": self.concepts,
-                "works_api_url": f"https://api.openalex.org/works?filter=issn:{self.issn}",
-                "updated_date": self.updated_date.isoformat()
+                "works_api_url": f"https://api.openalex.org/works?filter=journal.id:{self.openalex_id_short}",
+                "updated_date": self.updated_date
             })
         return response
 

@@ -83,6 +83,9 @@ def journal_from_issn(issn):
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
 
+def short_openalex_id(long_openalex_id):
+    return long_openalex_id.replace("https://openalex.org/", "")
+
 def single_work_query():
     return db.session.query(Work).options(
          selectinload(Work.locations),

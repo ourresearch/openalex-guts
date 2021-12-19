@@ -27,9 +27,6 @@ def as_work_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/W{id}"
 
-def as_work_openalex_id_short(id):
-    return f"W{id}"
-
 def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     insert_dicts = []
     data_list = []
@@ -140,7 +137,8 @@ class Work(db.Model):
 
     @property
     def openalex_id_short(self):
-        return as_work_openalex_id_short(self.paper_id)
+        from models import short_openalex_id
+        return short_openalex_id(self.openalex_id)
 
     def new_work_concepts(self):
         self.insert_dicts = []

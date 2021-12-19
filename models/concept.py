@@ -39,6 +39,11 @@ class Concept(db.Model):
     def openalex_id(self):
         return as_concept_openalex_id(self.field_of_study_id)
 
+    @property
+    def openalex_id_short(self):
+        from models import short_openalex_id
+        return short_openalex_id(self.openalex_id)
+
     @cached_property
     def is_valid(self):
         q = """
@@ -469,7 +474,7 @@ class Concept(db.Model):
                 "ancestors": self.ancestors,
                 "related_concepts": self.related_concepts,
                 # "counts_by_year": self.counts_by_year,
-                "works_api_url": f"https://api.openalex.org/works?filter=concept:{self.field_of_study_id}",
+                "works_api_url": f"https://api.openalex.org/works?filter=concept.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })
         return response
