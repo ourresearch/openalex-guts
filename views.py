@@ -12,6 +12,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import or_
+import re
 
 import json
 import os
@@ -93,7 +94,7 @@ def after_request_override_urls_for_debugging(response):
     wants_apiurls = ("apiurls" in request.args)
     if wants_apiurls:
         json_response_data = response.get_data().decode('utf-8')
-        json_response_data = json_response_data.replace("https://openalex.org/", "https://openalex-guts.herokuapp.com/")
+        json_response_data = re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "https://openalex-guts.herokuapp.com/\g<id>?apiurls", json_response_data)
         response.set_data(json_response_data.encode())
     return response
 
@@ -312,15 +313,15 @@ def universal_get(openalex_id):
 
     openalex_id = normalize_openalex_id(openalex_id)
     if is_work_openalex_id(openalex_id):
-        return redirect(url_for("works_id_get", id=openalex_id))
+        return redirect(url_for("works_id_get", id=openalex_id, **request.args))
     elif is_author_openalex_id(openalex_id):
-        return redirect(url_for("authors_id_get", id=openalex_id))
+        return redirect(url_for("authors_id_get", id=openalex_id, **request.args))
     elif is_venue_openalex_id(openalex_id):
-        return redirect(url_for("venues_id_get", id=openalex_id))
+        return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
     elif is_institution_openalex_id(openalex_id):
-        return redirect(url_for("institutions_id_get", id=openalex_id))
+        return redirect(url_for("institutions_id_get", id=openalex_id, **request.args))
     elif is_concept_openalex_id(openalex_id):
-        return redirect(url_for("concepts_id_get", id=openalex_id))
+        return redirect(url_for("concepts_id_get", id=openalex_id, **request.args))
     return {'message': "OpenAlex ID format not recognized"}, 404
 
 
