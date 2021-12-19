@@ -69,6 +69,7 @@ class Venue(db.Model):
         response_dict = {}
         for count_row in self.counts_by_year:
             response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
+        for count_row in self.counts_by_year:
             if count_row.type == "citation_count":
                 response_dict[count_row.year]["cited_by_count"] = count_row.n
             else:
