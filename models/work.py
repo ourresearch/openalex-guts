@@ -339,19 +339,11 @@ class Work(db.Model):
 
 
     @cached_property
-    def counts_by_year(self):
-        q = """
-        select citing_work.year, count(*) as cited_by_count
-        from mid.work citing_work
-        join mid.citation citation on citing_work.paper_id = citation.paper_id
-        where citing_work.year >= 2012
-        and citation.paper_reference_id = :paper_id    
-        group by citing_work.year
-        order by citing_work.year desc
-        """
-        rows = db.session.execute(text(q), {"paper_id": self.paper_id}).fetchall()
-        response = [dict(row) for row in rows]
+    def display_counts_by_year(self):
+        my_dicts = [counts.to_dict() for counts in self.counts_by_year if counts.year >= 2012]
+        response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
+
 
     def to_dict(self, return_level="full"):
         response = {
@@ -395,7 +387,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            # "counts_by_year": self.counts_by_year,
+            "counts_by_year": self.display_counts_by_year,
             "cited_by_api_url": self.cited_by_api_url,
             "updated_date": self.updated_date,
         })

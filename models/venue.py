@@ -65,38 +65,11 @@ class Venue(db.Model):
                                                                 )}]
 
     @cached_property
-    def counts_by_year(self):
-        response = {}
-        q = """
-        select work.year, count(distinct work.paper_id) as works_count
-        from mid.work work
-        where work.year >= 2012
-        and work.journal_id = :journal_id
-        group by work.year
-        order by work.year desc
-        """
-        works_count_rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
-        for row in works_count_rows:
-            response[row["year"]] = {"year": row["year"], "works_count": row["works_count"], "cited_by_count": 0}
-
-        q = """
-        select citing_work.year, count(*) as cited_by_count
-        from mid.work citing_work
-        join mid.citation citation on citing_work.paper_id = citation.paper_reference_id
-        where citing_work.year >= 2012
-        and citing_work.journal_id = :journal_id
-        group by citing_work.year
-        order by citing_work.year desc
-        """
-        cited_by_count_rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
-        for row in cited_by_count_rows:
-            if row["year"] in response:
-                response[row["year"]]["cited_by_count"] = row["cited_by_count"]
-            else:
-                response[row["year"]] = {"year": row["year"], "works_count": 0, "cited_by_count": row["cited_by_count"]}
-
-        response = sorted(response.values(), key=lambda x: x["year"], reverse=True)
+    def display_counts_by_year(self):
+        my_dicts = [counts.to_dict() for counts in self.counts_by_year if counts.year >= 2012]
+        response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
+
 
     @cached_property
     def concepts(self):
@@ -138,7 +111,7 @@ class Venue(db.Model):
                     "issn_l": self.issn,
                     "issn": json.loads(self.issns) if self.issns else None,
                 },
-                # "counts_by_year": self.counts_by_year,
+                "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=journal.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date

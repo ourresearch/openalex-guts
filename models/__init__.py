@@ -20,6 +20,7 @@ from models.work_concept import WorkConcept
 from models.ror import Ror
 from models.journalsdb import Journalsdb
 from models.work_extra_ids import WorkExtraIds
+from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
 
 
 # relationships without association tables
@@ -45,6 +46,13 @@ Author.last_known_institution = db.relationship("Institution")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
+
+Author.counts_by_year = db.relationship("AuthorCountsByYear", lazy='selectin', backref="work")
+Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', backref="work")
+Institution.counts_by_year = db.relationship("InstitutionCountsByYear", lazy='selectin', backref="work")
+Venue.counts_by_year = db.relationship("VenueCountsByYear", lazy='selectin', backref="work")
+Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")
+
 
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
@@ -92,6 +100,7 @@ def single_work_query():
          selectinload(Work.journal).selectinload(Venue.journalsdb),
          selectinload(Work.references),
          selectinload(Work.mesh),
+         selectinload(Work.counts_by_year),
          selectinload(Work.abstract),
          selectinload(Work.extra_ids),
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),

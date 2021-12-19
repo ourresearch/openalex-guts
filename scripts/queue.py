@@ -196,6 +196,7 @@ class DbQueue(object):
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
+                             selectinload(models.Work.counts_by_year),
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.extra_ids),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
@@ -222,16 +223,22 @@ class DbQueue(object):
                              orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Author:
                         objects = db.session.query(models.Author).options(
+                             selectinload(models.Author.counts_by_year),
                              selectinload(models.Author.orcids).raiseload('*'),
-                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                             orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Institution:
                         objects = db.session.query(models.Institution).options(
+                             selectinload(models.Institution.counts_by_year),
                              selectinload(models.Institution.ror).raiseload('*'),
-                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                             orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Concept:
-                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        objects = db.session.query(models.Concept).options(
+                             selectinload(models.Concept.counts_by_year),
+                             orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Venue:
-                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        objects = db.session.query(models.Venue).options(
+                             selectinload(models.Venue.counts_by_year),
+                             orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     else:
                         objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
