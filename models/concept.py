@@ -443,7 +443,7 @@ class Concept(db.Model):
                 },
                 "ancestors": self.ancestors,
                 "related_concepts": self.related_concepts,
-                "counts_by_year": self.display_counts_by_year,
+                # "counts_by_year": self.display_counts_by_year,
                 "works_api_url": f"https://api.openalex.org/works?filter=concept.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })

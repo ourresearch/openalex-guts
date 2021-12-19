@@ -387,7 +387,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            "counts_by_year": self.display_counts_by_year,
+            # "counts_by_year": self.display_counts_by_year,
             "cited_by_api_url": self.cited_by_api_url,
             "updated_date": self.updated_date,
         })
