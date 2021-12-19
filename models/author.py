@@ -212,7 +212,15 @@ class Author(db.Model):
 
     @cached_property
     def display_counts_by_year(self):
-        my_dicts = [counts.to_dict() for counts in self.counts_by_year if counts.year >= 2012]
+        response_dict = {}
+        for count_row in self.counts_by_year:
+            response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
+            if count_row.type == "citation_count":
+                response_dict[count_row.year]["cited_by_count"] = count_row.n
+            else:
+                response_dict[count_row.year]["works_count"] = count_row.n
+
+        my_dicts = [counts for counts in response_dict.values() if counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
@@ -237,7 +245,7 @@ class Author(db.Model):
                 # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "x_concepts": self.concepts,
-                # "counts_by_year": self.display_counts_by_year,
+                "counts_by_year": self.display_counts_by_year,
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })

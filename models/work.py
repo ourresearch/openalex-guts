@@ -340,7 +340,13 @@ class Work(db.Model):
 
     @cached_property
     def display_counts_by_year(self):
-        my_dicts = [counts.to_dict() for counts in self.counts_by_year if counts.year >= 2012]
+        response_dict = {}
+        for count_row in self.counts_by_year:
+            response_dict[count_row.year] = {"year": count_row.year, "cited_by_count": 0}
+            if count_row.type == "citation_count":
+                response_dict[count_row.year]["cited_by_count"] = count_row.n
+
+        my_dicts = [counts for counts in response_dict.values() if counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
@@ -387,7 +393,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "related_works": self.related_paper_list,
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            # "counts_by_year": self.display_counts_by_year,
+            "counts_by_year": self.display_counts_by_year,
             "cited_by_api_url": self.cited_by_api_url,
             "updated_date": self.updated_date,
         })
