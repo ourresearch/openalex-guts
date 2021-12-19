@@ -46,12 +46,17 @@ class Location(db.Model):
             return "unknown"
         return lookup.get(self.source_type, "unknown").lower()
 
+    def display_license(self):
+        if not self.license:
+            return None
+        return self.license.split(":", 1)[0]
+
     def to_dict(self, return_level="full"):
         response = {
             "url": self.source_url,
             "is_oa": self.is_oa,
             "version": self.version,
-            "license": self.license,
+            "license": self.display_license,
             # "repository_institution": self.repository_institution,
             "venue_id": None,
             "is_best": None
