@@ -274,6 +274,23 @@ class Work(db.Model):
         return False
 
     @cached_property
+    def display_genre(self):
+        if self.genre:
+            return self.genre
+        if self.doc_type:
+            lookup_mag_to_crossref_type = {
+                "Journal": "journal-article",
+                "Thesis": "dissertation",
+                "Conference": "proceedings-article",
+                "Repository": "posted-content",
+                "Book": "book",
+                "BookChapter": "book-chapter",
+                "Dataset": "dataset",
+            }
+            return lookup_mag_to_crossref_type[self.doc_type]
+        return None
+
+    @cached_property
     def references_list(self):
         import models
 
@@ -347,7 +364,7 @@ class Work(db.Model):
             },
             "venue": self.journal.to_dict("minimum") if self.journal else None,
             "url": self.best_url,
-            "type": self.genre,
+            "type": self.display_genre,
             "is_oa": self.is_oa,
             "oa_status": self.oa_status,
             "oa_url": self.best_free_url,

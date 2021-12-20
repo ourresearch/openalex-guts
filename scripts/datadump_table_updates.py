@@ -575,4 +575,9 @@ if False:
 # refresh mid.citation_concepts_by_year_mv
 # refresh mid.citation_works_by_year_mv
 
+# update mid.institution set iso3166_code=upper(ror.country_code)
+# from mid.institution t1
+# join ins.ror_summary_view ror on ror.ror_id=t1.ror_id
+# where t1.iso3166_code is null and t1.ror_id is not null
+
 
