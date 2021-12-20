@@ -52,6 +52,27 @@ class Location(db.Model):
             return None
         return self.license.lower().split(":", 1)[0]
 
+    @property
+    def score(self):
+        score = 0
+        if self.version == "publishedVersion":
+            score += 10000
+        if self.version == "acceptedVersion":
+            score += 5000
+        if self.version == "submittedVersion":
+            score += 1000
+        if self.license:
+            score += (500 - len(self.license))  # shorter is better, fewer restrictions
+        if "doi.org/" in self.source_url:
+            score += 100
+        if "pdf" in self.source_url:
+            score += 50
+        if "europepmc" in self.source_url:
+            score += 25
+        if "ncbi.nlm.nih.gov" in self.source_url:
+            score += 25
+        return score
+
     def to_dict(self, return_level="full"):
         response = {
             "url": self.source_url,

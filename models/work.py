@@ -247,7 +247,7 @@ class Work(db.Model):
 
     @property
     def locations_sorted(self):
-        return sorted(self.locations, key=lambda x: (x.is_oa == True, x.source_url), reverse=True)
+        return sorted(self.locations, key=lambda x: x.score, reverse=True)
 
     @property
     def mag_publisher(self):
