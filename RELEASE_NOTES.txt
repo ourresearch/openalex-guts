@@ -1,6 +1,11 @@
 OPENALEX DATA DUMP RELEASE NOTES
 DATA DUMP V1
 
+RELEASE
+- removed urls from publisher-specific license in PaperUrls table
+-
+
+
 RELEASE 2021-11-08b
 Released on December 3, 2021 at s3://openalex/data_dump_v1/2021-11-08b/
 - data content same as RELEASE 2021-11-08, but with some extra data cleanup
