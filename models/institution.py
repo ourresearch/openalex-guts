@@ -287,8 +287,6 @@ class Institution(db.Model):
             return None
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
-        # print(r.json())
-        r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # are claims too big?
         # del response["entities"][self.wikidata_id]["claims"]
@@ -401,7 +399,8 @@ class Institution(db.Model):
                     "ror": self.ror_url,
                     "grid": self.ror.grid_id if self.ror else None,
                     "wikipedia": self.wikipedia_url_canonical,
-                    "wikidata": self.wikidata_url
+                    "wikidata": self.wikidata_url,
+                    "mag": self.affiliation_id
                 },
                 "geo": {
                     "city": self.ror.city if self.ror else None,

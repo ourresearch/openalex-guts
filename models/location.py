@@ -53,6 +53,13 @@ class Location(db.Model):
         return self.license.lower().split(":", 1)[0]
 
     @property
+    def display_host_type(self):
+        if self.host_type == "publisher":
+            return "journal"
+        return self.host_type
+
+
+    @property
     def score(self):
         score = 0
         if self.version == "publishedVersion":
@@ -63,32 +70,46 @@ class Location(db.Model):
             score += 1000
         if self.license:
             score += (500 - len(self.license))  # shorter is better, fewer restrictions
+        if self.host_type == "publisher":
+            score += 200
         if "doi.org/" in self.source_url:
             score += 100
-        if "pdf" in self.source_url:
+        if ("pdf" in self.source_url) or (self.url_for_pdf is not None):
             score += 50
-        if "europepmc" in self.source_url:
-            score += 25
-        if "ncbi.nlm.nih.gov" in self.source_url:
+        if ("europepmc" in self.source_url) or ("ncbi.nlm.nih.gov" in self.source_url):
             score += 25
         return score
 
+    @property
+    def include_in_alternative(self):
+        if self.is_oa:
+            return True
+        return False
+
     def to_dict(self, return_level="full"):
+        id = None
+        display_name = self.repository_institution
+
+        if self.host_type == "publisher":
+            if self.work.journal:
+                id = self.work.journal.openalex_id
+                display_name = self.work.journal.display_name
         response = {
+            "id": id,
+            "display_name": display_name,
+            "type": self.display_host_type,
             "url": self.source_url,
             "is_oa": self.is_oa,
             "version": self.version,
             "license": self.display_license,
             # "repository_institution": self.repository_institution,
-            "venue_id": None,
-            "is_best": None
         }
         # if return_level == "full":
         #     response.update({
         #         "url_for_landing_page": self.url_for_landing_page,
         #         "url_for_pdf": self.url_for_pdf,
         #         "url_type": self.source_description,
-        #         "host_type": self.host_type,
+        #         "host_type": self.display_host_type,
         #         "oai_pmh_id": self.pmh_id
         #     })
         return response

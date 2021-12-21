@@ -3,7 +3,7 @@ DATA DUMP V1
 
 RELEASE
 - removed urls from publisher-specific license in PaperUrls table
--
+
 
 
 RELEASE 2021-11-08b

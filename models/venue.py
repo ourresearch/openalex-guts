@@ -42,6 +42,10 @@ class Venue(db.Model):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
 
+    @property
+    def issn_l(self):
+        return self.issn
+
     def get_insert_dict_fieldnames(self, table_name=None):
         return ["id", "updated", "json_save", "version"]
 
@@ -100,12 +104,23 @@ class Venue(db.Model):
             row["id"] = as_concept_openalex_id(row["id"])
         return response
 
+    @classmethod
+    def to_dict_null_minimum(self):
+        response = {
+            "id": None,
+            "issn_l": None,
+            "issn": None,
+            "display_name": None,
+            "publisher": None
+        }
+        return response
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "issn_l": self.issn,
-            "display_name": self.display_name,
             "issn": json.loads(self.issns) if self.issns else None,
+            "display_name": self.display_name,
             "publisher": self.publisher,
         }
         if return_level == "full":
@@ -119,6 +134,7 @@ class Venue(db.Model):
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
                     "issn": json.loads(self.issns) if self.issns else None,
+                    "mag": self.journal_id
                 },
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,

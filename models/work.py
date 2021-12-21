@@ -101,6 +101,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
+    original_venue = db.Column(db.Text)
     genre = db.Column(db.Text)
     is_paratext = db.Column(db.Boolean)
     oa_status = db.Column(db.Text)
@@ -271,6 +272,8 @@ class Work(db.Model):
     def is_oa(self):
         if self.best_free_url != None:
             return True
+        if self.oa_status != "closed":
+            return True
         return False
 
     @cached_property
@@ -349,8 +352,47 @@ class Work(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    @property
+    def primary_venue_details_dict(self):
+        # should match the extra stuff put out in locations.to_dict()
+        matching_location = None
+        for location in self.locations_sorted:
+            if "doi.org/" in location.source_url and not matching_location:
+                matching_location = location
+            elif not matching_location:
+                if location.host_type == "publisher":
+                    matching_location = location
+        if self.locations_sorted and (not matching_location):
+            matching_location = self.locations_sorted[0]
+
+        url = self.best_url if self.best_url else matching_location.source_url
+
+        type = None
+        if matching_location and matching_location.host_type != None:
+            type = matching_location.host_type
+        elif self.journal and self.journal.issn_l:
+            type = "journal"
+        elif "doi.org/" in url:
+            type = "journal"
+
+        is_oa = None
+        if matching_location and matching_location.is_oa != None:
+            is_oa = matching_location.is_oa
+        elif self.is_oa == False:
+            is_oa = False
+
+        response = {
+            "type": type,
+            "url": url,
+            "is_oa": is_oa,
+            "version": matching_location.version if matching_location else None,
+            "license": matching_location.display_license if matching_location else None,
+        }
+        return response
 
     def to_dict(self, return_level="full"):
+        from models import Venue
+
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
@@ -361,15 +403,20 @@ class Work(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
+                "mag": self.paper_id
             },
-            "venue": self.journal.to_dict("minimum") if self.journal else None,
-            "url": self.best_url,
+            "primary_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
             "type": self.display_genre,
-            "is_oa": self.is_oa,
-            "oa_status": self.oa_status,
-            "oa_url": self.best_free_url,
+            "open_access": {
+                "is_oa": self.is_oa,
+                "oa_status": self.oa_status,
+                "oa_url": self.best_free_url,
+            },
             "authorships": self.affiliations_list,
         }
+        response["primary_venue"].update(self.primary_venue_details_dict)
+        response["primary_venue"]["display_name"] = response["primary_venue"]["display_name"] if response["primary_venue"]["display_name"] else self.original_venue
+        response["primary_venue"]["publisher"] = response["primary_venue"]["publisher"] if response["primary_venue"]["publisher"] else self.publisher
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
@@ -388,7 +435,7 @@ class Work(db.Model):
             "is_paratext": self.is_paratext,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "alternate_locations": [location.to_dict("minimum") for location in self.locations_sorted if location.is_oa == True],
+            "additional_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
             "referenced_works": self.references_list,
             "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
