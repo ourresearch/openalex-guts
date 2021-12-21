@@ -107,7 +107,7 @@ class DbQueue(object):
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
                 text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
+                    select {id_field_name} from mid.works_not_done_yet
                         where {id_field_name} not in
                             (select {id_field_name} from {insert_table})
                         order by random()
