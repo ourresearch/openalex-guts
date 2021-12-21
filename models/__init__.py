@@ -23,6 +23,7 @@ from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
+from models.concept_wikidata import ConceptWikidata
 
 
 # relationships without association tables
@@ -49,6 +50,7 @@ Author.last_known_institution = db.relationship("Institution")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
+Concept.wikidata_cache = db.relationship("ConceptWikidata", lazy='selectin', backref="concept", uselist=False)
 
 Author.counts_by_year = db.relationship("AuthorCountsByYear", lazy='selectin', backref="work")
 Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', backref="work")

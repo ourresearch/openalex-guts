@@ -128,7 +128,7 @@ class Concept(db.Model):
         return [attr["attribute_value"] for attr in self.extended_attributes if attr["attribute_type"]==1]
 
     @cached_property
-    def wikipedia_url(self):
+    def raw_wikipedia_url(self):
         # for attr in self.extended_attributes:
         #     if attr["attribute_type"]==2:
         #         return attr["attribute_value"]
@@ -207,18 +207,6 @@ class Concept(db.Model):
         return related_concepts_all
 
     @cached_property
-    def wikipedia_pageid(self):
-        if not self.wikipedia_data:
-            return None
-        data = self.wikipedia_data
-        try:
-            page_id = data["query"]["pages"][0]["pageid"]
-        except KeyError:
-            return None
-
-        return page_id
-
-    @cached_property
     def image_url(self):
         if not self.wikipedia_data:
             return None
@@ -264,7 +252,7 @@ class Concept(db.Model):
             return None
 
     @cached_property
-    def wikidata_id(self):
+    def raw_wikidata_id(self):
         if not self.wikipedia_data:
             return None
         data = self.wikipedia_data
@@ -276,12 +264,44 @@ class Concept(db.Model):
 
     @cached_property
     def wikidata_url(self):
-        if not self.wikidata_id:
+        if not self.wikidata_cache:
             return None
-        return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
+        if not self.wikidata_cache.is_valid:
+            return None
+        return self.wikidata_cache.wikidata_id
+
+    @cached_property
+    def wikidata_id(self):
+        if not self.wikidata_url:
+            return None
+        return self.wikidata_cache.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+
+    @cached_property
+    def wikipedia_url(self):
+        if not self.wikidata_cache:
+            return None
+        if not self.wikidata_cache.is_valid:
+            return None
+        return self.wikidata_cache.wikipedia_id
+
+    @cached_property
+    def wikidata_data(self):
+        if not self.wikidata_cache:
+            return None
+        if not self.wikidata_cache.is_valid:
+            return None
+        return json.loads(self.wikidata_cache.wikidata_json)
 
     @cached_property
     def wikipedia_data(self):
+        if not self.wikidata_cache:
+            return None
+        if not self.wikidata_cache.is_valid:
+            return None
+        return json.loads(self.wikidata_cache.wikipedia_json)
+
+    @cached_property
+    def raw_wikipedia_data(self):
         if not self.wikipedia_url:
             return None
         wikipedia_page_name = self.wikipedia_url.rsplit("/", 1)[-1]
@@ -294,13 +314,6 @@ class Concept(db.Model):
 
         return r.json()
 
-    # is whatever the wikipedia url redirects to
-    @cached_property
-    def wikipedia_url_canonical(self):
-        if not self.wikipedia_title:
-            return None
-        encoded = urllib.parse.quote(self.wikipedia_title)
-        return f"https://en.wikipedia.org/wiki/{encoded}"
 
     @cached_property
     def display_name_international(self):
@@ -329,6 +342,7 @@ class Concept(db.Model):
             return None
         data = self.wikidata_data
         try:
+            print(data)
             response = data["entities"][self.wikidata_id]["descriptions"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
@@ -336,16 +350,16 @@ class Concept(db.Model):
             return None
 
     @cached_property
-    def wikidata_data(self):
-        if not self.wikidata_id:
+    def raw_wikidata_data(self):
+        if not self.raw_wikidata_id:
             return None
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.raw_wikidata_id}.json"
         # print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
         try:
-            del response["entities"][self.wikidata_id]["claims"]
+            del response["entities"][self.raw_wikidata_id]["claims"]
         except KeyError:
             # not here for some reason, doesn't matter
             pass
@@ -380,15 +394,15 @@ class Concept(db.Model):
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
-            wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            wikipedia_data = json.dumps(self.raw_wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
             if len(wikipedia_data) > 64000:
                 wikipedia_data = None
-            wikidata_data = json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            wikidata_data = json.dumps(self.raw_wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
             if len(wikidata_data) > 64000:
                 wikidata_data = None
             self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}', '{updated}')".format(
                                   id=self.field_of_study_id,
-                                  wikipedia_id=self.wikipedia_url_canonical,
+                                  wikipedia_id=self.wikipedia_url,
                                   wikidata_id=self.wikidata_url,
                                   wikipedia_data=wikipedia_data,
                                   wikidata_data=wikidata_data,
@@ -446,9 +460,10 @@ class Concept(db.Model):
                 "ids": {
                     "openalex": self.openalex_id,
                     "wikidata": self.wikidata_url,
-                    "wikipedia": self.wikipedia_url_canonical,
+                    "wikipedia": self.wikipedia_url,
                     "umls_aui": self.umls_aui_urls,
                     "umls_cui": self.umls_cui_urls,
+                    "mag": self.field_of_study_id
                 },
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
