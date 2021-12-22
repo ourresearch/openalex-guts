@@ -368,7 +368,8 @@ class Concept(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.concept_ancestor": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
-            "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json", "updated"],
+            # "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json", "updated"],
+            "ins.wiki_concept": ["field_of_study_id", "wikidata_super"],
             "mid.json_concepts": ["id", "updated", "json_save", "version"]
         }
         if table_name:
@@ -394,19 +395,15 @@ class Concept(db.Model):
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
-            wikipedia_data = json.dumps(self.raw_wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikipedia_data) > 64000:
-                wikipedia_data = None
-            wikidata_data = json.dumps(self.raw_wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # wikipedia_data = json.dumps(self.raw_wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # if len(wikipedia_data) > 64000:
+            #     wikipedia_data = None
+            wikidata_data = json.dumps(self.raw_wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
             if len(wikidata_data) > 64000:
                 wikidata_data = None
-            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}', '{updated}')".format(
+            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikidata_super}')".format(
                                   id=self.field_of_study_id,
-                                  wikipedia_id=self.wikipedia_url,
-                                  wikidata_id=self.wikidata_url,
-                                  wikipedia_data=wikipedia_data,
-                                  wikidata_data=wikidata_data,
-                                  updated=datetime.datetime.utcnow().isoformat()
+                                  wikidata_super=wikidata_data,
                                 )}]
 
 

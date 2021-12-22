@@ -141,14 +141,26 @@ class DbQueue(object):
                         limit {chunk};
                 """
             elif self.myclass == models.Concept and run_method=="save_wiki":
+                # text_query_pattern_select = """
+                #     select field_of_study_id from mid.concept
+                #         where
+                #         field_of_study_id not in (select field_of_study_id from ins.wiki_concept)
+                #         and paper_count >= 400
+                #         order by random()
+                #         limit {chunk};
+                # """
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
-                        where 
-                        field_of_study_id not in (select field_of_study_id from ins.wiki_concept)
-                        and paper_count >= 400
+                        where
+                        field_of_study_id in (select field_of_study_id from ins.wiki_concept 
+                                                where (wikidata_id != 'None') 
+                                                    and (wikidata_super is null) 
+                                                    and (wikidata_id is not null)
+                                                    and (is_active_concept = true))
                         order by random()
                         limit {chunk};
-                """
+                    """
+
             elif self.myclass == models.Institution and run_method=="save_wiki":
                 # text_query_pattern_select = """
                 #     select affiliation_id from mid.institution
@@ -242,6 +254,7 @@ class DbQueue(object):
                     elif self.myclass == models.Concept:
                         objects = db.session.query(models.Concept).options(
                              selectinload(models.Concept.counts_by_year),
+                             selectinload(models.Concept.wikidata_cache),
                              orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Venue:
                         objects = db.session.query(models.Venue).options(
