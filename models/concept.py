@@ -298,7 +298,11 @@ class Concept(db.Model):
             return None
         if not self.wikidata_cache.is_valid:
             return None
-        return json.loads(self.wikidata_cache.wikipedia_json)
+        try:
+            return json.loads(self.wikidata_cache.wikipedia_json)
+        except:
+            print(f"Error doing json_loads for {self.openalex_id} in wikipedia_data")
+            return None
 
     @cached_property
     def raw_wikipedia_data(self):
