@@ -160,7 +160,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select affiliation_id from mid.institution
                         where
-                        affiliation_id in (select affiliation_id from ins.wiki_institution where (wikidata_id != 'None') and (wikidata_super is null))
+                        affiliation_id in (select affiliation_id from ins.wiki_institution where (wikidata_id != 'None') and (wikidata_super is null) and (wikidata_id is not null))
                         order by random()
                         limit {chunk};
                     """
