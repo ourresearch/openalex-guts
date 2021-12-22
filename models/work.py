@@ -435,7 +435,7 @@ class Work(db.Model):
             "is_paratext": self.is_paratext,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "additional_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
+            "alternate_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
             "referenced_works": self.references_list,
             "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
