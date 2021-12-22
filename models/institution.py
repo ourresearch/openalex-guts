@@ -37,6 +37,7 @@ class Institution(db.Model):
     wiki_page = db.Column(db.Text)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
+    wikidata_id = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
@@ -239,16 +240,16 @@ class Institution(db.Model):
             return None
         return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
 
-    @cached_property
-    def wikidata_id(self):
-        if not self.wikipedia_data:
-            return None
-        data = self.wikipedia_data
-        try:
-            page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
-        except KeyError:
-            return None
-        return page_id
+    # @cached_property
+    # def wikidata_id(self):
+    #     if not self.wikipedia_data:
+    #         return None
+    #     data = self.wikipedia_data
+    #     try:
+    #         page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
+    #     except KeyError:
+    #         return None
+    #     return page_id
 
     @cached_property
     def wikipedia_data(self):
@@ -285,16 +286,23 @@ class Institution(db.Model):
     def wikidata_data(self):
         if not self.wikidata_id:
             return None
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id}.json"
+        wikidata_id_short = self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{wikidata_id_short}.json"
+        print(url)
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # are claims too big?
-        # del response["entities"][self.wikidata_id]["claims"]
+        try:
+            del response["entities"][self.wikidata_id]["claims"]
+        except:
+            pass
+        # print(response)
         return response
 
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
-            "ins.wiki_institution": ["affiliation_id", "ror_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"],
+            # "ins.wiki_institution": ["affiliation_id", "ror_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"],
+            "ins.wiki_institution": ["affiliation_id", "wikidata_super"],
             "mid.json_institutions": ["id", "updated", "json_save", "version"]
         }
         if table_name:
@@ -323,19 +331,15 @@ class Institution(db.Model):
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
-            wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikipedia_data) > 64000:
-                wikipedia_data = None
-            wikidata_data = json.dumps(self.wikidata_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # if len(wikipedia_data) > 64000:
+            #     wikipedia_data = None
+            wikidata_data = json.dumps(self.wikidata_data, ensure_ascii=False).replace("'", "''")  # .replace("%", "%%").replace(":", "\:")
             if len(wikidata_data) > 64000:
                 wikidata_data = None
-            self.insert_dicts = [{"ins.wiki_institution": "({id}, '{ror_id}', '{wikipedia_id}', '{wikidata_id}', '{wikipedia_data}', '{wikidata_data}')".format(
+            self.insert_dicts = [{"ins.wiki_institution": "({id}, '{wikidata_super}')".format(
                                   id=self.affiliation_id,
-                                  ror_id=self.ror_id,
-                                  wikipedia_id=self.wikipedia_url_canonical,
-                                  wikidata_id=self.wikidata_url,
-                                  wikipedia_data=wikipedia_data,
-                                  wikidata_data=wikidata_data
+                                  wikidata_super=wikidata_data
                                 )}]
 
     @cached_property
