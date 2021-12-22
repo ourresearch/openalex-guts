@@ -157,6 +157,8 @@ class DbQueue(object):
                                                     and (wikidata_super is null) 
                                                     and (wikidata_id is not null)
                                                     and (is_active_concept = true))
+                        and field_of_study_id not in (select field_of_study_id from ins.wiki_concept 
+                                                where (wikidata_super is not null) )
                         order by random()
                         limit {chunk};
                     """
