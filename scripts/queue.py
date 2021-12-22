@@ -150,15 +150,22 @@ class DbQueue(object):
                         limit {chunk};
                 """
             elif self.myclass == models.Institution and run_method=="save_wiki":
+                # text_query_pattern_select = """
+                #     select affiliation_id from mid.institution
+                #         where
+                #         affiliation_id not in (select affiliation_id from ins.wiki_institution)
+                #         order by random()
+                #         limit {chunk};
+                # """
                 text_query_pattern_select = """
                     select affiliation_id from mid.institution
-                        where 
-                        affiliation_id not in (select affiliation_id from ins.wiki_institution)
+                        where
+                        affiliation_id in (select affiliation_id from ins.wiki_institution where (wikidata_id != 'None') and (wikidata_super is null))
                         order by random()
                         limit {chunk};
-                """
+                    """
             else:
-                raise("myclass not known")
+                raise("myclass and method combo not known")
 
         index = 0
         start_time = time()
