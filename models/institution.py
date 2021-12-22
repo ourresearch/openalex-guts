@@ -334,7 +334,7 @@ class Institution(db.Model):
             # wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
             # if len(wikipedia_data) > 64000:
             #     wikipedia_data = None
-            wikidata_data = json.dumps(self.wikidata_data, ensure_ascii=False).replace("'", "''")  # .replace("%", "%%").replace(":", "\:")
+            wikidata_data = json.dumps(self.wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
             if len(wikidata_data) > 64000:
                 wikidata_data = None
             self.insert_dicts = [{"ins.wiki_institution": "({id}, '{wikidata_super}')".format(
