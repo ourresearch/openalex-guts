@@ -4,12 +4,12 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = True
-GENERATE_COMMENTS = True
+GENERATE_CREATE_TABLE = False
+GENERATE_COMMENTS = False
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-DUMP_DIR = "2021-11-08b"
+DUMP_DIR = "2021-12-06"
 
 
 ##  python -m sql.sql_generate_export_tables  -i sql/export_views.sql -o sql/export_tables_generated.sql
