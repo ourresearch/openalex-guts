@@ -353,7 +353,7 @@ class Work(db.Model):
         return response
 
     @property
-    def primary_venue_details_dict(self):
+    def host_venue_details_dict(self):
         # should match the extra stuff put out in locations.to_dict()
         matching_location = None
         for location in self.locations_sorted:
@@ -405,7 +405,7 @@ class Work(db.Model):
                 "doi": self.doi_url,
                 "mag": self.paper_id
             },
-            "primary_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
+            "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
             "type": self.display_genre,
             "open_access": {
                 "is_oa": self.is_oa,
@@ -414,9 +414,9 @@ class Work(db.Model):
             },
             "authorships": self.affiliations_list,
         }
-        response["primary_venue"].update(self.primary_venue_details_dict)
-        response["primary_venue"]["display_name"] = response["primary_venue"]["display_name"] if response["primary_venue"]["display_name"] else self.original_venue
-        response["primary_venue"]["publisher"] = response["primary_venue"]["publisher"] if response["primary_venue"]["publisher"] else self.publisher
+        response["host_venue"].update(self.host_venue_details_dict)
+        response["host_venue"]["display_name"] = response["host_venue"]["display_name"] if response["host_venue"]["display_name"] else self.original_venue
+        response["host_venue"]["publisher"] = response["host_venue"]["publisher"] if response["host_venue"]["publisher"] else self.publisher
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
@@ -435,7 +435,7 @@ class Work(db.Model):
             "is_paratext": self.is_paratext,
             "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "alternate_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
+            "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
             "referenced_works": self.references_list,
             "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
             "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
