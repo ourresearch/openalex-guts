@@ -56,6 +56,9 @@ class DbQueue(object):
                     method_name=method_name,
                     elapsed=elapsed(start_time, 4)))
 
+        if self.myclass == models.Concept and method_name=="clean_metadata":
+            db.session.commit()
+
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
             if hasattr(obj, "insert_dicts"):
@@ -162,7 +165,14 @@ class DbQueue(object):
                         order by random()
                         limit {chunk};
                     """
-
+            elif self.myclass == models.Concept and run_method=="clean_metadata":
+                text_query_pattern_select = """
+                    select field_of_study_id from mid.concept_metadata
+                        where
+                        updated is null
+                        order by random()
+                        limit {chunk};
+                """
             elif self.myclass == models.Institution and run_method=="save_wiki":
                 # text_query_pattern_select = """
                 #     select affiliation_id from mid.institution
@@ -256,7 +266,7 @@ class DbQueue(object):
                     elif self.myclass == models.Concept:
                         objects = db.session.query(models.Concept).options(
                              selectinload(models.Concept.counts_by_year),
-                             selectinload(models.Concept.wikidata_cache),
+                             selectinload(models.Concept.metadata),
                              orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Venue:
                         objects = db.session.query(models.Venue).options(

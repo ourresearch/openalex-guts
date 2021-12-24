@@ -138,5 +138,9 @@ insert into mid.location (
         )
 
 
-
-
+# load in to redshift
+--COPY ins.unpaywall_recordthresher_main
+--FROM 's3://openalex-sandbox/recordthresher-unpaywall-api-responses.jsonl.gz'
+--gzip
+--<CREDS>
+--DELIMITER AS '\b'

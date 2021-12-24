@@ -173,8 +173,8 @@ class view:
         table_name = re.sub(r'_view', '', self.view_name)
         export_dir = lookup_export_filenames[table_name.replace('"', '')]
         export_file_name = export_dir.split("/")[1]
-        aws_access_key_id = getenv("AWS_ACCESS_KEY_ID")
-        aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY")
+        aws_access_key_id = getenv("AWS_ACCESS_KEY_ID_OPENALEX_OPEN_DATA")
+        aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY_OPENALEX_OPEN_DATA")
 
         # Start with UNLOAD table ... header
         result = ""
@@ -390,8 +390,8 @@ class parser:
                 f.write(view.generate_more_commands())
 
             if GENERATE_UNLOAD:
-                aws_access_key_id = getenv("AWS_ACCESS_KEY_ID")
-                aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY")
+                aws_access_key_id = getenv("AWS_ACCESS_KEY_ID_OPENALEX_OPEN_DATA")
+                aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY_OPENALEX_OPEN_DATA")
 
                 f.write(f"""\n\n
 unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
