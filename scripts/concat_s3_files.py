@@ -141,8 +141,8 @@ def concat_table(table, bucket_name, delete, dry_run):
         key=table['output_key'],
         min_file_size=None,
         s3_client_kwargs={
-            'aws_access_key_id': getenv('AWS_ACCESS_KEY_ID'),
-            'aws_secret_access_key': getenv('AWS_SECRET_ACCESS_KEY')
+            'aws_access_key_id': getenv('AWS_ACCESS_KEY_ID_OPENALEX_OPEN_DATA'),
+            'aws_secret_access_key': getenv('AWS_SECRET_ACCESS_KEY_OPENALEX_OPEN_DATA')
         }
     )
 
