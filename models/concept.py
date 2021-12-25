@@ -425,13 +425,17 @@ class Concept(db.Model):
         self.wikipedia_id = self.metadata.wikipedia_id
         self.wikidata_id = self.metadata.wikidata_id
 
-        try:
-            # work around redshift bug with nested quotes in json
-            response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
-            self.wikipedia_super = json.loads(response)
-        except:
-            print(f"Error: oops on loading wikipedia_super {self.field_of_study_id}")
-            pass
+        # work around redshift bug with nested quotes in json
+        response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+        self.wikipedia_super = json.dumps(response, ensure_ascii=False)
+
+        # try:
+        #     # work around redshift bug with nested quotes in json
+        #     response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+        #     self.wikipedia_super = json.loads(response)
+        # except:
+        #     print(f"Error: oops on loading wikipedia_super {self.field_of_study_id}")
+        #     pass
 
         if self.metadata.wikidata_json:
             self.wikidata_super = json.loads(self.metadata.wikidata_json)
