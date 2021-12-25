@@ -454,7 +454,10 @@ class Concept(db.Model):
         #     print(f"Error: oops on loading wikidata_super {self.field_of_study_id}")
         #     pass
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except:
+            print(f"error on commit for {self.field_of_study_id}")
                 
         
 
