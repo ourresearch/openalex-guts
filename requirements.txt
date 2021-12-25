@@ -45,7 +45,7 @@ shortuuid==1.0.1
 simplejson==3.3.1
 six==1.16.0
 SQLAlchemy==1.4.17
-sqlalchemy-redshift==0.8.2
+sqlalchemy-redshift==0.8.9
 unicodecsv==0.14.1
 Unidecode==1.2.0
 urllib3==1.26.7

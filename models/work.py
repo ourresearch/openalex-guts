@@ -310,7 +310,7 @@ class Work(db.Model):
         # return response
 
     def store(self):
-        VERSION_STRING = "sent to casey"
+        VERSION_STRING = "save end of december"
 
         # print("processing work! {}".format(self.id))
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
