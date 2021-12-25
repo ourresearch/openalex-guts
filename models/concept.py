@@ -446,7 +446,7 @@ class Concept(db.Model):
             self.wikidata_super = json.loads(self.metadata.wikidata_json.replace('\\\\"', '*'))
         elif self.metadata.wikidata_id:
             print("getting wikidata")
-            self.wikidata_super = self.raw_wikidata_data, ensure_ascii=False
+            self.wikidata_super = self.raw_wikidata_data
 
         # try:
         #     if self.metadata.wikidata_json:
