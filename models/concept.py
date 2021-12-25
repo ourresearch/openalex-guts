@@ -427,6 +427,8 @@ class Concept(db.Model):
         self.wikipedia_id = self.metadata.wikipedia_id
         self.wikidata_id = self.metadata.wikidata_id
 
+        return
+
         # work around redshift bug with nested quotes in json
         if self.metadata.wikipedia_json:
             response = json.loads(self.metadata.wikipedia_json.replace('\\\\"', '*'))
