@@ -170,6 +170,7 @@ class DbQueue(object):
                     select field_of_study_id from mid.concept_metadata
                         where
                         updated is null
+                        and field_of_study_id=2984968299
                         order by random()
                         limit {chunk};
                 """
