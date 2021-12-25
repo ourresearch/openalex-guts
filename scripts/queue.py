@@ -282,6 +282,7 @@ class DbQueue(object):
                         sleep(5)
                         continue
 
+                    db.session.commit()
                     self.update_fn(run_class, run_method, objects, index=index)
 
                     index += 1
