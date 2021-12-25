@@ -4,6 +4,7 @@ import requests
 import json
 import urllib.parse
 import datetime
+from sqlalchemy_redshift.dialect import SUPER
 
 from app import db
 from app import USER_AGENT
@@ -28,6 +29,8 @@ class Concept(db.Model):
     level = db.Column(db.Numeric)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
+    wikipedia_super = db.Column(SUPER)
+    wikidata_super = db.Column(SUPER)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
 
@@ -264,42 +267,42 @@ class Concept(db.Model):
 
     @cached_property
     def wikidata_url(self):
-        if not self.wikidata_cache:
+        if not self.metadata:
             return None
-        if not self.wikidata_cache.is_valid:
+        if not self.metadata.is_valid:
             return None
-        return self.wikidata_cache.wikidata_id
+        return self.metadata.wikidata_id
 
     @cached_property
     def wikidata_id(self):
         if not self.wikidata_url:
             return None
-        return self.wikidata_cache.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+        return self.metadata.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
 
     @cached_property
     def wikipedia_url(self):
-        if not self.wikidata_cache:
+        if not self.metadata:
             return None
-        if not self.wikidata_cache.is_valid:
+        if not self.metadata.is_valid:
             return None
-        return self.wikidata_cache.wikipedia_id
+        return self.metadata.wikipedia_id
 
     @cached_property
     def wikidata_data(self):
-        if not self.wikidata_cache:
+        if not self.metadata:
             return None
-        if not self.wikidata_cache.is_valid:
+        if not self.metadata.is_valid:
             return None
-        return json.loads(self.wikidata_cache.wikidata_json)
+        return json.loads(self.metadata.wikidata_json)
 
     @cached_property
     def wikipedia_data(self):
-        if not self.wikidata_cache:
+        if not self.metadata:
             return None
-        if not self.wikidata_cache.is_valid:
+        if not self.metadata.is_valid:
             return None
         try:
-            return json.loads(self.wikidata_cache.wikipedia_json)
+            return json.loads(self.metadata.wikipedia_json)
         except:
             print(f"Error doing json_loads for {self.openalex_id} in wikipedia_data")
             return None
@@ -355,18 +358,22 @@ class Concept(db.Model):
 
     @cached_property
     def raw_wikidata_data(self):
-        if not self.raw_wikidata_id:
+        if not self.metadata.wikidata_id:
             return None
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.raw_wikidata_id}.json"
-        # print(f"calling {url}")
+
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.metadata.short_wikidata_id}.json"
+        print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
         try:
-            del response["entities"][self.raw_wikidata_id]["claims"]
+            del response["entities"][self.metadata.short_wikidata_id]["claims"]
         except KeyError:
             # not here for some reason, doesn't matter
             pass
+        response_json = json.dumps(response, ensure_ascii=False)
+        # work around redshift bug with nested quotes in json
+        response = json.loads(response_json.replace('\\"', '*'))
         return response
 
     def get_insert_dict_fieldnames(self, table_name=None):
@@ -381,7 +388,7 @@ class Concept(db.Model):
         return lookup
 
     def store(self):
-        VERSION_STRING = "sent to casey"
+        VERSION_STRING = "save end of december"
 
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
@@ -410,6 +417,41 @@ class Concept(db.Model):
                                   wikidata_super=wikidata_data,
                                 )}]
 
+    def clean_metadata(self):
+        if not self.metadata:
+            return
+
+        self.metadata.updated = datetime.datetime.utcnow()
+        self.wikipedia_id = self.metadata.wikipedia_id
+        self.wikidata_id = self.metadata.wikidata_id
+
+        try:
+            # work around redshift bug with nested quotes in json
+            response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+            self.wikipedia_super = json.loads(response)
+        except:
+            print(f"Error: oops on loading wikipedia_super {self.field_of_study_id}")
+            pass
+
+        if self.metadata.wikidata_json:
+            self.wikidata_super = json.loads(self.metadata.wikidata_json)
+        elif self.metadata.wikidata_id:
+            print("getting wikidata")
+            self.wikidata_super = json.dumps(self.raw_wikidata_data, ensure_ascii=False)
+
+        # try:
+        #     if self.metadata.wikidata_json:
+        #         self.wikidata_super = json.loads(self.metadata.wikidata_json)
+        #     elif self.metadata.wikidata_id:
+        #         print("getting wikidata")
+        #         self.wikidata_super = self.raw_wikidata_data
+        # except:
+        #     print(f"Error: oops on loading wikidata_super {self.field_of_study_id}")
+        #     pass
+
+
+                
+        
 
     def store_ancestors(self):
         ancestors = self.ancestors_raw
