@@ -427,7 +427,8 @@ class Concept(db.Model):
 
         # work around redshift bug with nested quotes in json
         if self.metadata.wikipedia_json:
-            response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+            # response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+            response = self.metadata.wikipedia_json.replace('\\"', '*')
             self.wikipedia_super = json.dumps(response, ensure_ascii=False)
 
         # try:
