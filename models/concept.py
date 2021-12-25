@@ -29,6 +29,8 @@ class Concept(db.Model):
     level = db.Column(db.Numeric)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
+    wikipedia_id = db.Column(db.Text)
+    wikidata_id = db.Column(db.Text)
     wikipedia_super = db.Column(SUPER)
     wikidata_super = db.Column(SUPER)
     created_date = db.Column(db.DateTime)
@@ -273,11 +275,11 @@ class Concept(db.Model):
             return None
         return self.metadata.wikidata_id
 
-    @cached_property
-    def wikidata_id(self):
-        if not self.wikidata_url:
-            return None
-        return self.metadata.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+    # @cached_property
+    # def wikidata_id(self):
+    #     if not self.wikidata_url:
+    #         return None
+    #     return self.metadata.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
 
     @cached_property
     def wikipedia_url(self):
@@ -373,7 +375,7 @@ class Concept(db.Model):
             pass
         response_json = json.dumps(response, ensure_ascii=False)
         # work around redshift bug with nested quotes in json
-        response = json.loads(response_json.replace('\\"', '*'))
+        response = response_json.replace('\\"', '*')
         return response
 
     def get_insert_dict_fieldnames(self, table_name=None):
@@ -427,23 +429,24 @@ class Concept(db.Model):
 
         # work around redshift bug with nested quotes in json
         if self.metadata.wikipedia_json:
-            # response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
-            response = self.metadata.wikipedia_json.replace('\\"', '*')
-            self.wikipedia_super = json.dumps(response, ensure_ascii=False)
+            response = json.loads(self.metadata.wikipedia_json.replace('\\\\"', '*'))
+            # response = self.metadata.wikipedia_json.replace('\\\\"', '*')
+            self.wikipedia_super = response
 
         # try:
         #     # work around redshift bug with nested quotes in json
-        #     response = json.loads(self.metadata.wikipedia_json.replace('\\"', '*'))
+        #     response = json.loads(self.metadata.wikipedia_json.replace('\\\\"', '*'))
         #     self.wikipedia_super = json.loads(response)
         # except:
         #     print(f"Error: oops on loading wikipedia_super {self.field_of_study_id}")
         #     pass
 
         if self.metadata.wikidata_json:
-            self.wikidata_super = json.loads(self.metadata.wikidata_json)
+            # self.wikidata_super = json.loads(self.metadata.wikidata_json.replace('\\\\"', '*'))
+            self.wikidata_super = json.loads(self.metadata.wikidata_json.replace('\\\\"', '*'))
         elif self.metadata.wikidata_id:
             print("getting wikidata")
-            self.wikidata_super = json.dumps(self.raw_wikidata_data, ensure_ascii=False)
+            self.wikidata_super = self.raw_wikidata_data, ensure_ascii=False
 
         # try:
         #     if self.metadata.wikidata_json:
@@ -455,11 +458,6 @@ class Concept(db.Model):
         #     print(f"Error: oops on loading wikidata_super {self.field_of_study_id}")
         #     pass
 
-        try:
-            db.session.commit()
-        except:
-            print(f"error on commit for {self.field_of_study_id}")
-                
         
 
     def store_ancestors(self):
