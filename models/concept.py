@@ -269,42 +269,20 @@ class Concept(db.Model):
 
     @cached_property
     def wikidata_url(self):
-        if not self.metadata:
-            return None
-        if not self.metadata.is_valid:
-            return None
-        return self.metadata.wikidata_id
-
-    # @cached_property
-    # def wikidata_id(self):
-    #     if not self.wikidata_url:
-    #         return None
-    #     return self.metadata.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+        return self.wikidata_id
 
     @cached_property
     def wikipedia_url(self):
-        if not self.metadata:
-            return None
-        if not self.metadata.is_valid:
-            return None
-        return self.metadata.wikipedia_id
+        return self.wikipedia_id
 
     @cached_property
     def wikidata_data(self):
-        if not self.metadata:
-            return None
-        if not self.metadata.is_valid:
-            return None
-        return json.loads(self.metadata.wikidata_json)
+        return json.loads(self.wikidata_json)
 
     @cached_property
     def wikipedia_data(self):
-        if not self.metadata:
-            return None
-        if not self.metadata.is_valid:
-            return None
         try:
-            return json.loads(self.metadata.wikipedia_json)
+            return json.loads(self.wikipedia_json)
         except:
             print(f"Error doing json_loads for {self.openalex_id} in wikipedia_data")
             return None
@@ -360,16 +338,16 @@ class Concept(db.Model):
 
     @cached_property
     def raw_wikidata_data(self):
-        if not self.metadata.wikidata_id:
+        if not self.wikidata_id:
             return None
 
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.metadata.short_wikidata_id}.json"
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.short_wikidata_id}.json"
         print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
         try:
-            del response["entities"][self.metadata.short_wikidata_id]["claims"]
+            del response["entities"][self.short_wikidata_id]["claims"]
         except KeyError:
             # not here for some reason, doesn't matter
             pass
