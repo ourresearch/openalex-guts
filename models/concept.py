@@ -31,8 +31,8 @@ class Concept(db.Model):
     citation_count = db.Column(db.Numeric)
     wikipedia_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
-    wikipedia_super = db.Column(SUPER)
-    wikidata_super = db.Column(SUPER)
+    wikipedia_json = db.Column(db.Text)
+    wikidata_json = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
 
@@ -277,7 +277,9 @@ class Concept(db.Model):
 
     @cached_property
     def wikidata_data(self):
-        return json.loads(self.wikidata_json)
+        if self.wikidata_json:
+            return json.loads(self.wikidata_json)
+        return None
 
     @cached_property
     def wikipedia_data(self):
