@@ -77,13 +77,24 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppres
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 # app.config['SQLALCHEMY_ECHO'] = True
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")  # don't use this though, default is unclear, use binds
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_OPENALEX_REDSHIFT_BASE")  # don't use this though, default is unclear, use binds
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_OPENALEX_REDSHIFT")  # don't use this though, default is unclear, use binds
+if os.config("DATABASE_TO_USE", "6-HIGH") == "4-LOW":
+    MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
+else:
+    MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
+print(f"Using database {MY_DATABASE}")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(MY_DATABASE)  # don't use this though, default is unclear, use binds
 app.config["SQLALCHEMY_BINDS"] = {
-    "redshift_db": os.getenv("DATABASE_URL_OPENALEX_REDSHIFT")
-    # "redshift_db": os.getenv("DATABASE_URL_OPENALEX_REDSHIFT_BASE")
+    "redshift_db": os.getenv(MY_DATABASE)
 }
+
+redshift_url = urlparse(os.getenv(MY_DATABASE))
+app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
+                                  database=redshift_url.path[1:],
+                                  user=redshift_url.username,
+                                  password=redshift_url.password,
+                                  host=redshift_url.hostname,
+                                  port=redshift_url.port)
 
 # see https://stackoverflow.com/questions/43594310/redshift-sqlalchemy-long-query-hangs
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_pre_ping": True,
@@ -125,17 +136,6 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 # gzip responses
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
-
-
-redshift_url = urlparse(os.getenv("DATABASE_URL_OPENALEX_REDSHIFT"))
-# redshift_url = urlparse(os.getenv("DATABASE_URL_OPENALEX_REDSHIFT_BASE"))
-app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
-                                  database=redshift_url.path[1:],
-                                  user=redshift_url.username,
-                                  password=redshift_url.password,
-                                  host=redshift_url.hostname,
-                                  port=redshift_url.port)
-
 
 
 @contextmanager
