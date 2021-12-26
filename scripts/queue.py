@@ -211,7 +211,6 @@ class DbQueue(object):
                 job_time = time()
                 print(text_query_select)
                 row_list = db.session.execute(text(text_query_select)).fetchall()
-                db.session.commit()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
                 number_of_smaller_chunks = int(big_chunk/chunk)
@@ -283,7 +282,6 @@ class DbQueue(object):
                         sleep(5)
                         continue
 
-                    db.session.commit()
                     self.update_fn(run_class, run_method, objects, index=index)
 
                     index += 1
