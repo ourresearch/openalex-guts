@@ -86,7 +86,7 @@ as (
         t1.paper_id as "PaperId",                    --- FOREIGN KEY REFERENCES Papers.PaperId
            field_of_study as "FieldOfStudyId",    --- FOREIGN KEY REFERENCES FieldsOfStudy.FieldOfStudyId
            score as "Score",                      --- Confidence range between 0 and 1. Bigger number representing higher confidence.
-           1 as "AlgorithmVersion"                -- NEW; version of algorithm to assign fields. Possible values: 1=old MAG (FROZEN), 2=OpenAlex
+           algorithm_version as "AlgorithmVersion"                -- NEW; version of algorithm to assign fields. Possible values: 1=old MAG (FROZEN), 2=OpenAlex
     from mid.work_concept t1
    )
 with no schema binding;
