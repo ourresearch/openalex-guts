@@ -154,13 +154,14 @@ class Author(db.Model):
         from models.concept import as_concept_openalex_id
 
         q = """
-            select ancestor_id as id, null as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/author.paper_count::float, 1) as score
+            select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/author.paper_count::float, 1) as score
             from mid.author author
             join mid.affiliation affil on affil.author_id=author.author_id
             join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
             join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
+            join mid.concept concept on concept.field_of_study_id=ancestor_id            
             where author.author_id=:author_id
-            group by ancestor_id, ancestor_name, ancestor_level, author.paper_count
+            group by ancestor_id, wikidata_id, ancestor_name, ancestor_level, author.paper_count
             order by score desc"""
         rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
         response = [dict(row) for row in rows if row["score"] > 20]
