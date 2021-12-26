@@ -445,8 +445,8 @@ class Work(db.Model):
                 })
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
+                response["counts_by_year"] = self.display_counts_by_year
             response.update({
-                "counts_by_year": self.display_counts_by_year,
                 "cited_by_api_url": self.cited_by_api_url,
                 "updated_date": self.updated_date,
                 })
