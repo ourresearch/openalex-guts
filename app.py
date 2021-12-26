@@ -75,7 +75,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppress warning
 
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
-# app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_ECHO'] = True
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")  # don't use this though, default is unclear, use binds
 # app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_OPENALEX_REDSHIFT_BASE")  # don't use this though, default is unclear, use binds

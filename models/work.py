@@ -356,6 +356,7 @@ class Work(db.Model):
     def host_venue_details_dict(self):
         # should match the extra stuff put out in locations.to_dict()
         matching_location = None
+        url = None
         for location in self.locations_sorted:
             if "doi.org/" in location.source_url and not matching_location:
                 matching_location = location
@@ -375,7 +376,7 @@ class Work(db.Model):
             type = matching_location.host_type
         elif self.journal and self.journal.issn_l:
             type = "journal"
-        elif "doi.org/" in url:
+        elif url and "doi.org/" in url:
             type = "journal"
 
         is_oa = None
