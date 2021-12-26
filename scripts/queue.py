@@ -289,8 +289,6 @@ class DbQueue(object):
                         return
                     else:
                         self.print_update(new_loop_start_time, chunk, limit, start_time, index)
-                        print(1/0)
-
 
     def run(self, parsed_args):
         start = time()
