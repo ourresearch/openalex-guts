@@ -365,7 +365,7 @@ class Work(db.Model):
         if self.locations_sorted and (not matching_location):
             matching_location = self.locations_sorted[0]
 
-        if self.best.url:
+        if self.best_url:
             url = self.best_url
         elif matching_location:
             url = matching_location.source_url
