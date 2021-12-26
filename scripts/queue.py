@@ -228,7 +228,7 @@ class DbQueue(object):
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
-                             # selectinload(models.Work.counts_by_year),
+                             selectinload(models.Work.counts_by_year),
                              # selectinload(models.Work.abstract),
                              selectinload(models.Work.extra_ids),
                              selectinload(models.Work.related_works),
