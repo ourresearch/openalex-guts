@@ -365,7 +365,10 @@ class Work(db.Model):
         if self.locations_sorted and (not matching_location):
             matching_location = self.locations_sorted[0]
 
-        url = self.best_url if self.best_url else matching_location.source_url
+        if self.best.url:
+            url = self.best_url
+        elif matching_location:
+            url = matching_location.source_url
 
         type = None
         if matching_location and matching_location.host_type != None:
