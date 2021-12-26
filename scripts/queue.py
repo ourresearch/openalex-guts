@@ -48,9 +48,9 @@ class DbQueue(object):
                     repr=obj,
                     method_name=method_name))
 
+                if method_name in ["store_work_high", "store_work_low"]:
+                    method_name = "store"
                 method_to_run = getattr(obj, method_name)
-                if method_to_run in ["store_work_high", "store_work_low"]:
-                    method_to_run = "store"
                 method_to_run()
 
                 logger.info("finished {repr}.{method_name}(). took {elapsed} seconds".format(
