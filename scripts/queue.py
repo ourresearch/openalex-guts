@@ -221,7 +221,22 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if self.myclass == models.Work and run_method != "new_work_concepts":
+                    if (self.myclass == models.Work) and (run_method == "store"):
+                        # no abstracts
+                        objects = db.session.query(models.Work).options(
+                             selectinload(models.Work.locations),
+                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                             selectinload(models.Work.references),
+                             selectinload(models.Work.mesh),
+                             selectinload(models.Work.counts_by_year),
+                             # selectinload(models.Work.abstract),
+                             selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.related_works),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    elif self.myclass == models.Work and run_method != "new_work_concepts":
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
