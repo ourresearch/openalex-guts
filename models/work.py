@@ -313,7 +313,7 @@ class Work(db.Model):
         VERSION_STRING = "save end of december"
 
         # print("processing work! {}".format(self.id))
-        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
+        self.json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
 
         # has to match order of get_insert_dict_fieldnames
         json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
@@ -425,28 +425,31 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
 
-        if return_level == "full":
+        if return_level in ("full", "store"):
             response.update({
-            # "doc_type": self.doc_type,
-            "cited_by_count": self.citation_count,
-            "biblio": {
-                "volume": self.volume,
-                "issue": self.issue,
-                "first_page": self.first_page,
-                "last_page": self.last_page
-            },
-            "is_retracted": self.is_retracted,
-            "is_paratext": self.is_paratext,
-            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
-            "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
-            "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
-            "referenced_works": self.references_list,
-            "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
-            "abstract_inverted_index": self.abstract.to_dict("minimum") if self.abstract else None,
-            "counts_by_year": self.display_counts_by_year,
-            "cited_by_api_url": self.cited_by_api_url,
-            "updated_date": self.updated_date,
-        })
+                # "doc_type": self.doc_type,
+                "cited_by_count": self.citation_count,
+                "biblio": {
+                    "volume": self.volume,
+                    "issue": self.issue,
+                    "first_page": self.first_page,
+                    "last_page": self.last_page
+                },
+                "is_retracted": self.is_retracted,
+                "is_paratext": self.is_paratext,
+                "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+                "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
+                "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
+                "referenced_works": self.references_list,
+                "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
+                })
+            if return_level == "full":
+                response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
+            response.update({
+                "counts_by_year": self.display_counts_by_year,
+                "cited_by_api_url": self.cited_by_api_url,
+                "updated_date": self.updated_date,
+                })
         return response
 
 
