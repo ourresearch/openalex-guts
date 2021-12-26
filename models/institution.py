@@ -350,7 +350,7 @@ class Institution(db.Model):
             select ancestor_id as id, null as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
             from mid.institution institution 
             join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
-            join mid.work_concept wc on wc.paper_id=affil.paper_id
+            join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
             join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
             where affil.affiliation_id=:institution_id
             group by ancestor_id, ancestor_name, ancestor_level, institution.paper_count

@@ -7,18 +7,12 @@ class ConceptMetadata(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_metadata"
 
-    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept.field_of_study_id"), primary_key=True)
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     wikipedia_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     wikipedia_json = db.Column(db.Text)
     wikidata_json = db.Column(db.Text)
     updated = db.Column(db.DateTime)
-
-    @cached_property
-    def is_valid(self):
-        if self.wikidata_id == "'None'" or not self.wikidata_json:
-            return False
-        return True
 
     @cached_property
     def display_wikidata_id(self):

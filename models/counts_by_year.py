@@ -18,7 +18,7 @@ class ConceptCountsByYear(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_concepts_by_year_mv"
 
-    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept.field_of_study_id"), primary_key=True)
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
     year = db.Column(db.Numeric, primary_key=True)
     n = db.Column(db.Numeric)

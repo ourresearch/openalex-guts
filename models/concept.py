@@ -20,7 +20,7 @@ def as_concept_openalex_id(id):
 
 class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "concept"
+    __tablename__ = "concept_for_api_mv"
 
     field_of_study_id = db.Column(db.BigInteger, primary_key=True)
     normalized_name = db.Column(db.Text)
@@ -48,18 +48,6 @@ class Concept(db.Model):
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
-
-    @cached_property
-    def is_valid(self):
-        q = """
-        select field_of_study_id
-        from mid.concept_deprecated_concepts
-        WHERE field_of_study_id = :concept_id
-        """
-        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-        if rows:
-            return False
-        return True
 
     def filter_for_valid_concepts(concept_id_list):
         q = """
@@ -170,7 +158,7 @@ class Concept(db.Model):
         concept2.level as field_of_study_id2_level,
         related.rank        
         from legacy.mag_advanced_related_field_of_study related
-        join mid.concept concept2 on concept2.field_of_study_id = field_of_study_id2
+        join mid.concept_for_api_mv concept2 on concept2.field_of_study_id = field_of_study_id2
         WHERE field_of_study_id1 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
@@ -188,7 +176,7 @@ class Concept(db.Model):
         concept1.level as field_of_study_id1_level,        
         related.rank       
         from legacy.mag_advanced_related_field_of_study related
-        join mid.concept concept1 on concept1.field_of_study_id = field_of_study_id1
+        join mid.concept_for_api_mv concept1 on concept1.field_of_study_id = field_of_study_id1
         WHERE field_of_study_id2 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()

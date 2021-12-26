@@ -433,7 +433,7 @@ class Work(db.Model):
             },
             "is_retracted": self.is_retracted,
             "is_paratext": self.is_paratext,
-            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted if concept.is_valid],
+            "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
             "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
             "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
             "referenced_works": self.references_list,
