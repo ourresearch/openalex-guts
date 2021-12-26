@@ -77,7 +77,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppres
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 # app.config['SQLALCHEMY_ECHO'] = True
 
-if os.config("DATABASE_TO_USE", "6-HIGH") == "4-LOW":
+if os.getenv("DATABASE_TO_USE", "6-HIGH") == "4-LOW":
     MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
 else:
     MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
