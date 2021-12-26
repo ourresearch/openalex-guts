@@ -99,12 +99,31 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if run_method=="store":
+            if run_method in ["store"]:
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select id from {insert_table})
-                        and paper_id < 2331496286
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_work_high":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and paper_id > 2331496286
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_work_low":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and paper_id <= 2331496286
                         order by random()
                         limit {chunk};
                 """
@@ -222,7 +241,7 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if (self.myclass == models.Work) and (run_method == "store"):
+                    if (self.myclass == models.Work) and (run_method in ["store", "store_work_high", "store_work_low"]):
                         # no abstracts
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),

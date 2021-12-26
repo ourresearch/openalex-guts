@@ -1,9 +1,12 @@
 web: gunicorn views:app -w 2 --timeout 36000 --reload
-run_queue_store_work_a: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-a$DYNO-${i} --randstart
-run_queue_store_work_b: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-b$DYNO-${i} --randstart
-run_queue_store_work_c: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-c$DYNO-${i} --randstart
-run_queue_store_work_d: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-d$DYNO-${i} --randstart
-run_queue_store_work_e: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-e$DYNO-${i} --randstart
+run_queue_store_work_a: DATABASE_TO_USE=4-LOW python -m scripts.queue --run --table=work --method=store_work_low --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-a$DYNO-${i} --randstart
+run_queue_store_work_b: DATABASE_TO_USE=4-LOW python -m scripts.queue --run --table=work --method=store_work_low --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-b$DYNO-${i} --randstart
+run_queue_store_work_c: DATABASE_TO_USE=4-LOW python -m scripts.queue --run --table=work --method=store_work_low --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-c$DYNO-${i} --randstart
+run_queue_store_work_d: DATABASE_TO_USE=4-LOW python -m scripts.queue --run --table=work --method=store_work_low --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-d$DYNO-${i} --randstart
+run_queue_store_work_w: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-w$DYNO-${i} --randstart
+run_queue_store_work_x: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-x$DYNO-${i} --randstart
+run_queue_store_work_y: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-y$DYNO-${i} --randstart
+run_queue_store_work_z: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-z$DYNO-${i} --randstart
 run_queue_store_author: python -m scripts.queue --run --table=author --method=store --chunk=10 --name=queue_author-worker$DYNO-${i} --randstart
 run_queue_store_venues: python -m scripts.queue --run --table=venue --method=store --chunk=10 --name=queue_venue-worker$DYNO-${i} --randstart
 run_queue_store_institution: python -m scripts.queue --run --table=institution --method=store --chunk=10 --name=queue_institution-worker$DYNO-${i} --randstart
