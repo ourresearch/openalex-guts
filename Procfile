@@ -1,6 +1,6 @@
 web: gunicorn views:app -w 2 --timeout 36000 --reload
-run_queue_store_work: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker$DYNO-${i} --randstart
-run_queue_store_author: python -m scripts.queue --run --table=author --method=store --chunk=10 --name=queue_author-worker$DYNO-${i} --randstart
+run_queue_store_work_a: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-workerA$DYNO-${i} --randstart
+run_queue_store_work_b: python -m scripts.queue --run --table=work --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-workerB$DYNO-${i} --randstartrun_queue_store_author: python -m scripts.queue --run --table=author --method=store --chunk=10 --name=queue_author-worker$DYNO-${i} --randstart
 run_queue_store_venues: python -m scripts.queue --run --table=venue --method=store --chunk=10 --name=queue_venue-worker$DYNO-${i} --randstart
 run_queue_store_institution: python -m scripts.queue --run --table=institution --method=store --chunk=10 --name=queue_institution-worker$DYNO-${i} --randstart
 run_queue_store_concept: python -m scripts.queue --run --table=concept_for_api_mv --method=store --chunk=10 --name=queue_concept-worker$DYNO-${i} --randstart
