@@ -454,7 +454,8 @@ class Concept(db.Model):
     def ancestors_sorted(self):
         if not self.ancestors:
             return None
-        return sorted(self.ancestors, key=lambda x: (x.my_ancestor.level, x.my_ancestor.display_name), reverse=True)
+        non_null_ancestors = [my_ancestor for my_ancestor in self.ancestors if my_ancestor]
+        return sorted(non_null_ancestors, key=lambda x: (x.my_ancestor.level, x.my_ancestor.display_name), reverse=True)
 
     @cached_property
     def display_counts_by_year(self):
