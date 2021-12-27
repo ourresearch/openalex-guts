@@ -584,7 +584,7 @@ def get_random_dois(n, from_date=None, only_journal_articles=True):
 #         if isinstance(data, elasticsearch.compat.string_types):
 #             return data
 #         try:
-#             return json.dumps(data, default=self.default, ensure_ascii=True)
+#             return json.dumps(data, default=self.default, ensure_ascii=False)
 #         except (ValueError, TypeError) as e:
 #             raise elasticsearch.exceptions.SerializationError(data, e)
 
@@ -803,7 +803,7 @@ def jsonify_fast_no_sort_raw(*args, **kwargs):
 
     return dumps(data,
               skipkeys=True,
-              ensure_ascii=True,
+              ensure_ascii=False,
               check_circular=False,
               allow_nan=True,
               cls=None,
