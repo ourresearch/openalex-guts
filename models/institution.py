@@ -38,6 +38,8 @@ class Institution(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     wikidata_id = db.Column(db.Text)
+    wikipedia_json = db.Column(db.Text)
+    wikidata_json = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
@@ -188,18 +190,6 @@ class Institution(db.Model):
         return row[0].lower() if row else None
 
     @cached_property
-    def wikipedia_pageid(self):
-        if not self.wikipedia_data:
-            return None
-        data = self.wikipedia_data
-        try:
-            page_id = data["query"]["pages"][0]["pageid"]
-        except KeyError:
-            return None
-
-        return page_id
-
-    @cached_property
     def image_url(self):
         if not self.wikipedia_data:
             return None
@@ -234,12 +224,6 @@ class Institution(db.Model):
         except KeyError:
             return None
 
-    @cached_property
-    def wikidata_url(self):
-        if not self.wikidata_id:
-            return None
-        return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
-
     # @cached_property
     # def wikidata_id(self):
     #     if not self.wikipedia_data:
@@ -255,12 +239,18 @@ class Institution(db.Model):
     def wikipedia_data(self):
         if not self.wiki_page:
             return None
-        wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
-        url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-        # print(url)
-        r = requests.get(url, headers={"User-Agent": USER_AGENT})
-        # print(r.json())
-        return r.json()
+        try:
+            data = json.loads(self.wikipedia_json)
+        except:
+            data = None
+        if not data:
+            wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
+            url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
+            print(url)
+            r = requests.get(url, headers={"User-Agent": USER_AGENT})
+            # print(r.json())
+            data = r.json()
+        return data
 
     # is whatever the wikipedia url redirects to
     @cached_property
@@ -272,32 +262,44 @@ class Institution(db.Model):
 
     @cached_property
     def display_name_international(self):
-        if not self.wikidata_data:
-            return None
         data = self.wikidata_data
+        if not data:
+            return None
         try:
-            response = data["entities"][self.wikidata_id]["labels"]
+            print("here")
+
+            response = data["entities"][self.wikidata_id_short]["labels"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
         except KeyError:
             return None
 
     @cached_property
+    def wikidata_id_short(self):
+        if not self.wikidata_id:
+            return None
+        return self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+
+    @cached_property
     def wikidata_data(self):
         if not self.wikidata_id:
             return None
-        wikidata_id_short = self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{wikidata_id_short}.json"
-        print(url)
-        r = requests.get(url, headers={"User-Agent": USER_AGENT})
-        response = r.json()
-        # are claims too big?
         try:
-            del response["entities"][self.wikidata_id]["claims"]
+            data = json.loads(self.wikidata_json)
         except:
-            pass
-        # print(response)
-        return response
+            data = None
+        if not data:
+            url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
+            print(url)
+            r = requests.get(url, headers={"User-Agent": USER_AGENT})
+            data = r.json()
+            # are claims too big?
+            try:
+                del data["entities"][self.wikidata_id_short]["claims"]
+            except:
+                pass
+            # print(response)
+        return data
 
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
@@ -404,7 +406,7 @@ class Institution(db.Model):
                     "ror": self.ror_url,
                     "grid": self.ror.grid_id if self.ror else None,
                     "wikipedia": self.wikipedia_url_canonical,
-                    "wikidata": self.wikidata_url,
+                    "wikidata": self.wikidata_id,
                     "mag": self.affiliation_id
                 },
                 "geo": {

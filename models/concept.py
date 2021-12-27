@@ -49,6 +49,12 @@ class Concept(db.Model):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
 
+    @cached_property
+    def wikidata_id_short(self):
+        if not self.wikidata_id:
+            return None
+        return self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
+
     def filter_for_valid_concepts(concept_id_list):
         q = """
         select field_of_study_id
@@ -256,10 +262,6 @@ class Concept(db.Model):
         return page_id
 
     @cached_property
-    def wikidata_url(self):
-        return self.wikidata_id
-
-    @cached_property
     def wikipedia_url(self):
         return self.wikipedia_id
 
@@ -302,7 +304,7 @@ class Concept(db.Model):
             return None
         data = self.wikidata_data
         try:
-            response = data["entities"][self.wikidata_id]["labels"]
+            response = data["entities"][self.wikidata_id_short]["labels"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
         except KeyError:
@@ -324,7 +326,7 @@ class Concept(db.Model):
         data = self.wikidata_data
         try:
             print(data)
-            response = data["entities"][self.wikidata_id]["descriptions"]
+            response = data["entities"][self.wikidata_id_short]["descriptions"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
         except KeyError:
@@ -332,16 +334,16 @@ class Concept(db.Model):
 
     @cached_property
     def raw_wikidata_data(self):
-        if not self.wikidata_id:
+        if not self.wikidata_id_short:
             return None
 
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.short_wikidata_id}.json"
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
         print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
         try:
-            del response["entities"][self.short_wikidata_id]["claims"]
+            del response["entities"][self.wikidata_id_short]["claims"]
         except KeyError:
             # not here for some reason, doesn't matter
             pass
@@ -353,7 +355,7 @@ class Concept(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.concept_ancestor": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
-            # "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json", "updated"],
+            # "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id_short", "wikipedia_json", "wikidata_json", "updated"],
             "ins.wiki_concept": ["field_of_study_id", "wikidata_super"],
             "mid.json_concepts": ["id", "updated", "json_save", "version"]
         }
@@ -397,7 +399,7 @@ class Concept(db.Model):
 
         self.metadata.updated = datetime.datetime.utcnow()
         self.wikipedia_id = self.metadata.wikipedia_id
-        self.wikidata_id = self.metadata.wikidata_id
+        self.wikidata_id_short = self.metadata.wikidata_id_short
 
         return
 
@@ -418,14 +420,14 @@ class Concept(db.Model):
         if self.metadata.wikidata_json:
             # self.wikidata_super = json.loads(self.metadata.wikidata_json.replace('\\\\"', '*'))
             self.wikidata_super = json.loads(self.metadata.wikidata_json.replace('\\\\"', '*'))
-        elif self.metadata.wikidata_id:
+        elif self.metadata.wikidata_id_short:
             print("getting wikidata")
             self.wikidata_super = self.raw_wikidata_data
 
         # try:
         #     if self.metadata.wikidata_json:
         #         self.wikidata_super = json.loads(self.metadata.wikidata_json)
-        #     elif self.metadata.wikidata_id:
+        #     elif self.metadata.wikidata_id_short:
         #         print("getting wikidata")
         #         self.wikidata_super = self.raw_wikidata_data
         # except:
@@ -451,6 +453,8 @@ class Concept(db.Model):
 
     @property
     def ancestors_sorted(self):
+        if not self.ancestors:
+            return None
         return sorted(self.ancestors, key=lambda x: (x.my_ancestor.level, x.my_ancestor.display_name), reverse=True)
 
     @cached_property
@@ -472,7 +476,7 @@ class Concept(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "wikidata": self.wikidata_url,
+            "wikidata": self.wikidata_id,
             "display_name": self.display_name,
             "level": self.level,
         }
@@ -483,7 +487,7 @@ class Concept(db.Model):
                 "cited_by_count": self.citation_count,
                 "ids": {
                     "openalex": self.openalex_id,
-                    "wikidata": self.wikidata_url,
+                    "wikidata": self.wikidata_id,
                     "wikipedia": self.wikipedia_url,
                     "umls_aui": self.umls_aui_urls,
                     "umls_cui": self.umls_cui_urls,
