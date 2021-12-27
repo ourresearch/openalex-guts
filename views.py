@@ -138,6 +138,7 @@ def yaml_get():
 #### Record
 
 @app.route('/records/RANDOM')
+@app.route('/records/random')
 def records_random_get():
     from models import Record
     obj = db.session.query(Record).order_by(func.random()).first()
@@ -160,6 +161,7 @@ def records_id_get(id):
 
 
 @app.route("/works/RANDOM")
+@app.route("/works/random")
 def works_random_get():
     work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
     work_id = work_id[0]
@@ -191,6 +193,7 @@ def works_id_get(id):
 #### Author
 
 @app.route("/authors/RANDOM")
+@app.route("/authors/random")
 def authors_random_get():
     obj = models.Author.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
@@ -217,6 +220,7 @@ def authors_id_get(id):
 # #### Institution
 
 @app.route("/institutions/RANDOM")
+@app.route("/institutions/random")
 def institutions_random_get():
     obj = models.Institution.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
@@ -241,6 +245,7 @@ def institutions_id_get(id):
 #### Venue
 
 @app.route("/venues/RANDOM")
+@app.route("/venues/random")
 def venues_random_get():
     obj = models.Venue.query.order_by(func.random()).first()
     if not obj:
@@ -269,6 +274,7 @@ def venues_id_get(id):
 #### Concept
 
 @app.route("/concepts/RANDOM")
+@app.route("/concepts/random")
 def concepts_random_get():
     obj = models.Concept.query.order_by(func.random()).first()
     return jsonify_fast_no_sort(obj.to_dict())
