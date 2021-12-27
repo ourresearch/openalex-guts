@@ -266,7 +266,11 @@ class Concept(db.Model):
     @cached_property
     def wikidata_data(self):
         if self.wikidata_json:
-            return json.loads(self.wikidata_json)
+            try:
+                return json.loads(self.wikidata_json)
+            except:
+                print(f"Bad json loads on {self.openalex_id}")
+                return None
         return None
 
     @cached_property
