@@ -303,7 +303,7 @@ class DbQueue(object):
                     elif self.myclass == models.Concept:
                         objects = db.session.query(models.Concept).options(
                              selectinload(models.Concept.counts_by_year),
-                             selectinload(models.Concept.metadata),
+                             selectinload(models.Concept.ancestors),
                              orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Venue:
                         objects = db.session.query(models.Venue).options(

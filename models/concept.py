@@ -325,7 +325,6 @@ class Concept(db.Model):
             return None
         data = self.wikidata_data
         try:
-            print(data)
             response = data["entities"][self.wikidata_id_short]["descriptions"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
