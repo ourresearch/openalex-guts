@@ -450,10 +450,10 @@ class Concept(db.Model):
                                 )}]
 
 
-    @property
+    @cached_property
     def ancestors_sorted(self):
         if not self.ancestors:
-            return None
+            return []
         non_null_ancestors = [ancestor for ancestor in self.ancestors if ancestor and ancestor.my_ancestor]
         return sorted(non_null_ancestors, key=lambda x: (x.my_ancestor.level, x.my_ancestor.display_name), reverse=True)
 
