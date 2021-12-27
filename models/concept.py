@@ -454,7 +454,7 @@ class Concept(db.Model):
     def ancestors_sorted(self):
         if not self.ancestors:
             return None
-        non_null_ancestors = [my_ancestor for my_ancestor in self.ancestors if my_ancestor]
+        non_null_ancestors = [ancestor for ancestor in self.ancestors if ancestor and ancestor.my_ancestor]
         return sorted(non_null_ancestors, key=lambda x: (x.my_ancestor.level, x.my_ancestor.display_name), reverse=True)
 
     @cached_property
