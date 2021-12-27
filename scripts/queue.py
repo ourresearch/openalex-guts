@@ -294,6 +294,7 @@ class DbQueue(object):
                         objects = db.session.query(models.Author).options(
                              selectinload(models.Author.counts_by_year),
                              selectinload(models.Author.orcids).raiseload('*'),
+                             selectinload(models.Author.last_known_institution).raiseload('*'),
                              orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Institution:
                         objects = db.session.query(models.Institution).options(
