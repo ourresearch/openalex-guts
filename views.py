@@ -251,7 +251,7 @@ def venues_random_get():
     if not obj:
         raise NoResultFound
     response = obj.to_dict()
-    return response
+    return jsonify_fast_no_sort(response)
 
 @app.route("/venues/<path:id>")
 def venues_id_get(id):
