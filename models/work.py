@@ -379,18 +379,24 @@ class Work(db.Model):
         elif url and "doi.org/" in url:
             type = "journal"
 
+        version = matching_location.version if matching_location else None
+        license = matching_location.display_license if matching_location else None
+
         is_oa = None
         if matching_location and matching_location.is_oa != None:
             is_oa = matching_location.is_oa
         elif self.is_oa == False:
             is_oa = False
+        elif self.oa_status == "gold":
+            is_oa = True
+            version = "publishedVersion"
 
         response = {
             "type": type,
             "url": url,
             "is_oa": is_oa,
-            "version": matching_location.version if matching_location else None,
-            "license": matching_location.display_license if matching_location else None,
+            "version": version,
+            "license": license
         }
         return response
 
