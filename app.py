@@ -38,6 +38,7 @@ logging.basicConfig(
 logger = logging.getLogger("oadoi")
 
 API_HOST = os.getenv("API_HOST")
+MAX_MAG_ID = 4200000000
 
 libraries_to_mum = [
     "requests",

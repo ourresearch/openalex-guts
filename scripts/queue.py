@@ -13,6 +13,7 @@ import os
 
 from app import db
 from app import logger
+from app import MAX_MAG_ID
 import models
 from util import elapsed
 
@@ -106,6 +107,7 @@ class DbQueue(object):
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select id from {insert_table})
+                        and {id_field_name} < {MAX_MAG_ID}                            
                         order by random()
                         limit {chunk};
                 """
@@ -116,7 +118,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and paper_id > 2331496286
-                        and paper_id < 4200000000
+                        and paper_id < {MAX_MAG_ID}
                         order by random()
                         limit {chunk};
                 """
