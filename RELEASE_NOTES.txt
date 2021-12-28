@@ -1,11 +1,16 @@
-OPENALEX DATA RELEASE NOTES
+OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
-RELEASE NEXT
-- MAG is no longer releasing new data, so all new data in this release is a result of OpenAlex algorithms using data from Crossref, Unpaywall, PubMed, ROR etc
-- removed patents from PaperUrls table (about 100 million rows)
-- includes FieldOfStudy rows with algorithm_version 2
-- moved to open bucket (free!  no longer requester pays)
-- new Standard data dump format available, and api
+RELEASE 2022-01-03
+Released on Jan 3, 2021 at s3://openalex-mag-format/data_dump_v1/2021-12-06/
+- MAG is no longer releasing new data, so all new data in this release and going forward is a result of
+    OpenAlex algorithms using data from Crossref, Unpaywall, PubMed, ROR etc
+- moved to new, free bucket thanks to new participation in AWS Open Data program
+    (transfer costs are free! no longer requester pays! See https://openalex.org for more info)
+- released a new Standard data format, new JSON data dump, and a free API! See https://openalex.org for more info.
+- announced end-of-life for this MAG format in July 2022. Hopefully this will give everyone time to transition to the new
+    OpenAlex format mentioned above. See https://openalex.org for more info.
+- include FieldOfStudy rows with algorithm_version 2
+- removed patents from PaperUrls table, which had been missed in previous purge of Patent data (about 100 million rows)
 
 RELEASE 2021-12-06
 Released on December 24, 2021 at s3://openalex/data_dump_v1/2021-12-06/

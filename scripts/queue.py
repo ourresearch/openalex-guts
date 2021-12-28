@@ -116,6 +116,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and paper_id > 2331496286
+                        and paper_id < 4200000000
                         order by random()
                         limit {chunk};
                 """

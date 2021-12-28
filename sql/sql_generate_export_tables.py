@@ -183,7 +183,7 @@ class view:
             if "PaperAbstractsInvertedIndex" in table_name:
                 result += f"""
 UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex"')
-TO 's3://openalex/data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.'
+TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
@@ -196,7 +196,7 @@ DELIMITER as '\\t';"""
                 # header file so no data
                 result += f"""
 UNLOAD ('SELECT * FROM {table_name} WHERE FALSE')
-TO 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt'
+TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
@@ -207,7 +207,7 @@ DELIMITER as '\\t';"""
                 # data
                 result += f"""
 UNLOAD ('SELECT * FROM {table_name}')
-TO 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt'
+TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
 ESCAPE
@@ -219,7 +219,7 @@ DELIMITER as '\\t';"""
         if GENERATE_COPY:
             result += f"""
 COPY {table_name}
-FROM 's3://openalex/data_dump_v1/{DUMP_DIR}/{export_file_name}.txt'
+FROM 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 COMPUPDATE ON
 ESCAPE
@@ -397,7 +397,7 @@ class parser:
 unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
 union
 select table_name::varchar(35), num_rows::varchar(25) as num_rows, used_mb::varchar(25), sysdate::varchar(25) from v_display_table_size_and_rows order by num_rows desc')
-TO 's3://openalex/data_dump_v1/{DUMP_DIR}/README.txt'
+TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/README.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 fixedwidth '0:35,1:25,2:25,3:25'
 ALLOWOVERWRITE
