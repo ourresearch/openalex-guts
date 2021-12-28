@@ -224,7 +224,8 @@ class DbQueue(object):
                 chunk=big_chunk,
                 queue_table=queue_table,
                 insert_table=insert_table,
-                id_field_name=self.id_field_name
+                id_field_name=self.id_field_name,
+                MAX_MAG_ID=MAX_MAG_ID
             )
             # logger.info("the queues query is:\n{}".format(text_query))
 
