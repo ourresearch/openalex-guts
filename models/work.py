@@ -13,6 +13,7 @@ import random
 
 
 from app import db
+from app import MAX_MAG_ID
 from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 
@@ -413,7 +414,7 @@ class Work(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
-                "mag": self.paper_id
+                "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
             "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
             "type": self.display_genre,
