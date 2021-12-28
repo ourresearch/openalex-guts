@@ -3,6 +3,7 @@ from sqlalchemy import text
 import json
 
 from app import db
+from app import MAX_MAG_ID
 
 
 # truncate mid.journal
@@ -135,7 +136,7 @@ class Venue(db.Model):
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
                     "issn": json.loads(self.issns) if self.issns else None,
-                    "mag": self.journal_id
+                    "mag": self.journal_id if self.journal_id < MAX_MAG_ID else None
                 },
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,

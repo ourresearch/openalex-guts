@@ -3,6 +3,7 @@ from sqlalchemy import text
 import json
 
 from app import db
+from app import MAX_MAG_ID
 
 
 # truncate mid.author
@@ -201,7 +202,7 @@ class Author(db.Model):
                     "scopus": self.scopus_url,
                     "twitter": self.twitter_url,
                     "wikipedia": self.wikipedia_url,
-                    "mag": self.author_id
+                    "mag": self.author_id if self.author_id < MAX_MAG_ID else None
                 },
                 # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,

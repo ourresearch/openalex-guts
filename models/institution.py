@@ -8,6 +8,7 @@ import json
 
 from app import db
 from app import USER_AGENT
+from app import MAX_MAG_ID
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -405,7 +406,7 @@ class Institution(db.Model):
                     "grid": self.ror.grid_id if self.ror else None,
                     "wikipedia": self.wikipedia_url_canonical,
                     "wikidata": self.wikidata_id,
-                    "mag": self.affiliation_id
+                    "mag": self.affiliation_id if self.affiliation_id < MAX_MAG_ID else None
                 },
                 "geo": {
                     "city": self.ror.city if self.ror else None,

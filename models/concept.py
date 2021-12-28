@@ -8,6 +8,7 @@ from sqlalchemy_redshift.dialect import SUPER
 
 from app import db
 from app import USER_AGENT
+from app import MAX_MAG_ID
 from util import jsonify_fast_no_sort_raw
 
 
@@ -503,7 +504,7 @@ class Concept(db.Model):
                     "wikipedia": self.wikipedia_url,
                     "umls_aui": self.umls_aui_urls,
                     "umls_cui": self.umls_cui_urls,
-                    "mag": self.field_of_study_id
+                    "mag": self.field_of_study_id if self.field_of_study_id < MAX_MAG_ID else None
                 },
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
