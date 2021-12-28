@@ -266,8 +266,6 @@ class Institution(db.Model):
         if not data:
             return None
         try:
-            print("here")
-
             response = data["entities"][self.wikidata_id_short]["labels"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
@@ -290,7 +288,7 @@ class Institution(db.Model):
             data = None
         if not data:
             url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
-            print(url)
+            print(f"calling wikidata live with {url} for {self.openalex_id}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
             data = r.json()
             # are claims too big?
@@ -333,7 +331,7 @@ class Institution(db.Model):
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
-            # wikipedia_data = json.dumps(self.wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # wikipedia_data = json.dumps(self.wikipedia_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
             # if len(wikipedia_data) > 64000:
             #     wikipedia_data = None
             wikidata_data = json.dumps(self.wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
