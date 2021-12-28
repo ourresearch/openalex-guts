@@ -1,8 +1,11 @@
-OPENALEX DATA DUMP RELEASE NOTES
-DATA DUMP V1
+OPENALEX DATA RELEASE NOTES
 
 RELEASE NEXT
+- MAG is no longer releasing new data, so all new data in this release is a result of OpenAlex algorithms using data from Crossref, Unpaywall, PubMed, ROR etc
 - removed patents from PaperUrls table (about 100 million rows)
+- includes FieldOfStudy rows with algorithm_version 2
+- moved to open bucket (free!  no longer requester pays)
+- new Standard data dump format available, and api
 
 RELEASE 2021-12-06
 Released on December 24, 2021 at s3://openalex/data_dump_v1/2021-12-06/

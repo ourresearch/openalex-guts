@@ -267,13 +267,25 @@ class Concept(db.Model):
 
     @cached_property
     def wikidata_data(self):
-        if self.wikidata_json:
+        if not self.wikidata_id:
+            return None
+        try:
+            data = json.loads(self.wikidata_json)
+        except:
+            data = None
+        if not data:
+            url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
+            print(f"calling wikidata live with {url} for {self.openalex_id}")
+            r = requests.get(url, headers={"User-Agent": USER_AGENT})
+            data = r.json()
+            # are claims too big?
             try:
-                return json.loads(self.wikidata_json)
+                del data["entities"][self.wikidata_id_short]["claims"]
             except:
-                print(f"Bad json loads on {self.openalex_id}")
-                return None
-        return None
+                pass
+            # print(response)
+        return data
+
 
     @cached_property
     def wikipedia_data(self):
@@ -381,7 +393,7 @@ class Concept(db.Model):
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
-            # wikipedia_data = json.dumps(self.raw_wikipedia_data).replace("'", "''").replace("%", "%%").replace(":", "\:")
+            # wikipedia_data = json.dumps(self.raw_wikipedia_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
             # if len(wikipedia_data) > 64000:
             #     wikipedia_data = None
             wikidata_data = json.dumps(self.raw_wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
