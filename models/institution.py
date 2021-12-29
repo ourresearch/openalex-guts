@@ -314,7 +314,7 @@ class Institution(db.Model):
     def store(self):
         import datetime
         from util import jsonify_fast_no_sort_raw
-        VERSION_STRING = "save end of december"
+        VERSION_STRING = "after all primary keys"
 
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 

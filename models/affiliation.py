@@ -35,19 +35,12 @@ class Affiliation(db.Model):
 
         if self.original_author:
             response["author"] = {"id": self.author_id, "display_name": self.original_author}
-            if self.author:
-                response["author"].update(self.author.to_dict(return_level="minimum"))
+            response["author"].update(self.author.to_dict(return_level="minimum"))
         else:
-            if self.author:
-                response["author"] = self.author.to_dict(return_level="minimum")
+            response["author"] = self.author.to_dict(return_level="minimum")
 
-        if self.original_affiliation:
-            response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
-            if self.institution:
-                response["institution"].update(self.institution.to_dict(return_level="minimum"))
-        else:
-            if self.institution:
-                response["institution"] = self.institution.to_dict(return_level="minimum")
+        if self.institution:
+            response["institution"] = self.institution.to_dict(return_level="minimum")
 
         response["author_sequence_number"] = self.author_sequence_number
 

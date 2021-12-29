@@ -7,7 +7,10 @@ run_queue_store_work_w: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --t
 run_queue_store_work_x: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-x$DYNO-${i} --randstart
 run_queue_store_work_y: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-y$DYNO-${i} --randstart
 run_queue_store_work_z: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=work --method=store_work_high --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-worker-z$DYNO-${i} --randstart
-run_queue_store_author: python -m scripts.queue --run --table=author --method=store --chunk=10 --name=queue_author-worker$DYNO-${i} --randstart
+run_queue_store_author_w:  DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=author --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-worker$DYNO-${i} --randstart
+run_queue_store_author_x:  DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=author --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-worker$DYNO-${i} --randstart
+run_queue_store_author_y:  DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=author --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-worker$DYNO-${i} --randstart
+run_queue_store_author_z:  DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=author --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-worker$DYNO-${i} --randstart
 run_queue_store_venues: python -m scripts.queue --run --table=venue --method=store --chunk=10 --name=queue_venue-worker$DYNO-${i} --randstart
 run_queue_store_institution: python -m scripts.queue --run --table=institution --method=store --chunk=10 --name=queue_institution-worker$DYNO-${i} --randstart
 run_queue_store_concept: python -m scripts.queue --run --table=concept --method=store --chunk=10 --name=queue_concept-worker$DYNO-${i} --randstart
