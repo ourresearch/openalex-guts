@@ -298,8 +298,8 @@ class DbQueue(object):
                         objects = db.session.query(models.Author).options(
                              selectinload(models.Author.counts_by_year),
                              selectinload(models.Author.alternative_names),
-                             selectinload(models.Author.concepts),
-                             selectinload(models.Author.orcids).selectinload(models.Orcid.orcid_data).raiseload('*'),
+                             selectinload(models.Author.author_concepts),
+                             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
                              selectinload(models.Author.last_known_institution).raiseload('*'),
                              orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Institution:
