@@ -7,8 +7,11 @@ from app import db
 from models.abstract import Abstract
 from models.author import Author
 from models.author_orcid import AuthorOrcid
+from models.orcid import Orcid
 from models.citation import Citation
 from models.concept import Concept
+from models.author_alternative_name import AuthorAlternativeName
+from models.author_concept import AuthorConcept
 from models.institution import Institution
 from models.venue import Venue
 from models.location import Location
@@ -44,7 +47,10 @@ Affiliation.institution = db.relationship("Institution")
 Institution.ror = db.relationship("Ror", uselist=False)
 Venue.journalsdb = db.relationship("Journalsdb", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author")
+AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
 Author.last_known_institution = db.relationship("Institution")
+Author.alternative_names = db.relationship("AuthorAlternativeName")
+Author.author_concepts = db.relationship("AuthorConcept")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
@@ -105,7 +111,7 @@ def single_work_query():
          selectinload(Work.abstract),
          selectinload(Work.extra_ids),
          selectinload(Work.related_works),
-         selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
+         selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),selectinload(AuthorOrcid.orcid_data),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
          orm.Load(Work).raiseload('*'))
