@@ -101,7 +101,7 @@ class Venue(db.Model):
             order by score desc
             """
         rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] > 20]
+        response = [dict(row) for row in rows if row["score"] and row["score"] > 20]
         for row in response:
             row["id"] = as_concept_openalex_id(row["id"])
         return response

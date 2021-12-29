@@ -359,7 +359,7 @@ class Institution(db.Model):
             order by score desc
             """
         rows = db.session.execute(text(q), {"institution_id": self.institution_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] > 20]
+        response = [dict(row) for row in rows if row["score"] and row["score"] > 20]
         for row in response:
             row["id"] = as_concept_openalex_id(row["id"])
         return response
