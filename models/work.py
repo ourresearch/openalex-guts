@@ -317,17 +317,13 @@ class Work(db.Model):
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
 
         # has to match order of get_insert_dict_fieldnames
-        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
-        if len(json_save_escaped) > 65000:
+        if len(self.json_save) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            json_save_escaped = None
-        self.insert_dicts = [{"mid.json_works": "({id}, '{updated}', '{json_save}', '{version}')".format(
-                                                                  id=self.id,
-                                                                  updated=datetime.datetime.utcnow().isoformat(),
-                                                                  json_save=json_save_escaped,
-                                                                  version=VERSION_STRING
-                                                                )}]
+            self.json_save = None
+        updated = datetime.datetime.utcnow().isoformat()
+        self.insert_dicts = [{"mid.json_works": [self.paper_id, updated, self.json_save, VERSION_STRING]}]
 
+        # print(self.insert_dicts)
         # print(self.json_save[0:100])
 
     def get_insert_dict_fieldnames(self, table_name=None):
