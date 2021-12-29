@@ -147,7 +147,7 @@ class Author(db.Model):
     def concepts(self):
         if not self.author_concepts:
             return []
-        response = [author_concept.to_dict() for author_concept in self.author_concepts if author_concept.score > 20]
+        response = [author_concept.to_dict() for author_concept in self.author_concepts if author_concept.score and author_concept.score > 20]
         response = sorted(response, key=lambda x: x["score"], reverse=True)
         return response
 
