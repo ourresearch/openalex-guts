@@ -79,6 +79,7 @@ class DbQueue(object):
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             fields = obj.get_insert_dict_fieldnames(table_name)
 
+            db.session.remove()
             db.session.execute(my_table.insert(), all_insert_strings)
             db.session.commit()
 
