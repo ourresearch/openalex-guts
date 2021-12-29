@@ -12,6 +12,12 @@ Released on Jan 3, 2021 at s3://openalex-mag-format/data_dump_v1/2021-12-06/
 - include FieldOfStudy rows with algorithm_version 2
 - removed patents from PaperUrls table, which had been missed in previous purge of Patent data (about 100 million rows)
 
+******
+decide
+- includes new Affiliations (every Affiliation now has a primary key)
+- includes new Journals (newly interpreted as Venues: includes repositories and other host sites)
+******
+
 RELEASE 2021-12-06
 Released on December 24, 2021 at s3://openalex/data_dump_v1/2021-12-06/
 - based on MAG data release "2021-12-06" plus some data from Crossref, Unpaywall, PubMed, ROR
