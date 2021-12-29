@@ -132,16 +132,11 @@ class Author(db.Model):
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
         # has to match order of get_insert_dict_fieldnames
-        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
-        if len(json_save_escaped) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            json_save_escaped = None
-        self.insert_dicts = [{"mid.json_authors": "({id}, '{updated}', '{json_save}', '{version}')".format(
-                                                                  id=self.author_id,
-                                                                  updated=datetime.datetime.utcnow().isoformat(),
-                                                                  json_save=json_save_escaped,
-                                                                  version=VERSION_STRING
-                                                                )}]
+        if len(self.json_save) > 65000:
+            print("Error: self.json_save too long for paper_id {}, skipping".format(self.openalex_id))
+            self.json_save = None
+        updated = datetime.datetime.utcnow().isoformat()
+        self.insert_dicts = [{"mid.json_authors": [self.author_id, updated, self.json_save, VERSION_STRING]}]
 
     @cached_property
     def concepts(self):

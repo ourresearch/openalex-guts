@@ -319,16 +319,11 @@ class Institution(db.Model):
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
         # has to match order of get_insert_dict_fieldnames
-        json_save_escaped = self.json_save.replace("'", "''").replace("%", "%%").replace(":", "\:")
-        if len(json_save_escaped) > 65000:
+        if len(self.json_save) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            json_save_escaped = None
-        self.insert_dicts = [{"mid.json_institutions": "({id}, '{updated}', '{json_save}', '{version}')".format(
-                                                                  id=self.affiliation_id,
-                                                                  updated=datetime.datetime.utcnow().isoformat(),
-                                                                  json_save=json_save_escaped,
-                                                                  version=VERSION_STRING
-                                                                )}]
+            self.json_save = None
+        updated = datetime.datetime.utcnow().isoformat()
+        self.insert_dicts = [{"mid.json_institutions": [self.affiliation_id, updated, self.json_save, VERSION_STRING]}]
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
