@@ -61,7 +61,7 @@ class Venue(db.Model):
         if len(self.json_save) > 65000:
             print("Error: self.json_save too long for paper_id {}, skipping".format(self.openalex_id))
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_venues": [self.journal_id, updated, self.json_save, VERSION_STRING]}]
+        self.insert_dicts = [{"mid.json_venues": {"id": self.journal_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
 
     @cached_property

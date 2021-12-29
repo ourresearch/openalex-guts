@@ -6,15 +6,15 @@ import shortuuid
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
+from sqlalchemy import MetaData
+from sqlalchemy import Table
 from collections import defaultdict
 import argparse
 import logging
 import os
-from psycopg2.extras import execute_values
 
 from app import db
 from app import logger
-from app import get_db_cursor
 from app import MAX_MAG_ID
 import models
 from util import elapsed
@@ -72,17 +72,15 @@ class DbQueue(object):
                         insert_dict_all_objects[table_name] += [insert_string]
 
         start_time = time()
+        metadata = MetaData(schema="mid")
+        metadata.reflect(db.engine, only=[table_name.split(".")[1]])
+        my_table = Table(table_name.split(".")[1], metadata, schema="mid", autoload=True, autoload_with=db.engine)
+
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             fields = obj.get_insert_dict_fieldnames(table_name)
-            # sql_command = u"INSERT INTO {} ({}) VALUES {};".format(
-            #     table_name, ', '.join(fields), ', '.join(all_insert_strings))
-            # db.session.remove()
-            # db.session.execute(sql_command)
-            # db.session.commit()
-            with get_db_cursor(commit=True) as cursor:
-                execute_values(cursor,
-                               "INSERT INTO {} ({}) VALUES %s;".format(table_name, ', '.join(fields)),
-                               all_insert_strings)
+
+            db.session.execute(my_table.insert(), all_insert_strings)
+            db.session.commit()
 
         if insert_dict_all_objects:
             logger.info("insert and commit took {} seconds".format(elapsed(start_time, 2)))

@@ -323,7 +323,7 @@ class Institution(db.Model):
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             self.json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_institutions": [self.affiliation_id, updated, self.json_save, VERSION_STRING]}]
+        self.insert_dicts = [{"mid.json_institutions": {"id": self.affiliation_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):
