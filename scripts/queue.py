@@ -49,7 +49,7 @@ class DbQueue(object):
                     repr=obj,
                     method_name=method_name))
 
-                if method_name in ["store_work_high", "store_work_low"]:
+                if method_name in ["store_work_high", "store_work_low", "store_author_high", "store_author_low"]:
                     method_name = "store"
                 method_to_run = getattr(obj, method_name)
                 method_to_run()
@@ -108,6 +108,27 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and {id_field_name} < {MAX_MAG_ID}                            
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_author_high":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and author_id > 2692399391
+                        and author_id < {MAX_MAG_ID}
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_author_low":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and author_id <= 2692399391
                         order by random()
                         limit {chunk};
                 """
