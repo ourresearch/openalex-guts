@@ -46,10 +46,16 @@ class Author(db.Model):
         return f"http://localhost:5007/institution/id/{self.last_known_affiliation_id}"
 
     @property
-    def orcid(self):
+    def orcid_object(self):
         if not self.orcids:
             return None
-        return sorted(self.orcids, key=lambda x: x.orcid)[0].orcid
+        return sorted(self.orcids, key=lambda x: x.orcid)[0]
+
+    @property
+    def orcid(self):
+        if not self.orcid_object:
+            return None
+        return self.orcid_object.orcid
 
     @property
     def orcid_url(self):
@@ -58,14 +64,8 @@ class Author(db.Model):
         return "https://orcid.org/{}".format(self.orcid)
 
     @cached_property
-    def alternative_names(self):
-        q = """
-        select attribute_value
-        from legacy.mag_main_author_extended_attributes
-        WHERE author_id = :author_id
-        """
-        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        response = [row[0] for row in rows]
+    def all_alternative_names(self):
+        response = [name.display_name for name in self.alternative_names]
 
         # add what we get from orcid
         if self.orcid_data_person:
@@ -115,17 +115,10 @@ class Author(db.Model):
     def orcid_data_person(self):
         if not self.orcid:
             return None
-
-        q = """
-        select api_json
-        from orcid_raw_from_s3
-        WHERE api_json."orcid-identifier".path::text = :orcid
-        """
-        row = db.session.execute(text(q), {"orcid": self.orcid}).first()
-        if row:
-            my_data = json.loads(row[0])
-            return my_data.get("person", None)
-        return None
+        if not self.orcid_object.orcid_data:
+            return None
+        my_data = json.loads(self.orcid_object.orcid_data.api_json)
+        return my_data.get("person", None)
 
 
     def get_insert_dict_fieldnames(self, table_name=None):
@@ -152,22 +145,10 @@ class Author(db.Model):
 
     @cached_property
     def concepts(self):
-        from models.concept import as_concept_openalex_id
-
-        q = """
-            select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/author.paper_count::float, 1) as score
-            from mid.author author
-            join mid.affiliation affil on affil.author_id=author.author_id
-            join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
-            join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
-            join mid.concept concept on concept.field_of_study_id=ancestor_id            
-            where author.author_id=:author_id
-            group by ancestor_id, wikidata_id, ancestor_name, ancestor_level, author.paper_count
-            order by score desc"""
-        rows = db.session.execute(text(q), {"author_id": self.author_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] > 20]
-        for row in response:
-            row["id"] = as_concept_openalex_id(row["id"])
+        if not self.author_concepts:
+            return []
+        response = [author_concept.to_dict() for author_concept in self.author_concepts if author_concept.score > 20]
+        response = sorted(response, key=lambda x: x["score"], reverse=True)
         return response
 
     @cached_property
@@ -193,7 +174,7 @@ class Author(db.Model):
               }
         if return_level == "full":
             response.update({
-                "display_name_alternatives": self.alternative_names,
+                "display_name_alternatives": self.all_alternative_names,
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
                 "ids": {
