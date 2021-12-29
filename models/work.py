@@ -321,7 +321,7 @@ class Work(db.Model):
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             self.json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_works": [self.paper_id, updated, self.json_save, VERSION_STRING]}]
+        self.insert_dicts = [{"mid.json_works": {"id": self.paper_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
         # print(self.insert_dicts)
         # print(self.json_save[0:100])
