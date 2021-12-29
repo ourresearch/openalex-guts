@@ -111,7 +111,7 @@ def single_work_query():
          selectinload(Work.abstract),
          selectinload(Work.extra_ids),
          selectinload(Work.related_works),
-         selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),selectinload(AuthorOrcid.orcid_data),
+         selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids).selectinload(AuthorOrcid.orcid_data),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
          orm.Load(Work).raiseload('*'))
