@@ -88,7 +88,6 @@ def after_request_stuff(resp):
 
     return resp
 
-
 @app.after_request
 def after_request_override_urls_for_debugging(response):
     wants_apiurls = ("apiurls" in request.args)

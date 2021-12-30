@@ -9,6 +9,7 @@ from sqlalchemy_redshift.dialect import SUPER
 from app import db
 from app import USER_AGENT
 from app import MAX_MAG_ID
+from app import get_apiurl_from_openalex_url
 from util import jsonify_fast_no_sort_raw
 
 
@@ -49,6 +50,10 @@ class Concept(db.Model):
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
+
+    @property
+    def openalex_api_url(self):
+        return get_apiurl_from_openalex_url(self.openalex_id)
 
     @cached_property
     def wikidata_id_short(self):
@@ -516,6 +521,6 @@ class Concept(db.Model):
         return response
 
     def __repr__(self):
-        return "<Concept ( {} ) {}>".format(self.openalex_id, self.display_name)
+        return "<Concept ( {} ) {}>".format(self.openalex_api_url, self.display_name)
 
 

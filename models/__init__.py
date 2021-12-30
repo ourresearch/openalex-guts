@@ -128,3 +128,4 @@ def work_from_pmid(pmid):
     pmid_attribute_type = 2
     work_extra_id = WorkExtraIds.query.filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).first()
     return work_extra_id.work if work_extra_id else None
+

@@ -14,6 +14,7 @@ import random
 
 from app import db
 from app import MAX_MAG_ID
+from app import get_apiurl_from_openalex_url
 from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 
@@ -55,22 +56,19 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     for row, api_dict in zip(rows, api_json):
         if api_dict["tags"] != []:
             for i, concept_name in enumerate(api_dict["tags"]):
-                insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
-                                      paper_id=row["paper_id"],
-                                      concept_name_lower=api_dict["tags"][i],
-                                      concept_id=api_dict["tag_ids"][i],
-                                      score=api_dict["scores"][i],
-                                      updated=datetime.datetime.utcnow().isoformat(),
-                                    )}]
+                insert_dicts += [{"mid.new_work_concepts": {"paper_id": row["paper_id"],
+                                                       "concept_name_lower": api_dict["tags"][i],
+                                                       "concept_id": api_dict["tag_ids"][i],
+                                                       "score": api_dict["scores"][i],
+                                                       "updated": datetime.datetime.utcnow().isoformat()}}]
         else:
             matching_ids = []
-            insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
-                                      paper_id=row["paper_id"],
-                                      concept_name_lower=None,
-                                      concept_id="NULL",
-                                      score="NULL",
-                                      updated=datetime.datetime.utcnow().isoformat(),
-                                    )}]
+            insert_dicts += [{"mid.new_work_concepts": {"paper_id": row["paper_id"],
+                                                       "concept_name_lower": None,
+                                                       "concept_id": "NULL",
+                                                       "score": "NULL",
+                                                       "updated": datetime.datetime.utcnow().isoformat()}}]
+
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
     return [response]
@@ -115,8 +113,6 @@ class Work(db.Model):
 
 
     def __init__(self, **kwargs):
-        self.id = random.randint(1000, 10000000)
-        self.paper_id = self.id
         self.created = datetime.datetime.utcnow().isoformat()
         self.updated = self.created
         super(Work, self).__init__(**kwargs)
@@ -137,6 +133,10 @@ class Work(db.Model):
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
+
+    @property
+    def openalex_api_url(self):
+        return get_apiurl_from_openalex_url(self.openalex_id)
 
     def new_work_concepts(self):
         self.insert_dicts = []
@@ -453,7 +453,7 @@ class Work(db.Model):
 
 
     def __repr__(self):
-        return "<Work ( {} ) {} '{}...'>".format(self.openalex_id, self.doi, self.paper_title[0:20])
+        return "<Work ( {} ) {} '{}...'>".format(self.openalex_api_url, self.doi, self.original_title[0:20] if self.original_title else None)
 
 
 

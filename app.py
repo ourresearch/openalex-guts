@@ -20,6 +20,7 @@ import psycopg2
 import psycopg2.extras # needed though you wouldn't guess it
 from psycopg2.pool import ThreadedConnectionPool
 from contextlib import contextmanager
+import re
 
 from util import safe_commit
 from util import elapsed
@@ -164,3 +165,8 @@ def get_db_cursor(commit=False):
       finally:
           cursor.close()
           pass
+
+def get_apiurl_from_openalex_url(openalex_url):
+    if not openalex_url:
+        return None
+    return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "https://api.openalex.org/\g<id>?apiurls", openalex_url)

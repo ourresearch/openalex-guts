@@ -40,6 +40,10 @@ class Record(db.Model):
     publisher = db.Column(db.Text)
     institution_host = db.Column(db.Text)
     is_retracted = db.Column(db.Boolean)
+    volume = db.Column(db.Text)
+    issue = db.Column(db.Text)
+    first_page = db.Column(db.Text)
+    last_page = db.Column(db.Text)
 
     # related tables
     citations = db.Column(db.Text)
@@ -68,11 +72,8 @@ class Record(db.Model):
 
     # set by Xplenty
     match_title = db.Column(db.Text)
-
-    # queues
-    started = db.Column(db.DateTime)
-    finished = db.Column(db.DateTime)
-    started_label = db.Column(db.Text)
+    normalized_type = db.Column(db.Text)
+    normalized_doc_type = db.Column(db.Text)
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
@@ -137,14 +138,16 @@ class Record(db.Model):
 
         # by doi
         if self.work_matches_by_doi:
+            print("found by doi")
             matching_works = self.work_matches_by_doi
 
         # by pmid
         # later
 
         # by title
-        if not matching_works:
+        if not matching_works and self.genre != "component":
             if self.work_matches_by_title:
+                print("found by title")
                 matching_works = self.work_matches_by_title
 
         # by url
@@ -156,8 +159,8 @@ class Record(db.Model):
             or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
             """
             matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
-            print(f"works that match title: {matching_works}")
             if matching_works:
+                print(f"found by url")
                 matching_work_id = matching_works[0]
 
         # by pmhid
@@ -168,8 +171,8 @@ class Record(db.Model):
             where pmh_id=:pmh_id
             """
             matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
-            print(f"works that match pmh_id: {matching_works}")
             if matching_works:
+                print(f"found by pmhid")
                 matching_work_id = matching_works[0]
 
         if matching_works:
@@ -177,23 +180,58 @@ class Record(db.Model):
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
                 matching_work = sorted_matching_works[0]
                 matching_work_id = matching_work.id
-            url = f"https://openalex-guts.herokuapp.com/works/id/{matching_work_id}"
-            print(f"found a match for this work: {url}")
+            url = f"https://api.openalex.org/W{matching_work_id}"
+            print(f"*********found a match for this work: {url}")
+            print(f"don't do anything else with this")
+            # don't do anything else
             # sleep(10)
         else:
-            print("no match")
+            print("_____________no match")
             # mint a work
+
+            self.mint_work()
             matching_work_id = "null"
 
-        self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
-                              record_id=self.id,
-                              updated=self.updated,
-                              matching_work_id=matching_work_id,
-                              added=datetime.datetime.utcnow().isoformat()
-                            )}]
+        # self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
+        #                       record_id=self.id,
+        #                       updated=self.updated,
+        #                       matching_work_id=matching_work_id,
+        #                       added=datetime.datetime.utcnow().isoformat()
+        #                     )}]
 
         return matching_work
 
+
+    def mint_work(self):
+        from models import Work
+        from models import Venue
+
+        journal_id = None
+        if self.journal_issn_l:
+            my_venue = db.session.query(Venue).options(orm.Load(Venue).raiseload('*')).filter(Venue.issn == self.journal_issn_l).first()
+            if my_venue:
+                journal_id = my_venue.journal_id
+
+        # assumes already tried a match
+        q = """select max_id from util.max_openalex_id"""
+        row = db.session.execute(text(q)).first()
+        max_id = row["max_id"]
+        new_work_id = max_id + 1
+
+        self.work_id = new_work_id
+
+        new_work = Work()
+        new_work.paper_id = new_work_id
+        new_work.doi = self.doi
+        new_work.doi_lower = self.doi  # already lowered from recordthresher
+        new_work.original_title = self.title
+        new_work.match_title = self.match_title
+        new_work.journal_id = journal_id
+        new_work.genre = self.normalized_type
+        new_work.doc_type = self.normalized_doc_type
+        db.session.add(new_work)
+
+        print(f"MADE A NEW WORK!!! {new_work}")
 
 
     def process(self):
@@ -202,9 +240,8 @@ class Record(db.Model):
         self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
-        if self.genre != "component":
-            self.work = self.get_or_mint_work()
-            # self.work.refresh()
+        self.work = self.get_or_mint_work()
+        # self.work.refresh()
 
 
     def to_dict(self, return_level="full"):
