@@ -20,6 +20,21 @@ import models
 from util import elapsed
 
 
+class JsonWorks(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_works"
+    id = db.Column(db.BigInteger, primary_key=True)
+    updated = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
+
+class JsonAuthors(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_authors"
+    id = db.Column(db.BigInteger, primary_key=True)
+    updated = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
 
 
 class DbQueue(object):
@@ -71,16 +86,17 @@ class DbQueue(object):
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
 
-        start_time = time()
-        metadata = MetaData(schema="mid")
-        metadata.reflect(db.engine, only=[table_name.split(".")[1]])
-        my_table = Table(table_name.split(".")[1], metadata, schema="mid", autoload=True, autoload_with=db.engine)
+        from sqlalchemy import insert
+        my_table = JsonWorks
+        if self.myclass == models.Author:
+            my_table = JsonAuthors
 
+        start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             fields = obj.get_insert_dict_fieldnames(table_name)
 
             db.session.remove()
-            db.session.execute(my_table.insert(), all_insert_strings)
+            db.session.execute(insert(my_table).values(all_insert_strings))
             db.session.commit()
 
         if insert_dict_all_objects:
