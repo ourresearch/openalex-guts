@@ -82,7 +82,7 @@ database_to_use = os.getenv("DATABASE_TO_USE", "")
 MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
 if database_to_use.startswith("q"):
     MY_DATABASE = f"DATABASE_URL_{database_to_use}"
-elif database_to_use == "6-HIGH"
+elif database_to_use == "6-HIGH":
     MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
 print(f"Using database {MY_DATABASE}")
 
