@@ -160,7 +160,7 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
-            elif run_method == "store_author_high":
+            elif run_method == "store_author_h2":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
@@ -171,7 +171,7 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
-            elif run_method == "store_author_low":
+            elif run_method == "store_author_h1":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
@@ -338,7 +338,7 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if (self.myclass == models.Work) and (run_method in ["store", "store_work_high", "store_work_low"]):
+                    if (self.myclass == models.Work) and (run_method.startswith("store")):
                         # no abstracts
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),

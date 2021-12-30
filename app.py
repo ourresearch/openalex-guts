@@ -80,7 +80,7 @@ app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 
 database_to_use = os.getenv("DATABASE_TO_USE", "")
 MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
-if database_to_use.startswith("q"):
+if database_to_use.startswith("q") or database_to_use.startswith("h"):
     MY_DATABASE = f"DATABASE_URL_{database_to_use}"
 elif database_to_use == "6-HIGH":
     MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
@@ -164,4 +164,3 @@ def get_db_cursor(commit=False):
       finally:
           cursor.close()
           pass
-
