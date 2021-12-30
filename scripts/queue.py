@@ -6,8 +6,7 @@ import shortuuid
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
-from sqlalchemy import MetaData
-from sqlalchemy import Table
+from sqlalchemy import insert
 from collections import defaultdict
 import argparse
 import logging
@@ -36,6 +35,29 @@ class JsonAuthors(db.Model):
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
 
+class JsonInstitutions(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_institutions"
+    id = db.Column(db.BigInteger, primary_key=True)
+    updated = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
+
+class JsonVenues(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_venues"
+    id = db.Column(db.BigInteger, primary_key=True)
+    updated = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
+
+class JsonConcepts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_concepts"
+    id = db.Column(db.BigInteger, primary_key=True)
+    updated = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
 
 class DbQueue(object):
 
@@ -66,7 +88,7 @@ class DbQueue(object):
                     repr=obj,
                     method_name=method_name))
 
-                if method_name in ["store_work_high", "store_work_low", "store_author_high", "store_author_low"]:
+                if method_name.startswith("store"):
                     method_name = "store"
                 method_to_run = getattr(obj, method_name)
                 method_to_run()
@@ -86,10 +108,15 @@ class DbQueue(object):
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
 
-        from sqlalchemy import insert
         my_table = JsonWorks
         if self.myclass == models.Author:
             my_table = JsonAuthors
+        elif self.myclass == models.Institution:
+            my_table = JsonInstitutions
+        elif self.myclass == models.Venue:
+            my_table = JsonVenues
+        elif self.myclass == models.Concept:
+            my_table = JsonConcepts
 
         start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
@@ -154,23 +181,45 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_high":
+            elif run_method == "store_work_q1":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and paper_id <= 2003298745
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_work_q2":
+                text_query_pattern_select = """
+                    select {id_field_name} from {queue_table}
+                        where {id_field_name} not in
+                            (select id from {insert_table})
+                        and paper_id > 2003298745
+                        and paper_id <= 2331496286
+                        order by random()
+                        limit {chunk};
+                """
+                insert_table = self.store_json_insert_tablename
+            elif run_method == "store_work_q3":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and paper_id > 2331496286
-                        and paper_id < {MAX_MAG_ID}
+                        and paper_id <= 2885216492
                         order by random()
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_low":
+            elif run_method == "store_work_q4":
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select id from {insert_table})
-                        and paper_id <= 2331496286
+                        and paper_id > 2885216492
+                        and paper_id < {MAX_MAG_ID}
                         order by random()
                         limit {chunk};
                 """
