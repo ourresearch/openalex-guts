@@ -4,6 +4,7 @@ import json
 
 from app import db
 from app import MAX_MAG_ID
+from app import get_apiurl_from_openalex_url
 
 
 # truncate mid.journal
@@ -42,6 +43,10 @@ class Venue(db.Model):
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
+
+    @property
+    def openalex_api_url(self):
+        return get_apiurl_from_openalex_url(self.openalex_id)
 
     @property
     def issn_l(self):
@@ -143,7 +148,7 @@ class Venue(db.Model):
 
 
     def __repr__(self):
-        return "<Venue ( {} ) {}>".format(self.openalex_id, self.display_name)
+        return "<Venue ( {} ) {}>".format(self.openalex_api_url, self.display_name)
 
 
 # select count(distinct work.paper_id)

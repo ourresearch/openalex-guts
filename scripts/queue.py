@@ -100,6 +100,8 @@ class DbQueue(object):
 
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
+        if self.myclass == models.Record and method_name=="process":
+            db.session.commit()
 
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
@@ -243,10 +245,8 @@ class DbQueue(object):
                 #     limit {chunk};
                 # """
                text_query_pattern_select = """
-                    select record_id from mid.record_match 
-                    join ins.recordthresher_record on ins.recordthresher_record.id=mid.record_match.record_id
-                    where matching_work_id is null
-                    and doi is null
+                    select id from ins.recordthresher_record 
+                    where work_id is null
                     order by random()
                     limit {chunk};
                 """
@@ -330,6 +330,9 @@ class DbQueue(object):
                 row_list = db.session.execute(text(text_query_select)).fetchall()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
+                if (self.myclass == models.Record) and (run_method == "process"):
+                    chunk = 1
+                    print("LIMITING chunk to 1 for processing records for now, to keep ids in sync")
                 number_of_smaller_chunks = int(big_chunk/chunk)
                 for chunk_number in range(0, number_of_smaller_chunks):
                     new_loop_start_time = time()

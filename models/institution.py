@@ -9,6 +9,7 @@ import json
 from app import db
 from app import USER_AGENT
 from app import MAX_MAG_ID
+from app import get_apiurl_from_openalex_url
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -56,6 +57,10 @@ class Institution(db.Model):
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
+
+    @property
+    def openalex_api_url(self):
+        return get_apiurl_from_openalex_url(self.openalex_id)
 
     @property
     def institution_id(self):
@@ -244,10 +249,11 @@ class Institution(db.Model):
             data = json.loads(self.wikipedia_json)
         except:
             data = None
+
         if not data:
             wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
             url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-            print(url)
+            print(f"calling wikipedia live for {self.openalex_id} with {url}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
             # print(r.json())
             data = r.json()
@@ -426,6 +432,6 @@ class Institution(db.Model):
         return response
 
     def __repr__(self):
-        return "<Institution ( {} ) {}>".format(self.openalex_id, self.display_name)
+        return "<Institution ( {} ) {}>".format(self.openalex_api_url, self.display_name)
 
 
