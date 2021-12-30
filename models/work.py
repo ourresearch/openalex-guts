@@ -112,10 +112,6 @@ class Work(db.Model):
 
     match_title = db.Column(db.Text)
 
-    # queues
-    started = db.Column(db.DateTime)
-    finished = db.Column(db.DateTime)
-    started_label = db.Column(db.Text)
 
 
     def __init__(self, **kwargs):
@@ -267,7 +263,7 @@ class Work(db.Model):
     def doi_url(self):
         if not self.doi:
             return None
-        return "https://doi.org/{}".format(self.doi_lower)
+        return "https://doi.org/{}".format(self.doi.lower())
 
     @cached_property
     def is_oa(self):
