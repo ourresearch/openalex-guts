@@ -20,7 +20,7 @@ class Author(db.Model):
 
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
-    last_known_affiliation_id = db.Column(db.Numeric, db.ForeignKey("mid.institution.affiliation_id"))
+    last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
