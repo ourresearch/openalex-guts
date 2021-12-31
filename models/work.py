@@ -63,8 +63,8 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
         else:
             matching_ids = []
             insert_dicts += [{"mid.work_concept": {"paper_id": row["paper_id"],
-                                                       "field_of_study": "NULL",
-                                                       "score": "NULL",
+                                                       "field_of_study": None,
+                                                       "score": None,
                                                        "algorithm_version": 2}}]
 
     response = ConceptLookupResponse()
