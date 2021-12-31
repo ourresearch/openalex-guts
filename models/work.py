@@ -366,9 +366,9 @@ class Work(db.Model):
         if matching_location and matching_location.host_type != None:
             type = matching_location.host_type
         elif self.journal and self.journal.issn_l:
-            type = "journal"
+            type = "publisher"
         elif url and "doi.org/" in url:
-            type = "journal"
+            type = "publisher"
 
         version = matching_location.version if matching_location else None
         license = matching_location.display_license if matching_location else None
