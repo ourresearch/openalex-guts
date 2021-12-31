@@ -22,6 +22,7 @@ import yaml
 from app import app
 from app import db
 from app import logger
+from app import MAX_MAG_ID
 import models
 
 from util import jsonify_fast_no_sort
@@ -162,7 +163,10 @@ def records_id_get(id):
 @app.route("/works/RANDOM")
 @app.route("/works/random")
 def works_random_get():
-    work_id = db.session.query(models.Work.paper_id).order_by(func.random()).first()
+    query = db.session.query(models.Work.paper_id).order_by(func.random())
+    if ("new" in request.args):
+        query = query.filter(models.Work.paper_id >= MAX_MAG_ID)
+    work_id = query.first()
     work_id = work_id[0]
     obj = models.work_from_id(work_id)
     if not obj:
@@ -194,7 +198,10 @@ def works_id_get(id):
 @app.route("/authors/RANDOM")
 @app.route("/authors/random")
 def authors_random_get():
-    obj = models.Author.query.order_by(func.random()).first()
+    query = models.Author.query.order_by(func.random())
+    if ("new" in request.args):
+        query = query.filter(models.Author.author_id >= MAX_MAG_ID)
+    obj = query.first()
     return jsonify_fast_no_sort(obj.to_dict())
 
 @app.route("/authors/<path:id>")
@@ -221,7 +228,10 @@ def authors_id_get(id):
 @app.route("/institutions/RANDOM")
 @app.route("/institutions/random")
 def institutions_random_get():
-    obj = models.Institution.query.order_by(func.random()).first()
+    query = models.Institution.query.order_by(func.random())
+    if ("new" in request.args):
+        query = query.filter(models.Institution.affiliation_id >= MAX_MAG_ID)
+    obj = query.first()
     return jsonify_fast_no_sort(obj.to_dict())
 
 @app.route("/institutions/<path:id>")
@@ -246,7 +256,10 @@ def institutions_id_get(id):
 @app.route("/venues/RANDOM")
 @app.route("/venues/random")
 def venues_random_get():
-    obj = models.Venue.query.order_by(func.random()).first()
+    query = models.Venue.query.order_by(func.random())
+    if ("new" in request.args):
+        query = query.filter(models.Venue.journal_id >= MAX_MAG_ID)
+    obj = query.first()
     if not obj:
         raise NoResultFound
     response = obj.to_dict()
@@ -275,7 +288,10 @@ def venues_id_get(id):
 @app.route("/concepts/RANDOM")
 @app.route("/concepts/random")
 def concepts_random_get():
-    obj = models.Concept.query.order_by(func.random()).first()
+    query = models.Concept.query.order_by(func.random())
+    if ("new" in request.args):
+        query = query.filter(models.Concept.field_of_study_id >= MAX_MAG_ID)
+    obj = query.first()
     return jsonify_fast_no_sort(obj.to_dict())
 
 @app.route("/concepts/<path:id>")
