@@ -28,7 +28,6 @@ from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
 
 # relationships without association tables
-Work.records = db.relationship("Record", lazy='selectin', backref="work")
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work")
 Work.references = db.relationship("Citation", lazy='selectin', backref="work")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work")
