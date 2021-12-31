@@ -242,6 +242,7 @@ class DbQueue(object):
                     select paper_id from mid.work
                         where paper_id not in
                             (select paper_id from mid.work_concept)
+                        and paper_title is not null
                         and work.paper_id > 4200000000 
                         order by random()
                         limit {chunk};
