@@ -3,6 +3,8 @@ from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
+from sqlalchemy.orm import deferred
+from sqlalchemy.orm import foreign, remote
 from collections import defaultdict
 from time import sleep
 import datetime
@@ -76,23 +78,23 @@ class Record(db.Model):
     normalized_doc_type = db.Column(db.Text)
 
     # relationship to works is set in Work
-    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
+    work_id = db.Column(db.BigInteger)
 
-    work_matches_by_title = db.relationship(
-        'Work',
-        lazy='subquery',
-        viewonly=True,
-        foreign_keys="Work.match_title",
-        primaryjoin="and_(func.length(Record.match_title) > 20, Record.match_title == Work.match_title)"
-    )
-
-    work_matches_by_doi = db.relationship(
-        'Work',
-        lazy='subquery',
-        viewonly=True,
-        foreign_keys="Work.doi_lower",
-        primaryjoin="and_(Record.doi != None, Record.doi == Work.doi_lower)"
-    )
+    # work_matches_by_title = db.relationship(
+    #     'Work',
+    #     lazy='subquery',
+    #     viewonly=True,
+    #     # foreign_keys="Work.match_title",
+    #     primaryjoin="and_(func.length(foreign(Record.match_title)) > 20, foreign(Record.match_title) == remote(Work.match_title))"
+    # )
+    #
+    # work_matches_by_doi = db.relationship(
+    #     'Work',
+    #     lazy='subquery',
+    #     viewonly=True,
+    #     # foreign_keys="Work.doi_lower",
+    #     primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
+    # )
 
     @property
     def score(self):
@@ -136,44 +138,45 @@ class Record(db.Model):
         matching_work_id = None
         print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
 
-        # by doi
-        if self.work_matches_by_doi:
-            print("found by doi")
-            matching_works = self.work_matches_by_doi
+        if False:
+            # by doi
+            if self.work_matches_by_doi:
+                print("found by doi")
+                matching_works = self.work_matches_by_doi
 
-        # by pmid
-        # later
+            # by pmid
+            # later
 
-        # by title
-        if not matching_works and self.genre != "component":
-            if self.work_matches_by_title:
-                print("found by title")
-                matching_works = self.work_matches_by_title
+            # by title
+            if not matching_works and self.genre != "component":
+                if self.work_matches_by_title:
+                    print("found by title")
+                    matching_works = self.work_matches_by_title
 
-        # by url
-        if not matching_works:
-            q = """
-            select paper_id
-            from mid.location t1
-            where (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url1, 'https', 'http'))
-            or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
-            """
-            matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
-            if matching_works:
-                print(f"found by url")
-                matching_work_id = matching_works[0]
+            # by url
+            if not matching_works:
+                q = """
+                select paper_id
+                from mid.location t1
+                where (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url1, 'https', 'http'))
+                or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
+                """
+                matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
+                if matching_works:
+                    print(f"found by url")
+                    matching_work_id = matching_works[0]
 
-        # by pmhid
-        if not matching_works:
-            q = """
-            select paper_id
-            from mid.location t1
-            where pmh_id=:pmh_id
-            """
-            matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
-            if matching_works:
-                print(f"found by pmhid")
-                matching_work_id = matching_works[0]
+            # by pmhid
+            if not matching_works:
+                q = """
+                select paper_id
+                from mid.location t1
+                where pmh_id=:pmh_id
+                """
+                matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
+                if matching_works:
+                    print(f"found by pmhid")
+                    matching_work_id = matching_works[0]
 
         if matching_works:
             if not matching_work_id:
