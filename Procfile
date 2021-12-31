@@ -40,4 +40,4 @@ run_queue_store_concept: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 
-run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=10 --name=queue_work_concepts$DYNO-${i}
+run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=queue_work_concepts$DYNO-${i}
