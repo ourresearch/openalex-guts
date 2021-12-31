@@ -116,6 +116,12 @@ class DbQueue(object):
                         insert_dict_all_objects[table_name] += [insert_string]
 
         my_table = JsonWorks
+        if self.myclass == models.Work:
+            if method_name == "store":
+                my_table = JsonWorks
+            else:
+                from models.work_concept import WorkConceptFull
+                my_table = WorkConceptFull
         if self.myclass == models.Author:
             my_table = JsonAuthors
         elif self.myclass == models.Institution:
@@ -233,13 +239,14 @@ class DbQueue(object):
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
                 text_query_pattern_select = """
-                    select {id_field_name} from mid.works_not_done_yet
-                        where {id_field_name} not in
-                            (select {id_field_name} from {insert_table})
+                    select paper_id from mid.work
+                        where paper_id not in
+                            (select paper_id from mid.work_concept)
+                        and work.paper_id > 4200000000 
                         order by random()
                         limit {chunk};
                 """
-                insert_table = "mid.new_work_concepts"
+                insert_table = "mid.work_concept"
             elif self.myclass == models.Record:
                 # text_query_pattern_select = """
                 #     select {id_field_name}
@@ -386,7 +393,7 @@ class DbQueue(object):
                         #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                         q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
                             from mid.work work
-                            left outer join mid.journal journal on journal.journal_id=work.journal_id 
+                            left outer join mid.journal journal on journal.journal_id=work.journal_id
                             where paper_id in ({})
                         """.format(",".join(str(paper_id) for paper_id in object_ids))
                         try:
