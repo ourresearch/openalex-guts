@@ -39,3 +39,5 @@ run_queue_store_institution: DATABASE_TO_USE=6-HIGH python -m scripts.queue --ru
 run_queue_store_concept: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=concept --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_concept$DYNO-${i} --randstart
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
+
+run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=queue_work_concepts$DYNO-${i}
