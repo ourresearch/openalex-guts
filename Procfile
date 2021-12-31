@@ -38,4 +38,4 @@ run_queue_store_venues: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --t
 run_queue_store_institution: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=institution --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_institution$DYNO-${i} --randstart
 run_queue_store_concept: DATABASE_TO_USE=6-HIGH python -m scripts.queue --run --table=concept --method=store --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_concept$DYNO-${i} --randstart
 
-run_queue_record: python -m scripts.queue --run --table=record --method=process --chunk=1 --name=queue_record$DYNO-${i}
+run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=$QUEUE_WORKER_CHUNK_SIZE_RECORDS --name=queue_record$DYNO-${i}

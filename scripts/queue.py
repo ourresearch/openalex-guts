@@ -66,7 +66,7 @@ class DbQueue(object):
         super(DbQueue, self).__init__(**kwargs)
 
 
-    def update_fn(self, cls, method_name, objects, index=1):
+    def update_fn(self, cls, method_name, objects, index=1, max_openalex_id=None):
         # we are in a fork!  dispose of our engine.
         # will get a new one automatically. if is pooling, need to do .dispose() instead
         db.engine.dispose()
@@ -74,24 +74,29 @@ class DbQueue(object):
         start = time()
         num_obj_rows = len(objects)
 
+        if method_name.startswith("store"):
+            method_name = "store"
+
         if method_name == "new_work_concepts":
             from models.work import call_sagemaker_bulk_lookup_new_work_concepts
             objects = call_sagemaker_bulk_lookup_new_work_concepts(objects)
         else:
             for count, obj in enumerate(objects):
+                total_count = count + (num_obj_rows*index)
                 start_time = time()
                 if obj is None:
                     return None
                 # logger.info(u"***")
                 logger.info("*** #{count} starting {repr}.{method_name}() method".format(
-                    count=count + (num_obj_rows*index),
+                    count=total_count,
                     repr=obj,
                     method_name=method_name))
 
-                if method_name.startswith("store"):
-                    method_name = "store"
                 method_to_run = getattr(obj, method_name)
-                method_to_run()
+                if method_name == "process_record":
+                    method_to_run(new_work_id_if_needed=(1 + max_openalex_id + total_count))
+                else:
+                    method_to_run()
 
                 logger.info("finished {repr}.{method_name}(). took {elapsed} seconds".format(
                     repr=obj,
@@ -100,7 +105,7 @@ class DbQueue(object):
 
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
-        if self.myclass == models.Record and method_name=="process":
+        if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
 
         insert_dict_all_objects = defaultdict(list)
@@ -310,6 +315,14 @@ class DbQueue(object):
         index = 0
         start_time = time()
         big_chunk = 10000
+
+        max_openalex_id = None
+        if run_method == "process_record":
+            q = """select max_id from util.max_openalex_id"""
+            row = db.session.execute(text(q)).first()
+            db.session.commit()
+            max_openalex_id = row["max_id"]
+
         while True:
             text_query_select = text_query_pattern_select.format(
                 chunk=big_chunk,
@@ -330,9 +343,6 @@ class DbQueue(object):
                 row_list = db.session.execute(text(text_query_select)).fetchall()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
-                if (self.myclass == models.Record) and (run_method == "process"):
-                    chunk = 1
-                    print("LIMITING chunk to 1 for processing records for now, to keep ids in sync")
                 number_of_smaller_chunks = int(big_chunk/chunk)
                 for chunk_number in range(0, number_of_smaller_chunks):
                     new_loop_start_time = time()
@@ -387,6 +397,7 @@ class DbQueue(object):
                         objects = db.session.query(models.Record).options(
                              # selectinload(models.Record.work_matches_by_title).raiseload('*'),
                              # selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+                             selectinload(models.Record.journal),
                              orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Author:
                         objects = db.session.query(models.Author).options(
@@ -413,6 +424,7 @@ class DbQueue(object):
                     else:
                         objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
+
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
 
                     if not objects:
@@ -420,7 +432,7 @@ class DbQueue(object):
                         sleep(5)
                         continue
 
-                    self.update_fn(run_class, run_method, objects, index=index)
+                    self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=max_openalex_id)
 
                     index += 1
                     if single_obj_id:

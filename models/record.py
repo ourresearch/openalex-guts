@@ -55,7 +55,7 @@ class Record(db.Model):
     # venue links
     repository_id = db.Column(db.Text)
     journal_id = db.Column(db.Text)
-    journal_issn_l = db.Column(db.Text)
+    journal_issn_l = db.Column(db.Text, db.ForeignKey("mid.journal.issn"))
 
     # record data
     record_webpage_url = db.Column(db.Text)
@@ -130,7 +130,7 @@ class Record(db.Model):
         return lookup
 
 
-    def get_or_mint_work(self):
+    def get_or_mint_work(self, new_work_id_if_needed):
         from models.work import Work
 
         matching_works = []
@@ -192,7 +192,7 @@ class Record(db.Model):
             print("_____________no match")
             # mint a work
 
-            self.mint_work()
+            self.mint_work(new_work_id_if_needed)
             matching_work_id = "null"
 
         # self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
@@ -205,22 +205,13 @@ class Record(db.Model):
         return matching_work
 
 
-    def mint_work(self):
+    def mint_work(self, new_work_id):
         from models import Work
         from models import Venue
 
-        journal_id = None
-        if self.journal_issn_l:
-            my_venue = db.session.query(Venue).options(orm.Load(Venue).raiseload('*')).filter(Venue.issn == self.journal_issn_l).first()
-            if my_venue:
-                journal_id = my_venue.journal_id
+        journal_id = self.journal.journal_id if self.journal else None
 
         # assumes already tried a match
-        q = """select max_id from util.max_openalex_id"""
-        row = db.session.execute(text(q)).first()
-        max_id = row["max_id"]
-        new_work_id = max_id + 1
-
         self.work_id = new_work_id
 
         new_work = Work()
@@ -237,13 +228,13 @@ class Record(db.Model):
         print(f"MADE A NEW WORK!!! {new_work}")
 
 
-    def process(self):
+    def process_record(self, new_work_id_if_needed):
         from models import Work
 
         self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
-        self.work = self.get_or_mint_work()
+        self.work = self.get_or_mint_work(new_work_id_if_needed)
         # self.work.refresh()
 
 
