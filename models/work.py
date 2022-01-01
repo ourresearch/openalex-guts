@@ -211,6 +211,11 @@ class Work(db.Model):
         return sorted(self.affiliations, key=lambda x: x.author_sequence_number)
 
     @cached_property
+    def mesh_sorted(self):
+        # sort so major topics at the top and the rest is alphabetical
+        return sorted(self.mesh, key=lambda x: (not x.is_major_topic, x.descriptor_name), reverse=False)
+
+    @cached_property
     def affiliations_list(self):
         affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
         if not affiliations:
@@ -404,6 +409,7 @@ class Work(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
+                "pmid": None, #filled in below
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
             "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
@@ -435,7 +441,7 @@ class Work(db.Model):
                 "is_retracted": self.is_retracted,
                 "is_paratext": self.is_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
-                "mesh": [mesh.to_dict("minimum") for mesh in self.mesh],
+                "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
                 "referenced_works": self.references_list,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
