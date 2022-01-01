@@ -13,10 +13,11 @@ class Mesh(db.Model):
     descriptor_name = db.Column(db.Text)
     qualifier_ui = db.Column(db.Text, primary_key=True)
     qualifier_name = db.Column(db.Text)
-    qualifier_name = db.Column(db.Boolean)
+    is_major_topic = db.Column(db.Boolean)
 
     def to_dict(self, return_level=None):
         response = {
+            "is_major_topic": self.is_major_topic,
             "descriptor_ui": self.descriptor_ui,
             "descriptor_name": self.descriptor_name,
             "qualifier_ui": self.qualifier_ui,
