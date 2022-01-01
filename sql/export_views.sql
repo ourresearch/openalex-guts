@@ -122,7 +122,7 @@ as (
         t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
            recommended_paper_id as "RecommendedPaperId",    --- FOREIGN KEY REFERENCES Papers.PaperId
            score as "Score"                    --- Confidence range between 0 and 1. Bigger number representing higher confidence.
-    from legacy.mag_advanced_paper_recommendations t1
+    from mid.related_work t1
    )
 with no schema binding;
 
