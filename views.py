@@ -98,31 +98,36 @@ def after_request_override_urls_for_debugging(response):
         response.set_data(json_response_data.encode())
     return response
 
-
 def is_work_openalex_id(id):
     if isinstance(id, int):
         return False
-    return id.upper().startswith("W")
+    clean_id = normalize_openalex_id(id)
+    return clean_id.startswith("W")
 
 def is_author_openalex_id(id):
     if isinstance(id, int):
         return False
-    return id.upper().startswith("A")
+    clean_id = normalize_openalex_id(id)
+    return clean_id.startswith("A")
 
 def is_venue_openalex_id(id):
     if isinstance(id, int):
         return False
-    return id.upper().startswith("V")
+    clean_id = normalize_openalex_id(id)
+    return clean_id.startswith("V")
 
 def is_institution_openalex_id(id):
     if isinstance(id, int):
         return False
-    return id.upper().startswith("I")
+    clean_id = normalize_openalex_id(id)
+    return clean_id.startswith("I")
 
 def is_concept_openalex_id(id):
     if isinstance(id, int):
         return False
-    return id.upper().startswith("C")
+    clean_id = normalize_openalex_id(id)
+    return clean_id.startswith("C")
+
 
 
 @app.route('/swagger.yml')
@@ -179,8 +184,10 @@ def works_random_get():
 def works_id_get(id):
     from util import normalize_doi
     if is_openalex_id(id):
-        id = normalize_openalex_id(id)
-        paper_id = int(id[1:])
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("works_id_get", id=clean_id, **request.args))
+        paper_id = int(clean_id[1:])
         obj = models.work_from_id(paper_id)
     else:
         clean_doi = normalize_doi(id)
@@ -208,8 +215,10 @@ def authors_random_get():
 def authors_id_get(id):
     from util import normalize_orcid
     if is_openalex_id(id):
-        id = normalize_openalex_id(id)
-        author_id = int(id[1:])
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("authors_id_get", id=clean_id, **request.args))
+        author_id = int(clean_id[1:])
         obj = models.author_from_id(author_id)
     else:
         clean_orcid = normalize_orcid(id)
@@ -238,9 +247,11 @@ def institutions_random_get():
 def institutions_id_get(id):
     from util import normalize_ror
     if is_openalex_id(id):
-        id = normalize_openalex_id(id)
-        id = int(id[1:])
-        obj = models.institution_from_id(id)
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("institutions_id_get", id=clean_id, **request.args))
+        clean_id = int(clean_id[1:])
+        obj = models.institution_from_id(clean_id)
     else:
         clean_ror = normalize_ror(id)
         if not clean_ror:
@@ -269,9 +280,11 @@ def venues_random_get():
 def venues_id_get(id):
     from util import normalize_issn
     if is_openalex_id(id):
-        id = normalize_openalex_id(id)
-        id = int(id[1:])
-        obj = models.journal_from_id(id)
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+        clean_id = int(clean_id[1:])
+        obj = models.journal_from_id(clean_id)
     else:
         clean_issn = normalize_issn(id)
         if not clean_issn:
@@ -297,9 +310,11 @@ def concepts_random_get():
 @app.route("/concepts/<path:id>")
 def concepts_id_get(id):
     if is_openalex_id(id):
-        id = normalize_openalex_id(id)
-        id = int(id[1:])
-    return jsonify_fast_no_sort(models.concept_from_id(id).to_dict())
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("concepts_id_get", id=clean_id, **request.args))
+        clean_id = int(clean_id[1:])
+    return jsonify_fast_no_sort(models.concept_from_id(clean_id).to_dict())
 
 @app.route("/concepts/wikidata/<path:wikidata_id>")
 def concepts_wikidata_get(wikidata_id):
