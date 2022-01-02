@@ -168,7 +168,7 @@ class DbQueue(object):
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
                             (select id from {insert_table})
-                        and {id_field_name} < {MAX_MAG_ID}                            
+                        -- and {id_field_name} < {MAX_MAG_ID}                            
                         order by random()
                         limit {chunk};
                 """
@@ -179,7 +179,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and author_id > 2692399391
-                        and author_id < {MAX_MAG_ID}
+                        -- and author_id < {MAX_MAG_ID}
                         order by random()
                         limit {chunk};
                 """
@@ -232,7 +232,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and paper_id > 2885216492
-                        and paper_id < {MAX_MAG_ID}
+                        -- and paper_id < {MAX_MAG_ID}
                         order by random()
                         limit {chunk};
                 """
@@ -243,7 +243,7 @@ class DbQueue(object):
                         where paper_id not in
                             (select paper_id from mid.work_concept)
                         and paper_title is not null
-                        and work.paper_id > {MAX_MAG_ID} 
+                        -- and work.paper_id > {MAX_MAG_ID} 
                         order by random()
                         limit {chunk};
                 """

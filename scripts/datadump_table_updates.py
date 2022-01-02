@@ -561,12 +561,15 @@ insert into mid.location (
 #
 #
 #
+#
 # refresh materialized view mid.citation_authors_by_year_mv;
 # refresh materialized view mid.citation_journals_by_year_mv;
 # refresh materialized view mid.citation_institutions_by_year_mv;
 # refresh materialized view mid.citation_concepts_by_year_mv;
 # refresh materialized view mid.citation_papers_by_year_mv;
 #
+# refresh materialized view mid.work_concept_for_api_mv
+# refresh materialized view mid.work_concept_for_api_mv
 #
 # update mid.institution set match_name = f_matching_string(display_name)
 # update mid.journal set match_name = f_matching_string(display_name)
