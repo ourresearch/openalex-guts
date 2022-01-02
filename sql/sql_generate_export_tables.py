@@ -4,9 +4,9 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = True
-GENERATE_COMMENTS = True
-GENERATE_UNLOAD = False
+GENERATE_CREATE_TABLE = False
+GENERATE_COMMENTS = False
+GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
 DUMP_DIR = "2022-01-02"
