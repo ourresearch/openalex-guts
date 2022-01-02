@@ -84,6 +84,10 @@ class Location(db.Model):
     def include_in_alternative(self):
         if self.is_oa:
             return True
+        if self.host_type == "publisher":
+            return True
+        if self.source_url and "doi" in self.source_url:
+            return True
         return False
 
     def to_dict(self, return_level="full"):

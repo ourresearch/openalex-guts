@@ -414,7 +414,7 @@ class Work(db.Model):
                 "pmid": None, #filled in below
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
-            "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
+            "host_venue": self.journal.to_dict("minimum") if self.journal else None,
             "type": self.display_genre,
             "open_access": {
                 "is_oa": self.is_oa,
@@ -423,9 +423,10 @@ class Work(db.Model):
             },
             "authorships": self.affiliations_list,
         }
-        response["host_venue"].update(self.host_venue_details_dict)
-        response["host_venue"]["display_name"] = response["host_venue"]["display_name"] if response["host_venue"]["display_name"] else self.original_venue
-        response["host_venue"]["publisher"] = response["host_venue"]["publisher"] if response["host_venue"]["publisher"] else self.publisher
+        if response["host_venue"]:
+            response["host_venue"].update(self.host_venue_details_dict)
+            response["host_venue"]["display_name"] = response["host_venue"]["display_name"] if response["host_venue"]["display_name"] else self.original_venue
+            response["host_venue"]["publisher"] = response["host_venue"]["publisher"] if response["host_venue"]["publisher"] else self.publisher
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
