@@ -1,0 +1,5 @@
+OPENALEX STANDARD-FORMAT DATA RELEASE NOTES
+
+RELEASE 2022-01-02
+Released on Jan 2, 2022 at s3://openalex/data/2021-01-02/
+- First release
