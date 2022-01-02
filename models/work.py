@@ -221,11 +221,13 @@ class Work(db.Model):
         if not affiliations:
             return []
 
+        # it seems like sometimes there are 0s and sometimes 1st, so figure out the minimum
+        first_author_sequence_number = min([affil.author_sequence_number for affil in affiliations])
         last_author_sequence_number = max([affil.author_sequence_number for affil in affiliations])
         affiliation_dict = defaultdict(list)
         for affil in affiliations:
             affil.author_position = "middle"
-            if affil.author_sequence_number == 1:
+            if affil.author_sequence_number == first_author_sequence_number:
                 affil.author_position = "first"
             elif affil.author_sequence_number == last_author_sequence_number:
                 affil.author_position = "last"
