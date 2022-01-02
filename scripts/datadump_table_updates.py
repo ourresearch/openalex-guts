@@ -71,7 +71,7 @@ if True:
         if table in tables_to_copy:
             new_table = f"zz{date_of_old_release}_{table}"
             q = f"""
-                create table mid.{new_table} (like {table}); 
+                create table mid.{new_table} (like mid.{table}); 
                 insert into mid.{new_table} (select * from mid.{table});
             """
             print(q)
