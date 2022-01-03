@@ -66,11 +66,9 @@ Record.journal =  db.relationship("Venue", lazy='selectin', uselist=False)
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
 
-def author_from_orcid(orcid):
-    author_orcid = AuthorOrcid.query.filter(AuthorOrcid.orcid==orcid).first()
-    if not author_orcid:
-        return None
-    return author_orcid.author
+def openalex_id_from_orcid(orcid):
+    author_id = db.session.query(AuthorOrcid.author_id).filter(AuthorOrcid.orcid == orcid).scalar()
+    return f"A{author_id}"
 
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
@@ -94,8 +92,9 @@ def institution_from_ror(ror_id):
 def journal_from_id(journal_id):
     return Venue.query.filter(Venue.journal_id == journal_id).first()
 
-def journal_from_issn(issn):
-    return Venue.query.filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).first()
+def openalex_id_from_issn(issn):
+    journal_id = db.session.query(Venue.journal_id).filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).scalar()
+    return f"V{journal_id}"
 
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
