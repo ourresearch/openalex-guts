@@ -87,7 +87,8 @@ class Location(db.Model):
         if self.host_type == "publisher":
             return True
         if self.source_url and "doi" in self.source_url:
-            return True
+            if self.version:
+                return True  # else is probably a component or stub record
         return False
 
     def to_dict(self, return_level="full"):

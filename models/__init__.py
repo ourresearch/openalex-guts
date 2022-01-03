@@ -79,15 +79,10 @@ def concept_from_name(name):
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
 
-def institution_from_ror(ror_id):
-    response = Institution.query.filter(Institution.ror_id==ror_id).order_by(Institution.citation_count.desc()).first()
-    if not response:
-        response_ror = Ror.query.filter(Ror.ror_id==ror_id).first()
-        if not response_ror:
-            return None
-        response_ror.institution_id = None
-        response = response_ror
-    return response
+def openalex_id_from_ror(ror_id):
+    affiliation_id = db.session.query(Institution.affiliation_id).filter(Institution.ror_id==ror_id).order_by(Institution.citation_count.desc()).scalar()
+    print(f"I{affiliation_id}")
+    return f"I{affiliation_id}"
 
 def journal_from_id(journal_id):
     return Venue.query.filter(Venue.journal_id == journal_id).first()
@@ -95,6 +90,10 @@ def journal_from_id(journal_id):
 def openalex_id_from_issn(issn):
     journal_id = db.session.query(Venue.journal_id).filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).scalar()
     return f"V{journal_id}"
+
+def openalex_id_from_wikidata(wikidata):
+    concept_id = db.session.query(Concept.field_of_study_id).filter(Concept.wikidata_id.ilike(f'%{wikidata}')).scalar()
+    return f"C{concept_id}"
 
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
@@ -121,12 +120,12 @@ def work_from_id(work_id):
     my_query = single_work_query()
     return my_query.filter(Work.paper_id==work_id).first()
 
-def work_from_doi(doi):
-    my_query = single_work_query()
-    return my_query.filter(Work.doi_lower == doi).first()
+def openalex_id_from_doi(doi):
+    paper_id = db.session.query(Work.paper_id).filter(Work.doi_lower == doi).scalar()
+    return f"W{paper_id}"
 
-def work_from_pmid(pmid):
+def openalex_id_from_pmid(pmid):
     pmid_attribute_type = 2
-    work_extra_id = WorkExtraIds.query.filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).first()
-    return work_extra_id.work if work_extra_id else None
+    paper_id = db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).scalar()
+    return f"W{paper_id}"
 

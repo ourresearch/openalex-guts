@@ -168,13 +168,27 @@ def normalize_issn(issn):
     issn = issn.replace('\0', '')
     return issn
 
+def normalize_wikidata(wikidata):
+    if not wikidata:
+        return None
+    wikidata = wikidata.strip().upper()
+    p = re.compile("Q\d*")
+    matches = re.findall(p, wikidata)
+    if len(matches) == 0:
+        return None
+    wikidata = matches[0]
+    wikidata = wikidata.replace('\0', '')
+    return wikidata
+
 def is_openalex_id(openalex_id):
     if not openalex_id:
         return False
     openalex_id = openalex_id.lower()
     if re.findall(r"http[s]://openalex.org/([waicv]\d{2,})", openalex_id):
         return True
-    if re.findall(r"([waicv]\d{2,})", openalex_id):
+    if re.findall(r"^([waicv]\d{2,})", openalex_id):
+        return True
+    if re.findall(r"(openalex:[waicv]\d{2,})", openalex_id):
         return True
     return False
 

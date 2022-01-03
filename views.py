@@ -183,17 +183,23 @@ def works_random_get():
 @app.route("/works/<path:id>")
 def works_id_get(id):
     from util import normalize_doi
+
+    obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
             return redirect(url_for("works_id_get", id=clean_id, **request.args))
-        paper_id = int(clean_id[1:])
-        obj = models.work_from_id(paper_id)
-    else:
+        clean_id = int(clean_id[1:])
+        obj = models.work_from_id(clean_id)
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"V{clean_id}"
+        return redirect(url_for("works_id_get", id=clean_id, **request.args))
+    elif id.startswith("doi:") or ("doi" in id):
         clean_doi = normalize_doi(id)
-        if not clean_doi:
-            abort(404)
-        obj = models.work_from_doi(clean_doi)
+        openalex_id = models.openalex_id_from_doi(clean_doi)
+        if openalex_id:
+            return redirect(url_for("works_id_get", id=openalex_id, **request.args))
     if not obj:
         abort(404)
     response = obj.to_dict()
@@ -235,28 +241,6 @@ def authors_id_get(id):
     response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
-def temp_venues_id_get(id):
-    from util import normalize_issn
-    obj = None
-    if is_openalex_id(id):
-        clean_id = normalize_openalex_id(id)
-        if clean_id != id:
-            return redirect(url_for("venues_id_get", id=clean_id, **request.args))
-        clean_id = int(clean_id[1:])
-        obj = models.journal_from_id(clean_id)
-    elif id.startswith("mag:"):
-        clean_id = id.replace("mag:", "")
-        clean_id = f"V{clean_id}"
-        return redirect(url_for("venues_id_get", id=clean_id, **request.args))
-    elif id.startswith("issn:"):
-        clean_issn = normalize_issn(id)
-        openalex_id = models.openalex_id_from_issn(clean_issn)
-        if openalex_id:
-            return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
-    if not obj:
-        abort(404)
-    response = obj.to_dict()
-    return jsonify_fast_no_sort(response)
 
 # #### Institution
 
@@ -272,21 +256,28 @@ def institutions_random_get():
 @app.route("/institutions/<path:id>")
 def institutions_id_get(id):
     from util import normalize_ror
+
+    obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
             return redirect(url_for("institutions_id_get", id=clean_id, **request.args))
         clean_id = int(clean_id[1:])
         obj = models.institution_from_id(clean_id)
-    else:
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"V{clean_id}"
+        return redirect(url_for("institutions_id_get", id=clean_id, **request.args))
+    elif id.startswith("ror:") or ("ror.org" in id):
         clean_ror = normalize_ror(id)
-        if not clean_ror:
-            abort(404)
-        obj = models.institution_from_ror(clean_ror)
+        openalex_id = models.openalex_id_from_ror(clean_ror)
+        if openalex_id:
+            return redirect(url_for("institutions_id_get", id=openalex_id, **request.args))
     if not obj:
         abort(404)
     response = obj.to_dict()
     return jsonify_fast_no_sort(response)
+
 
 #### Venue
 
@@ -340,25 +331,29 @@ def concepts_random_get():
 
 @app.route("/concepts/<path:id>")
 def concepts_id_get(id):
+    from util import normalize_wikidata
+
+    obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
             return redirect(url_for("concepts_id_get", id=clean_id, **request.args))
         clean_id = int(clean_id[1:])
-    return jsonify_fast_no_sort(models.concept_from_id(clean_id).to_dict())
+        obj = models.concept_from_id(clean_id)
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"V{clean_id}"
+        return redirect(url_for("concepts_id_get", id=clean_id, **request.args))
+    elif id.startswith("wikidata:") or ("wikidata" in id):
+        clean_wikidata = normalize_wikidata(id)
+        openalex_id = models.openalex_id_from_wikidata(clean_wikidata)
+        if openalex_id:
+            return redirect(url_for("concepts_id_get", id=openalex_id, **request.args))
+    if not obj:
+        abort(404)
+    response = obj.to_dict()
+    return jsonify_fast_no_sort(response)
 
-@app.route("/concepts/wikidata/<path:wikidata_id>")
-def concepts_wikidata_get(wikidata_id):
-    pass
-    # from util import normalize_wikidata_id
-    # clean_ror = normalize_ror(ror)
-    # if not clean_ror:
-    #     abort(404)
-    # obj = models.institutions_from_ror(clean_ror)
-    # if not obj:
-    #     abort(404)
-    # response = obj.to_dict()
-    # return jsonify_fast_no_sort(response)
 
 @app.route("/concepts/name/<string:name>")
 def concepts_name_get(name):
