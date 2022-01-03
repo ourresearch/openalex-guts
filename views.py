@@ -214,23 +214,49 @@ def authors_random_get():
 @app.route("/authors/<path:id>")
 def authors_id_get(id):
     from util import normalize_orcid
+    obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
             return redirect(url_for("authors_id_get", id=clean_id, **request.args))
         author_id = int(clean_id[1:])
         obj = models.author_from_id(author_id)
-    else:
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"A{clean_id}"
+        return redirect(url_for("authors_id_get", id=clean_id, **request.args))
+    elif id.startswith("orcid:") or id.startswith("https://orcid.org"):
         clean_orcid = normalize_orcid(id)
-        if not clean_orcid:
-            abort(404)
-        obj = models.author_from_orcid(clean_orcid)
+        openalex_id = models.openalex_id_from_orcid(clean_orcid)
+        if openalex_id:
+            return redirect(url_for("authors_id_get", id=openalex_id, **request.args))
     if not obj:
         abort(404)
     response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
-
+def temp_venues_id_get(id):
+    from util import normalize_issn
+    obj = None
+    if is_openalex_id(id):
+        clean_id = normalize_openalex_id(id)
+        if clean_id != id:
+            return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+        clean_id = int(clean_id[1:])
+        obj = models.journal_from_id(clean_id)
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"V{clean_id}"
+        return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+    elif id.startswith("issn:"):
+        clean_issn = normalize_issn(id)
+        openalex_id = models.openalex_id_from_issn(clean_issn)
+        if openalex_id:
+            return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
+    if not obj:
+        abort(404)
+    response = obj.to_dict()
+    return jsonify_fast_no_sort(response)
 
 # #### Institution
 
@@ -279,17 +305,22 @@ def venues_random_get():
 @app.route("/venues/<path:id>")
 def venues_id_get(id):
     from util import normalize_issn
+    obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
             return redirect(url_for("venues_id_get", id=clean_id, **request.args))
         clean_id = int(clean_id[1:])
         obj = models.journal_from_id(clean_id)
-    else:
+    elif id.startswith("mag:"):
+        clean_id = id.replace("mag:", "")
+        clean_id = f"V{clean_id}"
+        return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+    elif id.startswith("issn:"):
         clean_issn = normalize_issn(id)
-        if not clean_issn:
-            abort(404)
-        obj = models.journal_from_issn(clean_issn)
+        openalex_id = models.openalex_id_from_issn(clean_issn)
+        if openalex_id:
+            return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
     if not obj:
         abort(404)
     response = obj.to_dict()

@@ -93,7 +93,7 @@ class Institution(db.Model):
     #     return None
 
     @cached_property
-    def acroynyms(self):
+    def acronyms(self):
         q = """
         select acronym
         from ins.ror_acronyms
@@ -397,9 +397,9 @@ class Institution(db.Model):
                 "homepage_url": self.official_page,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
-                "display_name_acroynyms": self.acroynyms,
+                "display_name_acronyms": self.acronyms,
                 "display_name_alternatives": self.aliases,
-                "works_count": self.paper_count,
+                "works_count": self.paper_count if self.paper_count else 0,
                 "cited_by_count": self.citation_count,
                 "ids": {
                     "openalex": self.openalex_id,

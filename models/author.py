@@ -174,7 +174,7 @@ class Author(db.Model):
         if return_level == "full":
             response.update({
                 "display_name_alternatives": self.all_alternative_names,
-                "works_count": self.paper_count,
+                "works_count": self.paper_count if self.paper_count else 0,
                 "cited_by_count": self.citation_count,
                 "ids": {
                     "openalex": self.openalex_id,

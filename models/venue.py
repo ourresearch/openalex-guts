@@ -127,7 +127,7 @@ class Venue(db.Model):
         }
         if return_level == "full":
             response.update({
-                "works_count": self.paper_count,
+                "works_count": self.paper_count if self.paper_count else 0,
                 "cited_by_count": self.citation_count,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,

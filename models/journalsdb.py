@@ -24,8 +24,8 @@ class Journalsdb(db.Model):
             response.update({"id": None,
                              "display_name": None,
                              "homepage_url": None,
-                             "works_count": None,
-                             "cited_by_count": None,
+                             "works_count": 0,
+                             "cited_by_count": 0,
                              "updated_date": None
                              })
         response.update({
