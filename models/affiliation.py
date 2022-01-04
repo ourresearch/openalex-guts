@@ -31,13 +31,12 @@ class Affiliation(db.Model):
         # author_position set in works
         if hasattr(self, "author_position"):
             response["author_position"] = self.author_position
-        # keep in this order so author_position is at the top
-        response.update({"author": None, "institution": None})
 
-        if self.original_author:
-            response["author"] = {"id": self.author_id, "display_name": self.original_author, "orcid": None}
-        if self.original_affiliation:
-            response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
+        # keep in this order so author_position is at the top
+        response.update({"author": {}, "institution": {}})
+
+        response["author"] = {"id": self.author_id, "display_name": self.original_author, "orcid": None}
+        response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
 
         # overwrite display name with better ones from these dicts if we have them
         if self.author:
