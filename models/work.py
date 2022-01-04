@@ -235,7 +235,7 @@ class Work(db.Model):
         response = []
         for seq, affil_list in affiliation_dict.items():
             institution_list = [a["institution"] for a in affil_list]
-            if institution_list == [None]:
+            if institution_list == [{}]:
                 institution_list = []
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
