@@ -421,7 +421,7 @@ class Institution(db.Model):
                 "international": {"display_name": self.display_name_international},
                 # "labels": self.labels,
                 # "links": self.links,
-                "associated_insitutions": self.relationship_dicts,
+                "associated_institutions": self.relationship_dicts,
                 # "ids": self.external_ids,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
