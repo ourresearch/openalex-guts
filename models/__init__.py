@@ -67,7 +67,7 @@ def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
 
 def openalex_id_from_orcid(orcid):
-    author_id = db.session.query(AuthorOrcid.author_id).filter(AuthorOrcid.orcid == orcid).scalar()
+    author_id = db.session.query(AuthorOrcid.author_id).filter(AuthorOrcid.orcid == orcid).limit(1).scalar()
     return f"A{author_id}"
 
 def concept_from_id(concept_id):
