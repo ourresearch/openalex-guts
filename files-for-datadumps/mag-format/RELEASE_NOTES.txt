@@ -1,5 +1,7 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
+License updated to ODC-BY for OpenAlex MAG-format
+
 RELEASE 2022-01-02
 Released on Jan 2, 2022 at s3://openalex-mag-format/data_dump_v1/2022-01-02/
 - MAG is no longer releasing new data, so all new data in this release and going forward is a result of
