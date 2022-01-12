@@ -1,4 +1,4 @@
-web: DATABASE_TO_USE=api gunicorn views:app -w 2 --timeout 36000 --reload
+web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
 
 run_queue_store_work_q1a: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1a$DYNO-${i} --randstart
 run_queue_store_work_q1b: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1b$DYNO-${i} --randstart
