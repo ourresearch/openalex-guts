@@ -68,7 +68,7 @@ def author_from_id(author_id):
 
 def openalex_id_from_orcid(orcid):
     author_id = db.session.query(AuthorOrcid.author_id).filter(AuthorOrcid.orcid == orcid).limit(1).scalar()
-    return f"A{author_id}"
+    return f"A{author_id}" if author_id else None
 
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
@@ -82,18 +82,18 @@ def institution_from_id(institution_id):
 def openalex_id_from_ror(ror_id):
     affiliation_id = db.session.query(Institution.affiliation_id).filter(Institution.ror_id==ror_id).order_by(Institution.citation_count.desc()).limit(1).scalar()
     print(f"I{affiliation_id}")
-    return f"I{affiliation_id}"
+    return f"I{affiliation_id}" if affiliation_id else None
 
 def journal_from_id(journal_id):
     return Venue.query.filter(Venue.journal_id == journal_id).first()
 
 def openalex_id_from_issn(issn):
     journal_id = db.session.query(Venue.journal_id).filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).limit(1).scalar()
-    return f"V{journal_id}"
+    return f"V{journal_id}" if journal_id else None
 
 def openalex_id_from_wikidata(wikidata):
     concept_id = db.session.query(Concept.field_of_study_id).filter(Concept.wikidata_id.ilike(f'%{wikidata}')).limit(1).scalar()
-    return f"C{concept_id}"
+    return f"C{concept_id}" if concept_id else None
 
 def record_from_id(record_id):
     return Record.query.filter(Record.id==record_id).first()
@@ -122,10 +122,10 @@ def work_from_id(work_id):
 
 def openalex_id_from_doi(doi):
     paper_id = db.session.query(Work.paper_id).filter(Work.doi_lower == doi).limit(1).scalar()
-    return f"W{paper_id}"
+    return f"W{paper_id}" if paper_id else None
 
 def openalex_id_from_pmid(pmid):
     pmid_attribute_type = 2
     paper_id = db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).limit(1).scalar()
-    return f"W{paper_id}"
+    return f"W{paper_id}" if paper_id else None
 

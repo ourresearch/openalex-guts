@@ -196,7 +196,9 @@ def works_id_get(id):
         clean_id = f"V{clean_id}"
         return redirect(url_for("works_id_get", id=clean_id, **request.args))
     elif id.startswith("doi:") or ("doi" in id):
-        clean_doi = normalize_doi(id)
+        clean_doi = normalize_doi(id, return_none_if_error=True)
+        if not clean_doi:
+            abort(404)
         openalex_id = models.openalex_id_from_doi(clean_doi)
         if openalex_id:
             return redirect(url_for("works_id_get", id=openalex_id, **request.args))
