@@ -107,6 +107,8 @@ class DbQueue(object):
             db.session.commit()
         if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
+        if self.myclass == models.Work and method_name=="refresh":
+            db.session.commit()
 
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
@@ -232,7 +234,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         and paper_id > 2885216492
-                        -- and paper_id < {MAX_MAG_ID}
+                        and paper_id < {MAX_MAG_ID}
                         order by random()
                         limit {chunk};
                 """
@@ -248,6 +250,13 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = "mid.work_concept"
+            elif self.myclass == models.Work and run_method=="refresh":
+                text_query_pattern_select = """
+                    select paper_id from mid.work
+                        where created_date > '2022-01-01' and created_date < '2022-01-10' and started is null
+                        order by random()
+                        limit {chunk};
+                """
             elif self.myclass == models.Record:
                 # text_query_pattern_select = """
                 #     select {id_field_name}
@@ -361,19 +370,23 @@ class DbQueue(object):
                     print(object_ids)
                     if (self.myclass == models.Work) and (run_method.startswith("store")):
                         # no abstracts
-                        objects = db.session.query(models.Work).options(
-                             selectinload(models.Work.locations),
-                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                             selectinload(models.Work.references),
-                             selectinload(models.Work.mesh),
-                             selectinload(models.Work.counts_by_year),
-                             # selectinload(models.Work.abstract),
-                             selectinload(models.Work.extra_ids),
-                             selectinload(models.Work.related_works),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        try:
+                            objects = db.session.query(models.Work).options(
+                                 selectinload(models.Work.locations),
+                                 selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                                 selectinload(models.Work.references),
+                                 selectinload(models.Work.mesh),
+                                 selectinload(models.Work.counts_by_year),
+                                 # selectinload(models.Work.abstract),
+                                 selectinload(models.Work.extra_ids),
+                                 selectinload(models.Work.related_works),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        except:
+                            print(u"Exception fetching IDs {object_ids}")
+                            objects = []
                     elif self.myclass == models.Work and run_method != "new_work_concepts":
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
