@@ -518,6 +518,11 @@ class Concept(db.Model):
                 "works_api_url": f"https://api.openalex.org/works?filter=concepts.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })
+
+            # only include non-null IDs
+            for id_type in list(response["ids"].keys()):
+                if response["ids"][id_type] == None:
+                    del response["ids"][id_type]
         return response
 
     def __repr__(self):
