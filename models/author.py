@@ -184,13 +184,17 @@ class Author(db.Model):
                     "wikipedia": self.wikipedia_url,
                     "mag": self.author_id if self.author_id < MAX_MAG_ID else None
                 },
-                # "orcid_data_person": self.orcid_data_person,
                 "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date
             })
+
+            # only include non-null IDs
+            for id_type in list(response["ids"].keys()):
+                if response["ids"][id_type] == None:
+                    del response["ids"][id_type]
         return response
 
     def __repr__(self):

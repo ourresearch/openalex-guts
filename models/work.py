@@ -108,6 +108,9 @@ class Work(db.Model):
 
     match_title = db.Column(db.Text)
 
+    started = db.Column(db.DateTime)
+    finished = db.Column(db.DateTime)
+    started_label = db.Column(db.Text)
 
 
     def __init__(self, **kwargs):
@@ -178,27 +181,132 @@ class Work(db.Model):
                                     )}]
 
 
+    def set_fields_from_record(self, record):
+        from sqlalchemy import select
+        from sqlalchemy import func
+
+        self.original_venue = record.original_venue
+        self.publisher = record.journal.publisher
+        self.publication_date = record.publication_date
+        self.year = record.publication_date[0:4] if record.publication_date else None
+        self.online_date = record.publication_date
+        self.paper_title = select(func.util.f_mag_normalize_string(self.original_title))
+        self.online_date = record.publication_date
+        self.volume = record.volume
+        self.issue = record.issue
+        self.first_page = record.first_page
+        self.last_page = record.last_page
+        self.doc_sub_types = "Retracted" if record.is_retracted else None
+        self.genre = record.normalized_type
+
+
     def refresh(self):
-        print("refreshing! {}".format(self.id))
-        self.title = self.records[0].title
+        from models import Record
 
-        # throw out components
+        # - [x] what should be a work
+        # - [x] get work IDs minted
+        # - [x] concepts for those work IDs
+        # all handled via SQL for now
+        #
+        # - [ ] other easy things we can get from recordthresher
+        # - [ ] other things we can figure out
+        # - [ ] mesh
+        # - [ ] abstract
+        # - [ ] additional ids
+        # - [ ] other things we can get from unpaywall
+        #     - [ ] base
+        #     - [ ] location
+        # - [ ] complicated
+        #     - [ ] citations
+        #     - [ ] authors (after citations)
+        #     - [ ] institutions
+        #     - [ ] last known institutions
+        # - [ ] related papers (after author stuff)
+        # - [ ] update citation counts for everything
 
-        # build easy metadata (mesh, biblio)
-        # get abstract, build its index
-        # extract paper urls, join with unpaywall
-        # assign paper recommendations
-        # build citations list (combine crossref + pubmed via some way, look up IDs)
-        # build author list (has to be after citations list)
-        # build institution list
+        print(f"refreshing! {self.id}")
+        self.started = datetime.datetime.utcnow().isoformat()
+        self.finished = datetime.datetime.utcnow().isoformat()
+        print(f"my records: {records}")
 
-        # later
-        # build concept list (call concept API)
-        # maybe
-        # assign PaperExtendedAttributes, etc, look up other things in schema
+        # go through them with oldest first, and least reliable record type to most reliable, overwriting
+        records = Record.query.filter(Record.work_id==self.paper_id).order_by(Record.updated.asc()).all()
+        for record in records:
+            if record.record_type == "pmh_record":
+                self.set_fields_from_record(record)
+        for record in records:
+            if record.record_type == "pubmed_record":
+                self.set_fields_from_record(record)
+        for record in records:
+            if record.record_type == "crossref_doi":
+                self.set_fields_from_record(record)
 
-        self.updated = datetime.datetime.utcnow().isoformat()
-        print("done! {}".format(self.id))
+        print(f"done! {self.id}")
+
+        #
+        # get all the stuff you should get from recordthresher like
+        #
+        # set the publisher from the journal
+        # set the journal name if necessary
+        #
+        # # make sure this is all set, and do it before the next step
+        # update mid.work set doi_lower=lower(doi) where doi_lower is null and doi is not null
+        #
+        # # add unpaywall data to eveything with a doi that doesn't have it yet
+        #
+        # update mid.work set best_url=record_webpage_url
+        # from mid.work t1
+        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
+        # where t1.paper_id > 4200000000
+        # and t1.best_url is null
+        #
+        # update mid.work set is_paratext=t3.is_paratext::boolean, oa_status=t3.oa_status, best_free_url=t3.best_oa_location_url, best_free_version=t3.best_oa_location_version
+        # from mid.work t1
+        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
+        # join ins.unpaywall_recordthresher_fields_view t3 on t2.id = t3.recordthresher_id
+        # where t1.paper_id > 4200000000
+        #
+        # select
+        # (t3.is_paratext::text = 'true'), t3.oa_status, t3.best_oa_location_url, t3.best_oa_location_version
+        # from mid.work t1
+        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
+        # join ins.unpaywall_recordthresher_fields_view t3 on t2.id = t3.recordthresher_id
+        # where t1.paper_id > 4200000000
+        # and work_id=4200457617
+        #
+        # update mid.work set original_venue=t2.display_name
+        # from mid.work t1
+        # join mid.journal t2 on t1.journal_id = t2.journal_id
+        # where t1.paper_id > 4200000000
+        # and t1.journal_id is not null
+        # and t1.original_venue is null
+        #
+        #
+        # update mid.work set year=extract(year from publication_date::timestamp)
+        # where paper_id > 4200000000 and year is null
+        #
+        # select extract(year from publication_date::timestamp), count(*) from mid.work
+        # where paper_id > 4200000000 and publication_date is not null
+        # group by extract(year from publication_date::timestamp)
+        #
+        # insert into mid.citation (paper_id, paper_reference_id)
+        # (select parse.paper_id, work.paper_id as paper_reference_id
+        # from util.parse_citation_view parse
+        # join mid.work work on work.doi_lower = parse.referenced_doi
+        # )
+        #
+        #
+        # UPDATE temp_candidate_authors set matching_author_id = t1.my_author_id
+        # FROM
+        # (
+        #     SELECT 1 + 4202861942 + row_number() over (partition by 1) AS my_author_id, paper_id, author_sequence_number
+        #     FROM temp_candidate_authors
+        # ) AS t1
+        # WHERE temp_candidate_authors.paper_id = t1.paper_id
+        # and temp_candidate_authors.author_sequence_number = t1.author_sequence_number
+        # and temp_candidate_authors.matching_author_id is null
+        #
+        # -- related_work
 
     @cached_property
     def is_retracted(self):
@@ -455,6 +563,12 @@ class Work(db.Model):
                 "cited_by_api_url": self.cited_by_api_url,
                 "updated_date": self.updated_date,
                 })
+
+        # only include non-null IDs
+        for id_type in list(response["ids"].keys()):
+            if response["ids"][id_type] == None:
+                del response["ids"][id_type]
+
         return response
 
 
