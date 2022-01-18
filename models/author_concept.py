@@ -2,9 +2,11 @@ from cached_property import cached_property
 from app import db
 from models.concept import as_concept_openalex_id
 
+# refresh materialized view mid.author_concept_for_api_mv (1200 seconds)
+
 class AuthorConcept(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "author_concepts"
+    __tablename__ = "author_concept_for_api_mv"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     field_of_study_id = db.Column(db.BigInteger, primary_key=True)
