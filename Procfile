@@ -1,5 +1,7 @@
 web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
 
+run_queue_refresh_work: python -m scripts.queue --run --table=work --method=refresh --chunk=10 --name=queue_work-refresh$DYNO-${i}
+
 run_queue_store_work_q1a: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1a$DYNO-${i} --randstart
 run_queue_store_work_q1b: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1b$DYNO-${i} --randstart
 run_queue_store_work_q1c: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1c$DYNO-${i} --randstart
