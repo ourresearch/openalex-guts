@@ -185,13 +185,16 @@ class Work(db.Model):
         from sqlalchemy import select
         from sqlalchemy import func
 
-        self.original_venue = record.original_venue
-        self.publisher = record.journal.publisher
-        self.publication_date = record.publication_date
-        self.year = record.publication_date[0:4] if record.publication_date else None
-        self.online_date = record.publication_date
-        self.paper_title = select(func.util.f_mag_normalize_string(self.original_title))
-        self.online_date = record.publication_date
+        # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
+        if record.journal:
+            self.original_venue = record.journal.display_name
+            self.publisher = record.journal.publisher
+
+        self.publication_date = record.published_date
+        self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
+        # self.online_date = record.published_date
+
+        self.paper_title = select(func.util.f_mag_normalize_string(self.original_title)).scalar_subquery()
         self.volume = record.volume
         self.issue = record.issue
         self.first_page = record.first_page
@@ -227,10 +230,11 @@ class Work(db.Model):
         print(f"refreshing! {self.id}")
         self.started = datetime.datetime.utcnow().isoformat()
         self.finished = datetime.datetime.utcnow().isoformat()
-        print(f"my records: {records}")
 
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
         records = Record.query.filter(Record.work_id==self.paper_id).order_by(Record.updated.asc()).all()
+        print(f"my records: {records}")
+
         for record in records:
             if record.record_type == "pmh_record":
                 self.set_fields_from_record(record)
@@ -559,10 +563,8 @@ class Work(db.Model):
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
             response["counts_by_year"] = self.display_counts_by_year
-            response.update({
-                "cited_by_api_url": self.cited_by_api_url,
-                "updated_date": self.updated_date,
-                })
+            response["cited_by_api_url"] = self.cited_by_api_url
+            response["updated_date"] = self.updated_date
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
