@@ -103,12 +103,18 @@ class DbQueue(object):
                     method_name=method_name,
                     elapsed=elapsed(start_time, 4)))
 
+                if self.myclass == models.Work and method_name=="refresh":
+                    db.session.commit()
+
+
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
         if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
-        if self.myclass == models.Work and method_name=="refresh":
-            db.session.commit()
+
+        # try moving it up
+        # if self.myclass == models.Work and method_name=="refresh":
+        #     db.session.commit()
 
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
