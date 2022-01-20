@@ -31,11 +31,11 @@ run_queue_store_author_h2b:  DATABASE_TO_USE=h2author python -m scripts.queue --
 run_queue_store_author_h2c:  DATABASE_TO_USE=h2author python -m scripts.queue --run --table=author --method=store_author_h2 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-h2c$DYNO-${i} --randstart
 run_queue_store_author_h2d:  DATABASE_TO_USE=h2author python -m scripts.queue --run --table=author --method=store_author_h2 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_author-h2d$DYNO-${i} --randstart
 
-run_queue_store_work: DATABASE_TO_USE=q2work python -m scripts.queue --run --table=work --method=store --chunk=1000 --name=queue_work$DYNO-${i} --randstart
-run_queue_store_author: DATABASE_TO_USE=q2work python -m scripts.queue --run --table=author --method=store --chunk=1000 --name=queue_author$DYNO-${i} --randstart
-run_queue_store_venue: DATABASE_TO_USE=q2work python -m scripts.queue --run --table=venue --method=store --chunk=100 --name=queue_venue$DYNO-${i} --randstart
-run_queue_store_institution: DATABASE_TO_USE=q2work python -m scripts.queue --run --table=institution --method=store --chunk=100 --name=queue_institution$DYNO-${i} --randstart
-run_queue_store_concept: DATABASE_TO_USE=q2work python -m scripts.queue --run --table=concept --method=store --chunk=100 --name=queue_concept$DYNO-${i} --randstart
+run_queue_store_work: DATABASE_TO_USE=h1author python -m scripts.queue --run --table=work --method=store --chunk=1000 --name=queue_work$DYNO-${i} --randstart
+run_queue_store_author: DATABASE_TO_USE=h1author python -m scripts.queue --run --table=author --method=store --chunk=1000 --name=queue_author$DYNO-${i} --randstart
+run_queue_store_venue: DATABASE_TO_USE=h1author python -m scripts.queue --run --table=venue --method=store --chunk=100 --name=queue_venue$DYNO-${i} --randstart
+run_queue_store_institution: DATABASE_TO_USE=h1author python -m scripts.queue --run --table=institution --method=store --chunk=100 --name=queue_institution$DYNO-${i} --randstart
+run_queue_store_concept: DATABASE_TO_USE=h1author python -m scripts.queue --run --table=concept --method=store --chunk=100 --name=queue_concept$DYNO-${i} --randstart
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 
