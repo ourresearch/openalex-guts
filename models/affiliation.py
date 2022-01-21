@@ -46,7 +46,7 @@ class Affiliation(db.Model):
             response["institution"].update(self.institution.to_dict(return_level="minimum"))
 
         response["author_sequence_number"] = self.author_sequence_number
-        response["raw_affiliation"] = self.original_affiliation
+        response["raw_affiliation_string"] = self.original_affiliation
 
         return response
 
