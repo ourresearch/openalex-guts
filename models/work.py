@@ -124,7 +124,7 @@ class Work(db.Model):
 
     @property
     def cited_by_api_url(self):
-        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id_short}",
+        return f"https://api.openalex.org/works?filter=cites:{self.openalex_id_short}"
 
     @property
     def openalex_id(self):
@@ -352,9 +352,8 @@ class Work(db.Model):
                 institution_list = []
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
-                             "institutions": institution_list
-                # ,
-                #              "raw_affiliation": affil_list[0]["raw_affiliation"]
+                             "institutions": institution_list,
+                             "raw_affiliation_string": affil_list[0]["raw_affiliation_string"]
                      }
             response.append(response_dict)
         return response
