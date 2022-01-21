@@ -259,7 +259,7 @@ class DbQueue(object):
             elif self.myclass == models.Work and run_method=="refresh":
                 text_query_pattern_select = """
                     select paper_id from mid.work
-                        where created_date > '2022-01-01' and created_date < '2022-01-10' and started is null
+                        where created_date > '2022-01-01' and started is null
                         order by random()
                         limit {chunk};
                 """
@@ -393,8 +393,9 @@ class DbQueue(object):
                         except:
                             print(u"Exception fetching IDs {object_ids}")
                             objects = []
-                    elif self.myclass == models.Work and run_method != "new_work_concepts":
+                    elif self.myclass == models.Work and run_method=="refresh":
                         objects = db.session.query(models.Work).options(
+                             selectinload(models.Work.records),  # only use this one for refresh
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              selectinload(models.Work.references),
@@ -420,6 +421,21 @@ class DbQueue(object):
                             objects = db.session.execute(text(q)).fetchall()
                         except:
                             objects = []
+                    elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
+                        objects = db.session.query(models.Work).options(
+                             # selectinload(models.Work.records),  # only need this for refresh
+                             selectinload(models.Work.locations),
+                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                             selectinload(models.Work.references),
+                             selectinload(models.Work.mesh),
+                             selectinload(models.Work.counts_by_year),
+                             selectinload(models.Work.abstract),
+                             selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.related_works),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Record:
                         objects = db.session.query(models.Record).options(
                              # selectinload(models.Record.work_matches_by_title).raiseload('*'),

@@ -232,7 +232,8 @@ class Work(db.Model):
         self.finished = datetime.datetime.utcnow().isoformat()
 
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
-        records = Record.query.filter(Record.work_id==self.paper_id).order_by(Record.updated.asc()).all()
+        records = sorted(self.records, key=lambda x: x.updated, reverse=True)
+
         print(f"my records: {records}")
 
         for record in records:
@@ -351,7 +352,9 @@ class Work(db.Model):
                 institution_list = []
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
-                             "institutions": institution_list,
+                             "institutions": institution_list
+                # ,
+                #              "raw_affiliation": affil_list[0]["raw_affiliation"]
                      }
             response.append(response_dict)
         return response

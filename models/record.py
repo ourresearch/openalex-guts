@@ -78,7 +78,7 @@ class Record(db.Model):
     normalized_doc_type = db.Column(db.Text)
 
     # relationship to works is set in Work
-    work_id = db.Column(db.BigInteger)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
     # work_matches_by_title = db.relationship(
     #     'Work',
