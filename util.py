@@ -651,30 +651,6 @@ def get_sql_answers(db, q):
         return []
     return [row[0] for row in rows]
 
-def normalize_title(title):
-    if not title:
-        return ""
-
-    # just first n characters
-    response = title[0:500]
-
-    # lowercase
-    response = response.lower()
-
-    # deal with unicode
-    response = unidecode(str(response))
-
-    # has to be before remove_punctuation
-    # the kind in titles are simple <i> etc, so this is simple
-    response = clean_html(response)
-
-    # remove articles and common prepositions
-    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
-
-    # remove everything except alphas
-    response = remove_everything_but_alphas(response)
-
-    return response
 
 
 # from https://gist.github.com/douglasmiranda/5127251
@@ -851,8 +827,8 @@ class TimingMessages(object):
         self.messages.append(self.format_timing_message("TOTAL", use_start_time=True))
         return self.messages
 
-
-def normalize_title(title):
+# like the one below but similar to what we used in redshift
+def normalize_title_like_sql(title):
     import unidecode
     import re
 
@@ -879,5 +855,32 @@ def normalize_title(title):
 
     # remove everything except alphas
     response = u"".join(e for e in response if (e.isalpha()))
+
+    return response
+
+
+# inspired the version above
+def normalize_title(title):
+    if not title:
+        return ""
+
+    # just first n characters
+    response = title[0:500]
+
+    # lowercase
+    response = response.lower()
+
+    # deal with unicode
+    response = unidecode(str(response))
+
+    # has to be before remove_punctuation
+    # the kind in titles are simple <i> etc, so this is simple
+    response = clean_html(response)
+
+    # remove articles and common prepositions
+    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
+
+    # remove everything except alphas
+    response = remove_everything_but_alphas(response)
 
     return response
