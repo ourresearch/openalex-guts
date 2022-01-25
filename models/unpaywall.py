@@ -3,7 +3,7 @@ from app import db
 
 class Unpaywall(db.Model):
     __table_args__ = {'schema': 'ins'}
-    __tablename__ = "unpaywall_recordthresher_fields_view"
+    __tablename__ = "unpaywall_recordthresher_fields_mv"
 
     recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
     doi = db.Column(db.Text)
