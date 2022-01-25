@@ -1,5 +1,13 @@
-OPENALEX STANDARD-FORMAT DATA RELEASE NOTES
+OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
+
+RELEASE 2022-01-24
+- added work.abstract_inverted_index
+- added work.affiliations.raw_affiliation_string
+- changed the type of work.cited_by_api_url: was a list by mistake, now a string
+- removed ids that have a NULL value from the "ids" dict for all five entity types
+- corrected the spelling of institution.associated_institutions
+- does not include new entities since last release: a new snapshot will be released soon with recently-published works
 
 RELEASE 2022-01-02
-Released on Jan 2, 2022 at s3://openalex/data/2021-01-02/
+Released on Jan 2, 2022 at s3://openalex/data/
 - First release
