@@ -401,10 +401,22 @@ class DbQueue(object):
                             work_record_dicts[work_id] += [recordthresher_id]
 
                         # get records in bulk to get them fast
-                        record_objects = db.session.query(models.Record).options(
-                             selectinload(models.Record.journal),
-                             selectinload(models.Record.unpaywall),
-                             orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
+                        try:
+                            record_objects = db.session.query(models.Record).options(
+                                 selectinload(models.Record.journal),
+                                 selectinload(models.Record.unpaywall),
+                                 orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
+                        except:
+                            # running in to some "invalid continuation byte" problems, see if I can figure them out
+                            record_objects = []
+                            for id in recordthresher_ids:
+                                try:
+                                    record_objects += db.session.query(models.Record).options(
+                                         selectinload(models.Record.journal),
+                                         selectinload(models.Record.unpaywall),
+                                         orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
+                                except:
+                                    print(f"error: failed on recordthresher_id {id}")
 
                         objects = []
                         for work_id in work_record_dicts:
