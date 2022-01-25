@@ -56,6 +56,7 @@ class Record(db.Model):
     repository_id = db.Column(db.Text)
     journal_id = db.Column(db.Text)
     journal_issn_l = db.Column(db.Text, db.ForeignKey("mid.journal.issn"))
+    venue_name = db.Column(db.Text)
 
     # record data
     record_webpage_url = db.Column(db.Text)

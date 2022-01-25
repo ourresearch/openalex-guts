@@ -17,6 +17,7 @@ from models.venue import Venue
 from models.location import Location
 from models.mesh import Mesh
 from models.record import Record
+from models.unpaywall import Unpaywall
 from models.work import Work
 from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
@@ -62,7 +63,7 @@ Venue.counts_by_year = db.relationship("VenueCountsByYear", lazy='selectin', bac
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")
 
 Record.journal =  db.relationship("Venue", lazy='selectin', uselist=False)
-
+Record.unpaywall =  db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()

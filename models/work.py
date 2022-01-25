@@ -17,6 +17,7 @@ from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from util import normalize_title
 from util import jsonify_fast_no_sort_raw
+from util import normalize_simple
 
 
 # truncate mid.work
@@ -184,23 +185,43 @@ class Work(db.Model):
     def set_fields_from_record(self, record):
         from sqlalchemy import select
         from sqlalchemy import func
+        from util import clean_doi
 
         # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
-        if record.journal:
-            self.original_venue = record.journal.display_name
-            self.publisher = record.journal.publisher
+        self.paper_id = record.work_id
+        self.original_title = record.title
+        self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
+        self.doc_type = record.normalized_doc_type
+        self.created_date = datetime.datetime.utcnow().isoformat()
+        self.updated_date = datetime.datetime.utcnow().isoformat()
+        self.match_title = record.match_title
 
-        self.publication_date = record.published_date
+        self.original_venue = record.venue_name
+        if record.journal:
+            self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
+            self.publisher = record.journal.publisher
+            self.journal_id = record.journal.journal_id
+
+        self.doi = record.doi
+        self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
+        self.publication_date = record.published_date.isoformat()[0:10]
         self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
         # self.online_date = record.published_date
 
-        self.paper_title = select(func.util.f_mag_normalize_string(self.original_title)).scalar_subquery()
         self.volume = record.volume
         self.issue = record.issue
         self.first_page = record.first_page
         self.last_page = record.last_page
         self.doc_sub_types = "Retracted" if record.is_retracted else None
         self.genre = record.normalized_type
+        self.best_url = record.record_webpage_url
+
+        if record.unpaywall:
+            self.is_paratext = record.unpaywall.is_paratext
+            self.oa_status = record.unpaywall.oa_status
+            self.best_free_url = record.unpaywall.best_oa_location_url
+            self.best_free_version = record.unpaywall.best_oa_location_version
+
 
 
     def refresh(self):
@@ -227,6 +248,8 @@ class Work(db.Model):
         # - [ ] related papers (after author stuff)
         # - [ ] update citation counts for everything
 
+        # select count(distinct work_id) from mid.work_match_recordthresher where work_id > 4205086888
+
         print(f"refreshing! {self.id}")
         self.started = datetime.datetime.utcnow().isoformat()
         self.finished = datetime.datetime.utcnow().isoformat()
@@ -246,60 +269,20 @@ class Work(db.Model):
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
 
+        self.started_label = "new from match"
+
+        insert_dict = {}
+        for key in self.get_insert_dict_fieldnames("mid.work"):
+            insert_dict[key] = getattr(self, key)
+        self.insert_dicts = [{"mid.work": insert_dict}]
+
         print(f"done! {self.id}")
 
-        #
-        # get all the stuff you should get from recordthresher like
-        #
-        # set the publisher from the journal
-        # set the journal name if necessary
-        #
-        # # make sure this is all set, and do it before the next step
-        # update mid.work set doi_lower=lower(doi) where doi_lower is null and doi is not null
-        #
-        # # add unpaywall data to eveything with a doi that doesn't have it yet
-        #
-        # update mid.work set best_url=record_webpage_url
-        # from mid.work t1
-        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
-        # where t1.paper_id > 4200000000
-        # and t1.best_url is null
-        #
-        # update mid.work set is_paratext=t3.is_paratext::boolean, oa_status=t3.oa_status, best_free_url=t3.best_oa_location_url, best_free_version=t3.best_oa_location_version
-        # from mid.work t1
-        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
-        # join ins.unpaywall_recordthresher_fields_view t3 on t2.id = t3.recordthresher_id
-        # where t1.paper_id > 4200000000
-        #
-        # select
-        # (t3.is_paratext::text = 'true'), t3.oa_status, t3.best_oa_location_url, t3.best_oa_location_version
-        # from mid.work t1
-        # join ins.recordthresher_record t2 on t1.paper_id = t2.work_id
-        # join ins.unpaywall_recordthresher_fields_view t3 on t2.id = t3.recordthresher_id
-        # where t1.paper_id > 4200000000
-        # and work_id=4200457617
-        #
-        # update mid.work set original_venue=t2.display_name
-        # from mid.work t1
-        # join mid.journal t2 on t1.journal_id = t2.journal_id
-        # where t1.paper_id > 4200000000
-        # and t1.journal_id is not null
-        # and t1.original_venue is null
-        #
-        #
-        # update mid.work set year=extract(year from publication_date::timestamp)
-        # where paper_id > 4200000000 and year is null
-        #
-        # select extract(year from publication_date::timestamp), count(*) from mid.work
-        # where paper_id > 4200000000 and publication_date is not null
-        # group by extract(year from publication_date::timestamp)
-        #
         # insert into mid.citation (paper_id, paper_reference_id)
         # (select parse.paper_id, work.paper_id as paper_reference_id
         # from util.parse_citation_view parse
         # join mid.work work on work.doi_lower = parse.referenced_doi
         # )
-        #
         #
         # UPDATE temp_candidate_authors set matching_author_id = t1.my_author_id
         # FROM
@@ -426,7 +409,7 @@ class Work(db.Model):
         # return response
 
     def store(self):
-        VERSION_STRING = "save end of december"
+        VERSION_STRING = "save for second release"
 
         # print("processing work! {}".format(self.id))
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
@@ -444,7 +427,35 @@ class Work(db.Model):
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
             "mid.json_works": ["id", "updated", "json_save", "version"],
-            "mid.work_concept": ["paper_id", "field_of_study", "score", "algorithm_version"]
+            "mid.work_concept": ["paper_id", "field_of_study", "score", "algorithm_version"],
+            "mid.work": """
+                        paper_id
+                        doi
+                        doc_type
+                        paper_title
+                        original_title
+                        year
+                        publication_date
+                        online_date
+                        publisher
+                        journal_id
+                        volume
+                        issue
+                        first_page
+                        last_page
+                        created_date
+                        updated_date
+                        doi_lower
+                        doc_sub_types
+                        original_venue
+                        genre
+                        is_paratext
+                        oa_status
+                        best_url
+                        best_free_url
+                        best_free_version
+                        match_title
+                        started_label""".split()
         }
         if table_name:
             return lookup[table_name]
@@ -578,6 +589,7 @@ class Work(db.Model):
 
     def __repr__(self):
         return "<Work ( {} ) {} '{}...'>".format(self.openalex_api_url, self.doi, self.original_title[0:20] if self.original_title else None)
+
 
 
 
