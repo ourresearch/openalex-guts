@@ -1,5 +1,27 @@
 from app import db
 
+
+class Unpaywall(db.Model):
+    __table_args__ = {'schema': 'ins'}
+    __tablename__ = "unpaywall_recordthresher_fields_view"
+
+    recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
+    doi = db.Column(db.Text)
+    updated = db.Column(db.DateTime)
+    oa_status = db.Column(db.Text)
+    is_paratext = db.Column(db.Boolean)
+    best_oa_location_url = db.Column(db.Text)
+    best_oa_location_version = db.Column(db.Text)
+    best_oa_location_license = db.Column(db.Text)
+
+    def __repr__(self):
+        return "<Unpaywall ( {} ) '{}' {}>".format(self.recordthresher_id, self.doi, self.oa_status)
+
+
+
+
+# old
+
 # copy ins.unpaywall_raw from
 # 's3://unpaywall-daily-snapshots/unpaywall_snapshot_2021-11-01T083001.jsonl.gz'
 # credentials 'CREDS HERE'
@@ -39,28 +61,5 @@ from app import db
 # JSON 'auto ignorecase'
 # MAXERROR as 100;
 #
-#
-#
-# class Unpaywall(db.Model):
-#     __table_args__ = {'schema': 'ins'}
-#     __tablename__ = "unpaywall"
-#
-#     doi = db.Column(db.Text, db.ForeignKey("mid.work.doi_lower"), primary_key=True)
-#     genre = db.Column(db.Text)
-#     journal_is_oa = db.Column(db.Text)
-#     oa_status = db.Column(db.Text)
-#     has_green = db.Column(db.Boolean)
-#     is_oa_bool = db.Column(db.Boolean)
-#     best_version = db.Column(db.Text)
-#     best_license = db.Column(db.Text)
-#     best_host_type = db.Column(db.Text)
-#     best_url = db.Column(db.Text)
-#
-#     def to_dict(self, return_level="full"):
-#         keys = [col.name for col in self.__table__.columns if col.name not in ["doi"]]
-#         return {key: getattr(self, key) for key in keys}
-#
-#     def __repr__(self):
-#         return "<Unpaywall ( {} ) '{}' {}>".format(self.issn_l, self.title, self.publisher)
 #
 #

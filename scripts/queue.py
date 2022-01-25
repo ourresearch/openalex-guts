@@ -85,6 +85,7 @@ class DbQueue(object):
                 total_count = count + (num_obj_rows*index)
                 start_time = time()
                 if obj is None:
+                    print("obj is None, so returning")
                     return None
                 # logger.info(u"***")
                 logger.info("*** #{count} starting {repr}.{method_name}() method".format(
@@ -103,18 +104,10 @@ class DbQueue(object):
                     method_name=method_name,
                     elapsed=elapsed(start_time, 4)))
 
-                if self.myclass == models.Work and method_name=="refresh":
-                    db.session.commit()
-
-
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
         if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
-
-        # try moving it up
-        # if self.myclass == models.Work and method_name=="refresh":
-        #     db.session.commit()
 
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
@@ -127,6 +120,8 @@ class DbQueue(object):
         if self.myclass == models.Work:
             if method_name == "store":
                 my_table = JsonWorks
+            elif method_name == "refresh":
+                my_table = models.Work
             else:
                 from models.work_concept import WorkConceptFull
                 my_table = WorkConceptFull
@@ -258,8 +253,9 @@ class DbQueue(object):
                 insert_table = "mid.work_concept"
             elif self.myclass == models.Work and run_method=="refresh":
                 text_query_pattern_select = """
-                    select paper_id from mid.work
-                        where created_date > '2022-01-01' and started is null
+                    select work_id from mid.work_match_recordthresher
+                        where work_id>4205086888
+                        and work_id not in (select paper_id from mid.work)
                         order by random()
                         limit {chunk};
                 """
@@ -394,20 +390,44 @@ class DbQueue(object):
                             print(u"Exception fetching IDs {object_ids}")
                             objects = []
                     elif self.myclass == models.Work and run_method=="refresh":
-                        objects = db.session.query(models.Work).options(
-                             selectinload(models.Work.records),  # only use this one for refresh
-                             selectinload(models.Work.locations),
-                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                             selectinload(models.Work.references),
-                             selectinload(models.Work.mesh),
-                             selectinload(models.Work.counts_by_year),
-                             selectinload(models.Work.abstract),
-                             selectinload(models.Work.extra_ids),
-                             selectinload(models.Work.related_works),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        q = """select work_id, recordthresher_id from mid.work_match_recordthresher
+                            where work_id in ({})
+                        """.format(",".join(str(paper_id) for paper_id in object_ids))
+                        pairs = db.session.execute(text(q)).fetchall()
+
+                        recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
+                        work_record_dicts = defaultdict(list)
+                        for work_id, recordthresher_id in pairs:
+                            work_record_dicts[work_id] += [recordthresher_id]
+
+                        # get records in bulk to get them fast
+                        record_objects = db.session.query(models.Record).options(
+                             selectinload(models.Record.journal),
+                             selectinload(models.Record.unpaywall),
+                             orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
+
+                        objects = []
+                        for work_id in work_record_dicts:
+                            new_work = models.Work()
+                            new_work.paper_id = work_id
+                            new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
+                            objects += [new_work]
+                        # objects = [models.Work(paper_id=paper_id) for paper_id in object_ids]
+                        # objects = db.session.query(models.Work).options(
+                        #      selectinload(models.Work.records).selectinload(models.Work.records.journal),  # only use this one for refresh
+                        #      selectinload(models.Work.records).selectinload(models.Work.records.unpaywall),  # only use this one for refresh
+                        #      selectinload(models.Work.locations),
+                        #      selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                        #      selectinload(models.Work.references),
+                        #      selectinload(models.Work.mesh),
+                        #      selectinload(models.Work.counts_by_year),
+                        #      selectinload(models.Work.abstract),
+                        #      selectinload(models.Work.extra_ids),
+                        #      selectinload(models.Work.related_works),
+                        #      selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                        #      selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                        #      selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                        #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
                         # objects = db.session.query(models.Work).options(
                         #      selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
@@ -423,7 +443,6 @@ class DbQueue(object):
                             objects = []
                     elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
                         objects = db.session.query(models.Work).options(
-                             # selectinload(models.Work.records),  # only need this for refresh
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
                              selectinload(models.Work.references),

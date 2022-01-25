@@ -95,11 +95,14 @@ def normalize(text):
     response = re.sub("\s+", "", response)
     return response
 
-def normalize_simple(text):
+
+def normalize_simple(text, remove_articles=True, remove_spaces=True):
     response = text.lower()
     response = remove_punctuation(response)
-    response = re.sub(r"\b(a|an|the)\b", "", response)
-    response = re.sub("\s+", "", response)
+    if remove_articles:
+        response = re.sub(r"\b(a|an|the)\b", "", response)
+    if remove_spaces:
+        response = re.sub("\s+", "", response)
     return response
 
 def normalize_doi(doi, return_none_if_error=False):
