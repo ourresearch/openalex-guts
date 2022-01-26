@@ -412,11 +412,13 @@ class DbQueue(object):
                                 # running in to some "invalid continuation byte" problems, see if I can figure them out
                                 record_objects = []
                                 for id in recordthresher_ids:
-                                    record_objects += db.session.query(models.Record).options(
-                                         selectinload(models.Record.journals),
-                                         selectinload(models.Record.unpaywall),
-                                         orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
-                                    # print(f"error: failed on recordthresher_id {id}")
+                                    try:
+                                        record_objects += db.session.query(models.Record).options(
+                                             selectinload(models.Record.journals),
+                                             selectinload(models.Record.unpaywall),
+                                             orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
+                                    except Exception as e:
+                                        print(f"error: failed on recordthresher_id {id} with error {e}")
 
                             objects = []
                             for work_id in work_record_dicts:
