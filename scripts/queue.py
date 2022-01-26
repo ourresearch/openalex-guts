@@ -390,40 +390,41 @@ class DbQueue(object):
                             print(u"Exception fetching IDs {object_ids}")
                             objects = []
                     elif self.myclass == models.Work and run_method=="refresh":
-                        q = """select work_id, recordthresher_id from mid.work_match_recordthresher
-                            where work_id in ({})
-                        """.format(",".join(str(paper_id) for paper_id in object_ids))
-                        pairs = db.session.execute(text(q)).fetchall()
+                        objects = []
+                        if object_ids:
+                            q = """select work_id, recordthresher_id from mid.work_match_recordthresher
+                                where work_id in ({})
+                            """.format(",".join(str(paper_id) for paper_id in object_ids))
+                            pairs = db.session.execute(text(q)).fetchall()
 
-                        recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
-                        work_record_dicts = defaultdict(list)
-                        for work_id, recordthresher_id in pairs:
-                            work_record_dicts[work_id] += [recordthresher_id]
+                            recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
+                            work_record_dicts = defaultdict(list)
+                            for work_id, recordthresher_id in pairs:
+                                work_record_dicts[work_id] += [recordthresher_id]
 
-                        # get records in bulk to get them fast
-                        try:
-                            record_objects = db.session.query(models.Record).options(
-                                 selectinload(models.Record.journal),
-                                 selectinload(models.Record.unpaywall),
-                                 orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
-                        except:
-                            # running in to some "invalid continuation byte" problems, see if I can figure them out
-                            record_objects = []
-                            for id in recordthresher_ids:
-                                try:
+                            # get records in bulk to get them fast
+                            try:
+                                record_objects = db.session.query(models.Record).options(
+                                     selectinload(models.Record.journals),
+                                     selectinload(models.Record.unpaywall),
+                                     orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
+                            except:
+                                # running in to some "invalid continuation byte" problems, see if I can figure them out
+                                record_objects = []
+                                for id in recordthresher_ids:
                                     record_objects += db.session.query(models.Record).options(
                                          selectinload(models.Record.journals),
                                          selectinload(models.Record.unpaywall),
                                          orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
-                                except:
-                                    print(f"error: failed on recordthresher_id {id}")
+                                    # print(f"error: failed on recordthresher_id {id}")
 
-                        objects = []
-                        for work_id in work_record_dicts:
-                            new_work = models.Work()
-                            new_work.paper_id = work_id
-                            new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
-                            objects += [new_work]
+                            objects = []
+                            for work_id in work_record_dicts:
+                                if work_id:
+                                    new_work = models.Work()
+                                    new_work.paper_id = work_id
+                                    new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
+                                    objects += [new_work]
                         # objects = [models.Work(paper_id=paper_id) for paper_id in object_ids]
                         # objects = db.session.query(models.Work).options(
                         #      selectinload(models.Work.records).selectinload(models.Work.records.journal),  # only use this one for refresh
