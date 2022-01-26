@@ -101,6 +101,13 @@ class Record(db.Model):
     def score(self):
         return 42
 
+    # necessary right now because multiple journals can match on issn_ls in the mid.journal table alas. once that is fixed can normalize this.
+    @cached_property
+    def journal(self):
+        if not self.journals:
+            return None
+        return self.journals[0]
+
     @cached_property
     def siblings(self):
         from models import Work
