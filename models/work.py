@@ -188,7 +188,6 @@ class Work(db.Model):
         from util import clean_doi
 
         # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
-        self.paper_id = record.work_id
         self.original_title = record.title
         self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
         self.doc_type = record.normalized_doc_type
