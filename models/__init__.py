@@ -62,7 +62,7 @@ Institution.counts_by_year = db.relationship("InstitutionCountsByYear", lazy='se
 Venue.counts_by_year = db.relationship("VenueCountsByYear", lazy='selectin', backref="work")
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")
 
-Record.journal =  db.relationship("Venue", lazy='selectin', uselist=False)
+Record.journals =  db.relationship("Venue", lazy='selectin')  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
 Record.unpaywall =  db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
 def author_from_id(author_id):
