@@ -255,7 +255,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select work_id from mid.work_match_recordthresher
                         where work_id>4205086888
-                        and work_id not in (select paper_id from mid.work)
+                        and work_id not in (select paper_id from mid.work where paper_id is not null)
                         order by random()
                         limit {chunk};
                 """
