@@ -412,7 +412,7 @@ class DbQueue(object):
                             for id in recordthresher_ids:
                                 try:
                                     record_objects += db.session.query(models.Record).options(
-                                         selectinload(models.Record.journal),
+                                         selectinload(models.Record.journals),
                                          selectinload(models.Record.unpaywall),
                                          orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
                                 except:
