@@ -420,9 +420,19 @@ class DbQueue(object):
                                     objects += [new_work]
 
                     elif self.myclass == models.Work and run_method.startswith("add_"):
-                        objects = db.session.query(models.Work).options(
-                             selectinload(models.Work.records),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        try:
+                            objects = db.session.query(models.Work).options(
+                                 selectinload(models.Work.records),
+                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        except Exception as e:
+                            objects = []
+                            for id in object_ids:
+                                try:
+                                    objects += objects = db.session.query(models.Work).options(
+                                             selectinload(models.Work.records),
+                                             orm.Load(models.Work).raiseload('*')).filter(self.myid==id).all()
+                                except Exception as e:
+                                    print(f"error: failed on {run_method} {id} with error {e}")
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
                         q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
                             from mid.work work
@@ -505,7 +515,7 @@ class DbQueue(object):
 
         logger.info("finished update in {} seconds".format(elapsed(start)))
 
-        print("done")
+        print("fatal error, done run loop, quitting thread")
         return
 
 
