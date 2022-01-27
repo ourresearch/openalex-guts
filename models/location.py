@@ -14,6 +14,21 @@ from app import db
 # update mid.location set source_url=replace(source_url, '\t', '') where source_url ~ '\t';
 
 
+def get_repository_institution_from_source_url(source_url):
+    lookup = {"europepmc.org": "Europe PMC",
+              "ncbi.nlm.nih.gov/pmc": "PMC",
+              "pubmed.ncbi.nlm.nih.gov": "PubMed",
+              "arxiv.org": "arXiv",
+              "ci.nii.ac.jp": "CiNii",
+              "ui.adsabs.harvard.edu": "SAO/NASA Astrophysics Data System",
+              "dialnet.unirioja.es": "Dialnet",
+              "pdfs.semanticscholar.org": "Semantic Scholar"}
+    for key, value in lookup.items():
+        if key in source_url:
+            return value
+    return None
+
+
 class Location(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "location"
@@ -22,6 +37,8 @@ class Location(db.Model):
     source_url = db.Column(db.Text, primary_key=True)
     source_type = db.Column(db.Numeric)
     language_code = db.Column(db.Text)
+    source_url = db.Column(db.Text)
+    url = db.Column(db.Text)
     url_for_landing_page = db.Column(db.Text)
     url_for_pdf = db.Column(db.Text)
     host_type = db.Column(db.Text)
@@ -29,6 +46,11 @@ class Location(db.Model):
     license = db.Column(db.Text)
     repository_institution = db.Column(db.Text)
     pmh_id = db.Column(db.Text)
+    is_best = db.Column(db.Boolean)
+    oa_date = db.Column(db.Text)
+    endpoint_id = db.Column(db.Text)
+    evidence = db.Column(db.Text)
+    updated = db.Column(db.Text)
 
     @property
     def is_oa(self):
