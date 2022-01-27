@@ -166,7 +166,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
                         and (pmid is not null)
-                        and work_id not in (select paper_id from mid.external_ids)
+                        and work_id not in (select paper_id from mid.work_extra_ids)
                         order by random() limit {chunk}; """
             elif run_method == "add_locations":
                 text_query_pattern_select = """
