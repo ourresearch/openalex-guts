@@ -185,6 +185,9 @@ class Work(db.Model):
         for record in self.records:
             if record.abstract:
                 indexed_abstract = f_generate_inverted_index(record.abstract)
+                if len(indexed_abstract) >= 65535:
+                    # truncate the abstract if too long
+                    indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
                 insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
                 self.insert_dicts = [{"Abstract": insert_dict}]
                 return
