@@ -36,7 +36,7 @@ Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", use
 Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False)
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work")
 Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work")
-Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for refresh
+Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for mint
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work")

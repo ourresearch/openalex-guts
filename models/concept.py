@@ -374,7 +374,7 @@ class Concept(db.Model):
             "mid.concept_ancestor": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
             # "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id_short", "wikipedia_json", "wikidata_json", "updated"],
             "ins.wiki_concept": ["field_of_study_id", "wikidata_super"],
-            "mid.json_concepts": ["id", "updated", "json_save", "version"]
+            "JsonConcepts": ["id", "updated", "json_save", "version"]
         }
         if table_name:
             return lookup[table_name]
@@ -390,7 +390,7 @@ class Concept(db.Model):
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             self.json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_concepts": [self.field_of_study_id, updated, self.json_save, VERSION_STRING]}]
+        self.insert_dicts = [{"JsonConcepts": [self.field_of_study_id, updated, self.json_save, VERSION_STRING]}]
 
     def save_wiki(self):
         if not hasattr(self, "insert_dicts"):

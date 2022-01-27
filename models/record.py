@@ -243,7 +243,7 @@ class Record(db.Model):
         print("processing record! {}".format(self.id))
 
         self.work = self.get_or_mint_work(new_work_id_if_needed)
-        # self.work.refresh()
+        # self.work.mint()
 
 
     def to_dict(self, return_level="full"):

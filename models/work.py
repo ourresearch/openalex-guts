@@ -7,6 +7,7 @@ from collections import defaultdict
 import requests
 import os
 import json
+from util import f_generate_inverted_index
 
 import shortuuid
 import random
@@ -57,13 +58,13 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     for row, api_dict in zip(rows, api_json):
         if api_dict["tags"] != []:
             for i, concept_name in enumerate(api_dict["tags"]):
-                insert_dicts += [{"mid.work_concept": {"paper_id": row["paper_id"],
+                insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
                                                        "field_of_study": api_dict["tag_ids"][i],
                                                        "score": api_dict["scores"][i],
                                                        "algorithm_version": 2}}]
         else:
             matching_ids = []
-            insert_dicts += [{"mid.work_concept": {"paper_id": row["paper_id"],
+            insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
                                                        "field_of_study": None,
                                                        "score": None,
                                                        "algorithm_version": 2}}]
@@ -164,7 +165,7 @@ class Work(db.Model):
             # print(f"concepts that match: {matching_concepts}")
             # matching_ids = [concept[0] for concept in matching_concepts]
             for i, concept_name in enumerate(concept_names):
-                self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
+                self.insert_dicts += [{"WorkConceptFull": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=self.id,
                                       concept_name_lower=response_json[0]["tags"][i],
                                       concept_id=response_json[0]["tag_ids"][i],
@@ -173,7 +174,7 @@ class Work(db.Model):
                                     )}]
         else:
             matching_ids = []
-            self.insert_dicts += [{"mid.new_work_concepts": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
+            self.insert_dicts += [{"WorkConceptFull": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
                                       paper_id=self.id,
                                       concept_name_lower=None,
                                       concept_id="NULL",
@@ -181,6 +182,14 @@ class Work(db.Model):
                                       updated=datetime.datetime.utcnow().isoformat(),
                                     )}]
 
+
+    def add_abstract(self):
+        for record in self.records:
+            if record.abstract:
+                indexed_abstract = f_generate_inverted_index(record.abstract)
+                insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
+                self.insert_dicts = [{"Abstract": insert_dict}]
+                return
 
     def set_fields_from_record(self, record):
         from sqlalchemy import select
@@ -223,33 +232,10 @@ class Work(db.Model):
 
 
 
-    def refresh(self):
+    def mint(self):
         from models import Record
 
-        # - [x] what should be a work
-        # - [x] get work IDs minted
-        # - [x] concepts for those work IDs
-        # all handled via SQL for now
-        #
-        # - [ ] other easy things we can get from recordthresher
-        # - [ ] other things we can figure out
-        # - [ ] mesh
-        # - [ ] abstract
-        # - [ ] additional ids
-        # - [ ] other things we can get from unpaywall
-        #     - [ ] base
-        #     - [ ] location
-        # - [ ] complicated
-        #     - [ ] citations
-        #     - [ ] authors (after citations)
-        #     - [ ] institutions
-        #     - [ ] last known institutions
-        # - [ ] related papers (after author stuff)
-        # - [ ] update citation counts for everything
-
-        # select count(distinct work_id) from mid.work_match_recordthresher where work_id > 4205086888
-
-        print(f"refreshing! {self.id}")
+        print(f"minting! {self.id}")
         self.started = datetime.datetime.utcnow().isoformat()
         self.finished = datetime.datetime.utcnow().isoformat()
 
@@ -271,9 +257,9 @@ class Work(db.Model):
         self.started_label = "new from match"
 
         insert_dict = {}
-        for key in self.get_insert_dict_fieldnames("mid.work"):
+        for key in self.get_insert_dict_fieldnames("Work"):
             insert_dict[key] = getattr(self, key)
-        self.insert_dicts = [{"mid.work": insert_dict}]
+        self.insert_dicts = [{"Work": insert_dict}]
 
         print(f"done! {self.id}")
 
@@ -418,16 +404,17 @@ class Work(db.Model):
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             self.json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_works": {"id": self.paper_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
+        self.insert_dicts = [{"JsonWorks": {"id": self.paper_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
         # print(self.insert_dicts)
         # print(self.json_save[0:100])
 
     def get_insert_dict_fieldnames(self, table_name=None):
         lookup = {
-            "mid.json_works": ["id", "updated", "json_save", "version"],
-            "mid.work_concept": ["paper_id", "field_of_study", "score", "algorithm_version"],
-            "mid.work": """
+            "JsonWorks": ["id", "updated", "json_save", "version"],
+            "WorkConceptFull": ["paper_id", "field_of_study", "score", "algorithm_version"],
+            "Abstract": ["paper_id", "indexed_abstract"],
+            "Work": """
                         paper_id
                         doi
                         doc_type
