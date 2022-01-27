@@ -19,6 +19,7 @@ from app import get_apiurl_from_openalex_url
 from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 from util import normalize_simple
+from util import clean_doi
 
 
 # truncate mid.work
@@ -26,6 +27,7 @@ from util import normalize_simple
 # update mid.work set original_title=replace(original_title, '\\\\/', '/');
 
 # update work set match_title = f_matching_string(original_title)
+
 
 def as_work_openalex_id(id):
     from app import API_HOST
@@ -245,6 +247,30 @@ class Work(db.Model):
             if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
                 insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
             self.insert_dicts += [{"Location": insert_dict}]
+
+    def add_citations(self):
+        from models import WorkExtraIds
+        self.insert_dicts = []
+        citation_dois = []
+        citation_pmids = []
+        citation_paper_ids = []
+
+        for record in self.records:
+            if record.citations:
+                citations_dict_list = json.loads(record.citations)
+                citation_dois += [clean_doi(my_dict["doi"]) for my_dict in citations_dict_list if my_dict["doi"]]
+                citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
+
+        if citation_dois:
+            citation_paper_ids += [row[0] for row in db.session.query(Work.paper_id).filter(Work.doi_lower.in_(citation_dois)).all()]
+        if citation_pmids:
+            citation_paper_ids += [row[0] for row in db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()]
+        citation_paper_ids = list(set(citation_paper_ids))
+
+        for reference_id in citation_paper_ids:
+            self.insert_dicts += [{"WorkExtraIds": {
+                "paper_id": self.id,
+                "reference_id": reference_id}}]
 
 
     def set_fields_from_record(self, record):
