@@ -256,7 +256,7 @@ class Work(db.Model):
                     citation_dois += [clean_doi(my_dict["doi"]) for my_dict in citations_dict_list if my_dict["doi"]]
                     citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
                 except Exception as e:
-                    print(f"error json parsing, but continuing on other papers {self.paper_id} {e}")
+                    print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
             citation_paper_ids += [row[0] for row in db.session.query(Work.paper_id).filter(Work.doi_lower.in_(citation_dois)).all()]
@@ -276,7 +276,11 @@ class Work(db.Model):
             print("No records_with_affiliations")
             return
         record = records_with_affiliations[0]
-        author_dict_list = json.loads(record.authors)
+        try:
+            author_dict_list = json.loads(record.authors)
+        except Exception as e:
+            print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
+            return
 
         for i, author_dict in enumerate(author_dict_list):
             original_name = author_dict["raw"]
