@@ -42,8 +42,6 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
         }]
 
     class ConceptLookupResponse:
-        def get_insert_dict_fieldnames(self, table_name):
-            return ["paper_id", "field_of_study", "score", "algorithm_version"]
         pass
 
     api_key = os.getenv("SAGEMAKER_API_KEY")
@@ -191,6 +189,16 @@ class Work(db.Model):
                 self.insert_dicts = [{"Abstract": insert_dict}]
                 return
 
+    def add_mesh(self):
+        self.insert_dicts = []
+        for record in self.records:
+            if record.mesh:
+                mesh_dict_list = json.loads(record.mesh)
+                for mesh_dict in mesh_dict_list:
+                    mesh_dict["paper_id"] = self.paper_id
+                    self.insert_dicts += [{"Mesh": mesh_dict}]
+                return
+
     def set_fields_from_record(self, record):
         from sqlalchemy import select
         from sqlalchemy import func
@@ -257,7 +265,34 @@ class Work(db.Model):
         self.started_label = "new from match"
 
         insert_dict = {}
-        for key in self.get_insert_dict_fieldnames("Work"):
+        work_insert_fieldnames = """paper_id
+                        doi
+                        doc_type
+                        paper_title
+                        original_title
+                        year
+                        publication_date
+                        online_date
+                        publisher
+                        journal_id
+                        volume
+                        issue
+                        first_page
+                        last_page
+                        created_date
+                        updated_date
+                        doi_lower
+                        doc_sub_types
+                        original_venue
+                        genre
+                        is_paratext
+                        oa_status
+                        best_url
+                        best_free_url
+                        best_free_version
+                        match_title
+                        started_label""".split()
+        for key in work_insert_fieldnames:
             insert_dict[key] = getattr(self, key)
         self.insert_dicts = [{"Work": insert_dict}]
 
@@ -408,45 +443,6 @@ class Work(db.Model):
 
         # print(self.insert_dicts)
         # print(self.json_save[0:100])
-
-    def get_insert_dict_fieldnames(self, table_name=None):
-        lookup = {
-            "JsonWorks": ["id", "updated", "json_save", "version"],
-            "WorkConceptFull": ["paper_id", "field_of_study", "score", "algorithm_version"],
-            "Abstract": ["paper_id", "indexed_abstract"],
-            "Work": """
-                        paper_id
-                        doi
-                        doc_type
-                        paper_title
-                        original_title
-                        year
-                        publication_date
-                        online_date
-                        publisher
-                        journal_id
-                        volume
-                        issue
-                        first_page
-                        last_page
-                        created_date
-                        updated_date
-                        doi_lower
-                        doc_sub_types
-                        original_venue
-                        genre
-                        is_paratext
-                        oa_status
-                        best_url
-                        best_free_url
-                        best_free_version
-                        match_title
-                        started_label""".split()
-        }
-        if table_name:
-            return lookup[table_name]
-        return lookup
-
 
     @cached_property
     def display_counts_by_year(self):

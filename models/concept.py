@@ -369,17 +369,6 @@ class Concept(db.Model):
         response = response_json.replace('\\"', '*')
         return response
 
-    def get_insert_dict_fieldnames(self, table_name=None):
-        lookup = {
-            "mid.concept_ancestor": ["id", "name", "level", "ancestor_id", "ancestor_name", "ancestor_level"],
-            # "ins.wiki_concept": ["field_of_study_id", "wikipedia_id", "wikidata_id_short", "wikipedia_json", "wikidata_json", "updated"],
-            "ins.wiki_concept": ["field_of_study_id", "wikidata_super"],
-            "JsonConcepts": ["id", "updated", "json_save", "version"]
-        }
-        if table_name:
-            return lookup[table_name]
-        return lookup
-
     def store(self):
         VERSION_STRING = "after all primary keys"
 
