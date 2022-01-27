@@ -171,7 +171,7 @@ class DbQueue(object):
             elif run_method == "add_locations":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
-                        and id in (select ins.unpaywall_recordthersher)
+                        and id in (select recordthresher_id from ins.unpaywall_recordthresher_fields_mv where oa_status != 'closed')
                         and work_id not in (select paper_id from mid.location)
                         order by random() limit {chunk}; """
             elif run_method == "add_citations":

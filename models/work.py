@@ -209,6 +209,44 @@ class Work(db.Model):
                 self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
                 return
 
+    def add_locations(self):
+        from models.location import get_repository_institution_from_source_url
+
+        self.insert_dicts = []
+        record_to_use = None
+        backup_record = None
+        for record in self.records:
+            if record.unpaywall:
+                backup_record = record
+                if record.record_type == "crossref_doi":
+                    record_to_use = record
+        if not record_to_use:
+            record_to_use = backup_record
+        if not record_to_use:
+            return
+
+        for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
+            insert_dict = {
+                "paper_id": self.id,
+                "endpoint_id": unpaywall_oa_location["endpoint_id"],
+                "evidence": unpaywall_oa_location["evidence"],
+                "host_type": unpaywall_oa_location["host_type"],
+                "is_best": unpaywall_oa_location["is_best"],
+                "oa_date": unpaywall_oa_location["oa_date"],
+                "pmh_id": unpaywall_oa_location["pmh_id"],
+                "repository_institution": unpaywall_oa_location["repository_institution"],
+                "updated": unpaywall_oa_location["updated"],
+                "source_url": unpaywall_oa_location["url"],
+                "url": unpaywall_oa_location["url"],
+                "url_for_landing_page": unpaywall_oa_location["url_for_landing_page"],
+                "url_for_pdf": unpaywall_oa_location["url_for_pdf"],
+                "version": unpaywall_oa_location["version"],
+                "license": unpaywall_oa_location["license"]}
+            if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
+                insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
+            self.insert_dicts += [{"Location": insert_dict}]
+
+
     def set_fields_from_record(self, record):
         from sqlalchemy import select
         from sqlalchemy import func
