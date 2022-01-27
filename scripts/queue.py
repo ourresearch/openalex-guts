@@ -122,8 +122,6 @@ class DbQueue(object):
 
         start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
-            fields = obj.get_insert_dict_fieldnames(table_name)
-
             db.session.remove()
             db.session.execute(insert(my_table).values(all_insert_strings))
             db.session.commit()
@@ -161,7 +159,7 @@ class DbQueue(object):
             elif run_method == "add_mesh":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
-                        and mesh is not null
+                        and (mesh is not null) and (mesh != '[]')
                         and work_id not in (select paper_id from mid.mesh)
                         order by random() limit {chunk}; """
             elif run_method == "add_ids":

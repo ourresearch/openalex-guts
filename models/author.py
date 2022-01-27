@@ -125,9 +125,6 @@ class Author(db.Model):
         return my_data.get("person", None)
 
 
-    def get_insert_dict_fieldnames(self, table_name=None):
-        return ["id", "updated", "json_save", "version"]
-
     def store(self):
         import datetime
         from util import jsonify_fast_no_sort_raw

@@ -306,17 +306,6 @@ class Institution(db.Model):
             # print(response)
         return data
 
-    def get_insert_dict_fieldnames(self, table_name=None):
-        lookup = {
-            # "ins.wiki_institution": ["affiliation_id", "ror_id", "wikipedia_id", "wikidata_id", "wikipedia_json", "wikidata_json"],
-            "ins.wiki_institution": ["affiliation_id", "wikidata_super"],
-            "JsonInstitutions": ["id", "updated", "json_save", "version"]
-        }
-        if table_name:
-            return lookup[table_name]
-        return lookup
-
-
     def store(self):
         import datetime
         from util import jsonify_fast_no_sort_raw

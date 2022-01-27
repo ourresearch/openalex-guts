@@ -129,14 +129,6 @@ class Record(db.Model):
         response = sorted(response, key=lambda x: x["score"], reverse=True)
         return response
 
-    def get_insert_dict_fieldnames(self, table_name=None):
-        lookup = {
-            "mid.record_match": ["record_id", "updated", "matching_work_id", "added"]
-        }
-        if table_name:
-            return lookup[table_name]
-        return lookup
-
 
     def get_or_mint_work(self, new_work_id_if_needed):
         from models.work import Work
