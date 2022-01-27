@@ -176,8 +176,8 @@ class DbQueue(object):
                         order by random() limit {chunk}; """
             elif run_method == "add_citations":
                 text_query_pattern_select = """
-                    select work_id from ins.recordthresher_record where work_id is not null
-                        and citation is not null
+                    select distinct work_id from ins.recordthresher_record where work_id is not null
+                        and citations is not null and citations != '[]'
                         and work_id not in (select paper_id from mid.citation)
                         order by random() limit {chunk}; """
             elif run_method in ["store"]:
