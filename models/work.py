@@ -20,6 +20,7 @@ from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 from util import normalize_simple
 from util import clean_doi
+from util import normalize_orcid
 
 
 # truncate mid.work
@@ -215,17 +216,10 @@ class Work(db.Model):
         from models.location import get_repository_institution_from_source_url
 
         self.insert_dicts = []
-        record_to_use = None
-        backup_record = None
-        for record in self.records:
-            if record.unpaywall:
-                backup_record = record
-                if record.record_type == "crossref_doi":
-                    record_to_use = record
-        if not record_to_use:
-            record_to_use = backup_record
-        if not record_to_use:
+        records_with_unpaywall = [record for record in self.records_sorted if record.unpaywall]
+        if not records_with_unpaywall:
             return
+        record_to_use = records_with_unpaywall[0]
 
         for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
             insert_dict = {
@@ -275,6 +269,30 @@ class Work(db.Model):
                 "paper_id": self.id,
                 "paper_reference_id": reference_id}}]
 
+    def add_affiliations(self):
+        self.insert_dicts = []
+        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+        if not records_with_affiliations:
+            print("No records_with_affiliations")
+            return
+        record = records_with_affiliations[0]
+        author_dict_list = json.loads(record.authors)
+
+        for i, author_dict in enumerate(author_dict_list):
+            original_name = author_dict["raw"]
+            if author_dict["family"]:
+                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+            if not author_dict["affiliation"]:
+                author_dict["affiliation"] = [defaultdict(str)]
+            for affiliation_dict in author_dict["affiliation"]:
+                self.insert_dicts += [{"Affiliation": {
+                    "paper_id": self.paper_id,
+                    "author_sequence_number": i,
+                    "original_author": original_name,
+                    "original_affiliation": affiliation_dict["name"],
+                    "original_orcid": normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+                }}]
+
 
     def set_fields_from_record(self, record):
         from sqlalchemy import select
@@ -316,6 +334,11 @@ class Work(db.Model):
             self.best_free_version = record.unpaywall.best_oa_location_version
 
 
+    @cached_property
+    def records_sorted(self):
+        if not self.records:
+            return []
+        return sorted(self.records, key=lambda x: x.score, reverse=True)
 
     def mint(self):
         from models import Record
@@ -325,7 +348,9 @@ class Work(db.Model):
         self.finished = datetime.datetime.utcnow().isoformat()
 
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
-        records = sorted(self.records, key=lambda x: x.updated, reverse=True)
+        if not self.records_sorted:
+            return
+        records = self.records_sorted.reverse()
 
         print(f"my records: {records}")
 

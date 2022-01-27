@@ -180,6 +180,12 @@ class DbQueue(object):
                         and citations is not null and citations != '[]'
                         and work_id not in (select paper_id from mid.citation)
                         order by random() limit {chunk}; """
+            elif run_method == "add_affiliations":
+                text_query_pattern_select = """
+                    select distinct work_id from ins.recordthresher_record where work_id is not null
+                        and authors is not null and authors != '[]'
+                        and work_id not in (select paper_id from mid.affiliation)
+                        order by random() limit {chunk}; """
             elif run_method in ["store"]:
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}

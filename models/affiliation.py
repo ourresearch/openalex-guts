@@ -22,7 +22,8 @@ class Affiliation(db.Model):
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     author_sequence_number = db.Column(db.Numeric, primary_key=True)
     original_author = db.Column(db.Text)
-    original_affiliation = db.Column(db.Text)
+    original_affiliation = db.Column(db.Text, primary_key=True)
+    original_orcid = db.Column(db.Text)
 
     def to_dict(self, return_level="full"):
         response = {}
