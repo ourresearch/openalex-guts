@@ -1,9 +1,9 @@
 web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
 
-run_queue_refresh_work_a: python -m scripts.queue --run --table=work --method=refresh --chunk=1000 --name=$DYNO
-run_queue_refresh_work_b: python -m scripts.queue --run --table=work --method=refresh --chunk=1000 --name=$DYNO
-run_queue_refresh_work_c: python -m scripts.queue --run --table=work --method=refresh --chunk=1000 --name=$DYNO
-run_queue_refresh_work_d: python -m scripts.queue --run --table=work --method=refresh --chunk=1000 --name=$DYNO
+run_queue_mint_work_a: python -m scripts.queue --run --table=work --method=mint --chunk=1000 --name=$DYNO
+run_queue_mint_work_b: python -m scripts.queue --run --table=work --method=mint --chunk=1000 --name=$DYNO
+run_queue_mint_work_c: python -m scripts.queue --run --table=work --method=mint --chunk=1000 --name=$DYNO
+run_queue_mint_work_d: python -m scripts.queue --run --table=work --method=mint --chunk=1000 --name=$DYNO
 
 run_queue_store_work_q1a: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1a$DYNO-${i} --randstart
 run_queue_store_work_q1b: DATABASE_TO_USE=q1work python -m scripts.queue --run --table=work --method=store_work_q1 --chunk=$QUEUE_WORKER_CHUNK_SIZE --name=queue_work-q1b$DYNO-${i} --randstart
@@ -42,4 +42,10 @@ run_queue_store_concept: DATABASE_TO_USE=h1author python -m scripts.queue --run 
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 
-run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=queue_work_concepts$DYNO
+run_queue_work_add_abstracts: python -m scripts.queue --run --table=work --method=add_abstract --chunk=1000 --name=$DYNO
+run_queue_work_add_mesh: python -m scripts.queue --run --table=work --method=add_mesh --chunk=1000 --name=$DYNO
+run_queue_work_add_ids: python -m scripts.queue --run --table=work --method=add_ids --chunk=1000 --name=$DYNO
+run_queue_work_add_locations: python -m scripts.queue --run --table=work --method=add_locations --chunk=1000 --name=$DYNO
+run_queue_work_add_citations: python -m scripts.queue --run --table=work --method=add_citations --chunk=1000 --name=$DYNO
+
+run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=$DYNO

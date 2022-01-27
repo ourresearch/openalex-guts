@@ -16,6 +16,7 @@ from app import db
 from app import logger
 from app import MAX_MAG_ID
 import models
+from models import *  # needed to get the insert tables from the name alone
 from util import elapsed
 
 
@@ -116,23 +117,8 @@ class DbQueue(object):
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
 
-        my_table = JsonWorks
-        if self.myclass == models.Work:
-            if method_name == "store":
-                my_table = JsonWorks
-            elif method_name == "refresh":
-                my_table = models.Work
-            else:
-                from models.work_concept import WorkConceptFull
-                my_table = WorkConceptFull
-        if self.myclass == models.Author:
-            my_table = JsonAuthors
-        elif self.myclass == models.Institution:
-            my_table = JsonInstitutions
-        elif self.myclass == models.Venue:
-            my_table = JsonVenues
-        elif self.myclass == models.Concept:
-            my_table = JsonConcepts
+        # look up the model from the name
+        my_table = globals()[table_name]
 
         start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
@@ -166,7 +152,37 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if run_method in ["store"]:
+            if run_method == "add_abstract":
+                text_query_pattern_select = """
+                    select work_id from ins.recordthresher_record where work_id is not null
+                        and abstract is not null
+                        and work_id not in (select paper_id from mid.abstract)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_mesh":
+                text_query_pattern_select = """
+                    select work_id from ins.recordthresher_record where work_id is not null
+                        and mesh is not null
+                        and work_id not in (select paper_id from mid.mesh)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_ids":
+                text_query_pattern_select = """
+                    select work_id from ins.recordthresher_record where work_id is not null
+                        and (pmid is not null)
+                        and work_id not in (select paper_id from mid.external_ids)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_locations":
+                text_query_pattern_select = """
+                    select work_id from ins.recordthresher_record where work_id is not null
+                        and id in (select ins.unpaywall_recordthersher)
+                        and work_id not in (select paper_id from mid.location)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_citations":
+                text_query_pattern_select = """
+                    select work_id from ins.recordthresher_record where work_id is not null
+                        and citation is not null
+                        and work_id not in (select paper_id from mid.citation)
+                        order by random() limit {chunk}; """
+            elif run_method in ["store"]:
                 text_query_pattern_select = """
                     select {id_field_name} from {queue_table}
                         where {id_field_name} not in
@@ -251,7 +267,7 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = "mid.work_concept"
-            elif self.myclass == models.Work and run_method=="refresh":
+            elif self.myclass == models.Work and run_method=="mint":
                 text_query_pattern_select = """
                     select work_id from mid.work_match_recordthresher
                         where work_id>4205086888
@@ -260,14 +276,6 @@ class DbQueue(object):
                         limit {chunk};
                 """
             elif self.myclass == models.Record:
-                # text_query_pattern_select = """
-                #     select {id_field_name}
-                #     from ins.recordthresher_record
-                #     where
-                #     updated >= '2021-11-30'
-                #     order by random()
-                #     limit {chunk};
-                # """
                text_query_pattern_select = """
                     select id from ins.recordthresher_record 
                     where work_id is null
@@ -284,14 +292,6 @@ class DbQueue(object):
                         limit {chunk};
                 """
             elif self.myclass == models.Concept and run_method=="save_wiki":
-                # text_query_pattern_select = """
-                #     select field_of_study_id from mid.concept
-                #         where
-                #         field_of_study_id not in (select field_of_study_id from ins.wiki_concept)
-                #         and paper_count >= 400
-                #         order by random()
-                #         limit {chunk};
-                # """
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
                         where
@@ -314,13 +314,6 @@ class DbQueue(object):
                         limit {chunk};
                 """
             elif self.myclass == models.Institution and run_method=="save_wiki":
-                # text_query_pattern_select = """
-                #     select affiliation_id from mid.institution
-                #         where
-                #         affiliation_id not in (select affiliation_id from ins.wiki_institution)
-                #         order by random()
-                #         limit {chunk};
-                # """
                 text_query_pattern_select = """
                     select affiliation_id from mid.institution
                         where
@@ -389,7 +382,7 @@ class DbQueue(object):
                         except:
                             print(u"Exception fetching IDs {object_ids}")
                             objects = []
-                    elif self.myclass == models.Work and run_method=="refresh":
+                    elif self.myclass == models.Work and (run_method=="mint"):
                         objects = []
                         if object_ids:
                             q = """select work_id, recordthresher_id from mid.work_match_recordthresher
@@ -427,22 +420,11 @@ class DbQueue(object):
                                     new_work.paper_id = work_id
                                     new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
                                     objects += [new_work]
-                        # objects = [models.Work(paper_id=paper_id) for paper_id in object_ids]
-                        # objects = db.session.query(models.Work).options(
-                        #      selectinload(models.Work.records).selectinload(models.Work.records.journal),  # only use this one for refresh
-                        #      selectinload(models.Work.records).selectinload(models.Work.records.unpaywall),  # only use this one for refresh
-                        #      selectinload(models.Work.locations),
-                        #      selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                        #      selectinload(models.Work.references),
-                        #      selectinload(models.Work.mesh),
-                        #      selectinload(models.Work.counts_by_year),
-                        #      selectinload(models.Work.abstract),
-                        #      selectinload(models.Work.extra_ids),
-                        #      selectinload(models.Work.related_works),
-                        #      selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                        #      selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                        #      selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                        #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+
+                    elif self.myclass == models.Work and run_method.startswith("add_"):
+                        objects = db.session.query(models.Work).options(
+                             selectinload(models.Work.records),
+                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
                         q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
                             from mid.work work

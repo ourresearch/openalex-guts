@@ -140,7 +140,7 @@ class Author(db.Model):
             print("Error: self.json_save too long for paper_id {}, skipping".format(self.openalex_id))
             self.json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"mid.json_authors": {"id": self.author_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
+        self.insert_dicts = [{"JsonAuthors": {"id": self.author_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
     @cached_property
     def concepts(self):
