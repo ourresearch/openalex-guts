@@ -271,7 +271,7 @@ class Work(db.Model):
         citation_paper_ids = list(set(citation_paper_ids))
 
         for reference_id in citation_paper_ids:
-            self.insert_dicts += [{"WorkExtraIds": {
+            self.insert_dicts += [{"Citation": {
                 "paper_id": self.id,
                 "paper_reference_id": reference_id}}]
 
