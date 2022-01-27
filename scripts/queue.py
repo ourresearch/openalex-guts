@@ -444,9 +444,6 @@ class DbQueue(object):
                         #      selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
                         #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
-                        # objects = db.session.query(models.Work).options(
-                        #      selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
-                        #      orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                         q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
                             from mid.work work
                             left outer join mid.journal journal on journal.journal_id=work.journal_id
