@@ -257,9 +257,12 @@ class Work(db.Model):
 
         for record in self.records:
             if record.citations:
-                citations_dict_list = json.loads(record.citations)
-                citation_dois += [clean_doi(my_dict["doi"]) for my_dict in citations_dict_list if my_dict["doi"]]
-                citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
+                try:
+                    citations_dict_list = json.loads(record.citations)
+                    citation_dois += [clean_doi(my_dict["doi"]) for my_dict in citations_dict_list if my_dict["doi"]]
+                    citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
+                except Exception as e:
+                    print(f"error json parsing, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
             citation_paper_ids += [row[0] for row in db.session.query(Work.paper_id).filter(Work.doi_lower.in_(citation_dois)).all()]
