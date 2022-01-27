@@ -428,7 +428,7 @@ class DbQueue(object):
                             objects = []
                             for id in object_ids:
                                 try:
-                                    objects += objects = db.session.query(models.Work).options(
+                                    objects += db.session.query(models.Work).options(
                                              selectinload(models.Work.records),
                                              orm.Load(models.Work).raiseload('*')).filter(self.myid==id).all()
                                 except Exception as e:
