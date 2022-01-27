@@ -273,7 +273,7 @@ class Work(db.Model):
         for reference_id in citation_paper_ids:
             self.insert_dicts += [{"WorkExtraIds": {
                 "paper_id": self.id,
-                "reference_id": reference_id}}]
+                "paper_reference_id": reference_id}}]
 
 
     def set_fields_from_record(self, record):
