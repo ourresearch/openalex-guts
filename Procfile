@@ -47,5 +47,6 @@ run_queue_work_add_mesh: python -m scripts.queue --run --table=work --method=add
 run_queue_work_add_ids: python -m scripts.queue --run --table=work --method=add_ids --chunk=1000 --name=$DYNO
 run_queue_work_add_locations: python -m scripts.queue --run --table=work --method=add_locations --chunk=1000 --name=$DYNO
 run_queue_work_add_citations: python -m scripts.queue --run --table=work --method=add_citations --chunk=10 --name=$DYNO
+run_queue_work_add_affiliations: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
 
 run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=$DYNO

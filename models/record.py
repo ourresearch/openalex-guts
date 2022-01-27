@@ -99,7 +99,11 @@ class Record(db.Model):
 
     @property
     def score(self):
-        return 42
+        if self.record_type == "crossref_doi":
+            return 100
+        if self.record_type == "pubmed_record":
+            return 50
+        return 10  # pmh_record
 
     # necessary right now because multiple journals can match on issn_ls in the mid.journal table alas. once that is fixed can normalize this.
     @cached_property
