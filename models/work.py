@@ -202,6 +202,13 @@ class Work(db.Model):
                     self.insert_dicts += [{"Mesh": mesh_dict}]
                 return
 
+    def add_ids(self):
+        self.insert_dicts = []
+        for record in self.records:
+            if record.pmid:
+                self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
+                return
+
     def set_fields_from_record(self, record):
         from sqlalchemy import select
         from sqlalchemy import func
