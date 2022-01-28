@@ -1,6 +1,7 @@
 from cached_property import cached_property
 from sqlalchemy import text
 import json
+import datetime
 
 from app import db
 from app import MAX_MAG_ID
@@ -53,7 +54,6 @@ class Venue(db.Model):
         return self.issn
 
     def store(self):
-        import datetime
         from util import jsonify_fast_no_sort_raw
         VERSION_STRING = "save end of december"
 
@@ -138,8 +138,8 @@ class Venue(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
-                "updated_date": self.updated_date,
-                "created_date": self.created_date
+                "updated_date": self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date,
+                "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date
             })
 
             # only include non-null IDs
