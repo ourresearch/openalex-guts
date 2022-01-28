@@ -117,11 +117,12 @@ class DbQueue(object):
                     for table_name, insert_string in row.items():
                         insert_dict_all_objects[table_name] += [insert_string]
 
-        # look up the model from the name
-        my_table = globals()[table_name]
 
         start_time = time()
         for table_name, all_insert_strings in insert_dict_all_objects.items():
+            # look up the model from the name
+            my_table = globals()[table_name]
+
             db.session.remove()
             db.session.execute(insert(my_table).values(all_insert_strings))
             db.session.commit()
