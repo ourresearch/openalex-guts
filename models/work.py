@@ -666,6 +666,7 @@ class Work(db.Model):
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
             response["updated_date"] = self.updated_date
+            response["created_date"] = self.created_date
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
