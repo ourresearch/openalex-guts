@@ -51,9 +51,9 @@ run_queue_work_add_affiliations_b: python -m scripts.queue --run --table=work --
 run_queue_work_add_affiliations_c: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
 run_queue_work_add_affiliations_d: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
 
-run_queue_work_add_citations_a: python -m scripts.queue --run --table=work --method=add_citations --chunk=10 --name=$DYNO
-run_queue_work_add_citations_b: python -m scripts.queue --run --table=work --method=add_citations --chunk=10 --name=$DYNO
-run_queue_work_add_citations_c: python -m scripts.queue --run --table=work --method=add_citations --chunk=10 --name=$DYNO
-run_queue_work_add_citations_d: python -m scripts.queue --run --table=work --method=add_citations --chunk=10 --name=$DYNO
+run_queue_work_add_citations_a: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
+run_queue_work_add_citations_b: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
+run_queue_work_add_citations_c: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
+run_queue_work_add_citations_d: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
 
 run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=$DYNO
