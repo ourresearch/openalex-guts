@@ -185,7 +185,8 @@ class Author(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
-                "updated_date": self.updated_date
+                "updated_date": self.updated_date,
+                "created_date": self.created_date
             })
 
             # only include non-null IDs

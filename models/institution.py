@@ -416,6 +416,7 @@ class Institution(db.Model):
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=institutions.id:{self.openalex_id_short}",
                 "updated_date": self.updated_date,
+                "created_date": self.created_date
             })
 
             # only include non-null IDs
