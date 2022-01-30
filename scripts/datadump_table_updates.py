@@ -380,7 +380,7 @@ if True:
 #
 #
 #
-#
+
 # refresh materialized view mid.citation_authors_by_year_mv;
 # refresh materialized view mid.citation_journals_by_year_mv;
 # refresh materialized view mid.citation_institutions_by_year_mv;
