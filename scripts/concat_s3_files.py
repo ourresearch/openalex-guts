@@ -16,10 +16,10 @@ from app import logger
 
 PART_SUFFIX = r'\d+_part_\d+$'
 SKIP_FILES = ["PaperAbstractsInvertedIndex.txt"]
-DUMP_DIR = "2022-01-02"
+DUMP_DIR = "2022-01-30"
 
-##  python -m scripts.concat_s3_files  data_dump_v1/2022-01-02/mag  data_dump_v1/2022-01-02/advanced  data_dump_v1/2022-01-02/nlp --delete
-## heroku run --size=performance-l python -m scripts.concat_s3_files openalex-mag-format data_dump_v1/2022-01-02/mag  data_dump_v1/2022-01-02/advanced  data_dump_v1/2022-01-02/nlp --delete --threads=20
+##  python -m scripts.concat_s3_files  data_dump_v1/2022-01-30/mag  data_dump_v1/2022-01-30/advanced  data_dump_v1/2022-01-30/nlp --delete
+## heroku run --size=performance-l python -m scripts.concat_s3_files openalex-mag-format data_dump_v1/2022-01-30/mag  data_dump_v1/2022-01-30/advanced  data_dump_v1/2022-01-30/nlp --delete --threads=20
 
 ## takes about 15 minutes
 
