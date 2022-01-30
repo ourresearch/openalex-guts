@@ -404,24 +404,6 @@ class Work(db.Model):
 
         print(f"done! {self.id}")
 
-        # insert into mid.citation (paper_id, paper_reference_id)
-        # (select parse.paper_id, work.paper_id as paper_reference_id
-        # from util.parse_citation_view parse
-        # join mid.work work on work.doi_lower = parse.referenced_doi
-        # )
-        #
-        # UPDATE temp_candidate_authors set matching_author_id = t1.my_author_id
-        # FROM
-        # (
-        #     SELECT 1 + 4202861942 + row_number() over (partition by 1) AS my_author_id, paper_id, author_sequence_number
-        #     FROM temp_candidate_authors
-        # ) AS t1
-        # WHERE temp_candidate_authors.paper_id = t1.paper_id
-        # and temp_candidate_authors.author_sequence_number = t1.author_sequence_number
-        # and temp_candidate_authors.matching_author_id is null
-        #
-        # -- related_work
-
     @cached_property
     def is_retracted(self):
         if self.doc_sub_types != None:
