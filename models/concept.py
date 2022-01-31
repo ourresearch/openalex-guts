@@ -209,6 +209,8 @@ class Concept(db.Model):
         related_concepts_all = sorted(related_concepts_dict.values(), key=lambda x: (x["score"]), reverse=True)
         # the ones with poor rank aren't good enough to include
         related_concepts_all = [field for field in related_concepts_all if field["score"] >= 0.75 and field["level"] <= self.level + 1]
+        # keep a max of 100 related concepts
+        related_concepts_all = related_concepts_all[:100]
         return related_concepts_all
 
     @cached_property
