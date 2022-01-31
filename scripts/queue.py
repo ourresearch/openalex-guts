@@ -385,8 +385,8 @@ class DbQueue(object):
                                  selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                                  selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
                                  orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                        except:
-                            print(u"Exception fetching IDs {object_ids}")
+                        except Exception as e:
+                            print(f"Exception fetching IDs {object_ids} {e}")
                             objects = []
                     elif self.myclass == models.Work and (run_method=="mint"):
                         objects = []
