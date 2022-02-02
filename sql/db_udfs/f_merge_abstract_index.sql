@@ -36,8 +36,13 @@ return response_string
 $$LANGUAGE plpythonu;
 
 
-create table mid.json_works_with_abstract distkey (id) sortkey (id, updated) as (
-select id, sysdate as updated, util.f_merge_abstract_index(json_save, indexed_abstract) as json_save, version
-from mid.json_works_before_abstracts works
-left outer join mid.abstract abstract on works.id=abstract.paper_id
-)
+update mid.json_works_jan31_input
+set abstract_inverted_index = t2.indexed_abstract
+from mid.json_works_jan31_input t1
+join mid.abstract t2 on t1.id=t2.paper_id;
+
+update mid.json_works_jan31_input
+set json_save_with_abstract = util.f_merge_abstract_index(json_save, abstract_inverted_index);
+
+
+select max(json_extract_path_text(json_save, 'id')) from mid.json_works_with_abstract

@@ -11,6 +11,7 @@ util.f_mag_normalize_string(original_string character varying(65535))
 RETURNS character varying(65535)
 STABLE
 as $$
+    from namenormalizer import *
     import re
     punctuation = r"!#$%&'()*+,-./:;<=>?@[\]^_`{|}~–" + r'"'  #string.punctuation except for space
 
