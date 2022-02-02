@@ -155,7 +155,6 @@ zz20211025_mag_main_papers about 1,618,704 (about 700k are new, about 50k new on
 
 # needs tlc
 institution
-institution_ror
 journal
 author
 author_orcid

@@ -2,7 +2,7 @@
 
 --
 
--- need to update mid.institution using mid.institution_ror and ins.ror_summary_view (a view based on ins.ror* tables)
+-- need to update mid.journal
 -- specifically need to update these columns:
 
 --       normalized_name,
