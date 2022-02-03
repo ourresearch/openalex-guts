@@ -33,6 +33,10 @@ class Institution(db.Model):
     display_name = db.Column(db.Text)
     official_page = db.Column(db.Text)
     iso3166_code = db.Column(db.Text)
+    geonames_city_id = db.Column(db.Text)
+    city = db.Column(db.Text)
+    region = db.Column(db.Text)
+    country = db.Column(db.Text)
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
     paper_count = db.Column(db.Numeric)
@@ -126,23 +130,6 @@ class Institution(db.Model):
         response = [{"type": row[0], "id": row[1]} for row in rows]
         return response
 
-    @cached_property
-    def geonames_city_id(self):
-        # q = """
-        # select geonames_city_id
-        # from ins.ror_geonames
-        # join ins.ror_addresses on ror_addresses.geonames_city_id = ror_geonames.geonames_city_id
-        # WHERE ror_id = :ror_id
-        # """
-        q = """
-        select geonames_city_id
-        from ins.ror_addresses
-        WHERE ror_id = :ror_id
-        """
-        row = db.session.execute(text(q), {"ror_id": self.ror_id}).first()
-        if not row:
-            return None
-        return row[0]
 
     @cached_property
     def labels(self):
@@ -272,13 +259,13 @@ class Institution(db.Model):
     def display_name_international(self):
         data = self.wikidata_data
         if not data:
-            return None
+            return {'en': self.display_name}
         try:
             response = data["entities"][self.wikidata_id_short]["labels"]
             response = {d["language"]: d["value"] for d in response.values()}
             return dict(sorted(response.items()))
         except KeyError:
-            return None
+            return {'en': self.display_name}
 
     @cached_property
     def wikidata_id_short(self):
@@ -400,11 +387,11 @@ class Institution(db.Model):
                     "mag": self.affiliation_id if self.affiliation_id < MAX_MAG_ID else None
                 },
                 "geo": {
-                    "city": self.ror.city if self.ror else None,
+                    "city": self.city,
                     "geonames_city_id": self.geonames_city_id,
-                    "region": self.ror.state if self.ror else None,
+                    "region": self.region,
                     "country_code": self.country_code,
-                    "country": self.ror.country if self.ror else None,
+                    "country": self.country,
                     "latitude": self.latitude,
                     "longitude": self.longitude,
                 },
