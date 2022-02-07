@@ -509,7 +509,7 @@ class Work(db.Model):
         return reference_paper_ids
 
         # objs = db.session.query(Work).options(
-        #      selectinload(Work.journal).selectinload(models.Venue.journalsdb),
+        #      selectinload(Work.journal),
         #      selectinload(Work.extra_ids),
         #      selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
         #      selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
@@ -649,7 +649,7 @@ class Work(db.Model):
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
             response["updated_date"] = self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date
-            # response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date
+            response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
