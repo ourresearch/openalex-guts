@@ -60,7 +60,6 @@ if True:
             citation
             concept
             institution
-            institution_ror
             journal
             location
             mesh
@@ -91,13 +90,13 @@ if True:
 #        publisher=coalesce(jdb.publisher, t1.publisher),
 #        updated_date=sysdate
 # from mid.journal t1
-# join mid.journalsdb_flat jdb on t1.issn=jdb.issn
+# join mid.journalsdb_flat_mv jdb on t1.issn=jdb.issn
 # where t1.issns is null
 #
 #  update mid.journal set
 #         publisher=coalesce(jdb.publisher, t1.publisher)
 #  from mid.journal t1
-#  join mid.journalsdb_flat jdb on t1.issn=jdb.issn
+#  join mid.journalsdb_flat_mv jdb on t1.issn=jdb.issn
 #
 #
 # # just need to do this for ones with grid_ids we haven't seen before (have grid_id but no ror)
@@ -343,23 +342,21 @@ if True:
 # update mid.work set reference_count=v.reference_count, citation_count=v.citation_count, estimated_citation=v.estimated_citation, updated_date=sysdate
 # from mid.work t1
 # join mid.citation_papers_mv v on t1.paper_id=v.paper_id
-# where (v.reference_count != t1.reference_count) or (v.citation_count != t1.citation_count) or (v.estimated_citation != t1.estimated_citation);
+# where (v.reference_count != t1.reference_count) or (v.citation_count != t1.citation_count) or (v.estimated_citation != t1.estimated_citation) or (t1.reference_count is null) or (t1.citation_count is null);
 # update mid.work set updated_date = created_date::timestamp where updated_date is null;
-#
 #
 # refresh materialized view mid.citation_authors_mv;
 # update mid.author set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.author t1
 # join mid.citation_authors_mv v on t1.author_id=v.author_id
-# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count) or (t1.paper_count is null) or (t1.citation_count is null);
 # update mid.author set updated_date = created_date::timestamp where updated_date is null;
-#
 #
 # refresh materialized view mid.citation_journals_mv;
 # update mid.journal set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.journal t1
 # join mid.citation_journals_mv v on t1.journal_id=v.journal_id
-# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count) or (t1.paper_count is null) or (t1.citation_count is null);
 # update mid.journal set updated_date = created_date::timestamp where updated_date is null;
 #
 #
@@ -367,7 +364,7 @@ if True:
 # update mid.institution set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.institution t1
 # join mid.citation_institutions_mv v on t1.affiliation_id=v.affiliation_id
-# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count) or (t1.paper_count is null) or (t1.citation_count is null);
 # update mid.institution set updated_date = created_date::timestamp where updated_date is null;
 #
 #
@@ -375,10 +372,9 @@ if True:
 # update mid.concept set paper_count=v.paper_count, citation_count=v.citation_count, updated_date=sysdate
 # from mid.concept t1
 # join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id
-# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count);
+# where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count) or (t1.paper_count is null) or (t1.citation_count is null);
 # update mid.concept set updated_date = created_date::timestamp where updated_date is null;
-#
-#
+
 #
 
 # refresh materialized view mid.citation_authors_by_year_mv;
