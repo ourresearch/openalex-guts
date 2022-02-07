@@ -1,12 +1,47 @@
- insert into mid.work_match_recordthresher (select id as recordthresher_id, work_id, updated from ins.recordthresher_record where work_id not in (select work_id from mid.work_match_recordthresher))
+ create table ins.recordthresher_record_bak20220122beforenewrecordthresher as (select * from ins.recordthresher_record)
 
- DELETE FROM ins.recordthresher_record
- WHERE id IN
- (SELECT id
-               FROM (SELECT id,
-                              ROW_NUMBER() OVER (partition BY  id ORDER BY updated desc) AS rnum
-                      FROM ins.recordthresher_record) t
-               WHERE t.rnum > 1);
+ insert into mid.work_match_recordthresher
+ (select id as recordthresher_id, work_id, updated
+ from ins.recordthresher_record
+ where id not in (select recordthresher_id from mid.work_match_recordthresher))
+
+select count(*) from ins.recordthresher_record
+-- 8,292,279
+
+update ins.recordthresher_record set work_processed_state='has doi matching a work' where doi in (select doi_lower from mid.work)
+-- 5,688,415
+
+update ins.recordthresher_record set work_processed_state='has title matching a work' where length(match_title) > 50 and match_title in (select match_title from mid.work) and work_processed_state is null
+-- 455,428
+
+update ins.recordthresher_record set work_processed_state='no doi and title too short' where length(match_title) < 50 and doi is null and work_processed_state is null
+-- 81,625
+
+update ins.recordthresher_record set work_processed_state='is component' where normalized_type='component' and work_processed_state is null
+-- 115,468
+
+update ins.recordthresher_record set work_processed_state='blank match_title' where match_title is null and work_processed_state is null
+-- 189,549
+
+select count(*) from ins.recordthresher_record where work_processed_state is null
+-- 1,984,461
+
+select count(distinct doi) from ins.recordthresher_record where work_processed_state is null
+-- 1,846,623
+
+select count(distinct match_title) from ins.recordthresher_record where work_processed_state is null and doi is null
+-- 55,447
+
+
+
+-- probably not needed
+-- DELETE FROM ins.recordthresher_record
+-- WHERE id IN
+-- (SELECT id
+--               FROM (SELECT id,
+--                              ROW_NUMBER() OVER (partition BY  id ORDER BY updated desc) AS rnum
+--                      FROM ins.recordthresher_record) t
+--               WHERE t.rnum > 1);
 
 
  select count(*) from ins.recordthresher_record
