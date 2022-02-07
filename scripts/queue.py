@@ -172,7 +172,7 @@ class DbQueue(object):
             elif run_method == "add_locations":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
-                        and id in (select recordthresher_id from ins.unpaywall_recordthresher_fields_mv where oa_status != 'closed')
+                        and id in (select recordthresher_id from ins.unpaywall_recordthresher_fields_mv.sql where oa_status != 'closed')
                         and work_id not in (select paper_id from mid.location)
                         order by random() limit {chunk}; """
             elif run_method == "add_citations":
@@ -374,7 +374,7 @@ class DbQueue(object):
                         try:
                             objects = db.session.query(models.Work).options(
                                  selectinload(models.Work.locations),
-                                 selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                                 selectinload(models.Work.journal),
                                  selectinload(models.Work.references),
                                  selectinload(models.Work.mesh),
                                  selectinload(models.Work.counts_by_year),
@@ -454,7 +454,7 @@ class DbQueue(object):
                     elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
-                             selectinload(models.Work.journal).selectinload(models.Venue.journalsdb),
+                             selectinload(models.Work.journal),
                              selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
                              selectinload(models.Work.counts_by_year),
