@@ -1,6 +1,20 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
-License updated to ODC-BY for OpenAlex MAG-format
+
+Upcoming release 
+- ensured each institution has a distinct ROR
+- updated institution names and data to match what is in ror
+- added all ror institutions to Institutions
+- matched papers to new institutions (some errors, but will improve over time)
+- updated last known institution for millions of authors
+- add many new journals to Journals table, link to papers when possible
+
+
+RELEASE 2022-01-30
+Released on Jan 39, 2022 at s3://openalex-mag-format/data_dump_v1/2022-01-30/
+- added new papers and corresponding data
+- removed rows with empty primary keys
+- citation counts for Fields of Study are now for algorithm_version 2 (includes the most common 65k Fields of Study)
 
 RELEASE 2022-01-02
 Released on Jan 2, 2022 at s3://openalex-mag-format/data_dump_v1/2022-01-02/
