@@ -1,7 +1,7 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
 
-Upcoming release 
+Upcoming release
 - ensured each institution has a distinct ROR
 - updated institution names and data to match what is in ror
 - added all ror institutions to Institutions

@@ -19,11 +19,8 @@
 
 
 
--- first update the journalsdb_flat table
-create table mid.journalsdb_flat_new distkey (issn) sortkey (issn) as (select * from mid.journalsdb_flat_view)
-alter table mid.journalsdb_flat rename to journalsdb_flat_old;
-alter table mid.journalsdb_flat_new rename to journalsdb_flat;
-drop table journalsdb_flat_old;
+-- first update the journalsdb_flat_mv
+refresh materialized view mid.journalsdb_flat_mv;
 
 -- then update the journal table
 
@@ -41,6 +38,24 @@ update mid.journal set
        publisher=coalesce(jdb.publisher, t1.publisher),
        updated_date=sysdate
 from mid.journal t1
-join mid.journalsdb_flat jdb on t1.issn=jdb.issn
+join mid.journalsdb_flat_mv jdb on t1.issn=jdb.issn
 
 
+insert into mid.journal
+(journal_id, normalized_name, display_name, issn, publisher, created_date, updated_date, issns, is_oa, is_in_doaj, match_name)
+(select
+       1 + MAX_MAG_RIGHT_NOW + (row_number() over (partition by 1)),
+       f_mag_normalize_string(jdb.title),
+       jdb.title,
+       jdb.issn_l,
+       jdb.publisher,
+        sysdate,
+        sysdate,
+       jdb.issns_string,
+       jdb.is_gold_journal,
+       jdb.is_in_doaj,
+       f_matching_string(jdb.title)
+from mid.journalsdb_flat_mv jdb
+where issn_l not in (select issn from mid.journal where issn is not null)
+group by issn_l, title, jdb.publisher, jdb.issns_string, jdb.is_gold_journal, jdb.is_in_doaj
+)

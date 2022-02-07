@@ -22,7 +22,6 @@ from models.work import Work
 from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
 from models.ror import Ror
-from models.journalsdb import Journalsdb
 from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
@@ -46,7 +45,6 @@ Affiliation.author = db.relationship("Author")
 Affiliation.institution = db.relationship("Institution")
 
 Institution.ror = db.relationship("Ror", uselist=False)
-Venue.journalsdb = db.relationship("Journalsdb", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author")
 AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
 Author.last_known_institution = db.relationship("Institution")
@@ -106,7 +104,7 @@ def short_openalex_id(long_openalex_id):
 def single_work_query():
     return db.session.query(Work).options(
          selectinload(Work.locations),
-         selectinload(Work.journal).selectinload(Venue.journalsdb),
+         selectinload(Work.journal),
          selectinload(Work.references),
          selectinload(Work.mesh),
          selectinload(Work.counts_by_year),
