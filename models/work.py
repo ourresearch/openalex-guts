@@ -151,8 +151,13 @@ class Work(db.Model):
         headers = {"X-API-Key": api_key}
         api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
         r = requests.post(api_url, json=json.dumps([data]), headers=headers)
-        response_json = r.json()
-        concept_names = response_json[0]["tags"]
+        try:
+            response_json = r.json()
+            concept_names = response_json[0]["tags"]
+        except Exception as e:
+            print(f"error {e} in add_work_concepts with {self.id}")
+            concept_names = None
+
         if concept_names:
             # concept_names_string = "({})".format(", ".join(["'{}'".format(concept_name) for concept_name in concept_names]))
             # q = """
