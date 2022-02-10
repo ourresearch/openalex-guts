@@ -462,6 +462,7 @@ class DbQueue(object):
                                 try:
                                     objects += db.session.query(models.Work).options(
                                              selectinload(models.Work.records),
+                                             selectinload(models.Work.journal),
                                              orm.Load(models.Work).raiseload('*')).filter(self.myid==id).all()
                                 except Exception as e:
                                     print(f"error: failed on {run_method} {id} with error {e}")
