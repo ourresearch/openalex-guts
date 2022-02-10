@@ -170,10 +170,9 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
-                db.session.remove() # see if this helps serializeable violoations
-
                 big_chunk = chunk
                 text_query_pattern_select = """
+                commit;
                 begin transaction read write;
                 update mid.work set started=sysdate, started_label='{started_label}'
                     where paper_id in
