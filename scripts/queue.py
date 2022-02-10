@@ -171,10 +171,10 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
-                safe_commit(db)
                 big_chunk = chunk
                 text_query_pattern_select = """
                 begin transaction read write;
+                lock mid.work, mid.work_concept;
                 update mid.work set started=sysdate, started_label='{started_label}'
                     where paper_id in
                         (SELECT paper_id
@@ -185,7 +185,10 @@ class DbQueue(object):
                         LIMIT  {chunk});
                 commit;
                 end;
-                select paper_id from mid.work where started_label='{started_label}'; """
+                lock mid.work, mid.work_concept;
+                select paper_id from mid.work where started_label='{started_label}'; 
+                commit;"""
+
                 # text_query_pattern_select = """
                 #     select paper_id  from mid.work
                 #         where paper_id not in (select paper_id from mid.work_concept)
