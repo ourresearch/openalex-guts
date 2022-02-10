@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 from sqlalchemy import insert
+from sqlalchemy import delete
 from collections import defaultdict
 import argparse
 import logging
@@ -110,8 +111,13 @@ class DbQueue(object):
         if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
 
+        delete_dict_all_objects = defaultdict(list)
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
+            if hasattr(obj, "delete_dict"):
+                for table_name, ids in obj.delete_dict.items():
+                    delete_dict_all_objects[table_name] += ids
+
             if hasattr(obj, "insert_dicts"):
                 for row in obj.insert_dicts:
                     for table_name, insert_string in row.items():
@@ -119,10 +125,21 @@ class DbQueue(object):
 
 
         start_time = time()
+        for table_name, delete_ids in delete_dict_all_objects.items():
+            if table_name == "Work":
+                # print("TO DELETE")
+                # print(delete_ids)
+                db.session.remove()
+                db.session.execute(delete(Work).where(Work.paper_id.in_(delete_ids)))
+                db.session.commit()
+                print("delete done")
+
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             # look up the model from the name
             my_table = globals()[table_name]
-
+            # print("TO INSERT")
+            # print(my_table)
+            # print(all_insert_strings)
             db.session.remove()
             db.session.execute(insert(my_table).values(all_insert_strings))
             db.session.commit()
@@ -151,7 +168,12 @@ class DbQueue(object):
 
             if not limit:
                 limit = 1000
-            if run_method == "add_abstract":
+            if run_method == "add_everything":
+                text_query_pattern_select = """
+                    select distinct work_id from ins.recordthresher_record where work_id is not null
+                        and work_id not in (select paper_id from mid.work_concept)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_abstract":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
                         and abstract is not null
@@ -431,8 +453,10 @@ class DbQueue(object):
                         try:
                             objects = db.session.query(models.Work).options(
                                  selectinload(models.Work.records),
+                                 selectinload(models.Work.journal),
                                  orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
+                            print(f"Exception getting records for {object_ids} so trying individually")
                             objects = []
                             for id in object_ids:
                                 try:

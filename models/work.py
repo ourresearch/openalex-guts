@@ -29,7 +29,6 @@ from util import normalize_orcid
 
 # update work set match_title = f_matching_string(original_title)
 
-
 def as_work_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/W{id}"
@@ -142,8 +141,7 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
-    def new_work_concepts(self):
-        self.insert_dicts = []
+    def add_work_concepts(self):
         api_key = os.getenv("SAGEMAKER_API_KEY")
         data = {
             "title": self.work_title.lower(),
@@ -166,22 +164,28 @@ class Work(db.Model):
             # print(f"concepts that match: {matching_concepts}")
             # matching_ids = [concept[0] for concept in matching_concepts]
             for i, concept_name in enumerate(concept_names):
-                self.insert_dicts += [{"WorkConceptFull": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
-                                      paper_id=self.id,
-                                      concept_name_lower=response_json[0]["tags"][i],
-                                      concept_id=response_json[0]["tag_ids"][i],
-                                      score=response_json[0]["scores"][i],
-                                      updated=datetime.datetime.utcnow().isoformat(),
-                                    )}]
+                self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
+                                                       "field_of_study": response_json[0]["tag_ids"][i],
+                                                       "score": response_json[0]["scores"][i],
+                                                       "algorithm_version": 2}}]
         else:
-            matching_ids = []
-            self.insert_dicts += [{"WorkConceptFull": "({paper_id}, '{concept_name_lower}', {concept_id}, {score}, '{updated}')".format(
-                                      paper_id=self.id,
-                                      concept_name_lower=None,
-                                      concept_id="NULL",
-                                      score="NULL",
-                                      updated=datetime.datetime.utcnow().isoformat(),
-                                    )}]
+            self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
+                                                       "field_of_study": None,
+                                                       "score": None,
+                                                       "algorithm_version": 2}}]
+
+
+    def add_everything(self):
+        self.delete_dict = defaultdict(list)
+        self.insert_dicts = []
+        self.set_fields_from_all_records()
+        self.add_work_concepts()
+        self.add_abstract()
+        self.add_mesh()
+        self.add_ids()
+        self.add_locations()
+        self.add_citations()
+        self.add_affiliations()
 
 
     def add_abstract(self):
@@ -192,11 +196,10 @@ class Work(db.Model):
                     # truncate the abstract if too long
                     indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
                 insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
-                self.insert_dicts = [{"Abstract": insert_dict}]
+                self.insert_dicts += [{"Abstract": insert_dict}]
                 return
 
     def add_mesh(self):
-        self.insert_dicts = []
         for record in self.records:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
@@ -206,7 +209,6 @@ class Work(db.Model):
                 return
 
     def add_ids(self):
-        self.insert_dicts = []
         for record in self.records:
             if record.pmid:
                 self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
@@ -215,7 +217,6 @@ class Work(db.Model):
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
 
-        self.insert_dicts = []
         records_with_unpaywall = [record for record in self.records_sorted if record.unpaywall]
         if not records_with_unpaywall:
             return
@@ -244,7 +245,6 @@ class Work(db.Model):
 
     def add_citations(self):
         from models import WorkExtraIds
-        self.insert_dicts = []
         citation_dois = []
         citation_pmids = []
         citation_paper_ids = []
@@ -270,7 +270,6 @@ class Work(db.Model):
                 "paper_reference_id": reference_id}}]
 
     def add_affiliations(self):
-        self.insert_dicts = []
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
             print("No records_with_affiliations")
@@ -292,25 +291,22 @@ class Work(db.Model):
                 self.insert_dicts += [{"Affiliation": {
                     "paper_id": self.paper_id,
                     "author_sequence_number": i,
-                    "original_author": original_name,
-                    "original_affiliation": affiliation_dict["name"],
+                    "original_author": original_name if original_name else None,
+                    "original_affiliation": affiliation_dict["name"] if affiliation_dict["name"] else None,
                     "original_orcid": normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
                 }}]
 
 
     def set_fields_from_record(self, record):
-        from sqlalchemy import select
-        from sqlalchemy import func
-        from util import clean_doi
-
-        # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
+        if not self.created_date:
+            self.created_date = datetime.datetime.utcnow().isoformat()
         self.original_title = record.title
         self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
         self.doc_type = record.normalized_doc_type
-        self.created_date = datetime.datetime.utcnow().isoformat()
         self.updated_date = datetime.datetime.utcnow().isoformat()
         self.match_title = record.match_title
 
+        # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
         self.original_venue = record.venue_name
         if record.journal:
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
@@ -344,17 +340,12 @@ class Work(db.Model):
             return []
         return sorted(self.records, key=lambda x: x.score, reverse=True)
 
-    def mint(self):
-        from models import Record
-
-        print(f"minting! {self.id}")
-        self.started = datetime.datetime.utcnow().isoformat()
-        self.finished = datetime.datetime.utcnow().isoformat()
-
+    def set_fields_from_all_records(self):
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
         if not self.records_sorted:
             return
-        records = self.records_sorted.reverse()
+        records = self.records_sorted
+        records.reverse()
 
         print(f"my records: {records}")
 
@@ -368,40 +359,28 @@ class Work(db.Model):
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
 
-        self.started_label = "new from match"
-
+        self.delete_dict["Work"] += [self.paper_id]
         insert_dict = {}
-        work_insert_fieldnames = """paper_id
-                        doi
-                        doc_type
-                        paper_title
-                        original_title
-                        year
-                        publication_date
-                        online_date
-                        publisher
-                        journal_id
-                        volume
-                        issue
-                        first_page
-                        last_page
-                        created_date
-                        updated_date
-                        doi_lower
-                        doc_sub_types
-                        original_venue
-                        genre
-                        is_paratext
-                        oa_status
-                        best_url
-                        best_free_url
-                        best_free_version
-                        match_title
-                        started_label""".split()
+        work_insert_fieldnames = Work.__table__.columns.keys()
+        for key in work_insert_fieldnames:
+            insert_dict[key] = getattr(self, key)
+        self.insert_dicts += [{"Work": insert_dict}]
+
+
+    def mint(self):
+        from models import Record
+
+        print(f"minting! {self.id}")
+        self.started = datetime.datetime.utcnow().isoformat()
+        self.finished = datetime.datetime.utcnow().isoformat()
+        self.set_fields_from_all_records()
+
+        self.started_label = "new from match"
+        insert_dict = {}
+        work_insert_fieldnames = Work.__table__.columns.keys()
         for key in work_insert_fieldnames:
             insert_dict[key] = getattr(self, key)
         self.insert_dicts = [{"Work": insert_dict}]
-
         print(f"done! {self.id}")
 
     @cached_property

@@ -21,6 +21,7 @@ from models.unpaywall import Unpaywall
 from models.work import Work
 from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
+from models.work_concept import WorkConceptFull
 from models.ror import Ror
 from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, InstitutionCountsByYear, VenueCountsByYear, WorkCountsByYear
