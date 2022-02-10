@@ -19,6 +19,7 @@ from app import MAX_MAG_ID
 import models
 from models import *  # needed to get the insert tables from the name alone
 from util import elapsed
+from util import safe_commit
 
 
 class JsonWorks(db.Model):
@@ -170,9 +171,9 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
+                safe_commit(db)
                 big_chunk = chunk
                 text_query_pattern_select = """
-                commit;
                 begin transaction read write;
                 update mid.work set started=sysdate, started_label='{started_label}'
                     where paper_id in
