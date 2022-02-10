@@ -132,7 +132,7 @@ class Venue(db.Model):
                 "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
-                    "issn": json.loads(self.issns) if self.issns else None,
+                    "issn": json.loads(self.issns) if ((self.issns) and (self.issns != '[]')) else None,
                     "mag": self.journal_id if self.journal_id < MAX_MAG_ID else None
                 },
                 "counts_by_year": self.display_counts_by_year,
