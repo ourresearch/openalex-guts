@@ -170,6 +170,8 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
+                db.session.remove() # see if this helps serializeable violoations
+
                 big_chunk = chunk
                 text_query_pattern_select = """
                 begin transaction read write;
