@@ -158,6 +158,7 @@ class DbQueue(object):
         worker_name = kwargs.get("name", "myworker")
         run_class = self.myclass
         run_method = kwargs.get("method")
+        big_chunk = 10000
 
         if single_obj_id:
             limit = 1
@@ -165,14 +166,28 @@ class DbQueue(object):
         else:
             queue_table = self.table_name
             insert_table = None
-
             if not limit:
                 limit = 1000
+
             if run_method == "add_everything":
+                big_chunk = chunk
                 text_query_pattern_select = """
-                    select distinct work_id from ins.recordthresher_record where work_id is not null
-                        and work_id not in (select paper_id from mid.work_concept)
-                        order by random() limit {chunk}; """
+                begin transaction read write;
+                update mid.work set started=sysdate, started_label='{started_label}'
+                    where paper_id in
+                        (SELECT paper_id
+                        FROM   mid.work
+                        WHERE  started is null and finished is null and started_label is null
+                        and paper_id not in (select paper_id from mid.work_concept)
+                        order by random()
+                        LIMIT  {chunk});
+                commit;
+                end;
+                select paper_id from mid.work where started_label='{started_label}'; """
+                # text_query_pattern_select = """
+                #     select paper_id  from mid.work
+                #         where paper_id not in (select paper_id from mid.work_concept)
+                #         order by random() limit {chunk}; """
             elif run_method == "add_abstract":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
@@ -354,7 +369,6 @@ class DbQueue(object):
 
         index = 0
         start_time = time()
-        big_chunk = 10000
 
         max_openalex_id = None
         if run_method == "process_record":
@@ -364,12 +378,14 @@ class DbQueue(object):
             max_openalex_id = row["max_id"]
 
         while True:
+            started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
             text_query_select = text_query_pattern_select.format(
                 chunk=big_chunk,
                 queue_table=queue_table,
                 insert_table=insert_table,
                 id_field_name=self.id_field_name,
-                MAX_MAG_ID=MAX_MAG_ID
+                MAX_MAG_ID=MAX_MAG_ID,
+                started_label=started_label
             )
             # logger.info("the queues query is:\n{}".format(text_query))
 

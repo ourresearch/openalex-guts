@@ -346,6 +346,8 @@ class Work(db.Model):
         return sorted(self.records, key=lambda x: x.score, reverse=True)
 
     def set_fields_from_all_records(self):
+        self.finished = datetime.datetime.utcnow().isoformat()
+
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
         if not self.records_sorted:
             return
@@ -376,8 +378,6 @@ class Work(db.Model):
         from models import Record
 
         print(f"minting! {self.id}")
-        self.started = datetime.datetime.utcnow().isoformat()
-        self.finished = datetime.datetime.utcnow().isoformat()
         self.set_fields_from_all_records()
 
         self.started_label = "new from match"

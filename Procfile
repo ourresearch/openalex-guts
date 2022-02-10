@@ -43,7 +43,7 @@ run_queue_store_concept: python -m scripts.queue --run --table=concept --method=
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 
-run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=1000 --name=$DYNO
+run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=100 --name=$DYNO
 run_queue_work_add_abstracts: python -m scripts.queue --run --table=work --method=add_abstract --chunk=1000 --name=$DYNO
 run_queue_work_add_mesh: python -m scripts.queue --run --table=work --method=add_mesh --chunk=1000 --name=$DYNO
 run_queue_work_add_ids: python -m scripts.queue --run --table=work --method=add_ids --chunk=1000 --name=$DYNO
