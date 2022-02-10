@@ -493,8 +493,8 @@ class Concept(db.Model):
                     "openalex": self.openalex_id,
                     "wikidata": self.wikidata_id,
                     "wikipedia": self.wikipedia_url,
-                    "umls_aui": self.umls_aui_urls,
-                    "umls_cui": self.umls_cui_urls,
+                    "umls_aui": self.umls_aui_urls if self.umls_aui_urls else None,
+                    "umls_cui": self.umls_cui_urls if self.umls_cui_urls else None,
                     "mag": self.field_of_study_id if self.field_of_study_id < MAX_MAG_ID else None
                 },
                 "image_url": self.image_url,
