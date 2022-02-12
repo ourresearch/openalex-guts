@@ -1,14 +1,10 @@
  create table ins.recordthresher_record_bak20220122beforenewrecordthresher as (select * from ins.recordthresher_record)
-
- insert into mid.work_match_recordthresher
- (select id as recordthresher_id, work_id, updated
- from ins.recordthresher_record
- where id not in (select recordthresher_id from mid.work_match_recordthresher))
+ create table ins.work_match_recordthresher_bak20220122beforenewrecordthresher as (select * from mid.work_match_recordthresher)
 
 select count(*) from ins.recordthresher_record
 -- 8,292,279
 
-update ins.recordthresher_record set work_processed_state='has doi matching a work' where doi in (select doi_lower from mid.work)
+update ins.recordthresher_record set work_processed_state='has doi matching a work' where doi in (select doi_lower from mid.work) and work_processed_state is null
 -- 5,688,415
 
 update ins.recordthresher_record set work_processed_state='has title matching a work' where length(match_title) > 50 and match_title in (select match_title from mid.work) and work_processed_state is null
@@ -33,6 +29,7 @@ select count(distinct match_title) from ins.recordthresher_record where work_pro
 -- 55,447
 
 
+select id, count(*) as n from ins.recordthresher_record where work_processed_state is null group by id order by n desc
 
 -- probably not needed
 -- DELETE FROM ins.recordthresher_record
@@ -44,29 +41,16 @@ select count(distinct match_title) from ins.recordthresher_record where work_pro
 --               WHERE t.rnum > 1);
 
 
- select count(*) from ins.recordthresher_record
- 2,297,333
- select count(*) from ins.recordthresher_record where work_id is not null
- 557,340
- delete from ins.recordthresher_record where work_id is not null
- select count(*) from ins.recordthresher_record where doi in (select doi_lower from mid.work)
- 1,154,583
- delete from ins.recordthresher_record where doi in (select doi_lower from mid.work)
- select count(*) from ins.recordthresher_record where match_title in (select match_title from mid.work)
- 182,272
- delete from ins.recordthresher_record where match_title in (select match_title from mid.work)
- select count(*) from ins.recordthresher_record where doi is null and (match_title is null) or length(match_title) < 20
- 49804
-
- delete from ins.recordthresher_record where doi is null and (match_title is null) or length(match_title) < 20
+ delete from ins.recordthresher_record where work_processed_state is not null;
 
 
  select * from util.max_openalex_id
+-- 4210821236
 
  insert into mid.work
  (paper_id, doi, doi_lower, original_title, match_title, journal_id, doc_type, created_date, updated_date)
  (
- select 4205086888 + 1 + (row_number() over (partition by 1)) as paper_id, doi, doi, max(title) as title, max(match_title) as match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, sysdate
+ select 4210821236 + 1 + (row_number() over (partition by 1)) as paper_id, doi, doi, max(title) as title, max(match_title) as match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, sysdate
  from ins.recordthresher_record
  left outer join mid.journal journal on journal.issn = journal_issn_l
  where doi is not null and title is not null
@@ -99,10 +83,16 @@ select count(distinct match_title) from ins.recordthresher_record where work_pro
  where t1.doi is null and t1.work_id is null
 
 
+insert into mid.work_match_recordthresher (recordthresher_id, work_id, updated)
+(select id, work_id, sysdate from ins.recordthresher_record where work_id is not null)
+
+
  select work_id is null, count(*) from ins.recordthresher_record group by work_id is null
  FALSE	281621
  TRUE	71713
 
  delete from ins.recordthresher_record where work_id is null
+-- 1336
 
+update ins.recordthresher_record set work_processed_state='made a new work' where work_id is not null and work_processed_state is null
 
