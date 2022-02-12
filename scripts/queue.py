@@ -185,9 +185,7 @@ class DbQueue(object):
                         LIMIT  {chunk});
                 commit;
                 end;
-                lock mid.work, mid.work_concept;
-                select paper_id from mid.work where started_label='{started_label}'; 
-                commit;"""
+                select paper_id from mid.work where started_label='{started_label}'; """
 
                 # text_query_pattern_select = """
                 #     select paper_id  from mid.work
