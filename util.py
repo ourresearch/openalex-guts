@@ -151,6 +151,18 @@ def normalize_orcid(orcid):
     orcid = orcid.replace('\0', '')
     return orcid
 
+def normalize_pmid(pmid):
+    if not pmid:
+        return None
+    pmid = pmid.strip().lower()
+    p = re.compile('(\d+)')
+    matches = re.findall(p, pmid)
+    if len(matches) == 0:
+        return None
+    pmid = matches[0]
+    pmid = pmid.replace('\0', '')
+    return pmid
+
 def normalize_ror(ror):
     if not ror:
         return None

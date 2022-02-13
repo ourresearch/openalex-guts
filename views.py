@@ -183,6 +183,8 @@ def works_random_get():
 @app.route("/works/<path:id>")
 def works_id_get(id):
     from util import normalize_doi
+    from util import normalize_pmid
+    from models import openalex_id_from_pmid
 
     obj = None
     if is_openalex_id(id):
@@ -193,8 +195,13 @@ def works_id_get(id):
         obj = models.work_from_id(clean_id)
     elif id.startswith("mag:"):
         clean_id = id.replace("mag:", "")
-        clean_id = f"V{clean_id}"
+        clean_id = f"W{clean_id}"
         return redirect(url_for("works_id_get", id=clean_id, **request.args))
+    elif id.startswith("pmid:"):
+        id = id.replace("pmid:", "")
+        clean_pmid = normalize_pmid(id)
+        openalex_id = openalex_id_from_pmid(clean_pmid)
+        return redirect(url_for("works_id_get", id=openalex_id, **request.args))
     elif id.startswith("doi:") or ("doi" in id):
         clean_doi = normalize_doi(id, return_none_if_error=True)
         if not clean_doi:
@@ -268,7 +275,7 @@ def institutions_id_get(id):
         obj = models.institution_from_id(clean_id)
     elif id.startswith("mag:"):
         clean_id = id.replace("mag:", "")
-        clean_id = f"V{clean_id}"
+        clean_id = f"I{clean_id}"
         return redirect(url_for("institutions_id_get", id=clean_id, **request.args))
     elif id.startswith("ror:") or ("ror.org" in id):
         clean_ror = normalize_ror(id)
@@ -344,7 +351,7 @@ def concepts_id_get(id):
         obj = models.concept_from_id(clean_id)
     elif id.startswith("mag:"):
         clean_id = id.replace("mag:", "")
-        clean_id = f"V{clean_id}"
+        clean_id = f"C{clean_id}"
         return redirect(url_for("concepts_id_get", id=clean_id, **request.args))
     elif id.startswith("wikidata:") or ("wikidata" in id):
         clean_wikidata = normalize_wikidata(id)
