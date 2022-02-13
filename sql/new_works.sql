@@ -41,7 +41,7 @@ select id, count(*) as n from ins.recordthresher_record where work_processed_sta
 --               WHERE t.rnum > 1);
 
 
- delete from ins.recordthresher_record where work_processed_state is not null;
+ -- delete from ins.recordthresher_record where work_processed_state is not null;
 
 
  select * from util.max_openalex_id
@@ -54,12 +54,13 @@ select id, count(*) as n from ins.recordthresher_record where work_processed_sta
  from ins.recordthresher_record
  left outer join mid.journal journal on journal.issn = journal_issn_l
  where doi is not null and title is not null
+ and work_processed_state is null
  group by doi, journal_issn_l
  order by random()
  )
 
 
- update ins.recordthresher_record set work_id=t2.paper_id
+ update ins.recordthresher_record set work_id=t2.paper_id, work_processed_state='made new work'
  from ins.recordthresher_record t1
  join mid.work t2 on t1.doi = t2.doi_lower
  where t1.work_id is null
@@ -77,14 +78,16 @@ select id, count(*) as n from ins.recordthresher_record where work_processed_sta
  order by random()
  )
 
- update ins.recordthresher_record set work_id=t2.paper_id
+ update ins.recordthresher_record set work_id=t2.paper_id, work_processed_state='made new work'
  from ins.recordthresher_record t1
  join mid.work t2 on t1.match_title = t2.match_title
  where t1.doi is null and t1.work_id is null
 
 
 insert into mid.work_match_recordthresher (recordthresher_id, work_id, updated)
-(select id, work_id, sysdate from ins.recordthresher_record where work_id is not null)
+(select id, work_id, sysdate from ins.recordthresher_record where work_id is not null
+and id not in (select recordthresher_id from mid.work_match_recordthresher))
+)
 
 
  select work_id is null, count(*) from ins.recordthresher_record group by work_id is null

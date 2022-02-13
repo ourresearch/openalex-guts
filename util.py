@@ -86,6 +86,8 @@ def clean_html(raw_html):
 
 # good for deduping strings.  warning: output removes spaces so isn't readable.
 def normalize(text):
+    if not text:
+        return None
     response = text.lower()
     response = unidecode(str(response))
     response = clean_html(response)  # has to be before remove_punctuation
@@ -97,6 +99,8 @@ def normalize(text):
 
 
 def normalize_simple(text, remove_articles=True, remove_spaces=True):
+    if not text:
+        return None
     response = text.lower()
     response = remove_punctuation(response)
     if remove_articles:
