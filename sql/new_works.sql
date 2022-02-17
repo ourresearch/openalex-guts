@@ -99,3 +99,55 @@ and id not in (select recordthresher_id from mid.work_match_recordthresher))
 
 update ins.recordthresher_record set work_processed_state='made a new work' where work_id is not null and work_processed_state is null
 
+
+
+
+
+truncate mid.json_works_input
+
+COPY mid.json_works_input
+(id, updated, json_save, version, abstract_inverted_index, json_save_with_abstract)
+ FROM 's3://openalex-sandbox/json/works-feb8-q4work/'
+FORMAT PARQUET
+CREDS
+-- heather WAIT while it copies over
+
+-- 53012557 q1
+-- 52665970 q2
+-- 52646888 q3
+-- 52672746 q4
+
+
+select count(distinct id) from mid.json_works_input
+-- 204564431
+
+select count(distinct id) from mid.json_works where id in (select id from mid.json_works_input)
+-- 204564431
+-- 5,485,433
+-- 5,480,606
+select count(distinct id) from mid.json_works_input where id not in (select id from mid.json_works)
+-- 609566
+
+-- 1933.8 seconds
+update mid.json_works_input set abstract_inverted_index=t2.indexed_abstract, updated=sysdate
+from mid.json_works_input t1
+join mid.abstract t2 on t1.id=t2.paper_id
+-- 110283394
+
+-- 9587.7 seconds
+update mid.json_works_input set json_save_with_abstract=util.f_merge_abstract_index(json_save, abstract_inverted_index), updated=sysdate
+-- 210998161
+
+-- delete from mid.json_works where id in (select id from mid.json_works_input)
+-- delete from mid.json_works_input where id in (select id from mid.json_works)
+or
+truncate mid.json_works
+
+truncate mid.json_works;
+
+-- 1116.9 seconds
+insert into mid.json_works (id, updated, json_save, version, abstract_inverted_index, json_save_with_abstract)
+(select id, max(updated) as updated, max(json_save) as json_save, max(version) as version,
+max(abstract_inverted_index) as abstract_inverted_index, max(json_save_with_abstract) as json_save_with_abstract
+from json_works_input group by id);
+-- 204564431

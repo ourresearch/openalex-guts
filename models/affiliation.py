@@ -27,13 +27,13 @@ class Affiliation(db.Model):
     updated_date = db.Column(db.DateTime)
 
     def update(self):
-
+        #
         # update mid.affiliation set affiliation_id=lookup.affiliation_id, updated_date=sysdate
         # from mid.affiliation affil
         # join mid.affiliation_institution_lookup_view lookup on affil.original_affiliation=lookup.original_affiliation
         # where affil.original_affiliation is not null and affil.affiliation_id is null and affil.paper_id > 4200000000
-
-
+        #
+        #
         # with update_table as (select affil.original_affiliation, inst.affiliation_id
         # from mid.affiliation affil
         # join mid.institution inst on affil.original_affiliation ilike '%' || inst.display_name || '%'
@@ -46,22 +46,22 @@ class Affiliation(db.Model):
         # from mid.affiliation t1
         # join update_table t2 on t1.original_affiliation=t2.original_affiliation
         # where t1.original_affiliation is not null and t1.affiliation_id is null and t1.paper_id > 4200000000
-
+        #
         # make sure to make the updated_date of works and be the max of its updated date and this updated date
         # update mid.work set updated_date=t2.updated_date
         # from mid.work t1
         # join mid.affiliation t2 on t1.paper_id=t2.paper_id
         # where t1.updated_date < t2.updated_date and t2.updated_date is not null
-
+        #
         # update mid.affiliation set match_author = f_matching_author_string(original_author) where original_author is not null and match_author is null;  -- running now 3830.2
         # update mid.affiliation set match_institution_name = f_matching_string(original_affiliation) where original_affiliation is not null and match_institution_name is null; -- took 1500
-
+        #
         # match orcids to what we've got
         # update mid.affiliation set author_id=t2.author_id, updated_date=sysdate
         # from mid.affiliation t1
         # join mid.author_orcid t2 on t1.original_orcid=t2.orcid
         # where t1.original_orcid is not null and t1.author_id is null
-
+        #
         # match author_id with the ones who cite themselves
         # with matching_authors as (
         # select orig_affil.paper_id, orig_affil.author_sequence_number,  affil.author_id, auth_cited.match_name, affil.match_author, citation.paper_reference_id
@@ -76,9 +76,9 @@ class Affiliation(db.Model):
         # from mid.affiliation t1
         # join matching_authors t2 on (t1.paper_id=t2.paper_id) and (t1.author_sequence_number=t2.author_sequence_number) and (t1.match_author=t2.match_author)
         # and t1.author_id is null
-
+        #
         # make new authors of everyone else
-
+        #
         # select * from util.max_openalex_id
         # -- 4207094444
         #
@@ -97,13 +97,13 @@ class Affiliation(db.Model):
         # from mid.affiliation t1
         # join new_ids_for_authors t2 on t2.paper_id=t1.paper_id
         # where t2.author_sequence_number = t1.author_sequence_number
-
+        #
         # insert into mid.author (author_id, display_name, created_date, updated_date, match_name, last_known_affiliation_id)
         # select author_id, original_author, sysdate, sysdate, match_author, max(affiliation_id) as affiliation_id
         # from mid.affiliation
         # where author_id > 4207094444  YOU MUST UPDATE THIS NUMBER
         # group by author_id, original_author, match_author
-
+        #
         # add author orcid if not already there
         # insert into mid.author_orcid (author_id, orcid, updated, evidence)
         # (select author_id, original_orcid, sysdate, 'from recordthresher'
@@ -111,16 +111,16 @@ class Affiliation(db.Model):
         # and (author_id not in (select author_id from mid.author_orcid))
         # group by author_id, original_orcid
         # )
-
-
+        #
+        #
         # update the updated date of works
         # update mid.work set updated_date=t2.updated_date
         # from mid.work t1
         # join mid.affiliation t2 on t1.paper_id=t2.paper_id
         # where t1.updated_date < t2.updated_date and t2.updated_date is not null
-
+        #
         # figure out how I did the recommended papers thing
-
+        #
         #
         # create table temp_papers_can_recommend distkey(author_id) sortkey(author_id) as
         # (select work.paper_id, publication_date, citation_count, author_id
@@ -150,7 +150,7 @@ class Affiliation(db.Model):
         # select paper_id, recommended_paper_id, 0.4 as score, sysdate as updated
         # from relevant_recommendations
         # where row_number <= 10
-
+        #
         #
         # refresh materialized view mid.citation_papers_mv;
         # update mid.work set reference_count=v.reference_count, citation_count=v.citation_count, estimated_citation=v.estimated_citation, updated_date=sysdate
@@ -188,7 +188,7 @@ class Affiliation(db.Model):
         # join mid.citation_concepts_mv v on t1.field_of_study_id=v.field_of_study_id
         # where (v.paper_count != t1.paper_count) or (v.citation_count != t1.citation_count) or (t1.paper_count is null) or (t1.citation_count is null);
         # update mid.concept set updated_date = created_date::timestamp where updated_date is null;
-
+        #
         #
         # refresh materialized view mid.citation_authors_by_year_mv;
         # refresh materialized view mid.citation_journals_by_year_mv;

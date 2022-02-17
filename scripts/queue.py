@@ -233,7 +233,7 @@ class DbQueue(object):
                         where {id_field_name} not in
                             (select id from {insert_table})
                         -- and {id_field_name} < {MAX_MAG_ID} 
-                        and updated_date > '2022-01-20'                           
+                        and updated_date > '2022-02-15'                           
                         order by random()
                         limit {chunk};
                 """
