@@ -1,9 +1,12 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2022-02-22
+- added new papers and corresponding data
+
 Partial release on 2022-02-04 (updated Institutions and Venues)
 - ensured each institution has a distinct ROR (identified some institutions that will be merged in a future release, details TBD)
-- updated institution names and data to match what is in ror
-- added all ror institutions to Institutions
+- updated institution names and data to match what is in ROR
+- added all ROR institutions to Institutions
 - matched papers to new institutions (some errors, but will improve over time)
 - updated last known institution for millions of authors
 - don't show citation counts for future years in "counts_by_year"
