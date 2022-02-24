@@ -52,6 +52,7 @@ class Author(db.Model):
 
     @property
     def orcid_object(self):
+        # eventually get it like this from ORCID api:  curl -vLH'Accept: application/json' https://orcid.org/0000-0003-0902-4386
         if not self.orcids:
             return None
         return sorted(self.orcids, key=lambda x: x.orcid)[0]
