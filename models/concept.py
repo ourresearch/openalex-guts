@@ -72,49 +72,49 @@ class Concept(db.Model):
         response = [id for id in concept_id_list if id not in invalid_ids]
         return response
 
-    # @cached_property
-    # def ancestors_raw(self):
-    #     q = """
-    #     WITH RECURSIVE leaf (child_field_of_study_id, child_field, child_level, field_of_study_id, parent_field, parent_level) AS (
-    #     SELECT  linking.child_field_of_study_id,
-    #             child_fields.display_name as child_field,
-    #             child_fields.level as child_level,
-    #             linking.field_of_study_id,
-    #             parent_fields.display_name as parent_field,
-    #             parent_fields.level as parent_level
-    #     FROM    legacy.mag_advanced_field_of_study_children linking
-    #     JOIN    legacy.mag_advanced_fields_of_study child_fields on child_fields.field_of_study_id=linking.child_field_of_study_id
-    #     JOIN    legacy.mag_advanced_fields_of_study parent_fields on parent_fields.field_of_study_id=linking.field_of_study_id
-    #     WHERE   child_field_of_study_id = :concept_id
-    #     UNION ALL
-    #     SELECT  linking2.child_field_of_study_id,
-    #             child_fields2.display_name as child_field,
-    #             child_fields2.level as child_level,
-    #             linking2.field_of_study_id,
-    #             parent_fields2.display_name as parent_field,
-    #             parent_fields2.level as parent_level
-    #     FROM    legacy.mag_advanced_field_of_study_children linking2
-    #     JOIN    legacy.mag_advanced_fields_of_study child_fields2 on child_fields2.field_of_study_id=linking2.child_field_of_study_id
-    #     JOIN    legacy.mag_advanced_fields_of_study parent_fields2 on parent_fields2.field_of_study_id=linking2.field_of_study_id
-    #
-    #     INNER JOIN leaf l
-    #     On l.field_of_study_id = linking2.child_field_of_study_id
-    #     )
-    #     SELECT distinct child_field_of_study_id as id, child_field as name, child_level as level, field_of_study_id as ancestor_id, parent_field as ancestor_name, parent_level as ancestor_level FROM leaf
-    #
-    #     """
-    #     rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-    #     return rows
-    #
-    # @cached_property
-    # def ancestors(self):
-    #     rows = self.ancestors_raw
-    #     row_dict = {row["ancestor_id"]: row for row in rows}
-    #     ancestors = [{"id": as_concept_openalex_id(row["ancestor_id"]),
-    #                 "display_name": row["ancestor_name"],
-    #                 "level": row["ancestor_level"]} for row in row_dict.values()]
-    #     ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
-    #     return ancestors
+    @cached_property
+    def ancestors_raw(self):
+        q = """
+        WITH RECURSIVE leaf (child_field_of_study_id, child_field, child_level, field_of_study_id, parent_field, parent_level) AS (
+        SELECT  linking.child_field_of_study_id,
+                child_fields.display_name as child_field,
+                child_fields.level as child_level,
+                linking.field_of_study_id,
+                parent_fields.display_name as parent_field,
+                parent_fields.level as parent_level
+        FROM    legacy.mag_advanced_field_of_study_children linking
+        JOIN    legacy.mag_advanced_fields_of_study child_fields on child_fields.field_of_study_id=linking.child_field_of_study_id
+        JOIN    legacy.mag_advanced_fields_of_study parent_fields on parent_fields.field_of_study_id=linking.field_of_study_id
+        WHERE   child_field_of_study_id = :concept_id
+        UNION ALL
+        SELECT  linking2.child_field_of_study_id,
+                child_fields2.display_name as child_field,
+                child_fields2.level as child_level,
+                linking2.field_of_study_id,
+                parent_fields2.display_name as parent_field,
+                parent_fields2.level as parent_level
+        FROM    legacy.mag_advanced_field_of_study_children linking2
+        JOIN    legacy.mag_advanced_fields_of_study child_fields2 on child_fields2.field_of_study_id=linking2.child_field_of_study_id
+        JOIN    legacy.mag_advanced_fields_of_study parent_fields2 on parent_fields2.field_of_study_id=linking2.field_of_study_id
+
+        INNER JOIN leaf l
+        On l.field_of_study_id = linking2.child_field_of_study_id
+        )
+        SELECT distinct child_field_of_study_id as id, child_field as name, child_level as level, field_of_study_id as ancestor_id, parent_field as ancestor_name, parent_level as ancestor_level FROM leaf
+
+        """
+        rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
+        return rows
+
+    @cached_property
+    def ancestors(self):
+        rows = self.ancestors_raw
+        row_dict = {row["ancestor_id"]: row for row in rows}
+        ancestors = [{"id": as_concept_openalex_id(row["ancestor_id"]),
+                    "display_name": row["ancestor_name"],
+                    "level": row["ancestor_level"]} for row in row_dict.values()]
+        ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
+        return ancestors
 
     @cached_property
     def extended_attributes(self):
@@ -437,22 +437,16 @@ class Concept(db.Model):
         #     print(f"Error: oops on loading wikidata_super {self.field_of_study_id}")
         #     pass
 
-        
 
-    def store_ancestors(self):
+    def calculate_ancestors(self):
         ancestors = self.ancestors_raw
         if not hasattr(self, "insert_dicts"):
             self.insert_dicts = []
         for ancestor in ancestors:
-            self.insert_dicts += [{"mid.concept_ancestor": "({id}, '{name}', {level}, {ancestor_id}, '{ancestor_name}', {ancestor_level})".format(
-                                  id=self.field_of_study_id,
-                                  name=self.display_name.replace("'", ""),
-                                  level=self.level,
-                                  ancestor_id=ancestor["ancestor_id"],
-                                  ancestor_name=ancestor["ancestor_name"].replace("'", ""),
-                                  ancestor_level=ancestor["ancestor_level"],
-                                )}]
-
+            id = self.field_of_study_id
+            ancestor_id = ancestor["ancestor_id"]
+            self.insert_dicts += [{"ConceptAncestor": [id, ancestor_id]}]
+        print(self.insert_dicts)
 
     @cached_property
     def ancestors_sorted(self):
