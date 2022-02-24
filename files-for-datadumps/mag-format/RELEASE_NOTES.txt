@@ -1,6 +1,8 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
 
+- added 45 new journals
+
 RELEASE 2022-02-22
 - added new papers and corresponding data
 - ensured each institution has a distinct ROR (identified some institutions that will be merged in a future release, details TBD)

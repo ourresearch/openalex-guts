@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+
+- added 45 new journals to Venues
+
+
 RELEASE 2022-02-22
 - added new papers and corresponding data
 
