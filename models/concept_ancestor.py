@@ -7,6 +7,7 @@ class ConceptAncestor(db.Model):
 
     id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     ancestor_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+
     my_concept = db.relationship("Concept", foreign_keys=id, backref="ancestors")
     my_ancestor = db.relationship("Concept", foreign_keys=ancestor_id)
 

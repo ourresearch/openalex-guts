@@ -328,7 +328,7 @@ class DbQueue(object):
                     order by random()
                     limit {chunk};
                 """
-            elif self.myclass == models.Concept and run_method=="store_ancestors":
+            elif self.myclass == models.Concept and run_method=="calculate_ancestors":
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept
                         where 
@@ -528,6 +528,9 @@ class DbQueue(object):
                              selectinload(models.Institution.counts_by_year),
                              selectinload(models.Institution.ror).raiseload('*'),
                              orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
+                        objects = db.session.query(models.Concept).options(
+                             orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Concept:
                         objects = db.session.query(models.Concept).options(
                              selectinload(models.Concept.counts_by_year),
