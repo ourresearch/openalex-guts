@@ -14,7 +14,7 @@ class Ror(db.Model):
     country_code = db.Column(db.Text)
     grid_id = db.Column(db.Text)
     wikipedia_url = db.Column(db.Text)
-
+    ror_type = db.Column(db.Text)
 
     @property
     def ror_url(self):
