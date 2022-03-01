@@ -174,16 +174,6 @@ class Institution(db.Model):
         return response
 
     @cached_property
-    def type(self):
-        q = """
-        select type
-        from ins.ror_types
-        WHERE ror_id = :ror_id
-        """
-        row = db.session.execute(text(q), {"ror_id": self.ror_id}).first()
-        return row[0].lower() if row else None
-
-    @cached_property
     def image_url(self):
         if not self.wikipedia_data:
             return None
@@ -363,7 +353,7 @@ class Institution(db.Model):
             "ror": self.ror_url,
             "display_name": self.display_name,
             "country_code": self.country_code,
-            "type": self.type,
+            "type": self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None,
         }
         # true for embedded related institutions
         if hasattr(self, "relationship_status"):
