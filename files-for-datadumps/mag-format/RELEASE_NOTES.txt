@@ -1,7 +1,11 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
 
+RELEASE 2022-02-28
+- added new papers and corresponding data
 - added 45 new journals
+- added ancestors to 1500 field of study ids without ancestors
+- fixed a bug with some tabs in the Journal publisher field
 
 RELEASE 2022-02-22
 - added new papers and corresponding data
