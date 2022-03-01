@@ -29,6 +29,8 @@ class JsonWorks(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
+    abstract_inverted_index = db.Column(db.Text)
+    json_save_with_abstract = db.Column(db.Text)
 
 class JsonAuthors(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -229,11 +231,11 @@ class DbQueue(object):
                         order by random() limit {chunk}; """
             elif run_method in ["store"]:
                 text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        -- and {id_field_name} < {MAX_MAG_ID} 
-                        -- and updated_date > '2022-02-15'                           
+                    select distinct {id_field_name} 
+                        from {queue_table}
+                        left outer join {insert_table} on {queue_table}.{id_field_name} = {insert_table}.id
+                        where (({insert_table}.updated is null) or ({insert_table}.updated < {queue_table}.updated_date))
+                        and {queue_table}.updated_date > '2022-02-19'
                         order by random()
                         limit {chunk};
                 """
@@ -410,7 +412,25 @@ class DbQueue(object):
 
                     job_time = time()
                     print(object_ids)
-                    if (self.myclass == models.Work) and (run_method.startswith("store")):
+                    if (self.myclass == models.Work) and (run_method == "store"):
+                        try:
+                            objects = db.session.query(models.Work).options(
+                                 selectinload(models.Work.locations),
+                                 selectinload(models.Work.journal),
+                                 selectinload(models.Work.references),
+                                 selectinload(models.Work.mesh),
+                                 selectinload(models.Work.counts_by_year),
+                                 selectinload(models.Work.abstract),  # include abstract for this one, isn't high throughput
+                                 selectinload(models.Work.extra_ids),
+                                 selectinload(models.Work.related_works),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                        except Exception as e:
+                            print(f"Exception fetching IDs {object_ids} {e}")
+                            objects = []
+                    elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
                         # no abstracts
                         try:
                             objects = db.session.query(models.Work).options(
@@ -419,7 +439,7 @@ class DbQueue(object):
                                  selectinload(models.Work.references),
                                  selectinload(models.Work.mesh),
                                  selectinload(models.Work.counts_by_year),
-                                 # selectinload(models.Work.abstract),
+                                 # selectinload(models.Work.abstract),  # this is the high throughput one, no abstract for this one
                                  selectinload(models.Work.extra_ids),
                                  selectinload(models.Work.related_works),
                                  selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
