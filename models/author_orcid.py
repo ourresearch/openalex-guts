@@ -6,7 +6,7 @@ class AuthorOrcid(db.Model):
     __tablename__ = "author_orcid"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
-    orcid = db.Column(db.Text, primary_key=True) # shouldn't have more than one but might?
+    orcid = db.Column(db.Text) # shouldn't have more than one but might?
     # evidence = db.Column(db.Text)
 
     @property
