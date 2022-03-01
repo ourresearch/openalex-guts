@@ -540,7 +540,7 @@ class DbQueue(object):
                              selectinload(models.Author.alternative_names),
                              selectinload(models.Author.author_concepts),
                              selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
-                             selectinload(models.Author.last_known_institution).raiseload('*'),
+                             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror),
                              orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Institution:
                         objects = db.session.query(models.Institution).options(
