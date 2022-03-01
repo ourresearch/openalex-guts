@@ -1,8 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-
+RELEASE 2022-02-28
+- added new papers and corresponding data
 - added 45 new journals to Venues
-
+- added ancestors to 1500 Concepts without ancestors
+- fixed a bug with some tabs in the publisher field in Venues and Works
 
 RELEASE 2022-02-22
 - added new papers and corresponding data
