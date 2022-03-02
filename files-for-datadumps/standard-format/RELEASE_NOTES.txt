@@ -1,6 +1,6 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-RELEASE 2022-02-28
+RELEASE 2022-03-01
 - added new papers and corresponding data
 - added 45 new journals to Venues
 - added ancestors to 1500 Concepts without ancestors
@@ -8,6 +8,7 @@ RELEASE 2022-02-28
 
 RELEASE 2022-02-22
 - added new papers and corresponding data
+- added "created_date" to all entities
 
 Partial release on 2022-02-04 (updated Institutions and Venues)
 - ensured each institution has a distinct ROR (identified some institutions that will be merged in a future release, details TBD)

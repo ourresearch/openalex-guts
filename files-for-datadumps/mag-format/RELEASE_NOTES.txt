@@ -1,6 +1,5 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
-
 RELEASE 2022-02-28
 - added new papers and corresponding data
 - added 45 new journals
