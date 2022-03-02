@@ -413,7 +413,7 @@ class DbQueue(object):
                     print(object_ids)
                     if (self.myclass == models.Work) and (run_method == "store"):
                         try:
-                            objects = db.session.query(models.Work).options(
+                            object_query = db.session.query(models.Work).options(
                                  selectinload(models.Work.locations),
                                  selectinload(models.Work.journal),
                                  selectinload(models.Work.references),
@@ -425,10 +425,16 @@ class DbQueue(object):
                                  selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                                  selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                                  selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                                 orm.Load(models.Work).raiseload('*'))
+                            objects = object_query.filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
-                            print(f"Exception fetching IDs {object_ids} {e}")
+                            print(f"Exception getting objects {e} for {object_ids} so trying individually")
                             objects = []
+                            for id in object_ids:
+                                try:
+                                    objects += object_query.filter(self.myid==id).all()
+                                except Exception as e:
+                                    print(f"error: failed on {run_method} {id} with error {e}")
                     elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
                         # no abstracts
                         try:
@@ -562,13 +568,13 @@ class DbQueue(object):
                     else:
                         objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
-
                     logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
 
                     if not objects:
                         logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
                         sleep(5)
                         continue
+
 
                     self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=max_openalex_id)
 
