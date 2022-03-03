@@ -75,10 +75,11 @@ class Author(db.Model):
                 rows = cur.fetchall()
                 if rows:
                     return rows[0]["author_id"]
-            cur.execute(match_with_citations)
-            rows = cur.fetchall()
-            if rows:
-                return rows[0]["author_id"]
+            if citation_paper_ids:
+                cur.execute(match_with_citations)
+                rows = cur.fetchall()
+                if rows:
+                    return rows[0]["author_id"]
         return None
 
 
