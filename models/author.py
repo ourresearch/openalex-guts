@@ -38,6 +38,9 @@ class Author(db.Model):
 
     @classmethod
     def matching_author_string(cls, raw_author_string):
+        if not raw_author_string:
+            return None
+
         sql_for_match = f"""
             select f_matching_author_string(%s) as match_author_string;
             """
