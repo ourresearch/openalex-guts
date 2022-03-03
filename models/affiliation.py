@@ -25,6 +25,8 @@ class Affiliation(db.Model):
     original_author = db.Column(db.Text)
     original_affiliation = db.Column(db.Text, primary_key=True)
     original_orcid = db.Column(db.Text)
+    match_author = db.Column(db.Text)
+    match_institution_name = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
 
     @classmethod

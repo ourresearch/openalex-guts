@@ -25,6 +25,7 @@ class Author(db.Model):
     last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
+    match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
 
