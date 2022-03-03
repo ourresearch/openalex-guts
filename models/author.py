@@ -54,6 +54,9 @@ class Author(db.Model):
 
     @classmethod
     def try_to_match(cls, raw_author_string, original_orcid, citation_paper_ids):
+        if not raw_author_string and not original_orcid:
+            return None
+
         match_with_orcid = f"""
             select author_id from mid.author_orcid
             where orcid = '{original_orcid}'

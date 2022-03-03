@@ -191,7 +191,7 @@ class DbQueue(object):
                 # temp override
                 # pubmed ones: 4214798165 4214797353 4214794591
                 # crossref ones: 4214778246 4214778318 4214778274
-                # text_query_pattern_select = """select 4214798165"""
+                # text_query_pattern_select = """select 4214704367"""
 
                 # text_query_pattern_select = """
                 #     select paper_id  from mid.work

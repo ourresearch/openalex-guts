@@ -338,7 +338,7 @@ class Work(db.Model):
             original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
             if raw_author_string:
                 author_id = Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
-            if not author_id:
+            if raw_author_string and not author_id:
                 new_author = Author(display_name=raw_author_string)
                 print(f"new_author: {new_author}")
                 author_id = new_author.author_id
@@ -347,18 +347,19 @@ class Work(db.Model):
             for affiliation_dict in author_dict["affiliation"]:
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
-                self.insert_dicts += [{"Affiliation": {
-                    "paper_id": self.paper_id,
-                    "author_id": author_id,
-                    "affiliation_id": affiliation_id,
-                    "author_sequence_number": i,
-                    "original_author": raw_author_string,
-                    "original_affiliation": raw_affiliation_string,
-                    "original_orcid": original_orcid,
-                    "match_author": author_match_name,
-                    "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
-                    "updated_date": datetime.datetime.utcnow().isoformat()
-                }}]
+                if raw_author_string or raw_affiliation_string:
+                    self.insert_dicts += [{"Affiliation": {
+                        "paper_id": self.paper_id,
+                        "author_id": author_id,
+                        "affiliation_id": affiliation_id,
+                        "author_sequence_number": i,
+                        "original_author": raw_author_string,
+                        "original_affiliation": raw_affiliation_string,
+                        "original_orcid": original_orcid,
+                        "match_author": author_match_name,
+                        "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
+                        "updated_date": datetime.datetime.utcnow().isoformat()
+                    }}]
 
             if new_author:
                 self.insert_dicts += [{"Author": {
