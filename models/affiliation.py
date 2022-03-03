@@ -46,6 +46,9 @@ class Affiliation(db.Model):
 
     @classmethod
     def try_to_match(cls, raw_affiliation_string):
+        if not raw_affiliation_string:
+            return None
+
         exact_matching_papers_sql = f"""
                 select lookup.affiliation_id 
                 from mid.affiliation_institution_lookup_view lookup 
