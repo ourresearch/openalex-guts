@@ -49,6 +49,7 @@ class Affiliation(db.Model):
         if not raw_affiliation_string:
             return None
 
+        raw_affiliation_string = raw_affiliation_string.replace("'", "''")
         exact_matching_papers_sql = f"""
                 select lookup.affiliation_id 
                 from mid.affiliation_institution_lookup_view lookup 
