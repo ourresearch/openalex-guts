@@ -141,23 +141,20 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
-
 @contextmanager
 def get_db_connection():
-    try:
-        connection = app.config['postgreSQL_pool'].getconn()
-        connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        connection.autocommit=True
-        # connection.readonly = True
-        yield connection
-    finally:
-        app.config['postgreSQL_pool'].putconn(connection)
+    connection = psycopg2.connect(dbname=redshift_url.path[1:],
+                                  user=redshift_url.username,
+                                  password=redshift_url.password,
+                                  host=redshift_url.hostname,
+                                  port=redshift_url.port)
+    connection.set_session(readonly=True, autocommit=True)
+    yield connection
 
 @contextmanager
 def get_db_cursor(commit=False):
     with get_db_connection() as connection:
-      cursor = connection.cursor(
-                  cursor_factory=psycopg2.extras.RealDictCursor)
+      cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
       try:
           yield cursor
           if commit:

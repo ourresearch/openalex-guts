@@ -7,21 +7,17 @@ from collections import defaultdict
 import requests
 import os
 import json
-from util import f_generate_inverted_index
-
-import shortuuid
-import random
-
 
 from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
+from util import f_generate_inverted_index
 from util import normalize_title
 from util import jsonify_fast_no_sort_raw
 from util import normalize_simple
 from util import clean_doi
 from util import normalize_orcid
-
+from app import get_db_cursor
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
@@ -158,6 +154,7 @@ class Work(db.Model):
             print(f"error {e} in add_work_concepts with {self.id}")
             concept_names = None
 
+        self.concepts_for_related_papers = []
         if concept_names:
             # concept_names_string = "({})".format(", ".join(["'{}'".format(concept_name) for concept_name in concept_names]))
             # q = """
@@ -169,10 +166,14 @@ class Work(db.Model):
             # print(f"concepts that match: {matching_concepts}")
             # matching_ids = [concept[0] for concept in matching_concepts]
             for i, concept_name in enumerate(concept_names):
+                score = response_json[0]["scores"][i]
+                field_of_study = response_json[0]["tag_ids"][i]
                 self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
-                                                       "field_of_study": response_json[0]["tag_ids"][i],
-                                                       "score": response_json[0]["scores"][i],
+                                                       "field_of_study": field_of_study,
+                                                       "score": score,
                                                        "algorithm_version": 2}}]
+                if score > 0.3:
+                    self.concepts_for_related_papers.append(field_of_study)
         else:
             self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
                                                        "field_of_study": None,
@@ -180,17 +181,49 @@ class Work(db.Model):
                                                        "algorithm_version": 2}}]
 
 
+
     def add_everything(self):
         self.delete_dict = defaultdict(list)
         self.insert_dicts = []
         self.set_fields_from_all_records()
         self.add_work_concepts()
+        self.add_related_papers()  # must be after work_concepts
         self.add_abstract()
         self.add_mesh()
         self.add_ids()
         self.add_locations()
         self.add_citations()
         self.add_affiliations()
+
+    def add_related_papers(self):
+        if not hasattr(self, "concepts_for_related_papers"):
+            return
+        if not self.concepts_for_related_papers:
+            return
+
+        matching_papers_sql = """
+            select 
+                concepts_of_related.paper_id as related_paper_id, 
+                avg(concepts_of_related.score) as average_related_score, 
+                count(distinct concepts_of_related.field_of_study) as n
+            from mid.work_concept_for_api_mv concepts_of_related 
+            where field_of_study in %s
+            group by concepts_of_related.paper_id
+            order by n desc
+            limit 10"""
+
+        with get_db_cursor() as cur:
+            # print(cur.mogrify(matching_papers_sql, (tuple(self.concepts_for_related_papers), )))
+            cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_papers), ))
+            rows = cur.fetchall()
+            # print(rows)
+            for row in rows:
+                score = row["average_related_score"] * row["average_related_score"]
+                self.insert_dicts += [{"WorkRelatedWork": {"paper_id": self.paper_id,
+                                                           "recommended_paper_id": row["related_paper_id"],
+                                                           "score": score,
+                                                           "updated": datetime.datetime.utcnow().isoformat()
+                                                           }}]
 
 
     def add_abstract(self):
@@ -268,38 +301,81 @@ class Work(db.Model):
         if citation_pmids:
             citation_paper_ids += [row[0] for row in db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()]
         citation_paper_ids = list(set(citation_paper_ids))
+        self.citation_paper_ids = citation_paper_ids
 
         for reference_id in citation_paper_ids:
             self.insert_dicts += [{"Citation": {
                 "paper_id": self.id,
                 "paper_reference_id": reference_id}}]
 
+
     def add_affiliations(self):
+        from models import Affiliation
+        from models import Author
+        new_authors = []
+
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
             print("No records_with_affiliations")
-            return
+            return new_authors
         record = records_with_affiliations[0]
         try:
             author_dict_list = json.loads(record.authors)
         except Exception as e:
             print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
-            return
+            return new_authors
 
         for i, author_dict in enumerate(author_dict_list):
+            new_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
+
+            author_id = None
+            raw_author_string = original_name if original_name else None
+            original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+            if raw_author_string:
+                author_id = Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
+            if not author_id:
+                new_author = Author(display_name=raw_author_string)
+                print(f"new_author: {new_author}")
+                author_id = new_author.author_id
+
+            author_match_name = Author.matching_author_string(raw_author_string)
             for affiliation_dict in author_dict["affiliation"]:
+                raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
                 self.insert_dicts += [{"Affiliation": {
                     "paper_id": self.paper_id,
+                    "author_id": author_id,
+                    "affiliation_id": affiliation_id,
                     "author_sequence_number": i,
-                    "original_author": original_name if original_name else None,
-                    "original_affiliation": affiliation_dict["name"] if affiliation_dict["name"] else None,
-                    "original_orcid": normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+                    "original_author": raw_author_string,
+                    "original_affiliation": raw_affiliation_string,
+                    "original_orcid": original_orcid,
+                    "match_author": author_match_name,
+                    "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
+                    "updated_date": datetime.datetime.utcnow().isoformat()
                 }}]
+
+            if new_author:
+                self.insert_dicts += [{"Author": {
+                    "author_id": author_id,
+                    "display_name": raw_author_string,
+                    "last_known_affiliation_id": affiliation_id,
+                    "match_name": author_match_name,
+                    "created_date": datetime.datetime.utcnow().isoformat(),
+                    "updated_date": datetime.datetime.utcnow().isoformat()
+                    }}]
+                if original_orcid:
+                    self.insert_dicts += [{"AuthorOrcid": {
+                        "author_id": author_id,
+                        "orcid": original_orcid
+                        }}]
+            new_authors += [new_author]
+        return new_authors
 
 
     def set_fields_from_record(self, record):

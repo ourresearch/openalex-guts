@@ -6,6 +6,7 @@ import datetime
 from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
+from app import get_db_cursor
 
 # truncate mid.author
 # insert into mid.author (select * from legacy.mag_main_authors)
@@ -26,6 +27,57 @@ class Author(db.Model):
     citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
+
+    def __init__(self, **kwargs):
+        import models
+        models.max_openalex_id += 1
+        self.author_id = models.max_openalex_id
+        # self.created = datetime.datetime.utcnow().isoformat()
+        # self.updated = self.created
+        super(Author, self).__init__(**kwargs)
+
+    @classmethod
+    def matching_author_string(cls, raw_author_string):
+        sql_for_match = f"""
+            select f_matching_author_string(%s) as match_author_string;
+            """
+        with get_db_cursor() as cur:
+            cur.execute(sql_for_match, (raw_author_string, ))
+            rows = cur.fetchall()
+            if rows:
+                return rows[0]["match_author_string"]
+        return None
+
+    @classmethod
+    def try_to_match(cls, raw_author_string, original_orcid, citation_paper_ids):
+        match_with_orcid = f"""
+            select author_id from mid.author_orcid
+            where orcid = '{original_orcid}'
+            """
+
+        match_name = Author.matching_author_string(raw_author_string)
+        citation_paper_ids_tuple = tuple(citation_paper_ids)
+        match_with_citations = f"""
+            select affil.author_id 
+            from mid.author author
+            join mid.affiliation affil on affil.author_id=author.author_id
+            where author.author_id is not null
+            and affil.paper_id in {citation_paper_ids_tuple}
+            and author.match_name = '{match_name}'
+            """
+
+        with get_db_cursor() as cur:
+            if original_orcid:
+                cur.execute(match_with_orcid)
+                rows = cur.fetchall()
+                if rows:
+                    return rows[0]["author_id"]
+            cur.execute(match_with_citations)
+            rows = cur.fetchall()
+            if rows:
+                return rows[0]["author_id"]
+        return None
+
 
     @property
     def last_known_institution_id(self):
