@@ -63,11 +63,15 @@ class Affiliation(db.Model):
             cur.execute(exact_matching_papers_sql)
             rows = cur.fetchall()
             if rows:
-                return rows[0]["affiliation_id"]
+                response = rows[0]["affiliation_id"]
+                print("matched: affiliation {response} using exact match")
+                return response
             cur.execute(ilike_matching_papers_sql)
             rows = cur.fetchall()
             if rows:
-                return rows[0]["affiliation_id"]
+                response = rows[0]["affiliation_id"]
+                print("matched: affiliation {response} using ilike")
+                return response
 
         return None
 
