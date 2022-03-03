@@ -1,4 +1,5 @@
 from app import db
+from app import get_db_cursor
 
 # alter table affiliation add column match_name varchar(65000)
 # update affiliation set normalized_institution_name=f_matching_string(original_affiliation) where original_affiliation is not null
@@ -25,6 +26,48 @@ class Affiliation(db.Model):
     original_affiliation = db.Column(db.Text, primary_key=True)
     original_orcid = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
+
+    @classmethod
+    def matching_affiliation_string(cls, raw_string):
+        sql_for_match = f"""
+            select f_matching_string(%s) as match_string;
+            """
+        with get_db_cursor() as cur:
+            cur.execute(sql_for_match, (raw_string, ))
+            rows = cur.fetchall()
+            if rows:
+                return rows[0]["match_string"]
+        return None
+
+    @classmethod
+    def try_to_match(cls, raw_affiliation_string):
+        exact_matching_papers_sql = f"""
+                select lookup.affiliation_id 
+                from mid.affiliation_institution_lookup_view lookup 
+                where lookup.original_affiliation = '{raw_affiliation_string}'
+            """
+
+        ilike_matching_papers_sql = f"""
+            select affil.affiliation_id
+            from mid.affiliation affil 
+            where affil.original_affiliation ilike '%{raw_affiliation_string}%'
+            and affil.affiliation_id is not null
+            and affil.affiliation_id not in (select affiliation_id from mid.institutions_with_names_bad_for_ilookup)
+        """
+
+        with get_db_cursor() as cur:
+            # print(cur.mogrify(exact_matching_papers_sql))
+            cur.execute(exact_matching_papers_sql)
+            rows = cur.fetchall()
+            if rows:
+                return rows[0]["affiliation_id"]
+            cur.execute(ilike_matching_papers_sql)
+            rows = cur.fetchall()
+            if rows:
+                return rows[0]["affiliation_id"]
+
+        return None
+
 
     def update(self):
         #

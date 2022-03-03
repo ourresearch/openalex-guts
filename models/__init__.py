@@ -28,6 +28,8 @@ from models.counts_by_year import AuthorCountsByYear,ConceptCountsByYear, Instit
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
 
+max_openalex_id = None
+
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work")
 Work.references = db.relationship("Citation", lazy='selectin', backref="work")

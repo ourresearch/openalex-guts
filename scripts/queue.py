@@ -21,7 +21,6 @@ from models import *  # needed to get the insert tables from the name alone
 from util import elapsed
 from util import safe_commit
 
-
 class JsonWorks(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_works"
@@ -188,6 +187,11 @@ class DbQueue(object):
                 commit;
                 end;
                 select paper_id from mid.work where started_label='{started_label}'; """
+
+                # temp override
+                # pubmed ones: 4214798165 4214797353 4214794591
+                # crossref ones: 4214778246 4214778318 4214778274
+                # text_query_pattern_select = """select 4214798165"""
 
                 # text_query_pattern_select = """
                 #     select paper_id  from mid.work
@@ -374,12 +378,14 @@ class DbQueue(object):
         index = 0
         start_time = time()
 
-        max_openalex_id = None
-        if run_method == "process_record":
-            q = """select max_id from util.max_openalex_id"""
-            row = db.session.execute(text(q)).first()
-            db.session.commit()
-            max_openalex_id = row["max_id"]
+
+        if (run_method == "process_record") or (run_method == "add_everything"):
+            from app import get_db_cursor
+            with get_db_cursor() as cur:
+                cur.execute("select max_id from util.max_openalex_id")
+                rows = cur.fetchall()
+                models.max_openalex_id = rows[0]["max_id"]
+                print(f"max_openalex_id: {models.max_openalex_id}")
 
         while True:
             started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
