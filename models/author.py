@@ -63,7 +63,11 @@ class Author(db.Model):
             """
 
         match_name = Author.matching_author_string(raw_author_string)
-        citation_paper_ids_tuple = tuple(citation_paper_ids)
+        if len(citation_paper_ids) > 1:
+            citation_paper_ids_tuple = tuple(citation_paper_ids)
+        else:
+            # doesn't parse into sql properly if only one, so duplicate it for no harm
+            citation_paper_ids_tuple = tuple(citation_paper_ids + citation_paper_ids)
         match_with_citations = f"""
             select affil.author_id 
             from mid.author author
