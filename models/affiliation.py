@@ -29,6 +29,9 @@ class Affiliation(db.Model):
 
     @classmethod
     def matching_affiliation_string(cls, raw_string):
+        if not raw_string:
+            return None
+
         sql_for_match = f"""
             select f_matching_string(%s) as match_string;
             """
