@@ -74,13 +74,13 @@ class Author(db.Model):
                 cur.execute(match_with_orcid)
                 rows = cur.fetchall()
                 if rows:
-                    print("matched: author using orcid")
+                    print(f"matched: author using orcid")
                     return rows[0]["author_id"]
             if citation_paper_ids:
                 cur.execute(match_with_citations)
                 rows = cur.fetchall()
                 if rows:
-                    print("matched: author using citations")
+                    print(f"matched: author using citations")
                     return rows[0]["author_id"]
         return None
 

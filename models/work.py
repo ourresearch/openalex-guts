@@ -316,7 +316,7 @@ class Work(db.Model):
 
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
-            print("No records_with_affiliations")
+            print("no affiliation data found in any of the records")
             return new_authors
         record = records_with_affiliations[0]
         try:

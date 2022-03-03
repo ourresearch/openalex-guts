@@ -64,13 +64,13 @@ class Affiliation(db.Model):
             rows = cur.fetchall()
             if rows:
                 response = rows[0]["affiliation_id"]
-                print("matched: affiliation {response} using exact match")
+                print(f"matched: affiliation {response} using exact match")
                 return response
             cur.execute(ilike_matching_papers_sql)
             rows = cur.fetchall()
             if rows:
                 response = rows[0]["affiliation_id"]
-                print("matched: affiliation {response} using ilike")
+                print(f"matched: affiliation {response} using ilike")
                 return response
 
         return None
