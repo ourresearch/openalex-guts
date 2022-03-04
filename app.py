@@ -2,6 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_compress import Compress
 from flask_debugtoolbar import DebugToolbarExtension
+import datetime
+import shortuuid
 
 from sqlalchemy import exc
 from sqlalchemy import event
@@ -142,23 +144,21 @@ Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
 @contextmanager
-def get_db_connection():
+def get_db_connection(readonly=True):
     connection = psycopg2.connect(dbname=redshift_url.path[1:],
                                   user=redshift_url.username,
                                   password=redshift_url.password,
                                   host=redshift_url.hostname,
                                   port=redshift_url.port)
-    connection.set_session(readonly=True, autocommit=True)
+    connection.set_session(readonly=readonly, autocommit=True)
     yield connection
 
 @contextmanager
-def get_db_cursor(commit=False):
-    with get_db_connection() as connection:
+def get_db_cursor(readonly=True):
+    with get_db_connection(readonly) as connection:
       cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
       try:
           yield cursor
-          if commit:
-              connection.commit()
       finally:
           cursor.close()
           pass
@@ -167,3 +167,21 @@ def get_apiurl_from_openalex_url(openalex_url):
     if not openalex_url:
         return None
     return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "https://api.openalex.org/\g<id>?apiurls", openalex_url)
+
+
+def get_next_openalex_id(entity):
+    assigned_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
+
+    text_query_pattern_select = f"""
+        begin transaction read write;
+        lock mid.openalex_assigned_ids;
+        insert into mid.openalex_assigned_ids (assigned, assigned_label, entity) values (sysdate, '{assigned_label}', '{entity}');
+        commit;
+        end;
+        select id from mid.openalex_assigned_ids where assigned_label='{assigned_label}'; """
+    with get_db_cursor(readonly=False) as cur:
+        cur.execute(text_query_pattern_select)
+        row = cur.first()
+        id = row["id"]
+        print(f"new openalex id: {id}")
+    return id

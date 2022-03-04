@@ -154,7 +154,7 @@ class Work(db.Model):
             print(f"error {e} in add_work_concepts with {self.id}")
             concept_names = None
 
-        self.concepts_for_related_papers = []
+        self.concepts_for_related_works = []
         if concept_names:
             # concept_names_string = "({})".format(", ".join(["'{}'".format(concept_name) for concept_name in concept_names]))
             # q = """
@@ -173,7 +173,7 @@ class Work(db.Model):
                                                        "score": score,
                                                        "algorithm_version": 2}}]
                 if score > 0.3:
-                    self.concepts_for_related_papers.append(field_of_study)
+                    self.concepts_for_related_works.append(field_of_study)
         else:
             self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
                                                        "field_of_study": None,
@@ -187,7 +187,7 @@ class Work(db.Model):
         self.insert_dicts = []
         self.set_fields_from_all_records()
         self.add_work_concepts()
-        self.add_related_papers()  # must be after work_concepts
+        self.add_related_works()  # must be after work_concepts
         self.add_abstract()
         self.add_mesh()
         self.add_ids()
@@ -195,11 +195,17 @@ class Work(db.Model):
         self.add_citations()
         self.add_affiliations()
 
-    def add_related_papers(self):
-        if not hasattr(self, "concepts_for_related_papers"):
-            return
-        if not self.concepts_for_related_papers:
-            return
+    def add_related_works(self):
+        if self.concepts:
+            self.concepts_for_related_works = [concept.field_of_study for concept in self.concepts]
+        else:
+            if not hasattr(self, "concepts_for_related_works"):
+                return
+            if not self.concepts_for_related_works:
+                return
+
+        if not hasattr(self, "insert_dicts"):
+            self.insert_dicts = []
 
         matching_papers_sql = """
             select 
@@ -213,12 +219,13 @@ class Work(db.Model):
             limit 10"""
 
         with get_db_cursor() as cur:
-            # print(cur.mogrify(matching_papers_sql, (tuple(self.concepts_for_related_papers), )))
-            cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_papers), ))
+            # print(cur.mogrify(matching_papers_sql, (tuple(self.concepts_for_related_works), )))
+            cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_works), ))
             rows = cur.fetchall()
             # print(rows)
             for row in rows:
                 score = row["average_related_score"] * row["average_related_score"]
+
                 self.insert_dicts += [{"WorkRelatedWork": {"paper_id": self.paper_id,
                                                            "recommended_paper_id": row["related_paper_id"],
                                                            "score": score,
