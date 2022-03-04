@@ -247,6 +247,7 @@ class DbQueue(object):
                     select paper_id from mid.work
                         where paper_id not in (select paper_id from mid.related_work)
                         and paper_id in (select paper_id from mid.work_concept)
+                        and paper_id > 4200000000
                         order by random() limit {chunk}; """
             elif run_method in ["store"]:
                 text_query_pattern_select = """
