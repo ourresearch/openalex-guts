@@ -108,6 +108,11 @@ class DbQueue(object):
                     method_name=method_name,
                     elapsed=elapsed(start_time, 4)))
 
+        # for count, obj in enumerate(objects):
+        #     if hasattr(obj, "insert_dicts"):
+        #         print(obj.id, obj.insert_dicts)
+        # print(1/0)
+
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
         if self.myclass == models.Record and method_name=="process_record":
@@ -116,14 +121,18 @@ class DbQueue(object):
         delete_dict_all_objects = defaultdict(list)
         insert_dict_all_objects = defaultdict(list)
         for count, obj in enumerate(objects):
-            if hasattr(obj, "delete_dict"):
-                for table_name, ids in obj.delete_dict.items():
-                    delete_dict_all_objects[table_name] += ids
+            if not hasattr(obj, "delete_dict"):
+                obj.delete_dict = defaultdict(list)
 
             if hasattr(obj, "insert_dicts"):
                 for row in obj.insert_dicts:
-                    for table_name, insert_string in row.items():
-                        insert_dict_all_objects[table_name] += [insert_string]
+                    for table_name, insert_dict in row.items():
+                        insert_dict_all_objects[table_name] += [insert_dict]
+                        if table_name.startswith("Json"):
+                            obj.delete_dict[table_name] += [insert_dict["id"]]
+
+            for table_name, ids in obj.delete_dict.items():
+                delete_dict_all_objects[table_name] += ids
 
 
         start_time = time()
@@ -232,6 +241,12 @@ class DbQueue(object):
                     select distinct work_id from ins.recordthresher_record where work_id is not null
                         and authors is not null and authors != '[]'
                         and work_id not in (select paper_id from mid.affiliation)
+                        order by random() limit {chunk}; """
+            elif run_method == "add_related_works":
+                text_query_pattern_select = """
+                    select paper_id from mid.work
+                        where paper_id not in (select paper_id from mid.related_work)
+                        and paper_id in (select paper_id from mid.work_concept)
                         order by random() limit {chunk}; """
             elif run_method in ["store"]:
                 text_query_pattern_select = """
@@ -504,6 +519,7 @@ class DbQueue(object):
                             objects = db.session.query(models.Work).options(
                                  selectinload(models.Work.records),
                                  selectinload(models.Work.journal),
+                                 selectinload(models.Work.concepts).raiseload('*'),
                                  orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
                             print(f"Exception getting records for {object_ids} so trying individually")

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import selectinload
 from sqlalchemy import orm
 from sqlalchemy.sql.expression import func
+import datetime
+import shortuuid
 
 from app import db
+from app import get_db_cursor
 
 from models.abstract import Abstract
 from models.author import Author
@@ -131,4 +134,5 @@ def openalex_id_from_pmid(pmid):
     pmid_attribute_type = 2
     paper_id = db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).limit(1).scalar()
     return f"W{paper_id}" if paper_id else None
+
 

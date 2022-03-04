@@ -7,6 +7,7 @@ from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
+from app import get_next_openalex_id
 
 # truncate mid.author
 # insert into mid.author (select * from legacy.mag_main_authors)
@@ -30,9 +31,7 @@ class Author(db.Model):
     updated_date = db.Column(db.DateTime)
 
     def __init__(self, **kwargs):
-        import models
-        models.max_openalex_id += 1
-        self.author_id = models.max_openalex_id
+        self.author_id = get_next_openalex_id("author")
         # self.created = datetime.datetime.utcnow().isoformat()
         # self.updated = self.created
         super(Author, self).__init__(**kwargs)

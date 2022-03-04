@@ -44,18 +44,6 @@ run_queue_store_concept: python -m scripts.queue --run --table=concept --method=
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 
 run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=$DYNO --randstart
-run_queue_work_add_abstracts: python -m scripts.queue --run --table=work --method=add_abstract --chunk=1000 --name=$DYNO
-run_queue_work_add_mesh: python -m scripts.queue --run --table=work --method=add_mesh --chunk=1000 --name=$DYNO
-run_queue_work_add_ids: python -m scripts.queue --run --table=work --method=add_ids --chunk=1000 --name=$DYNO
-run_queue_work_add_locations: python -m scripts.queue --run --table=work --method=add_locations --chunk=1000 --name=$DYNO
-run_queue_work_add_affiliations_a: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
-run_queue_work_add_affiliations_b: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
-run_queue_work_add_affiliations_c: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
-run_queue_work_add_affiliations_d: python -m scripts.queue --run --table=work --method=add_affiliations --chunk=1000 --name=$DYNO
-
-run_queue_work_add_citations_a: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
-run_queue_work_add_citations_b: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
-run_queue_work_add_citations_c: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
-run_queue_work_add_citations_d: python -m scripts.queue --run --table=work --method=add_citations --chunk=100 --name=$DYNO
+run_queue_work_add_related_works: python -m scripts.queue --run --table=work --method=add_abstract --chunk=1000 --name=$DYNO
 
 run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=$DYNO
