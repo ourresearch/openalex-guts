@@ -184,13 +184,13 @@ class DbQueue(object):
                 big_chunk = chunk
                 text_query_pattern_select = """
                 --begin transaction read write;
-                lock mid.work, mid.work_concept;
+                lock mid.work;
                 update mid.work set started=sysdate, started_label='{started_label}'
                     where paper_id in
                         (SELECT paper_id
                         FROM   mid.work
                         WHERE  started is null and finished is null and started_label is null
-                        and paper_id not in (select paper_id from mid.work_concept)
+                        and updated_date is null
                         order by random()
                         LIMIT  {chunk});
                 commit;
