@@ -50,7 +50,7 @@ select id, count(*) as n from ins.recordthresher_record where work_processed_sta
  insert into mid.work
  (paper_id, doi, doi_lower, original_title, match_title, journal_id, doc_type, created_date, updated_date)
  (
- select 4210821236 + 1 + (row_number() over (partition by 1)) as paper_id, doi, doi, max(title) as title, max(match_title) as match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, sysdate
+ select 4210821236 + 1 + (row_number() over (partition by 1)) as paper_id, doi, doi, max(title) as title, max(match_title) as match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, null
  from ins.recordthresher_record
  left outer join mid.journal journal on journal.issn = journal_issn_l
  where doi is not null and title is not null
@@ -70,7 +70,7 @@ select id, count(*) as n from ins.recordthresher_record where work_processed_sta
  insert into mid.work
  (paper_id, original_title, match_title, journal_id, doc_type, created_date, updated_date)
  (
- select 4205354939 + 1 + (row_number() over (partition by 1)) as paper_id, max(title) as title, match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, sysdate
+ select 4205354939 + 1 + (row_number() over (partition by 1)) as paper_id, max(title) as title, match_title, max(journal.journal_id) as journal_id, max(normalized_doc_type) as doc_type, sysdate, null
  from ins.recordthresher_record
  left outer join mid.journal journal on journal.issn = journal_issn_l
  where (doi is null) and (title is not null) and (length(match_title) > 50)

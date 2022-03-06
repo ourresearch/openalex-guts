@@ -430,6 +430,7 @@ class Work(db.Model):
         return sorted(self.records, key=lambda x: x.score, reverse=True)
 
     def set_fields_from_all_records(self):
+        self.updated_date = datetime.datetime.utcnow().isoformat()
         self.finished = datetime.datetime.utcnow().isoformat()
 
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
