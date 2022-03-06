@@ -187,7 +187,7 @@ class Record(db.Model):
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
                 matching_work = sorted_matching_works[0]
                 matching_work_id = matching_work.id
-            url = f"https://api.openalex.org/W{matching_work_id}"
+            url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
             print(f"*********found a match for this work: {url}")
             print(f"don't do anything else with this")
             # don't do anything else

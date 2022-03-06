@@ -143,25 +143,30 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
-@contextmanager
-def get_db_connection(readonly=True):
+
+def new_db_connection(readonly=True):
     connection = psycopg2.connect(dbname=redshift_url.path[1:],
                                   user=redshift_url.username,
                                   password=redshift_url.password,
                                   host=redshift_url.hostname,
                                   port=redshift_url.port)
     connection.set_session(readonly=readonly, autocommit=True)
-    yield connection
+    return connection
+
+readonly_connection = new_db_connection(readonly=True)
+readwrite_connection = new_db_connection(readonly=False)
 
 @contextmanager
 def get_db_cursor(readonly=True):
-    with get_db_connection(readonly) as connection:
-      cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-      try:
-          yield cursor
-      finally:
-          cursor.close()
-          pass
+    connection = readwrite_connection
+    if readonly:
+        connection = readonly_connection
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+      yield cursor
+    finally:
+      cursor.close()
+      pass
 
 def get_apiurl_from_openalex_url(openalex_url):
     if not openalex_url:
