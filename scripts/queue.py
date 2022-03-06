@@ -494,19 +494,17 @@ class DbQueue(object):
 
                             # get records in bulk to get them fast
                             try:
-                                record_objects = db.session.query(models.Record).options(
+                                query = db.session.query(models.Record).options(
                                      selectinload(models.Record.journals),
                                      selectinload(models.Record.unpaywall),
-                                     orm.Load(models.Record).raiseload('*')).filter(models.Record.id.in_(recordthresher_ids)).all()
+                                     orm.Load(models.Record).raiseload('*'))
+                                record_objects = query.filter(models.Record.id.in_(recordthresher_ids)).all()
                             except:
                                 # running in to some "invalid continuation byte" problems, see if I can figure them out
                                 record_objects = []
                                 for id in recordthresher_ids:
                                     try:
-                                        record_objects += db.session.query(models.Record).options(
-                                             selectinload(models.Record.journals),
-                                             selectinload(models.Record.unpaywall),
-                                             orm.Load(models.Record).raiseload('*')).filter(models.Record.id == id).all()
+                                        record_objects += query.filter(models.Record.id == id).all()
                                     except Exception as e:
                                         print(f"error: failed on recordthresher_id {id} with error {e}")
 
@@ -520,20 +518,18 @@ class DbQueue(object):
 
                     elif self.myclass == models.Work and run_method.startswith("add_"):
                         try:
-                            objects = db.session.query(models.Work).options(
+                            query = db.session.query(models.Work).options(
                                  selectinload(models.Work.records),
                                  selectinload(models.Work.journal),
                                  selectinload(models.Work.concepts).raiseload('*'),
-                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                                 orm.Load(models.Work).raiseload('*'))
+                            objects = query.filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
                             print(f"Exception getting records for {object_ids} so trying individually")
                             objects = []
                             for id in object_ids:
                                 try:
-                                    objects += db.session.query(models.Work).options(
-                                             selectinload(models.Work.records),
-                                             selectinload(models.Work.journal),
-                                             orm.Load(models.Work).raiseload('*')).filter(self.myid==id).all()
+                                    objects += query.filter(self.myid==id).all()
                                 except Exception as e:
                                     print(f"error: failed on {run_method} {id} with error {e}")
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
