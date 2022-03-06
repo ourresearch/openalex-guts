@@ -181,7 +181,7 @@ def get_next_openalex_id(entity):
         select id from mid.openalex_assigned_ids where assigned_label='{assigned_label}'; """
     with get_db_cursor(readonly=False) as cur:
         cur.execute(text_query_pattern_select)
-        row = cur.first()
+        row = cur.fetchone()
         id = row["id"]
         print(f"new openalex id: {id}")
     return id
