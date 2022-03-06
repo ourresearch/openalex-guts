@@ -183,8 +183,8 @@ class DbQueue(object):
             if run_method == "add_everything":
                 big_chunk = chunk
                 text_query_pattern_select = """
-                begin transaction read write;
-                lock mid.work, mid.work_concept;
+                -- begin transaction read write;
+                -- lock mid.work, mid.work_concept;
                 update mid.work set started=sysdate, started_label='{started_label}'
                     where paper_id in
                         (SELECT paper_id
@@ -194,7 +194,7 @@ class DbQueue(object):
                         order by random()
                         LIMIT  {chunk});
                 commit;
-                end;
+                -- end;
                 select paper_id from mid.work where started_label='{started_label}'; """
 
                 # temp override

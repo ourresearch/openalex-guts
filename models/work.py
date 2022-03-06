@@ -465,7 +465,6 @@ class Work(db.Model):
         print(f"minting! {self.id}")
         self.set_fields_from_all_records()
 
-        self.started_label = "new from match"
         insert_dict = {}
         work_insert_fieldnames = Work.__table__.columns.keys()
         for key in work_insert_fieldnames:
