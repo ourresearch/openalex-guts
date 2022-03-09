@@ -144,6 +144,14 @@ class DbQueue(object):
                 db.session.execute(delete(Work).where(Work.paper_id.in_(delete_ids)))
                 db.session.commit()
                 print("delete done")
+            elif table_name.startswith("Json"):
+                # print("TO DELETE")
+                # print(delete_ids)
+                my_table = globals()[table_name]
+                db.session.remove()
+                db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
+                db.session.commit()
+                print("delete done")
 
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             # look up the model from the name
