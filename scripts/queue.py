@@ -255,7 +255,7 @@ class DbQueue(object):
                         from {queue_table}
                         left outer join {insert_table} on {queue_table}.{id_field_name} = {insert_table}.id
                         where (({insert_table}.updated is null) 
-                            -- or ({insert_table}.updated < {queue_table}.updated_date)
+                             or ({insert_table}.updated < {queue_table}.updated_date)
                             )
                             and {queue_table}.updated_date is not null
                         order by random()
