@@ -4,12 +4,12 @@ from os import path
 from os import getenv
 import re
 
-GENERATE_CREATE_TABLE = True
-GENERATE_COMMENTS = True
+GENERATE_CREATE_TABLE = False
+GENERATE_COMMENTS = False
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-DUMP_DIR = "2022-02-28"
+DUMP_DIR = "2022-03-11"
 
 
 ##  python -m sql.sql_generate_export_tables  -i sql/export_views.sql -o sql/export_tables_generated.sql
@@ -180,9 +180,10 @@ class view:
         result = ""
 
         if GENERATE_UNLOAD:
-            if "PaperAbstractsInvertedIndex" in table_name:
+            view_name = self.view_name
+            if "PaperAbstractsInvertedIndex" in view_name:
                 result += f"""
-UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex"')
+UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex_view"')
 TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
@@ -195,7 +196,7 @@ DELIMITER as '\\t';"""
             else:
                 # header file so no data
                 result += f"""
-UNLOAD ('SELECT * FROM {table_name} WHERE FALSE')
+UNLOAD ('SELECT * FROM {view_name} WHERE FALSE')
 TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
@@ -206,7 +207,7 @@ DELIMITER as '\\t';"""
                 result += "\n"
                 # data
                 result += f"""
-UNLOAD ('SELECT * FROM {table_name}')
+UNLOAD ('SELECT * FROM {view_name}')
 TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt'
 ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
 CLEANPATH
