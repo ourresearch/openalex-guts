@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2022-03-11
+- added 1181 new journals to Venues
+- updated publisher, title, ISSNs on a few hundred journals
+
 RELEASE 2022-03-01
 - added new papers and corresponding data
 - added 45 new journals to Venues
@@ -13,12 +17,12 @@ RELEASE 2022-02-22
 Partial release on 2022-02-04 (updated Institutions and Venues)
 - ensured each institution has a distinct ROR (identified some institutions that will be merged in a future release, details TBD)
 - updated institution names and data to match what is in ROR
-- added all ROR institutions to Institutions
+- added all ROR institutions to Institutions (about 81,000 new institutions)
 - matched papers to new institutions (some errors, but will improve over time)
 - updated last known institution for millions of authors
 - don't show citation counts for future years in "counts_by_year"
 - ensured each journal has a distinct ISSN-L (identified some journals that will be merged in a future release, details TBD)
-- add many new journals to venues table, link to works when possible
+- add many new journals to venues table, link to works when possible (about 73,000 new journals)
 - add more links from works to venues using Crossref data
 
 RELEASE 2022-01-31

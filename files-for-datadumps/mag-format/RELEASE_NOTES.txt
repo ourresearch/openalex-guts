@@ -1,5 +1,10 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
+
+RELEASE 2022-03-11
+- added about 1,200 new journals
+- updated publisher, title, ISSNs on a few hundred journals
+
 RELEASE 2022-02-28
 - added new papers and corresponding data
 - added 45 new journals
@@ -10,11 +15,11 @@ RELEASE 2022-02-22
 - added new papers and corresponding data
 - ensured each institution has a distinct ROR (identified some institutions that will be merged in a future release, details TBD)
 - updated institution names and data to match what is in ROR
-- added all ROR institutions to Institutions
+- added all ROR institutions to Institutions  (about 81,000 new institutions)
 - matched papers to new institutions (some errors, but will improve over time)
 - updated last known institution for millions of authors
 - ensured each journal has a distinct ISSN-L (identified some journals that will be merged in a future release, details TBD)
-- add many new journals to Journals table, link to papers when possible
+- add many new journals to Journals table, link to papers when possible (about 73,000 new journals)
 
 RELEASE 2022-01-30
 Released on Jan 39, 2022 at s3://openalex-mag-format/data_dump_v1/2022-01-30/
