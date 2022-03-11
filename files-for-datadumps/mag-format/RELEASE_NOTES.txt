@@ -2,8 +2,10 @@ OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
 
 RELEASE 2022-03-11
+- added new papers and corresponding data
 - added about 1,200 new journals
 - updated publisher, title, ISSNs on a few hundred journals
+- removed README.txt, because of change in tech it became difficult to maintain.  Please refer to LISTING.txt for similar information.
 
 RELEASE 2022-02-28
 - added new papers and corresponding data
