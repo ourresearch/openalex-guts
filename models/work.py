@@ -207,16 +207,34 @@ class Work(db.Model):
         if not hasattr(self, "insert_dicts"):
             self.insert_dicts = []
 
+        # matching_papers_sql = """
+        #     select
+        #         concepts_of_related.paper_id as related_paper_id,
+        #         avg(concepts_of_related.score) as average_related_score,
+        #         count(distinct concepts_of_related.field_of_study) as n
+        #     from mid.work_concept_for_api_mv concepts_of_related
+        #     where field_of_study in %s
+        #     group by concepts_of_related.paper_id
+        #     order by n desc
+        #     limit 10"""
+
         matching_papers_sql = """
+            with matches as (
             select 
-                concepts_of_related.paper_id as related_paper_id, 
-                avg(concepts_of_related.score) as average_related_score, 
-                count(distinct concepts_of_related.field_of_study) as n
-            from mid.work_concept_for_api_mv concepts_of_related 
-            where field_of_study in %s
-            group by concepts_of_related.paper_id
-            order by n desc
-            limit 10"""
+                            paper_id as related_paper_id, 
+                            avg(score) as average_related_score, 
+                            count(distinct field_of_study) as n
+                        from mid.work_concept_for_api_mv 
+                        where field_of_study in %s
+                        group by paper_id                      
+                        limit 100000
+            )
+            select matches.*, n*average_related_score  
+            from matches 
+            where n > 3 
+            order by n desc, average_related_score desc
+            limit 10        
+        """
 
         with get_db_cursor() as cur:
             # print(cur.mogrify(matching_papers_sql, (tuple(self.concepts_for_related_works), )))

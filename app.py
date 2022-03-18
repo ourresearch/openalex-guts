@@ -88,6 +88,9 @@ if database_to_use.startswith("q") or database_to_use.startswith("h") or (databa
     MY_DATABASE = f"DATABASE_URL_{database_to_use}"
 elif database_to_use == "6-HIGH":
     MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
+
+MY_DATABASE = "POSTGRES_URL"
+
 print(f"Using database {MY_DATABASE}")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(MY_DATABASE)  # don't use this though, default is unclear, use binds
@@ -96,6 +99,8 @@ app.config["SQLALCHEMY_BINDS"] = {
 }
 
 redshift_url = urlparse(os.getenv(MY_DATABASE))
+print(redshift_url)
+# redshift_url = urlparse(os.getenv(MY_DATABASE))
 app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
                                   database=redshift_url.path[1:],
                                   user=redshift_url.username,
@@ -214,3 +219,4 @@ def reserve_more_openalex_ids(entity, number_to_reserve=100):
         rows = cur.fetchall()
         ids = [row["id"] for row in rows]
     return ids
+

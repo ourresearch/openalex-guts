@@ -252,11 +252,13 @@ class DbQueue(object):
                         order by random() limit {chunk}; """
             elif run_method == "add_related_works":
                 text_query_pattern_select = """
-                    select paper_id from mid.work
-                        where paper_id not in (select paper_id from mid.related_work)
-                        and paper_id in (select paper_id from mid.work_concept)
-                        and paper_id > 4200000000
-                        order by random() limit {chunk}; """
+                select distinct mid.work_concept_for_api_mv.paper_id 
+                    from mid.work_concept_for_api_mv
+                    left outer join mid.related_work on mid.related_work.paper_id=mid.work_concept_for_api_mv.paper_id
+                    where mid.work_concept_for_api_mv.paper_id > 4200000000
+                    and mid.related_work.paper_id is null
+                    -- order by random() 
+                    limit 10000; """
             elif run_method in ["store"]:
                 text_query_pattern_select = """
                     select distinct {id_field_name} 
@@ -369,20 +371,6 @@ class DbQueue(object):
                         order by random()
                         limit {chunk};
                 """
-            elif self.myclass == models.Concept and run_method=="save_wiki":
-                text_query_pattern_select = """
-                    select field_of_study_id from mid.concept
-                        where
-                        field_of_study_id in (select field_of_study_id from ins.wiki_concept 
-                                                where (wikidata_id != 'None') 
-                                                    and (wikidata_super is null) 
-                                                    and (wikidata_id is not null)
-                                                    and (is_active_concept = true))
-                        and field_of_study_id not in (select field_of_study_id from ins.wiki_concept 
-                                                where (wikidata_super is not null) )
-                        order by random()
-                        limit {chunk};
-                    """
             elif self.myclass == models.Concept and run_method=="clean_metadata":
                 text_query_pattern_select = """
                     select field_of_study_id from mid.concept_metadata
@@ -391,14 +379,6 @@ class DbQueue(object):
                         order by random()
                         limit {chunk};
                 """
-            elif self.myclass == models.Institution and run_method=="save_wiki":
-                text_query_pattern_select = """
-                    select affiliation_id from mid.institution
-                        where
-                        affiliation_id in (select affiliation_id from ins.wiki_institution where (wikidata_id != 'None') and (wikidata_super is null) and (wikidata_id is not null))
-                        order by random()
-                        limit {chunk};
-                    """
             else:
                 raise("myclass and method combo not known")
 
@@ -411,8 +391,9 @@ class DbQueue(object):
             with get_db_cursor() as cur:
                 cur.execute("select max_id from util.max_openalex_id")
                 rows = cur.fetchall()
-                models.max_openalex_id = rows[0]["max_id"]
-                print(f"max_openalex_id: {models.max_openalex_id}")
+                if rows:
+                    models.max_openalex_id = rows[0]["max_id"]
+                    print(f"max_openalex_id: {models.max_openalex_id}")
 
         while True:
             started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
@@ -533,7 +514,7 @@ class DbQueue(object):
                                  orm.Load(models.Work).raiseload('*'))
                             objects = query.filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
-                            print(f"Exception getting records for {object_ids} so trying individually")
+                            print(f"Exception {e} getting records for {object_ids} so trying individually")
                             objects = []
                             for id in object_ids:
                                 try:
