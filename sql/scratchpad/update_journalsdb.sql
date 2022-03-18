@@ -40,6 +40,8 @@ update mid.journal set
 from mid.journal t1
 join mid.journalsdb_flat_mv jdb on t1.issn=jdb.issn
 
+MAX_MAG_RIGHT_NOW is
+select * from util.max_openalex_id
 
 insert into mid.journal
 (journal_id, normalized_name, display_name, issn, publisher, created_date, updated_date, issns, is_oa, is_in_doaj, match_name)

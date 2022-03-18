@@ -4,7 +4,6 @@ import requests
 import json
 import urllib.parse
 import datetime
-from sqlalchemy_redshift.dialect import SUPER
 
 from app import db
 from app import USER_AGENT
@@ -61,16 +60,6 @@ class Concept(db.Model):
             return None
         return self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
 
-    def filter_for_valid_concepts(concept_id_list):
-        q = """
-        select field_of_study_id
-        from mid.concept_deprecated_concepts
-        WHERE field_of_study_id in :concept_id_list
-        """
-        rows = db.session.execute(text(q), {"concept_id_list": concept_id_list}).fetchall()
-        invalid_ids = [row[0] for row in rows]
-        response = [id for id in concept_id_list if id not in invalid_ids]
-        return response
 
     @cached_property
     def ancestors_raw(self):
@@ -386,18 +375,6 @@ class Concept(db.Model):
                                                "json_save": self.json_save,
                                                 "version": VERSION_STRING}}]
 
-    def save_wiki(self):
-        if not hasattr(self, "insert_dicts"):
-            # wikipedia_data = json.dumps(self.raw_wikipedia_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            # if len(wikipedia_data) > 64000:
-            #     wikipedia_data = None
-            wikidata_data = json.dumps(self.raw_wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikidata_data) > 64000:
-                wikidata_data = None
-            self.insert_dicts = [{"ins.wiki_concept": "({id}, '{wikidata_super}')".format(
-                                  id=self.field_of_study_id,
-                                  wikidata_super=wikidata_data,
-                                )}]
 
     def clean_metadata(self):
         if not self.metadata:

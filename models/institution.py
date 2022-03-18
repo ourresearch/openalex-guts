@@ -298,18 +298,6 @@ class Institution(db.Model):
         updated = datetime.datetime.utcnow().isoformat()
         self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
 
-    def save_wiki(self):
-        if not hasattr(self, "insert_dicts"):
-            # wikipedia_data = json.dumps(self.wikipedia_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            # if len(wikipedia_data) > 64000:
-            #     wikipedia_data = None
-            wikidata_data = json.dumps(self.wikidata_data, ensure_ascii=False).replace("'", "''").replace("%", "%%").replace(":", "\:")
-            if len(wikidata_data) > 64000:
-                wikidata_data = None
-            self.insert_dicts = [{"ins.wiki_institution": "({id}, '{wikidata_super}')".format(
-                                  id=self.affiliation_id,
-                                  wikidata_super=wikidata_data
-                                )}]
 
     @cached_property
     def concepts(self):
