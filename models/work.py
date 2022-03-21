@@ -231,7 +231,7 @@ class Work(db.Model):
             )
             select matches.*, n*average_related_score  
             from matches 
-            where n > 3 
+            -- where n >= 3 
             order by n desc, average_related_score desc
             limit 10        
         """
