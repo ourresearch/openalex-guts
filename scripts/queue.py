@@ -144,14 +144,14 @@ class DbQueue(object):
                 db.session.execute(delete(Work).where(Work.paper_id.in_(delete_ids)))
                 db.session.commit()
                 print("delete done")
-            # elif table_name.startswith("Json"):
-            #     # print("TO DELETE")
-            #     # print(delete_ids)
-            #     my_table = globals()[table_name]
-            #     db.session.remove()
-            #     db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
-            #     db.session.commit()
-            #     print("delete done")
+            elif table_name.startswith("Json"):
+                # print("TO DELETE")
+                # print(delete_ids)
+                my_table = globals()[table_name]
+                db.session.remove()
+                db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
+                db.session.commit()
+                print("delete done")
 
         for table_name, all_insert_strings in insert_dict_all_objects.items():
             # look up the model from the name
@@ -260,16 +260,23 @@ class DbQueue(object):
                     -- order by random() 
                     limit 10000; """
             elif run_method in ["store"]:
-                text_query_pattern_select = """
-                    select distinct {id_field_name} 
-                        from {queue_table}
-                        left outer join {insert_table} on {queue_table}.{id_field_name} = {insert_table}.id
-                        where (({insert_table}.updated is null) 
-                             -- or ({insert_table}.updated < {queue_table}.updated_date)
-                            )
-                            and {queue_table}.updated_date is not null
-                        order by random()
-                        limit {chunk};
+                # text_query_pattern_select = """
+                #     select distinct {id_field_name}
+                #         from {queue_table}
+                #         left outer join {insert_table} on {queue_table}.{id_field_name} = {insert_table}.id
+                #         where (({insert_table}.updated is null)
+                #              -- or ({insert_table}.updated < {queue_table}.updated_date)
+                #             )
+                #             and {queue_table}.updated_date is not null
+                #         order by random()
+                #         limit {chunk};
+                # """
+                text_query_pattern_select = """                
+                    with some_papers as (
+                    select paper_id from mid.related_work 
+                    where updated > '2022-03-10'::timestamp 
+                    limit {chunk}*10)
+                    select distinct paper_id from some_papers
                 """
                 insert_table = self.store_json_insert_tablename
             elif run_method == "store_author_h2":
@@ -429,16 +436,17 @@ class DbQueue(object):
                         try:
                             object_query = db.session.query(models.Work).options(
                                  selectinload(models.Work.locations),
-                                 selectinload(models.Work.journal),
+                                 selectinload(models.Work.journal).raiseload('*'),
                                  selectinload(models.Work.references),
                                  selectinload(models.Work.mesh),
                                  selectinload(models.Work.counts_by_year),
                                  selectinload(models.Work.abstract),  # include abstract for this one, isn't high throughput
                                  selectinload(models.Work.extra_ids),
                                  selectinload(models.Work.related_works),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
                                  orm.Load(models.Work).raiseload('*'))
                             objects = object_query.filter(self.myid.in_(object_ids)).all()
                         except Exception as e:
@@ -553,7 +561,8 @@ class DbQueue(object):
                              orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                     elif self.myclass == models.Author:
                         objects = db.session.query(models.Author).options(
-                             selectinload(models.Author.counts_by_year),
+                             selectinload(models.Author.counts_by_year_papers),
+                             selectinload(models.Author.counts_by_year_citations),
                              selectinload(models.Author.alternative_names),
                              selectinload(models.Author.author_concepts),
                              selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),

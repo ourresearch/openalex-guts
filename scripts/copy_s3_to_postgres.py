@@ -8,6 +8,8 @@ from time import time
 
 from util import elapsed
 
+# python -m scripts.copy_s3_to_postgres mid.work_extra_ids
+
 postgres_url = urlparse(getenv("POSTGRES_URL"))
 
 def new_postgres_connection(readonly=True):
@@ -45,34 +47,43 @@ if __name__ == '__main__':
     folder_name = table_name.replace(".", "_", 1)
 
     for i in range(0, 32):
-        loop_time = time()
-        print(f"loop number {i}")
-        q2 = f"""analyze {table_name};
-                SELECT reltuples::bigint AS estimate
-                FROM   pg_class
-                WHERE  oid = '{table_name}'::regclass;
-                """
-        print(q2)
-        q = f"""SELECT aws_s3.table_import_from_s3(
-           '{table_name}',
-           '', 
-           '(delimiter $$|$$, null $$$$)',
-           aws_commons.create_s3_uri(
-                   'openalex-sandbox',
-                   'export-rds/{folder_name}/{i:0>4}_part_00',
-                   'us-east-1'
-                ),
-           aws_commons.create_aws_credentials(
-           '{aws_access_key_id}', '{aws_secret_access_key}', '')
-        );"""
-        print(q)
-        with get_postgres_cursor() as cur:
-            cur.execute(q2)
-            rows = cur.fetchall()
-            print(f"done, {rows}")
-            cur.execute(q)
+        max_part = 1
+        if table_name == "mid.json_works":
+            max_part = 10
+        elif table_name == "mid.json_authors":
+            max_part = 3
+        elif table_name == "ins.unpaywall_recordthresher_fields_mv":
+            max_part = 2
+        for j in range(0, max_part):
 
-        print(f"loop time {elapsed(loop_time)}s, per loop time {elapsed(start_time)/(i+1)}s, total_time {elapsed(start_time)}s")
+            loop_time = time()
+            print(f"loop number {i}")
+            q2 = f"""analyze {table_name};
+                    SELECT reltuples::bigint AS estimate
+                    FROM   pg_class
+                    WHERE  oid = '{table_name}'::regclass;
+                    """
+            print(q2)
+            q = f"""SELECT aws_s3.table_import_from_s3(
+               '{table_name}',
+               '', 
+               '(delimiter $$|$$, null $$$$)',
+               aws_commons.create_s3_uri(
+                       'openalex-sandbox',
+                       'export-rds/{folder_name}/{i:0>4}_part_{j:0>2}',
+                       'us-east-1'
+                    ),
+               aws_commons.create_aws_credentials(
+               '{aws_access_key_id}', '{aws_secret_access_key}', '')
+            );"""
+            print(q)
+            with get_postgres_cursor() as cur:
+                cur.execute(q2)
+                rows = cur.fetchall()
+                print(f"done, {rows}")
+                cur.execute(q)
+
+            print(f"loop time {elapsed(loop_time)}s, per loop time {elapsed(start_time)/(i+1)}s, total_time {elapsed(start_time)}s")
 
     # final print of size
     with get_postgres_cursor() as cur:

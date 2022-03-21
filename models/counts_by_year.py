@@ -1,9 +1,9 @@
 from app import db
 
 
-class AuthorCountsByYear(db.Model):
+class AuthorCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_authors_by_year_mv"
+    __tablename__ = "citation_authors_by_year_paper_count_mv"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -11,7 +11,19 @@ class AuthorCountsByYear(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<AuthorCountsByYear ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+        return "<AuthorCountsByYearPapers ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+
+class AuthorCountsByYearCitations(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_authors_by_year_citation_count_mv"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<AuthorCountsByYearCitations ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
 
 
 class ConceptCountsByYear(db.Model):
