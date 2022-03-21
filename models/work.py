@@ -604,7 +604,7 @@ class Work(db.Model):
         # return response
 
     def store(self):
-        VERSION_STRING = "save for second release"
+        VERSION_STRING = "saved on postgres"
 
         # print("processing work! {}".format(self.id))
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
@@ -691,6 +691,14 @@ class Work(db.Model):
         }
         return response
 
+    @cached_property
+    def updated_json_response_date(self):
+        updated_date = self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date[0:10]
+        for related_work in self.related_works:
+            if related_work.updated.isoformat() > updated_date:
+                updated_date = related_work.updated.isoformat()[0:10]
+        return updated_date
+
     def to_dict(self, return_level="full"):
         from models import Venue
 
@@ -745,7 +753,7 @@ class Work(db.Model):
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
-            response["updated_date"] = self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date[0:10]
+            response["updated_date"] = self.updated_json_response_date
             response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
 
         # only include non-null IDs

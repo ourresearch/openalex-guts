@@ -16,19 +16,13 @@ class Unpaywall(db.Model):
     best_oa_location_url = db.Column(db.Text)
     best_oa_location_version = db.Column(db.Text)
     best_oa_location_license = db.Column(db.Text)
-    json_line = db.Column(db.Text)
-
-    @cached_property
-    def api_raw(self):
-        if not self.json_line:
-            return None
-        return json.loads(self.json_line)
+    oa_locations_json = db.Column(db.Text)
 
     @cached_property
     def oa_locations(self):
-        if not self.api_raw:
+        if not self.oa_locations_json:
             return []
-        return self.api_raw["oa_locations"]
+        return json.loads(self.oa_locations_json)
 
     def __repr__(self):
         return "<Unpaywall ( {} ) '{}' {}>".format(self.recordthresher_id, self.doi, self.oa_status)
