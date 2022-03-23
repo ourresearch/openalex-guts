@@ -46,4 +46,4 @@ run_queue_record: python -m scripts.queue --run --table=record --method=process_
 run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=20 --name=$DYNO --randstart
 run_queue_work_add_related_works: python -m scripts.queue --run --table=work --method=add_related_works --chunk=100 --name=$DYNO
 
-run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=500 --name=$DYNO
+run_queue_work_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=100 --name=$DYNO
