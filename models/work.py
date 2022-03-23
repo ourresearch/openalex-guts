@@ -50,7 +50,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
-        print(f"error: status code {r}")
+        print(f"error: status code {r} reason {r.reason}")
         return []
 
     api_json = r.json()
