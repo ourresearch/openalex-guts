@@ -36,7 +36,9 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
         data_list += [{
             "title": row["paper_title"].lower(),
             "doc_type": row["doc_type"],
-            "journal": row["journal_title"].lower() if row["journal_title"] else None
+            "journal": row["journal_title"].lower() if row["journal_title"] else None,
+            "abstract": row["inverted_index"],
+            "inverted_abstract": True
         }]
 
     class ConceptLookupResponse:
@@ -44,7 +46,8 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
 
     api_key = os.getenv("SAGEMAKER_API_KEY")
     headers = {"X-API-Key": api_key}
-    api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
+    # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/" #for version without abstracts
+    api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
         print(f"error: status code {r}")
@@ -57,16 +60,19 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
                 insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
                                                        "field_of_study": api_dict["tag_ids"][i],
                                                        "score": api_dict["scores"][i],
-                                                       "algorithm_version": 2}}]
+                                                       "algorithm_version": 2,
+                                                       "updated_date": datetime.datetime.utcnow().isoformat()}}]
         else:
             matching_ids = []
             insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
                                                        "field_of_study": None,
                                                        "score": None,
-                                                       "algorithm_version": 2}}]
+                                                       "algorithm_version": 2,
+                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
 
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
+    response.delete_dict = {"WorkConceptFull": [row["paper_id"] for row in rows]}
     return [response]
 
 
@@ -171,14 +177,17 @@ class Work(db.Model):
                 self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
                                                        "field_of_study": field_of_study,
                                                        "score": score,
-                                                       "algorithm_version": 2}}]
+                                                       "algorithm_version": 2,
+                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
                 if score > 0.3:
                     self.concepts_for_related_works.append(field_of_study)
         else:
             self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
                                                        "field_of_study": None,
                                                        "score": None,
-                                                       "algorithm_version": 2}}]
+                                                       "algorithm_version": 2,
+                                                       "updated_date": datetime.datetime.utcnow().isoformat()}}]
+        self.delete_dict["WorkConceptFull"] += [self.id]
 
 
 

@@ -137,11 +137,12 @@ class DbQueue(object):
 
         start_time = time()
         for table_name, delete_ids in delete_dict_all_objects.items():
-            if table_name == "Work":
+            if table_name == "Work" or table_name == "WorkConceptFull":
                 # print("TO DELETE")
                 # print(delete_ids)
+                my_table = globals()[table_name]
                 db.session.remove()
-                db.session.execute(delete(Work).where(Work.paper_id.in_(delete_ids)))
+                db.session.execute(delete(my_table).where(my_table.paper_id.in_(delete_ids)))
                 db.session.commit()
                 print("delete done")
             elif table_name.startswith("Json"):
@@ -254,6 +255,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                 select distinct mid.work_concept_for_api_mv.paper_id 
                     from mid.work_concept_for_api_mv
+                    join mid.work on mid.work.paper_id=mid.work_concept_for_api_mv.paper_id
                     left outer join mid.related_work on mid.related_work.paper_id=mid.work_concept_for_api_mv.paper_id
                     where mid.work_concept_for_api_mv.paper_id > 4200000000
                     and mid.related_work.paper_id is null
@@ -345,13 +347,17 @@ class DbQueue(object):
                 """
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
+                # text_query_pattern_select = """
+                #     select paper_id from mid.work
+                #         where paper_id not in
+                #             (select paper_id from mid.work_concept)
+                #         and paper_title is not null
+                #         -- and work.paper_id > {MAX_MAG_ID}
+                #         order by random()
+                #         limit {chunk};
+                # """
                 text_query_pattern_select = """
-                    select paper_id from mid.work
-                        where paper_id not in
-                            (select paper_id from mid.work_concept)
-                        and paper_title is not null
-                        -- and work.paper_id > {MAX_MAG_ID} 
-                        order by random()
+                    select paper_id from mid.work_concept where updated_date is null
                         limit {chunk};
                 """
                 insert_table = "mid.work_concept"
@@ -531,9 +537,11 @@ class DbQueue(object):
                                 except Exception as e:
                                     print(f"error: failed on {run_method} {id} with error {e}")
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
-                        q = """select work.paper_id, work.paper_title, work.doc_type, journal.display_name as journal_title
+                        q = """select work.paper_id, work.paper_title, work.doc_type, 
+                                journal.display_name as journal_title, abstract.inverted_index
                             from mid.work work
                             left outer join mid.journal journal on journal.journal_id=work.journal_id
+                            left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
                             where paper_id in ({})
                         """.format(",".join(str(paper_id) for paper_id in object_ids))
                         try:
