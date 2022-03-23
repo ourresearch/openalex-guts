@@ -276,8 +276,10 @@ class DbQueue(object):
                 text_query_pattern_select = """     
                 with select_some as (select paper_id from mid.related_work 
                     left outer join mid.json_works on mid.json_works.id=mid.related_work.paper_id
-                    where ((mid.json_works.id is null) or (mid.json_works.updated < mid.related_work.updated))
-                    and mid.related_work.updated > '2022-03-10'::timestamp 
+                    left outer join mid.json_works on mid.json_works.id=mid.work_concept.paper_id
+                    where (mid.json_works.id is null)  
+                        or ((mid.json_works.updated < mid.related_work.updated) and (mid.related_work.updated > '2022-03-10'::timestamp)) 
+                        or ((mid.work_concept.updated_date is not null) and (json_works.updated < mid.related_work.updated)) 
                     limit {chunk}*10)
                 select distinct paper_id from select_some
                 """
@@ -357,7 +359,11 @@ class DbQueue(object):
                 #         limit {chunk};
                 # """
                 text_query_pattern_select = """
-                    select paper_id from mid.work_concept where updated_date is null
+                    select distinct mid.work_concept.paper_id from mid.work_concept 
+                        join mid.work on mid.work.paper_id=mid.work_concept.paper_id
+                        join mid.abstract on mid.abstract.paper_id=mid.work_concept.paper_id
+                        where mid.work_concept.updated_date is null
+                        and mid.abstract.paper_id is not null
                         limit {chunk};
                 """
                 insert_table = "mid.work_concept"
@@ -538,16 +544,13 @@ class DbQueue(object):
                                     print(f"error: failed on {run_method} {id} with error {e}")
                     elif self.myclass == models.Work and run_method=="new_work_concepts":
                         q = """select work.paper_id, work.paper_title, work.doc_type, 
-                                journal.display_name as journal_title, abstract.inverted_index
+                                journal.display_name as journal_title, abstract.indexed_abstract
                             from mid.work work
                             left outer join mid.journal journal on journal.journal_id=work.journal_id
                             left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
-                            where paper_id in ({})
+                            where work.paper_id in ({})
                         """.format(",".join(str(paper_id) for paper_id in object_ids))
-                        try:
-                            objects = db.session.execute(text(q)).fetchall()
-                        except:
-                            objects = []
+                        objects = db.session.execute(text(q)).fetchall()
                     elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
                         objects = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
