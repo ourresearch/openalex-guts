@@ -37,7 +37,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
             "title": row["paper_title"].lower(),
             "doc_type": row["doc_type"],
             "journal": row["journal_title"].lower() if row["journal_title"] else None,
-            "abstract": row["inverted_index"],
+            "abstract": row["indexed_abstract"],
             "inverted_abstract": True
         }]
 
