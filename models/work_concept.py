@@ -32,4 +32,5 @@ class WorkConceptFull(db.Model):
     field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     score = db.Column(db.Float)
     algorithm_version = db.Column(db.Numeric)
+    updated_date = db.Column(db.DateTime)
 
