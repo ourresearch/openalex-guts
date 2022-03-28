@@ -276,10 +276,8 @@ class DbQueue(object):
                 text_query_pattern_select = """     
                 with select_some as (select mid.related_work.paper_id from mid.related_work 
                     left outer join mid.json_works on mid.json_works.id=mid.related_work.paper_id
-                    left outer join mid.work_concept on mid.json_works.id=mid.work_concept.paper_id
-                    where (mid.json_works.id is null)  
-                        or ((mid.json_works.updated < mid.related_work.updated) and (mid.related_work.updated > '2022-03-10'::timestamp)) 
-                        or ((mid.work_concept.updated_date is not null) and (json_works.updated < mid.work_concept.updated_date)) 
+                    where ((mid.json_works.id is null) or (mid.json_works.updated < mid.related_work.updated))
+                    and mid.related_work.updated > '2022-03-10'::timestamp 
                     limit {chunk}*10)
                 select distinct paper_id from select_some
                 """
