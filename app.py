@@ -98,15 +98,14 @@ app.config["SQLALCHEMY_BINDS"] = {
     "redshift_db": os.getenv(MY_DATABASE)
 }
 
-redshift_url = urlparse(os.getenv(MY_DATABASE))
-print(redshift_url)
-# redshift_url = urlparse(os.getenv(MY_DATABASE))
+database_url = urlparse(os.getenv(MY_DATABASE))
+# database_url = urlparse(os.getenv(MY_DATABASE))
 app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
-                                  database=redshift_url.path[1:],
-                                  user=redshift_url.username,
-                                  password=redshift_url.password,
-                                  host=redshift_url.hostname,
-                                  port=redshift_url.port)
+                                  database=database_url.path[1:],
+                                  user=database_url.username,
+                                  password=database_url.password,
+                                  host=database_url.hostname,
+                                  port=database_url.port)
 
 # see https://stackoverflow.com/questions/43594310/redshift-sqlalchemy-long-query-hangs
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_pre_ping": True,
@@ -151,11 +150,11 @@ app.config["COMPRESS_DEBUG"] = compress_json
 
 
 def new_db_connection(readonly=True):
-    connection = psycopg2.connect(dbname=redshift_url.path[1:],
-                                  user=redshift_url.username,
-                                  password=redshift_url.password,
-                                  host=redshift_url.hostname,
-                                  port=redshift_url.port)
+    connection = psycopg2.connect(dbname=database_url.path[1:],
+                                  user=database_url.username,
+                                  password=database_url.password,
+                                  host=database_url.hostname,
+                                  port=database_url.port)
     connection.set_session(readonly=readonly, autocommit=True)
     return connection
 
