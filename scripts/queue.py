@@ -273,13 +273,18 @@ class DbQueue(object):
                 #         order by random()
                 #         limit {chunk};
                 # """
+                # text_query_pattern_select = """
+                # with select_some as (select mid.related_work.paper_id from mid.related_work
+                #     left outer join mid.json_works on mid.json_works.id=mid.related_work.paper_id
+                #     where ((mid.json_works.id is null) or (mid.json_works.updated < mid.related_work.updated))
+                #     and mid.related_work.updated > '2022-03-10'::timestamp
+                #     limit {chunk}*10)
+                # select distinct paper_id from select_some
+                # """
                 text_query_pattern_select = """     
-                with select_some as (select mid.related_work.paper_id from mid.related_work 
-                    left outer join mid.json_works on mid.json_works.id=mid.related_work.paper_id
-                    where ((mid.json_works.id is null) or (mid.json_works.updated < mid.related_work.updated))
-                    and mid.related_work.updated > '2022-03-10'::timestamp 
-                    limit {chunk}*10)
-                select distinct paper_id from select_some
+                select paper_id from
+                 mid.work where mid.work.updated_date > '2022-03-31'::timestamp 
+                    limit {chunk}*10
                 """
                 insert_table = self.store_json_insert_tablename
             elif run_method == "store_author_h2":
