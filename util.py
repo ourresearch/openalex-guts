@@ -845,7 +845,6 @@ class TimingMessages(object):
 
 # like the one below but similar to what we used in redshift
 def normalize_title_like_sql(title):
-    import unidecode
     import re
 
     response = title
@@ -856,9 +855,6 @@ def normalize_title_like_sql(title):
     # just first n characters
     response = response[0:500]
 
-    if not isinstance(response, str):
-        response = unidecode.unidecode(response.decode('utf-8')).encode('ascii', 'ignore')
-
     # lowercase
     response = response.lower()
 
@@ -867,10 +863,10 @@ def normalize_title_like_sql(title):
     response = re.sub(u'<.*?>', u'', response)
 
     # remove articles and common prepositions
-    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", u"", response)
+    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
 
     # remove everything except alphas
-    response = u"".join(e for e in response if (e.isalpha()))
+    response = "".join(e for e in response if (e.isalpha()))
 
     return response
 
