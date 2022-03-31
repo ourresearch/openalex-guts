@@ -282,8 +282,10 @@ class DbQueue(object):
                 # select distinct paper_id from select_some
                 # """
                 text_query_pattern_select = """     
-                select paper_id from
-                 mid.work where mid.work.updated_date > '2022-03-31'::timestamp 
+                select paper_id from mid.work 
+                join mid.json_works on mid.json_works.id=mid.work.paper_id
+                 where mid.work.updated_date > '2022-03-31'::timestamp 
+                 and mid.json_works.updated < mid.work.updated_date))
                     limit {chunk}*10
                 """
                 insert_table = self.store_json_insert_tablename
