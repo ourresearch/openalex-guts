@@ -198,7 +198,7 @@ def reserve_more_openalex_ids(entity, number_to_reserve=100):
     for i in range(0, number_to_reserve):
         assigned_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
         assigned_labels += [assigned_label]
-        values_string_list += [f"(sysdate, '{assigned_label}', '{entity}')"]
+        values_string_list += [f"(now(), '{assigned_label}', '{entity}')"]
 
     values_string = ",".join(values_string_list)
     text_query_pattern_select = f"""

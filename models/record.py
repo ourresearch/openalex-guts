@@ -11,6 +11,7 @@ import datetime
 import json
 
 from app import db
+from util import normalize_title_like_sql
 
 
 # alter table recordthresher_record add column started_label text;
@@ -73,10 +74,7 @@ class Record(db.Model):
     open_license = db.Column(db.Text)
     open_version = db.Column(db.Text)
 
-    # set by Xplenty
-    match_title = db.Column(db.Text)
-    normalized_type = db.Column(db.Text)
-    normalized_doc_type = db.Column(db.Text)
+    normalized_title = db.Column(db.Text)
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
@@ -223,14 +221,21 @@ class Record(db.Model):
         new_work.doi = self.doi
         new_work.doi_lower = self.doi  # already lowered from recordthresher
         new_work.original_title = self.title
-        new_work.match_title = self.match_title
+        new_work.unpaywall_normalize_title = self.normalized_title if self.normalized_title else normalize_title_like_sql(self.title)
         new_work.journal_id = journal_id
-        new_work.genre = self.normalized_type
+        new_work.genre = self.normalized_work_type
         new_work.doc_type = self.normalized_doc_type
         db.session.add(new_work)
 
         print(f"MADE A NEW WORK!!! {new_work}")
 
+    @property
+    def normalized_doc_type(self):
+        return work_type_lookup[self.genre]["doc_type"]
+
+    @property
+    def normalized_work_type(self):
+        return work_type_lookup[self.genre]["work_type"]
 
     def process_record(self, new_work_id_if_needed):
         from models import Work
@@ -284,4 +289,87 @@ class Record(db.Model):
     def __repr__(self):
         return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
 
+
+
+work_type_strings = """
+    lookup_string,work_type,doc_type
+    conference,proceedings,Conference
+    proceedings-series,proceedings-series,
+    journal-volume,journal-volume,
+    book-series,book-series,
+    dataset,dataset,Dataset
+    info:eu-repo/semantics/report,report,
+    guideline,other,
+    preprint,posted-content,Repository
+    report,report,
+    thesis/dissertation,dissertation,Thesis
+    corrected and republished article,journal-article,Journal
+    observational study,journal-article,Journal
+    systematic review,journal-article,Journal
+    info:eu-repo/semantics/workingpaper,report,
+    video-audio media,other,
+    english abstract,other,
+    personal narrative,other,
+    info:eu-repo/semantics/other,other,
+    letter,posted-content,Repository
+    proceedings,proceedings,Conference
+    technical report,report,
+    peer-review,peer-review,
+    program document,other,
+    info:eu-repo/semantics/doctoralthesis,dissertation,Thesis
+    info:eu-repo/semantics/masterthesis,dissertation,Thesis
+    other,other,
+    book,book,Book
+    dissertation,dissertation,Thesis
+    info:eu-repo/semantics/article,journal-article,Journal
+    monograph,monograph,Book
+    proceedings-article,proceedings-article,Conference
+    data,dataset,Dataset
+    info:eu-repo/semantics/conferencepaper,proceedings,Conference
+    info:eu-repo/semantics/patent,other,
+    info:eu-repo/semantics/preprint,posted-content,Repository
+    journal,journal,
+    practice guideline,other,
+    book-set,book-set,
+    grant,grant,
+    congress,other,
+    info:eu-repo/semantics/conferenceobject,proceedings-article,Conference
+    journal article: accepted manuscript,journal-article,Journal
+    report-series,report-series,
+    news,posted-content,Repository
+    reference-entry,reference-entry,
+    book-part,book-part,
+    clinical trial,journal-article,Journal
+    editorial,journal-article,Journal
+    info:eu-repo/semantics/book,book,Book
+    journal article: publisher's accepted manuscript,journal-article,Journal
+    posted-content,posted-content,Repository
+    published erratum,other,
+    reference-book,reference-book,
+    retraction of publication,other,
+    standard,standard,
+    info:eu-repo/semantics/bookpart,book-chapter,BookChapter
+    journal-issue,journal-issue,
+    book-chapter,book-chapter,BookChapter
+    interview,other,
+    introductory journal article,journal-article,Journal
+    historical article,journal-article,Journal
+    journal article,journal-article,Journal
+    journal-article,journal-article,Journal
+    meta-analysis,journal-article,Journal
+    article,journal-article,Journal
+    case reports,journal-article,Journal
+    component,component,
+    info:eu-repo/semantics/lecture,other,
+    journal article: published article,journal-article,Journal
+    patient education handout,other,
+"""
+
+work_type_lines = work_type_strings.split("\n")
+work_type_lookup = dict()
+for line in work_type_lines:
+    if line:
+        (lookup, work_type, doc_type) = line.split(",")
+        work_type_lookup[lookup.strip()] = {"work_type": work_type if work_type else None,
+                                            "doc_type": doc_type if doc_type else None}
 

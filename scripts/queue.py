@@ -191,30 +191,31 @@ class DbQueue(object):
 
             if run_method == "add_everything":
                 big_chunk = chunk
-                text_query_pattern_select = """
-                --begin transaction read write;
-                lock mid.work;
-                update mid.work set started=sysdate, started_label='{started_label}'
-                    where paper_id in
-                        (SELECT paper_id
-                        FROM   mid.work
-                        WHERE  started is null and finished is null and started_label is null
-                        and updated_date is null
-                        order by random()
-                        LIMIT  {chunk});
-                commit;
-                --end;
-                select paper_id from mid.work where started_label='{started_label}'; """
+                # text_query_pattern_select = """
+                # --begin transaction read write;
+                # lock mid.work;
+                # update mid.work set started=sysdate, started_label='{started_label}'
+                #     where paper_id in
+                #         (SELECT paper_id
+                #         FROM   mid.work
+                #         WHERE  started is null and finished is null and started_label is null
+                #         and updated_date is null
+                #         -- order by random()
+                #         LIMIT  {chunk});
+                # commit;
+                # --end;
+                # select paper_id from mid.work where started_label='{started_label}'; """
 
                 # temp override
                 # pubmed ones: 4214798165 4214797353 4214794591
                 # crossref ones: 4214778246 4214778318 4214778274
                 # text_query_pattern_select = """select 4214704367"""
 
-                # text_query_pattern_select = """
-                #     select paper_id  from mid.work
-                #         where paper_id not in (select paper_id from mid.work_concept)
-                #         order by random() limit {chunk}; """
+                text_query_pattern_select = """
+                    select paper_id from mid.work
+                        where updated_date is null
+                        -- order by random() 
+                        limit {chunk}; """
             elif run_method == "add_abstract":
                 text_query_pattern_select = """
                     select work_id from ins.recordthresher_record where work_id is not null
@@ -284,7 +285,9 @@ class DbQueue(object):
                 text_query_pattern_select = """     
                 select paper_id from mid.work 
                 join mid.json_works on mid.json_works.id=mid.work.paper_id
-                 where ((mid.work.updated_date > '2022-03-31'::timestamp) 
+                 where ((mid.work.updated_date is not null) 
+                 and ((mid.json_works.id is null) or (mid.json_works.updated < mid.works.updated)))
+                 and (mid.work.updated_date > '2022-03-31'::timestamp) 
                  and (mid.json_works.updated < mid.work.updated_date))
                     limit {chunk}*10
                 """
@@ -374,10 +377,9 @@ class DbQueue(object):
                 insert_table = "mid.work_concept"
             elif self.myclass == models.Work and run_method=="mint":
                 text_query_pattern_select = """
-                    select work_id from mid.work_match_recordthresher
-                        where work_id>4205086888
-                        and work_id not in (select paper_id from mid.work where paper_id is not null)
-                        order by random()
+                    select work_id from mid.work_match_recordthresher wrt
+                    left outer join mid.work work on wrt.work_id=work.paper_id
+                    where work.paper_id is null
                         limit {chunk};
                 """
             elif self.myclass == models.Record:

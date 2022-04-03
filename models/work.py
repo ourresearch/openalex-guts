@@ -17,13 +17,12 @@ from util import jsonify_fast_no_sort_raw
 from util import normalize_simple
 from util import clean_doi
 from util import normalize_orcid
+from util import normalize_title_like_sql
 from app import get_db_cursor
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
 # update mid.work set original_title=replace(original_title, '\\\\/', '/');
-
-# update work set match_title = f_matching_string(original_title)
 
 def as_work_openalex_id(id):
     from app import API_HOST
@@ -110,7 +109,7 @@ class Work(db.Model):
     best_free_url = db.Column(db.Text)
     best_free_version = db.Column(db.Text)
 
-    match_title = db.Column(db.Text)
+    unpaywall_normalize_title = db.Column(db.Text)
 
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
@@ -194,6 +193,12 @@ class Work(db.Model):
     def add_everything(self):
         self.delete_dict = defaultdict(list)
         self.insert_dicts = []
+
+        # workaround to call unpaywall api instead of having it in db for now
+        if self.records_sorted[0].doi:
+            from models import Unpaywall
+            self.records_sorted[0].unpaywall = Unpaywall(self.records_sorted[0].doi)
+
         self.set_fields_from_all_records()
         self.add_work_concepts()
         self.add_related_works()  # must be after work_concepts
@@ -289,7 +294,7 @@ class Work(db.Model):
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
 
-        records_with_unpaywall = [record for record in self.records_sorted if record.unpaywall]
+        records_with_unpaywall = [record for record in self.records_sorted if hasattr(record, "unpaywall") and record.unpaywall]
         if not records_with_unpaywall:
             return
         record_to_use = records_with_unpaywall[0]
@@ -420,7 +425,7 @@ class Work(db.Model):
         self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
         self.doc_type = record.normalized_doc_type
         self.updated_date = datetime.datetime.utcnow().isoformat()
-        self.match_title = record.match_title
+        self.unpaywall_normalize_title = record.normalized_title
 
         # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
         self.original_venue = record.venue_name
@@ -440,10 +445,10 @@ class Work(db.Model):
         self.first_page = record.first_page
         self.last_page = record.last_page
         self.doc_sub_types = "Retracted" if record.is_retracted else None
-        self.genre = record.normalized_type
+        self.genre = record.normalized_work_type
         self.best_url = record.record_webpage_url
 
-        if record.unpaywall:
+        if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
             self.oa_status = record.unpaywall.oa_status
             self.best_free_url = record.unpaywall.best_oa_location_url
@@ -474,6 +479,7 @@ class Work(db.Model):
         for record in records:
             if record.record_type == "pubmed_record":
                 self.set_fields_from_record(record)
+       
         for record in records:
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
