@@ -38,18 +38,22 @@ class Author(db.Model):
 
     @classmethod
     def matching_author_string(cls, raw_author_string):
+        from util import matching_author_string
         if not raw_author_string:
             return None
 
-        sql_for_match = f"""
-            select f_matching_author_string(%s) as match_author_string;
-            """
-        with get_db_cursor() as cur:
-            cur.execute(sql_for_match, (raw_author_string, ))
-            rows = cur.fetchall()
-            if rows:
-                return rows[0]["match_author_string"]
-        return None
+        return matching_author_string(raw_author_string)
+
+
+        # sql_for_match = f"""
+        #     select f_matching_author_string(%s) as match_author_string;
+        #     """
+        # with get_db_cursor() as cur:
+        #     cur.execute(sql_for_match, (raw_author_string, ))
+        #     rows = cur.fetchall()
+        #     if rows:
+        #         return rows[0]["match_author_string"]
+        # return None
 
     @classmethod
     def try_to_match(cls, raw_author_string, original_orcid, citation_paper_ids):

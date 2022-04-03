@@ -1,31 +1,85 @@
 from cached_property import cached_property
 import json
+import requests
+from time import time
+
+from util import elapsed
 
 from app import db
 
 
-class Unpaywall(db.Model):
-    __table_args__ = {'schema': 'ins'}
-    __tablename__ = "unpaywall_recordthresher_fields_mv"
+class Unpaywall(object):
 
-    recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
-    doi = db.Column(db.Text)
-    updated = db.Column(db.DateTime)
-    oa_status = db.Column(db.Text)
-    is_paratext = db.Column(db.Boolean)
-    best_oa_location_url = db.Column(db.Text)
-    best_oa_location_version = db.Column(db.Text)
-    best_oa_location_license = db.Column(db.Text)
-    oa_locations_json = db.Column(db.Text)
+    def __init__(self, doi):
+        self.doi = doi
+        print(f"calling unpaywall api for workaround for now till we get data in postgres")
+        start_time = time()
+        r = requests.get(f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org")
+        self.response = r.json()
+        print(f"called unpaywall for {doi} took {elapsed(start_time)}")
+        super(Unpaywall, self).__init__()
+
+    @cached_property
+    def oa_status(self):
+        return self.response.get("oa_status", None)
+
+    @cached_property
+    def is_paratext(self):
+        return self.response.get("is_paratext", None)
+
+    @cached_property
+    def best_oa_location_url(self):
+        if not self.response:
+            return None
+        return self.response["best_oa_location"].get("url", None)
+
+    @cached_property
+    def best_oa_location_version(self):
+        if not self.response:
+            return None
+        return self.response["best_oa_location"].get("version", None)
+
+    @cached_property
+    def best_oa_location_license(self):
+        if not self.response:
+            return None
+        return self.response["best_oa_location"].get("license", None)
 
     @cached_property
     def oa_locations(self):
-        if not self.oa_locations_json:
+        if not self.response:
             return []
-        return json.loads(self.oa_locations_json)
+        if not self.response.get("oa_locations", None):
+            return []
+        return self.response.get("oa_locations", None)
 
     def __repr__(self):
-        return "<Unpaywall ( {} ) '{}' {}>".format(self.recordthresher_id, self.doi, self.oa_status)
+        return "<Unpaywall ( {} ) '{}' {}>".format(self.doi, self.oa_status)
+
+
+
+# class Unpaywall(db.Model):
+#     __table_args__ = {'schema': 'ins'}
+#     __tablename__ = "unpaywall_recordthresher_fields_mv"
+#
+#     recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
+#     doi = db.Column(db.Text)
+#     updated = db.Column(db.DateTime)
+#     oa_status = db.Column(db.Text)
+#     is_paratext = db.Column(db.Boolean)
+#     best_oa_location_url = db.Column(db.Text)
+#     best_oa_location_version = db.Column(db.Text)
+#     best_oa_location_license = db.Column(db.Text)
+#     oa_locations_json = db.Column(db.Text)
+#
+#     @cached_property
+#     def oa_locations(self):
+#         if not self.oa_locations_json:
+#             return []
+#         return json.loads(self.oa_locations_json)
+#
+#     def __repr__(self):
+#         return "<Unpaywall ( {} ) '{}' {}>".format(self.recordthresher_id, self.doi, self.oa_status)
 
 
 
