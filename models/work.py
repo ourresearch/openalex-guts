@@ -32,7 +32,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     data_list = []
     for row in rows:
         data_list += [{
-            "title": row["paper_title"].lower(),
+            "title": row["paper_title"].lower() if row["paper_title"] else None,
             "doc_type": row["doc_type"],
             "journal": row["journal_title"].lower() if row["journal_title"] else None,
             "abstract": row["indexed_abstract"],
@@ -143,13 +143,18 @@ class Work(db.Model):
 
     def add_work_concepts(self):
         api_key = os.getenv("SAGEMAKER_API_KEY")
+
         data = {
-            "title": self.work_title.lower(),
+            "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
-            "journal": self.journal.display_name.lower() if self.journal else None
+            "journal": self.journal.display_name.lower() if self.journal else None,
+            "abstract": self.abstract.indexed_abstract if self.abstract else None,
+            "inverted_abstract": True
         }
         headers = {"X-API-Key": api_key}
-        api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"
+        # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"  # for version without abstracts
+        api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+
         r = requests.post(api_url, json=json.dumps([data]), headers=headers)
         try:
             response_json = r.json()
