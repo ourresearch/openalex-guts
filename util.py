@@ -844,7 +844,7 @@ class TimingMessages(object):
         return self.messages
 
 # like the one below but similar to what we used in redshift
-def normalize_title_like_sql(title):
+def normalize_title_like_sql(title, remove_stop_words=True):
     import re
 
     response = title
@@ -863,7 +863,8 @@ def normalize_title_like_sql(title):
     response = re.sub(u'<.*?>', u'', response)
 
     # remove articles and common prepositions
-    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
+    if remove_stop_words:
+        response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
 
     # remove everything except alphas
     response = "".join(e for e in response if (e.isalpha()))
@@ -871,31 +872,7 @@ def normalize_title_like_sql(title):
     return response
 
 
-# inspired the version above
-def normalize_title(title):
-    if not title:
-        return ""
 
-    # just first n characters
-    response = title[0:500]
-
-    # lowercase
-    response = response.lower()
-
-    # deal with unicode
-    response = unidecode(str(response))
-
-    # has to be before remove_punctuation
-    # the kind in titles are simple <i> etc, so this is simple
-    response = clean_html(response)
-
-    # remove articles and common prepositions
-    response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
-
-    # remove everything except alphas
-    response = remove_everything_but_alphas(response)
-
-    return response
 
 # matches sql/f_generate_inverted_index.sql python user defined function in redshift
 def f_generate_inverted_index(abstract_string):
@@ -998,13 +975,13 @@ def matching_author_string(origName):
         first = parsed_name.first
         last = parsed_name.last
 
-        first_initial = u""
+        first_initial = ""
         if first:
             first_initial = first[0]
-            response = u"{};{}".format(last.decode("utf-8"), first_initial.decode("utf-8"))
+            response = "{};{}".format(last, first_initial)
 
-    except:
-    # except UnicodeEncodeError:
+    except Exception as e:
+        print(f"Exception {e} {e.message}")
         pass
 
 

@@ -231,11 +231,15 @@ class Record(db.Model):
 
     @property
     def normalized_doc_type(self):
-        return work_type_lookup[self.genre]["doc_type"]
+        if not self.genre:
+            return None
+        return work_type_lookup[self.genre.lower()]["doc_type"]
 
     @property
     def normalized_work_type(self):
-        return work_type_lookup[self.genre]["work_type"]
+        if not self.genre:
+            return None
+        return work_type_lookup[self.genre.lower()]["work_type"]
 
     def process_record(self, new_work_id_if_needed):
         from models import Work

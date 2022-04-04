@@ -14,9 +14,10 @@ class Unpaywall(object):
         self.doi = doi
         print(f"calling unpaywall api for workaround for now till we get data in postgres")
         start_time = time()
-        r = requests.get(f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org")
+        url = f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org"
+        r = requests.get(url)
         self.response = r.json()
-        print(f"called unpaywall for {doi} took {elapsed(start_time)}")
+        print(f"called unpaywall with {url} took {elapsed(start_time)}")
         super(Unpaywall, self).__init__()
 
     @cached_property
@@ -28,22 +29,30 @@ class Unpaywall(object):
         return self.response.get("is_paratext", None)
 
     @cached_property
+    def best_oa_location(self):
+        if not self.response:
+            return {}
+        if self.response.get("best_oa_location", {}):
+            return self.response.get("best_oa_location")
+        return {}
+
+    @cached_property
     def best_oa_location_url(self):
         if not self.response:
             return None
-        return self.response["best_oa_location"].get("url", None)
+        return self.best_oa_location.get("url", None)
 
     @cached_property
     def best_oa_location_version(self):
         if not self.response:
             return None
-        return self.response["best_oa_location"].get("version", None)
+        return self.best_oa_location.get("version", None)
 
     @cached_property
     def best_oa_location_license(self):
         if not self.response:
             return None
-        return self.response["best_oa_location"].get("license", None)
+        return self.best_oa_location.get("license", None)
 
     @cached_property
     def oa_locations(self):
