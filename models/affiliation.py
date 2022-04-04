@@ -31,18 +31,24 @@ class Affiliation(db.Model):
 
     @classmethod
     def matching_affiliation_string(cls, raw_string):
+        from util import normalize_title_like_sql
         if not raw_string:
             return None
 
-        sql_for_match = f"""
-            select f_matching_string(%s) as match_string;
-            """
-        with get_db_cursor() as cur:
-            cur.execute(sql_for_match, (raw_string, ))
-            rows = cur.fetchall()
-            if rows:
-                return rows[0]["match_string"]
-        return None
+        # for backwards compatibility
+        remove_stop_words = False
+        return normalize_title_like_sql(raw_string, remove_stop_words)
+
+
+        # sql_for_match = f"""
+        #     select f_matching_string(%s) as match_string;
+        #     """
+        # with get_db_cursor() as cur:
+        #     cur.execute(sql_for_match, (raw_string, ))
+        #     rows = cur.fetchall()
+        #     if rows:
+        #         return rows[0]["match_string"]
+        # return None
 
     @classmethod
     def try_to_match(cls, raw_affiliation_string):
@@ -72,12 +78,12 @@ class Affiliation(db.Model):
                 response = rows[0]["affiliation_id"]
                 print(f"matched: affiliation {response} using exact match")
                 return response
-            cur.execute(ilike_matching_papers_sql)
-            rows = cur.fetchall()
-            if rows:
-                response = rows[0]["affiliation_id"]
-                print(f"matched: affiliation {response} using ilike")
-                return response
+            # cur.execute(ilike_matching_papers_sql)
+            # rows = cur.fetchall()
+            # if rows:
+            #     response = rows[0]["affiliation_id"]
+            #     print(f"matched: affiliation {response} using ilike")
+            #     return response
 
         return None
 
