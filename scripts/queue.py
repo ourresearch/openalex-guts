@@ -283,13 +283,17 @@ class DbQueue(object):
                 # select distinct paper_id from select_some
                 # """
                 text_query_pattern_select = """     
-                select paper_id from mid.work 
-                join mid.json_works on mid.json_works.id=mid.work.paper_id
-                 where ((mid.work.updated_date is not null) 
-                 and ((mid.json_works.id is null) or (mid.json_works.updated < mid.works.updated)))
-                 and (mid.work.updated_date > '2022-03-31'::timestamp) 
-                 and (mid.json_works.updated < mid.work.updated_date))
-                    limit {chunk}*10
+                with all_missing_from_json_works as
+                (select t1.paper_id, t1.updated_date from mid.work t1
+                   WHERE NOT EXISTS (
+                       SELECT 1
+                       FROM   mid.json_works t2
+                       WHERE  (t1.paper_id=t2.id) and (t1.updated_date < t2.updated)
+                       ) and t1.updated_date is not null                 
+                )                  
+                select paper_id from all_missing_from_json_works
+                where updated_date is not null
+                limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
             elif run_method == "store_author_h2":
