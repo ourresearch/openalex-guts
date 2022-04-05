@@ -214,7 +214,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select paper_id from mid.work
                         where updated_date is null
-                        -- order by random() 
+                        order by random() 
                         limit {chunk}; """
             elif run_method == "add_abstract":
                 text_query_pattern_select = """
