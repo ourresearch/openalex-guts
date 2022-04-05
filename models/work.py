@@ -31,12 +31,13 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     insert_dicts = []
     data_list = []
     for row in rows:
+        has_abstract = True if row["indexed_abstract"] else False
         data_list += [{
             "title": row["paper_title"].lower() if row["paper_title"] else None,
             "doc_type": row["doc_type"],
             "journal": row["journal_title"].lower() if row["journal_title"] else None,
             "abstract": row["indexed_abstract"],
-            "inverted_abstract": True
+            "inverted_abstract": has_abstract
         }]
 
     class ConceptLookupResponse:
@@ -143,13 +144,13 @@ class Work(db.Model):
 
     def add_work_concepts(self):
         api_key = os.getenv("SAGEMAKER_API_KEY")
-
+        has_abstract = True if self.abstract_indexed_abstract else False
         data = {
             "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
             "abstract": self.abstract_indexed_abstract,
-            "inverted_abstract": True
+            "inverted_abstract": has_abstract
         }
         headers = {"X-API-Key": api_key}
         # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"  # for version without abstracts
