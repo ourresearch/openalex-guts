@@ -161,7 +161,7 @@ class Work(db.Model):
             response_json = r.json()
             concept_names = response_json[0]["tags"]
         except Exception as e:
-            print(f"error {e} in add_work_concepts with {self.id}, response {r} {r.text}, called with {api_url} data: {data} headers: {headers}")
+            print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
             concept_names = None
 
         self.concepts_for_related_works = []
