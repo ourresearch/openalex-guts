@@ -148,7 +148,7 @@ class Work(db.Model):
             "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
-            "abstract": self.abstract.indexed_abstract if self.abstract else None,
+            "abstract": self.abstract_indexed_abstract,
             "inverted_abstract": True
         }
         headers = {"X-API-Key": api_key}
@@ -204,9 +204,9 @@ class Work(db.Model):
             self.records_sorted[0].unpaywall = Unpaywall(self.records_sorted[0].doi)
 
         self.set_fields_from_all_records()
+        self.add_abstract() # add abstract before work_concepts
         self.add_work_concepts()
         self.add_related_works()  # must be after work_concepts
-        self.add_abstract()
         self.add_mesh()
         self.add_ids()
         self.add_locations()
@@ -270,6 +270,7 @@ class Work(db.Model):
 
 
     def add_abstract(self):
+        self.abstract_indexed_abstract = None
         for record in self.records:
             if record.abstract:
                 indexed_abstract = f_generate_inverted_index(record.abstract)
@@ -278,6 +279,7 @@ class Work(db.Model):
                     indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
                 insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
                 self.insert_dicts += [{"Abstract": insert_dict}]
+                self.abstract_indexed_abstract = indexed_abstract
                 return
 
     def add_mesh(self):

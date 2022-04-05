@@ -460,7 +460,7 @@ class DbQueue(object):
                                  selectinload(models.Work.references),
                                  selectinload(models.Work.mesh),
                                  selectinload(models.Work.counts_by_year),
-                                 selectinload(models.Work.abstract),  # include abstract for this one, isn't high throughput
+                                 selectinload(models.Work.abstract),
                                  selectinload(models.Work.extra_ids),
                                  selectinload(models.Work.related_works),
                                  selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
@@ -478,7 +478,6 @@ class DbQueue(object):
                                 except Exception as e:
                                     print(f"error: failed on {run_method} {id} with error {e}")
                     elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
-                        # no abstracts
                         try:
                             objects = db.session.query(models.Work).options(
                                  selectinload(models.Work.locations),
@@ -537,6 +536,7 @@ class DbQueue(object):
                         try:
                             query = db.session.query(models.Work).options(
                                  selectinload(models.Work.records),
+                                 selectinload(models.Work.abstract),
                                  selectinload(models.Work.journal),
                                  selectinload(models.Work.concepts).raiseload('*'),
                                  orm.Load(models.Work).raiseload('*'))
