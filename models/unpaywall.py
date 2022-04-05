@@ -12,12 +12,12 @@ class Unpaywall(object):
 
     def __init__(self, doi):
         self.doi = doi
-        print(f"calling unpaywall api for workaround for now till we get data in postgres")
+        # print(f"calling unpaywall api for workaround for now till we get data in postgres")
         start_time = time()
         url = f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org"
         r = requests.get(url)
         self.response = r.json()
-        print(f"called unpaywall with {url} took {elapsed(start_time)}")
+        print(f"called unpaywall for workaround for now till we get data in postgres with {url} took {elapsed(start_time)}")
         super(Unpaywall, self).__init__()
 
     @cached_property
