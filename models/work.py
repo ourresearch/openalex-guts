@@ -389,7 +389,7 @@ class Work(db.Model):
                 author_id = new_author.author_id
 
             author_match_name = Author.matching_author_string(raw_author_string)
-            print(f"author_match_name: {author_match_name}")
+            # print(f"author_match_name: {author_match_name}")
             for affiliation_dict in author_dict["affiliation"]:
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
