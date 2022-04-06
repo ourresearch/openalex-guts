@@ -245,7 +245,7 @@ class DbQueue(object):
                 # select distinct paper_id from select_some
                 # """
                 text_query_pattern_select = """  
-                    select {id_field_name}, t1.updated_date 
+                    select {id_field_name} 
                         from {queue_table} t1
                         where updated_date is not null
                         and updated_date > '2022-03-01'
