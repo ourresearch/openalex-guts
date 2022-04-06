@@ -41,7 +41,7 @@ class ConceptCountsByYear(db.Model):
 
 class InstitutionCountsByYear(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_institutions_by_year_mv"
+    __tablename__ = "citation_institutions_by_year_view"
 
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)

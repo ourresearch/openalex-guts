@@ -178,7 +178,6 @@ class DbQueue(object):
         worker_name = kwargs.get("name", "myworker")
         run_class = self.myclass
         run_method = kwargs.get("method")
-        big_chunk = 10000
 
         if single_obj_id:
             limit = 1
@@ -190,7 +189,6 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
-                big_chunk = chunk
                 # text_query_pattern_select = """
                 # --begin transaction read write;
                 # lock mid.work;
@@ -216,42 +214,6 @@ class DbQueue(object):
                         where updated_date is null
                         order by random() 
                         limit {chunk}; """
-            elif run_method == "add_abstract":
-                text_query_pattern_select = """
-                    select work_id from ins.recordthresher_record where work_id is not null
-                        and abstract is not null
-                        and work_id not in (select paper_id from mid.abstract)
-                        order by random() limit {chunk}; """
-            elif run_method == "add_mesh":
-                text_query_pattern_select = """
-                    select work_id from ins.recordthresher_record where work_id is not null
-                        and (mesh is not null) and (mesh != '[]')
-                        and work_id not in (select paper_id from mid.mesh)
-                        order by random() limit {chunk}; """
-            elif run_method == "add_ids":
-                text_query_pattern_select = """
-                    select work_id from ins.recordthresher_record where work_id is not null
-                        and (pmid is not null)
-                        and work_id not in (select paper_id from mid.work_extra_ids)
-                        order by random() limit {chunk}; """
-            elif run_method == "add_locations":
-                text_query_pattern_select = """
-                    select work_id from ins.recordthresher_record where work_id is not null
-                        and id in (select recordthresher_id from ins.unpaywall_recordthresher_fields_mv.sql where oa_status != 'closed')
-                        and work_id not in (select paper_id from mid.location)
-                        order by random() limit {chunk}; """
-            elif run_method == "add_citations":
-                text_query_pattern_select = """
-                    select distinct work_id from ins.recordthresher_record where work_id is not null
-                        and citations is not null and citations != '[]'
-                        and work_id not in (select paper_id from mid.citation)
-                        order by random() limit {chunk}; """
-            elif run_method == "add_affiliations":
-                text_query_pattern_select = """
-                    select distinct work_id from ins.recordthresher_record where work_id is not null
-                        and authors is not null and authors != '[]'
-                        and work_id not in (select paper_id from mid.affiliation)
-                        order by random() limit {chunk}; """
             elif run_method == "add_related_works":
                 text_query_pattern_select = """
                 select distinct mid.work_concept_for_api_mv.paper_id 
@@ -283,81 +245,22 @@ class DbQueue(object):
                 # select distinct paper_id from select_some
                 # """
                 text_query_pattern_select = """     
-                with all_missing_from_json_works as
-                (select t1.paper_id, t1.updated_date from mid.work t1
-                   WHERE NOT EXISTS (
+                with missing_from_json_table as
+                (select {id_field_name}, t1.updated_date 
+                    from {queue_table} t1
+                    WHERE NOT EXISTS (
                        SELECT 1
-                       FROM   mid.json_works t2
-                       WHERE  (t1.paper_id=t2.id) and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
+                       FROM   {insert_table} t2
+                       WHERE  (t1.{id_field_name}=t2.id) 
+                                and ((t1.updated_date is not null) -- needed for newly minted works
+                                -- and (t1.updated_date < t2.updated)  -- don't want this for authors right now
+                            )
                        )                  
                 )                  
-                select paper_id from all_missing_from_json_works
+                select {id_field_name} 
+                from missing_from_json_table
                 where updated_date is not null
                 limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_author_h2":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and author_id > 2692399391
-                        -- and author_id < {MAX_MAG_ID}
-                        order by random()
-                        limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_author_h1":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and author_id <= 2692399391
-                        order by random()
-                        limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_q1":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and paper_id <= 2003298745
-                        order by random()
-                        limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_q2":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and paper_id > 2003298745
-                        and paper_id <= 2331496286
-                        order by random()
-                        limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_q3":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and paper_id > 2331496286
-                        and paper_id <= 2885216492
-                        order by random()
-                        limit {chunk};
-                """
-                insert_table = self.store_json_insert_tablename
-            elif run_method == "store_work_q4":
-                text_query_pattern_select = """
-                    select {id_field_name} from {queue_table}
-                        where {id_field_name} not in
-                            (select id from {insert_table})
-                        and paper_id > 2885216492
-                        and paper_id < {MAX_MAG_ID}
-                        order by random()
-                        limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
@@ -393,23 +296,6 @@ class DbQueue(object):
                     order by random()
                     limit {chunk};
                 """
-            elif self.myclass == models.Concept and run_method=="calculate_ancestors":
-                text_query_pattern_select = """
-                    select field_of_study_id from mid.concept
-                        where 
-                        field_of_study_id not in (select id from mid.concept_ancestor)
-                        and field_of_study_id in (select child_field_of_study_id from legacy.mag_advanced_field_of_study_children)                            
-                        order by random()
-                        limit {chunk};
-                """
-            elif self.myclass == models.Concept and run_method=="clean_metadata":
-                text_query_pattern_select = """
-                    select field_of_study_id from mid.concept_metadata
-                        where
-                        updated is null
-                        order by random()
-                        limit {chunk};
-                """
             else:
                 raise("myclass and method combo not known")
 
@@ -429,7 +315,7 @@ class DbQueue(object):
         while True:
             started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
             text_query_select = text_query_pattern_select.format(
-                chunk=big_chunk,
+                chunk=chunk,
                 queue_table=queue_table,
                 insert_table=insert_table,
                 id_field_name=self.id_field_name,
@@ -448,184 +334,183 @@ class DbQueue(object):
                 row_list = db.session.execute(text(text_query_select)).fetchall()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
 
-                number_of_smaller_chunks = int(big_chunk/chunk)
-                for chunk_number in range(0, number_of_smaller_chunks):
-                    new_loop_start_time = time()
+                new_loop_start_time = time()
 
-                    object_ids = [row[0] for row in row_list[(chunk*chunk_number):(chunk*(chunk_number+1))]]
+                object_ids = [row[0] for row in row_list]
 
-                    job_time = time()
-                    print(object_ids)
-                    if (self.myclass == models.Work) and (run_method == "store"):
-                        try:
-                            object_query = db.session.query(models.Work).options(
-                                 selectinload(models.Work.locations),
-                                 selectinload(models.Work.journal).raiseload('*'),
-                                 selectinload(models.Work.references),
-                                 selectinload(models.Work.mesh),
-                                 selectinload(models.Work.counts_by_year),
-                                 selectinload(models.Work.abstract),
-                                 selectinload(models.Work.extra_ids),
-                                 selectinload(models.Work.related_works),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
-                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
-                                 orm.Load(models.Work).raiseload('*'))
-                            objects = object_query.filter(self.myid.in_(object_ids)).all()
-                        except Exception as e:
-                            print(f"Exception getting objects {e} for {object_ids} so trying individually")
-                            objects = []
-                            for id in object_ids:
-                                try:
-                                    objects += object_query.filter(self.myid==id).all()
-                                except Exception as e:
-                                    print(f"error: failed on {run_method} {id} with error {e}")
-                    elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
-                        try:
-                            objects = db.session.query(models.Work).options(
-                                 selectinload(models.Work.locations),
-                                 selectinload(models.Work.journal),
-                                 selectinload(models.Work.references),
-                                 selectinload(models.Work.mesh),
-                                 selectinload(models.Work.counts_by_year),
-                                 # selectinload(models.Work.abstract),  # this is the high throughput one, no abstract for this one
-                                 selectinload(models.Work.extra_ids),
-                                 selectinload(models.Work.related_works),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                                 selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                                 selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                                 orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                        except Exception as e:
-                            print(f"Exception fetching IDs {object_ids} {e}")
-                            objects = []
-                    elif self.myclass == models.Work and (run_method=="mint"):
-                        objects = []
-                        if object_ids:
-                            q = """select work_id, recordthresher_id from mid.work_match_recordthresher
-                                where work_id in ({})
-                            """.format(",".join(str(paper_id) for paper_id in object_ids))
-                            pairs = db.session.execute(text(q)).fetchall()
-
-                            recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
-                            work_record_dicts = defaultdict(list)
-                            for work_id, recordthresher_id in pairs:
-                                work_record_dicts[work_id] += [recordthresher_id]
-
-                            # get records in bulk to get them fast
-                            try:
-                                query = db.session.query(models.Record).options(
-                                     selectinload(models.Record.journals),
-                                     selectinload(models.Record.unpaywall),
-                                     orm.Load(models.Record).raiseload('*'))
-                                record_objects = query.filter(models.Record.id.in_(recordthresher_ids)).all()
-                            except:
-                                # running in to some "invalid continuation byte" problems, see if I can figure them out
-                                record_objects = []
-                                for id in recordthresher_ids:
-                                    try:
-                                        record_objects += query.filter(models.Record.id == id).all()
-                                    except Exception as e:
-                                        print(f"error: failed on recordthresher_id {id} with error {e}")
-
-                            objects = []
-                            for work_id in work_record_dicts:
-                                if work_id:
-                                    new_work = models.Work()
-                                    new_work.paper_id = work_id
-                                    new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
-                                    objects += [new_work]
-
-                    elif self.myclass == models.Work and run_method.startswith("add_"):
-                        try:
-                            query = db.session.query(models.Work).options(
-                                 selectinload(models.Work.records),
-                                 selectinload(models.Work.abstract),
-                                 selectinload(models.Work.journal),
-                                 selectinload(models.Work.concepts).raiseload('*'),
-                                 orm.Load(models.Work).raiseload('*'))
-                            objects = query.filter(self.myid.in_(object_ids)).all()
-                        except Exception as e:
-                            print(f"Exception {e} getting records for {object_ids} so trying individually")
-                            objects = []
-                            for id in object_ids:
-                                try:
-                                    objects += query.filter(self.myid==id).all()
-                                except Exception as e:
-                                    print(f"error: failed on {run_method} {id} with error {e}")
-                    elif self.myclass == models.Work and run_method=="new_work_concepts":
-                        q = """select work.paper_id, work.paper_title, work.doc_type, 
-                                journal.display_name as journal_title, abstract.indexed_abstract
-                            from mid.work work
-                            left outer join mid.journal journal on journal.journal_id=work.journal_id
-                            left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
-                            where work.paper_id in ({})
-                        """.format(",".join(str(paper_id) for paper_id in object_ids))
-                        objects = db.session.execute(text(q)).fetchall()
-                    elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
-                        objects = db.session.query(models.Work).options(
+                job_time = time()
+                print(object_ids)
+                if (self.myclass == models.Work) and (run_method == "store"):
+                    try:
+                        object_query = db.session.query(models.Work).options(
                              selectinload(models.Work.locations),
-                             selectinload(models.Work.journal),
+                             selectinload(models.Work.journal).raiseload('*'),
                              selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
                              selectinload(models.Work.counts_by_year),
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.extra_ids),
                              selectinload(models.Work.related_works),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+                             orm.Load(models.Work).raiseload('*'))
+                        objects = object_query.filter(self.myid.in_(object_ids)).all()
+                    except Exception as e:
+                        print(f"Exception getting objects {e} for {object_ids} so trying individually")
+                        objects = []
+                        for id in object_ids:
+                            try:
+                                objects += object_query.filter(self.myid==id).all()
+                            except Exception as e:
+                                print(f"error: failed on {run_method} {id} with error {e}")
+                elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
+                    try:
+                        objects = db.session.query(models.Work).options(
+                             selectinload(models.Work.locations),
+                             selectinload(models.Work.journal),
+                             selectinload(models.Work.references),
+                             selectinload(models.Work.mesh),
+                             selectinload(models.Work.counts_by_year),
+                             # selectinload(models.Work.abstract),  # this is the high throughput one, no abstract for this one
+                             selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.related_works),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
                              orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Record:
-                        objects = db.session.query(models.Record).options(
-                             # selectinload(models.Record.work_matches_by_title).raiseload('*'),
-                             # selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-                             selectinload(models.Record.journal),
-                             orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Author:
-                        objects = db.session.query(models.Author).options(
-                             selectinload(models.Author.counts_by_year_papers),
-                             selectinload(models.Author.counts_by_year_citations),
-                             selectinload(models.Author.alternative_names),
-                             selectinload(models.Author.author_concepts),
-                             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
-                             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror),
-                             orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Institution:
-                        objects = db.session.query(models.Institution).options(
-                             selectinload(models.Institution.counts_by_year),
-                             selectinload(models.Institution.ror).raiseload('*'),
-                             orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
-                        objects = db.session.query(models.Concept).options(
-                             orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Concept:
-                        objects = db.session.query(models.Concept).options(
-                             selectinload(models.Concept.counts_by_year),
-                             selectinload(models.Concept.ancestors),
-                             orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    elif self.myclass == models.Venue:
-                        objects = db.session.query(models.Venue).options(
-                             selectinload(models.Venue.counts_by_year),
-                             orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    else:
-                        objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                    except Exception as e:
+                        print(f"Exception fetching IDs {object_ids} {e}")
+                        objects = []
+                elif self.myclass == models.Work and (run_method=="mint"):
+                    objects = []
+                    if object_ids:
+                        q = """select work_id, recordthresher_id from mid.work_match_recordthresher
+                            where work_id in ({})
+                        """.format(",".join(str(paper_id) for paper_id in object_ids))
+                        pairs = db.session.execute(text(q)).fetchall()
 
-                    logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
+                        recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
+                        work_record_dicts = defaultdict(list)
+                        for work_id, recordthresher_id in pairs:
+                            work_record_dicts[work_id] += [recordthresher_id]
 
-                    if not objects:
-                        logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
-                        sleep(5)
-                        continue
+                        # get records in bulk to get them fast
+                        try:
+                            query = db.session.query(models.Record).options(
+                                 selectinload(models.Record.journals),
+                                 selectinload(models.Record.unpaywall),
+                                 orm.Load(models.Record).raiseload('*'))
+                            record_objects = query.filter(models.Record.id.in_(recordthresher_ids)).all()
+                        except:
+                            # running in to some "invalid continuation byte" problems, see if I can figure them out
+                            record_objects = []
+                            for id in recordthresher_ids:
+                                try:
+                                    record_objects += query.filter(models.Record.id == id).all()
+                                except Exception as e:
+                                    print(f"error: failed on recordthresher_id {id} with error {e}")
+
+                        objects = []
+                        for work_id in work_record_dicts:
+                            if work_id:
+                                new_work = models.Work()
+                                new_work.paper_id = work_id
+                                new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
+                                objects += [new_work]
+
+                elif self.myclass == models.Work and run_method.startswith("add_"):
+                    try:
+                        query = db.session.query(models.Work).options(
+                             selectinload(models.Work.records),
+                             selectinload(models.Work.abstract),
+                             selectinload(models.Work.journal),
+                             selectinload(models.Work.concepts).raiseload('*'),
+                             orm.Load(models.Work).raiseload('*'))
+                        objects = query.filter(self.myid.in_(object_ids)).all()
+                    except Exception as e:
+                        print(f"Exception {e} getting records for {object_ids} so trying individually")
+                        objects = []
+                        for id in object_ids:
+                            try:
+                                objects += query.filter(self.myid==id).all()
+                            except Exception as e:
+                                print(f"error: failed on {run_method} {id} with error {e}")
+                elif self.myclass == models.Work and run_method=="new_work_concepts":
+                    q = """select work.paper_id, work.paper_title, work.doc_type, 
+                            journal.display_name as journal_title, abstract.indexed_abstract
+                        from mid.work work
+                        left outer join mid.journal journal on journal.journal_id=work.journal_id
+                        left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
+                        where work.paper_id in ({})
+                    """.format(",".join(str(paper_id) for paper_id in object_ids))
+                    objects = db.session.execute(text(q)).fetchall()
+                elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
+                    objects = db.session.query(models.Work).options(
+                         selectinload(models.Work.locations),
+                         selectinload(models.Work.journal),
+                         selectinload(models.Work.references),
+                         selectinload(models.Work.mesh),
+                         selectinload(models.Work.counts_by_year),
+                         selectinload(models.Work.abstract),
+                         selectinload(models.Work.extra_ids),
+                         selectinload(models.Work.related_works),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
+                         selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
+                         orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Record:
+                    objects = db.session.query(models.Record).options(
+                         # selectinload(models.Record.work_matches_by_title).raiseload('*'),
+                         # selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+                         selectinload(models.Record.journal),
+                         orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Author:
+                    objects = db.session.query(models.Author).options(
+                         selectinload(models.Author.counts_by_year_papers),
+                         selectinload(models.Author.counts_by_year_citations),
+                         selectinload(models.Author.alternative_names),
+                         selectinload(models.Author.author_concepts),
+                         selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
+                         selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
+                         selectinload(models.Author.last_known_institution).raiseload('*'),
+                         orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Institution:
+                    objects = db.session.query(models.Institution).options(
+                         selectinload(models.Institution.counts_by_year),
+                         selectinload(models.Institution.ror).raiseload('*'),
+                         orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
+                    objects = db.session.query(models.Concept).options(
+                         orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Concept:
+                    objects = db.session.query(models.Concept).options(
+                         selectinload(models.Concept.counts_by_year),
+                         selectinload(models.Concept.ancestors),
+                         orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                elif self.myclass == models.Venue:
+                    objects = db.session.query(models.Venue).options(
+                         selectinload(models.Venue.counts_by_year),
+                         orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                else:
+                    objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+
+                logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
+
+                if not objects:
+                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
+                    sleep(5)
+                    continue
 
 
-                    self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=max_openalex_id)
+                self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=max_openalex_id)
 
-                    index += 1
-                    if single_obj_id:
-                        return
-                    else:
-                        self.print_update(new_loop_start_time, chunk, limit, start_time, index)
+                index += 1
+                if single_obj_id:
+                    return
+                else:
+                    self.print_update(new_loop_start_time, chunk, limit, start_time, index)
 
     def run(self, parsed_args):
         start = time()
