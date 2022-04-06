@@ -226,9 +226,9 @@ class Author(db.Model):
             response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
         for count_row in all_rows:
             if count_row.type == "citation_count":
-                response_dict[count_row.year]["cited_by_count"] = count_row.n
+                response_dict[count_row.year]["cited_by_count"] = int(count_row.n)
             else:
-                response_dict[count_row.year]["works_count"] = count_row.n
+                response_dict[count_row.year]["works_count"] = int(count_row.n)
 
         my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
