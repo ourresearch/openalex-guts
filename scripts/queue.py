@@ -244,23 +244,18 @@ class DbQueue(object):
                 #     limit {chunk}*10)
                 # select distinct paper_id from select_some
                 # """
-                text_query_pattern_select = """     
-                with missing_from_json_table as
-                (select {id_field_name}, t1.updated_date 
-                    from {queue_table} t1
-                    WHERE NOT EXISTS (
-                       SELECT 1
-                       FROM   {insert_table} t2
-                       WHERE  (t1.{id_field_name}=t2.id) 
-                                and ((t1.updated_date is not null) -- needed for newly minted works
-                                -- and (t1.updated_date < t2.updated)  -- don't want this for authors right now
-                            )
-                       )                  
-                )                  
-                select {id_field_name} 
-                from missing_from_json_table
-                where updated_date is not null
-                limit {chunk};
+                text_query_pattern_select = """  
+                    select {id_field_name}, t1.updated_date 
+                        from {queue_table} t1
+                        where updated_date is not null
+                        and updated_date > '2022-03-01'
+                        and NOT EXISTS (
+                           SELECT 1
+                           FROM   {insert_table} t2
+                           WHERE  (t1.{id_field_name}=t2.id) and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
+                           and updated > '2022-03-01'
+                           )      
+                        limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
