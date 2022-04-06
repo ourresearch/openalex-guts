@@ -288,8 +288,8 @@ class DbQueue(object):
                    WHERE NOT EXISTS (
                        SELECT 1
                        FROM   mid.json_works t2
-                       WHERE  (t1.paper_id=t2.id) and (t1.updated_date < t2.updated)
-                       ) and t1.updated_date is not null                 
+                       WHERE  (t1.paper_id=t2.id) and and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
+                       )                  
                 )                  
                 select paper_id from all_missing_from_json_works
                 where updated_date is not null
