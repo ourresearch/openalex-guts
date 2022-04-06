@@ -255,6 +255,7 @@ class DbQueue(object):
                            WHERE  (t1.{id_field_name}=t2.id) and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
                            and updated > '2022-03-01'
                            )      
+                        order by random()
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
