@@ -4,7 +4,6 @@
 -- making the tables and comments currently takes about 20 minutes (1400 seconds)
 -- doing the unloads takes about 25 minutes (4000 seconds)
 
-set enable_case_sensitive_identifier=true;
 
 ------ mag_advanced_entity_related_entities
 
@@ -21,7 +20,7 @@ as (
         related_type as "RelatedType",     --- Possible values: 0 (same paper), 1 (common coauthors), 2 (co-cited), 3 (common field of study), 4 (same venue), 5 (A cites B), 6 (B cites A)
         score as "Score"                   --- Confidence range between 0 and 1. Larger number representing higher confidence.
  from legacy.mag_advanced_entity_related_entities)
-with no schema binding;
+; -- with no schema binding;
 
 
 ------ mag_advanced_field_of_study_children

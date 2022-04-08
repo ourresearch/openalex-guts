@@ -9,35 +9,36 @@ GENERATE_COMMENTS = False
 GENERATE_UNLOAD = True
 GENERATE_COPY = False
 
-DUMP_DIR = "2022-03-11"
+DUMP_DIR = "2022-04-07"
 
 
 ##  python -m sql.sql_generate_export_tables  -i sql/export_views.sql -o sql/export_tables_generated.sql
 
 lookup_export_filenames = {
-    'outs.EntityRelatedEntities':       'advanced/EntityRelatedEntities',
-    'outs.FieldOfStudyChildren':        'advanced/FieldOfStudyChildren',
-    'outs.FieldOfStudyExtendedAttributes': 'advanced/FieldOfStudyExtendedAttributes',
+    # 'outs.EntityRelatedEntities':       'advanced/EntityRelatedEntities',
+    # 'outs.FieldOfStudyChildren':        'advanced/FieldOfStudyChildren',
+    # 'outs.FieldOfStudyExtendedAttributes': 'advanced/FieldOfStudyExtendedAttributes',
     'outs.FieldsOfStudy':               'advanced/FieldsOfStudy',
     'outs.PaperFieldsOfStudy':          'advanced/PaperFieldsOfStudy',
     'outs.PaperMeSH':                   'advanced/PaperMeSH',
     'outs.PaperRecommendations':        'advanced/PaperRecommendations',
-    'outs.RelatedFieldOfStudy':         'advanced/RelatedFieldOfStudy',
+    # 'outs.RelatedFieldOfStudy':         'advanced/RelatedFieldOfStudy',
     'outs.Affiliations':                'mag/Affiliations',
     'outs.AuthorExtendedAttributes':    'mag/AuthorExtendedAttributes',
     'outs.Authors':                     'mag/Authors',
-    'outs.ConferenceInstances':         'mag/ConferenceInstances',
-    'outs.ConferenceSeries':            'mag/ConferenceSeries',
+    # 'outs.ConferenceInstances':         'mag/ConferenceInstances',
+    # 'outs.ConferenceSeries':            'mag/ConferenceSeries',
     'outs.Journals':                    'mag/Journals',
     'outs.PaperAuthorAffiliations':     'mag/PaperAuthorAffiliations',
     'outs.PaperExtendedAttributes':     'mag/PaperExtendedAttributes',
     'outs.PaperReferences':             'mag/PaperReferences',
     'outs.PaperUrls':                   'mag/PaperUrls',
-    'outs.PaperResources':              'mag/PaperResources',
+    # 'outs.PaperResources':              'mag/PaperResources',
     'outs.Papers':                      'mag/Papers',
     'outs.PaperAbstractsInvertedIndex': 'nlp/PaperAbstractsInvertedIndex',
-    'outs.PaperCitationContexts':       'nlp/PaperCitationContexts'
+    # 'outs.PaperCitationContexts':       'nlp/PaperCitationContexts'
 }
+
 
 ####################################################################################################
 # Define name of the tool                                                                          #
@@ -171,50 +172,47 @@ class view:
     # Method for generating more commands
     def generate_more_commands(self):
         table_name = re.sub(r'_view', '', self.view_name)
-        export_dir = lookup_export_filenames[table_name.replace('"', '')]
+        export_dir = lookup_export_filenames.get(table_name.replace('"', ''), None)
+        result = ""
+        if not export_dir:
+            return result
+
         export_file_name = export_dir.split("/")[1]
         aws_access_key_id = getenv("AWS_ACCESS_KEY_ID_OPENALEX_OPEN_DATA")
         aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY_OPENALEX_OPEN_DATA")
 
         # Start with UNLOAD table ... header
-        result = ""
 
         if GENERATE_UNLOAD:
             view_name = self.view_name
             if "PaperAbstractsInvertedIndex" in view_name:
                 result += f"""
-UNLOAD ('SELECT * FROM outs."PaperAbstractsInvertedIndex_view"')
-TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.'
-ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
-CLEANPATH
-ESCAPE
-NULL AS ''
-PARALLEL OFF
-MAXFILESIZE AS 6GB
-HEADER
-DELIMITER as '\\t';"""
+SELECT * from aws_s3.query_export_to_s3('select * from outs."PaperAbstractsInvertedIndex_view" where false', 
+   aws_commons.create_s3_uri('openalex-mag-format', 'data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.', 'us-east-1'),
+   options :='format csv, delimiter E''\\t'', HEADER true, ESCAPE ''\\'', NULL '''''
+);"""
+                result += f"""
+SELECT * from aws_s3.query_export_to_s3('select * from outs."PaperAbstractsInvertedIndex_view"', 
+   aws_commons.create_s3_uri('openalex-mag-format', 'data_dump_v1/{DUMP_DIR}/nlp/PaperAbstractsInvertedIndex.txt.', 'us-east-1'),
+   options :='NULL '''''
+);"""
+
             else:
                 # header file so no data
                 result += f"""
-UNLOAD ('SELECT * FROM {view_name} WHERE FALSE')
-TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt'
-ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
-CLEANPATH
-ESCAPE
-NULL AS ''
-HEADER
-DELIMITER as '\\t';"""
+SELECT * from aws_s3.query_export_to_s3('select * from {view_name} where false', 
+   aws_commons.create_s3_uri('openalex-mag-format', 'data_dump_v1/{DUMP_DIR}/{export_dir}/HEADER_{export_file_name}.txt', 'us-east-1'),
+   options :='format csv, delimiter E''\\t'', HEADER true, ESCAPE ''\\'', NULL '''''
+);
+"""
                 result += "\n"
                 # data
                 result += f"""
-UNLOAD ('SELECT * FROM {view_name}')
-TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt'
-ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
-CLEANPATH
-ESCAPE
-NULL AS ''
-MAXFILESIZE AS 1.5GB
-DELIMITER as '\\t';"""
+SELECT * from aws_s3.query_export_to_s3('select * from {view_name}', 
+   aws_commons.create_s3_uri('openalex-mag-format', 'data_dump_v1/{DUMP_DIR}/{export_dir}/{export_file_name}.txt', 'us-east-1'),
+   options :=' NULL '''' '
+);
+"""
             result += "\n\n"
 
         if GENERATE_COPY:
@@ -380,7 +378,7 @@ class parser:
         try:
             f = open(self.output_file_path, "w")
             f.write('\n')
-            f.write('SET enable_case_sensitive_identifier=true;\n\n')
+            # f.write('SET enable_case_sensitive_identifier=true;\n\n')
 
             # Generate table for each view object that we have
             for view in self.views:
@@ -394,16 +392,16 @@ class parser:
                 aws_access_key_id = getenv("AWS_ACCESS_KEY_ID_OPENALEX_OPEN_DATA")
                 aws_secret_access_key = getenv("AWS_SECRET_ACCESS_KEY_OPENALEX_OPEN_DATA")
 
-                f.write(f"""\n\n
-unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
-union
-select table_name::varchar(35), num_rows::varchar(25) as num_rows, used_mb::varchar(25), sysdate::varchar(25) from v_display_table_size_and_rows order by num_rows desc')
-TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/README.txt'
-ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
-fixedwidth '0:35,1:25,2:25,3:25'
-ALLOWOVERWRITE
-parallel off; \n\n
-""")
+#                 f.write(f"""\n\n
+# unload ('select ''table'', ''num_rows'' as num_rows, ''size_in_mb'', ''date''
+# union
+# select table_name::varchar(35), num_rows::varchar(25) as num_rows, used_mb::varchar(25), sysdate::varchar(25) from v_display_table_size_and_rows order by num_rows desc')
+# TO 's3://openalex-mag-format/data_dump_v1/{DUMP_DIR}/README.txt'
+# ACCESS_KEY_ID '{aws_access_key_id}' SECRET_ACCESS_KEY '{aws_secret_access_key}'
+# fixedwidth '0:35,1:25,2:25,3:25'
+# ALLOWOVERWRITE
+# parallel off; \n\n
+# """)
 
             f.close()
         # If output file genereation failed, then log error and raise it
