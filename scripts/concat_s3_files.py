@@ -233,6 +233,32 @@ def do_directory_cleanups(bucket_name):
         print(f"continuing anyway")
 
 
+from io import BufferedReader
+MAX_SSL_CONTENT_LENGTH = 2**30 - 1
+
+# from https://medium.com/in-the-weeds/remedial-data-science-engineering-424a15f8ea0c
+class S3StreamingBodyIO(BufferedReader):
+  def read_all(self, *args):
+      if args:
+          size = args[0]
+      else:
+          size = -1
+
+      if size > MAX_SSL_CONTENT_LENGTH:
+          logger.debug("Read requested with size {:,}; chunking".format(size))
+          data_out = bytearray()
+          remaining_size = size
+
+          while remaining_size > 0:
+              chunk_size = min(remaining_size, MAX_SSL_CONTENT_LENGTH)
+              data_out += self.read_all(chunk_size)
+              remaining_size = remaining_size - chunk_size
+
+          return data_out
+      else:
+          return self.read(size)
+
+
 def merge_in_headers(table, bucket_name):
     if not table["part_keys"]:
         return
@@ -253,24 +279,36 @@ def merge_in_headers(table, bucket_name):
     first_part_object = s3_client.get_object(Bucket=bucket_name, Key=first_part_key)
     # first_part_data = first_part_object['Body'].read().decode('utf-8')
 
+    first_part_data = S3StreamingBodyIO(first_part_object['Body']._raw_stream).read_all(first_part_object['ContentLength']).decode("utf-8")
+
     # need to do it this way to get around ssl error in pyton < 3.10
     # from https://stackoverflow.com/a/70909130/596939
-    buf = bytearray(first_part_object['ContentLength'])
-    first_part_data = memoryview(buf)
-    pos = 0
-    while True:
-        chunk = first_part_object['Body'].read(67108864).decode('utf-8')
-        if len(chunk) == 0:
-            break
-        first_part_data[pos:pos+len(chunk)] = chunk
-        pos += len(chunk)
+    # buf = bytearray(first_part_object['ContentLength'])
+    # first_part_data = memoryview(buf)
+    # pos = 0
+    # while True:
+    #     chunk = (first_part_object['Body'].read(67108864)).decode('utf-8')
+    #     if len(chunk) == 0:
+    #         break
+    #     first_part_data[pos:pos+len(chunk)] = chunk
+    #     pos += len(chunk)
 
     print(f"merging {first_part_key}")
     merged_data = header_data + first_part_data
 
     print(f"uploading {first_part_key}")
     buffer_to_upload = io.BytesIO(merged_data.encode())
-    s3_client.put_object(Body=buffer_to_upload, Bucket=bucket_name, Key=first_part_key)
+    # s3_client.put_object(Body=buffer_to_upload, Bucket=bucket_name, Key=first_part_key)
+
+    from boto3.s3.transfer import TransferConfig
+
+    # Set the desired multipart threshold value (5GB)
+    GB = 1024 ** 3
+    config = TransferConfig(multipart_threshold=5*GB)
+
+    # Perform the transfer
+    s3_client.upload_fileobj(buffer_to_upload, bucket_name, first_part_key, Config=config)
+
     print(f"DONE MERGE for {first_part_key}")
 
     # then delete header
