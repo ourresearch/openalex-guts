@@ -244,7 +244,7 @@ class Author(db.Model):
             response.update({
                 "display_name_alternatives": self.all_alternative_names,
                 "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count,
+                "cited_by_count": self.citation_count if self.citation_count else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,
