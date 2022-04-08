@@ -251,7 +251,19 @@ def merge_in_headers(table, bucket_name):
 
     print(f"downloading first part file {first_part_key}")
     first_part_object = s3_client.get_object(Bucket=bucket_name, Key=first_part_key)
-    first_part_data = first_part_object['Body'].read().decode('utf-8')
+    # first_part_data = first_part_object['Body'].read().decode('utf-8')
+
+    # need to do it this way to get around ssl error in pyton < 3.10
+    # from https://stackoverflow.com/a/70909130/596939
+    buf = bytearray(first_part_object['ContentLength'])
+    first_part_data = memoryview(buf)
+    pos = 0
+    while True:
+        chunk = first_part_object['Body'].read(67108864).decode('utf-8')
+        if len(chunk) == 0:
+            break
+        first_part_data[pos:pos+len(chunk)] = chunk
+        pos += len(chunk)
 
     print(f"merging {first_part_key}")
     merged_data = header_data + first_part_data
