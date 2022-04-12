@@ -6,7 +6,7 @@ run_queue_store_work: python -m scripts.queue --run --table=work --method=store 
 run_queue_store_author: python -m scripts.queue --run --table=author --method=store --chunk=100 --name=queue_author$DYNO-${i} --randstart
 run_queue_store_venue: python -m scripts.queue --run --table=venue --method=store --chunk=10 --name=queue_venue$DYNO-${i} --randstart
 run_queue_store_institution: python -m scripts.queue --run --table=institution --method=store --chunk=10 --name=queue_institution$DYNO-${i} --randstart
-run_queue_store_concept: python -m scripts.queue --run --table=concept --method=store --chunk=100 --name=queue_concept$DYNO-${i} --randstart
+run_queue_store_concept: python -m scripts.queue --run --table=concept --method=store --chunk=10 --name=queue_concept$DYNO-${i} --randstart
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO-${i}
 

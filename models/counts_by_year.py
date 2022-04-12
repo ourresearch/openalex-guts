@@ -77,10 +77,9 @@ class InstitutionCountsByYearCitations(db.Model):
         return "<InstitutionCountsByYearCitations ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
 
 
-
-class ConceptCountsByYear(db.Model):
+class ConceptCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_concepts_by_year_mv"
+    __tablename__ = "citation_concepts_by_year_paper_count_view"
 
     field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -88,8 +87,20 @@ class ConceptCountsByYear(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<ConceptCountsByYear ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
+        return "<ConceptCountsByYearPapers ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
+
+class ConceptCountsByYearCitations(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_concepts_by_year_citation_count_view"
+
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<ConceptCountsByYearCitations ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
 
 
