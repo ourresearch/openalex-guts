@@ -487,7 +487,8 @@ class DbQueue(object):
                          orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Venue:
                     objects = db.session.query(models.Venue).options(
-                         selectinload(models.Venue.counts_by_year),
+                         selectinload(models.Venue.counts_by_year_papers),
+                         selectinload(models.Venue.counts_by_year_citations),
                          orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 else:
                     objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()

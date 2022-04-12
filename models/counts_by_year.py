@@ -3,7 +3,7 @@ from app import db
 
 class AuthorCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_authors_by_year_paper_count_mv"
+    __tablename__ = "citation_authors_by_year_paper_count_view"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -15,7 +15,7 @@ class AuthorCountsByYearPapers(db.Model):
 
 class AuthorCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_authors_by_year_citation_count_mv"
+    __tablename__ = "citation_authors_by_year_citation_count_view"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -24,6 +24,32 @@ class AuthorCountsByYearCitations(db.Model):
 
     def __repr__(self):
         return "<AuthorCountsByYearCitations ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+
+
+class VenueCountsByYearPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_journals_by_year_paper_count_view"
+
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<VenueCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+
+
+class VenueCountsByYearCitations(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_journals_by_year_citation_count_view"
+
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<VenueCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
 class ConceptCountsByYear(db.Model):
@@ -50,19 +76,6 @@ class InstitutionCountsByYear(db.Model):
 
     def __repr__(self):
         return "<InstitutionCountsByYear ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
-
-
-class VenueCountsByYear(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_journals_by_year_mv"
-
-    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
-    type = db.Column(db.Text, primary_key=True)
-    year = db.Column(db.Numeric, primary_key=True)
-    n = db.Column(db.Numeric)
-
-    def __repr__(self):
-        return "<VenueCountsByYear ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
 class WorkCountsByYear(db.Model):

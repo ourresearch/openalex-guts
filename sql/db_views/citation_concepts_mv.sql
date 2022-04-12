@@ -8,7 +8,7 @@ select
     coalesce(group_papers.n, 0) as paper_count,
     coalesce(group_citations.n, 0) as citation_count,
     sysdate as updated_date
-    from mid.concept concept
+    from mid.concept_for_api_mv concept
  left outer join group_citations on group_citations.field_of_study_id = concept.field_of_study_id
  left outer join group_papers on group_papers.field_of_study_id = concept.field_of_study_id
 )
