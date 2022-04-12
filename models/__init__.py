@@ -29,7 +29,8 @@ from models.ror import Ror
 from models.work_extra_id import WorkExtraIds
 from models.counts_by_year import AuthorCountsByYearPapers, AuthorCountsByYearCitations
 from models.counts_by_year import VenueCountsByYearPapers, VenueCountsByYearCitations
-from models.counts_by_year import ConceptCountsByYear, InstitutionCountsByYear, WorkCountsByYear
+from models.counts_by_year import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
+from models.counts_by_year import ConceptCountsByYear, WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
 
@@ -65,7 +66,8 @@ WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_
 Author.counts_by_year_papers = db.relationship("AuthorCountsByYearPapers", lazy='selectin', backref="work")
 Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations", lazy='selectin', backref="work")
 Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', backref="work")
-Institution.counts_by_year = db.relationship("InstitutionCountsByYear", lazy='selectin', backref="work")
+Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', backref="work")
+Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', backref="work")
 Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='selectin', backref="work")
 Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', backref="work")
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")

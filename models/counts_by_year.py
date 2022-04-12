@@ -51,6 +51,32 @@ class VenueCountsByYearCitations(db.Model):
     def __repr__(self):
         return "<VenueCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
+class InstitutionCountsByYearPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_institutions_by_year_paper_count_view"
+
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<InstitutionCountsByYearPapers ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+
+
+class InstitutionCountsByYearCitations(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_institutions_by_year_citation_count_view"
+
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<InstitutionCountsByYearCitations ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+
+
 
 class ConceptCountsByYear(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -65,17 +91,6 @@ class ConceptCountsByYear(db.Model):
         return "<ConceptCountsByYear ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
 
-class InstitutionCountsByYear(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_institutions_by_year_view"
-
-    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
-    type = db.Column(db.Text, primary_key=True)
-    year = db.Column(db.Numeric, primary_key=True)
-    n = db.Column(db.Numeric)
-
-    def __repr__(self):
-        return "<InstitutionCountsByYear ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
 
 
 class WorkCountsByYear(db.Model):
