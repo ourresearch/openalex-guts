@@ -287,7 +287,7 @@ class Institution(db.Model):
     def store(self):
         import datetime
         from util import jsonify_fast_no_sort_raw
-        VERSION_STRING = "after all primary keys"
+        VERSION_STRING = "with concepts fix"
 
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
@@ -304,12 +304,12 @@ class Institution(db.Model):
         from models.concept import as_concept_openalex_id
 
         q = """
-            select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * count(distinct affil.paper_id)/institution.paper_count::float, 1) as score
+            select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct affil.paper_id))/institution.paper_count, 1)::float as score
             from mid.institution institution 
             join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
             join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
             join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
-            join mid.concept concept on concept.field_of_study_id=ancestor_id                        
+            join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                        
             where affil.affiliation_id=:institution_id
             group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, institution.paper_count
             order by score desc

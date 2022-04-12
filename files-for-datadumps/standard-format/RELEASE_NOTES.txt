@@ -1,5 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+
+- updated 8715 venues that had issn_l listed but no issns in "issns" key
+
 RELEASE 2022-04-07
 - added new papers and corresponding data
 - add DOIs to 1,242,303 existing works

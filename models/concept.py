@@ -361,7 +361,7 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        VERSION_STRING = "after all primary keys"
+        VERSION_STRING = "with concepts fix"
 
         self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
