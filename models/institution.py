@@ -155,6 +155,7 @@ class Institution(db.Model):
 
     @cached_property
     def relationship_dicts(self):
+        response = []
         q = """
            select relationship_type, ror_grid_equivalents.ror_id as related_ror_id 
             from ins.ror_relationships
@@ -166,11 +167,12 @@ class Institution(db.Model):
         for row in rows:
             relationship_dict[row["related_ror_id"]] = row["relationship_type"].lower()
         ror_ids = relationship_dict.keys()
-        objs = db.session.query(Institution).options(selectinload(Institution.ror), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
-        for obj in objs:
-            obj.relationship_status = relationship_dict[obj.ror_id]
-        objs = sorted(objs, key=lambda x: (x.relationship_status if x.relationship_status else "", x.display_name if x.display_name else ""))
-        response = [obj.to_dict("minimum") for obj in objs]
+        if ror_ids:
+            objs = db.session.query(Institution).options(selectinload(Institution.ror), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
+            for obj in objs:
+                obj.relationship_status = relationship_dict[obj.ror_id]
+            objs = sorted(objs, key=lambda x: (x.relationship_status if x.relationship_status else "", x.display_name if x.display_name else ""))
+            response = [obj.to_dict("minimum") for obj in objs]
         return response
 
     @cached_property
