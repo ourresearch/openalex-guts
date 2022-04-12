@@ -474,10 +474,14 @@ class DbQueue(object):
                          orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Institution:
                     objects = db.session.query(models.Institution).options(
-                         selectinload(models.Institution.counts_by_year_papers),
-                         selectinload(models.Institution.counts_by_year_citations),
+                         # selectinload(models.Institution.counts_by_year_papers),
+                         # selectinload(models.Institution.counts_by_year_citations),
                          selectinload(models.Institution.ror).raiseload('*'),
-                         orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                         orm.Load(models.Institution).lazyload('*')).filter(self.myid.in_(object_ids)).all()
+                         # selectinload(models.Institution.counts_by_year_papers),
+                         # selectinload(models.Institution.counts_by_year_citations),
+                         # selectinload(models.Institution.ror).raiseload('*'),
+                         # orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
                     objects = db.session.query(models.Concept).options(
                          orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
