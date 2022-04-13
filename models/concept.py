@@ -438,7 +438,8 @@ class Concept(db.Model):
     @cached_property
     def display_counts_by_year(self):
         response_dict = {}
-        all_rows = self.counts_by_year_papers + self.counts_by_year_citations
+        # all_rows = self.counts_by_year_papers + self.counts_by_year_citations
+        all_rows = self.counts_by_year
         for count_row in all_rows:
             response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
         for count_row in all_rows:
