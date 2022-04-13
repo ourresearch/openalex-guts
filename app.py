@@ -61,6 +61,7 @@ libraries_to_mum = [
     "cryptography",
     "psycopg2",
     "s3_concat",
+    "s3transfer",
 ]
 
 
