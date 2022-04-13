@@ -1,3 +1,4 @@
+import tempfile
 import argparse
 import concurrent.futures
 import re
@@ -14,7 +15,7 @@ from s3_concat.utils import _threads, _chunk_by_size, MIN_S3_SIZE
 
 from app import logger
 
-PART_SUFFIX = r'\_part\d+$'
+PART_SUFFIX = r'\.txt(?:_part\d+)?$'
 SKIP_FILE_PREFIX = "PaperAbstractsInvertedIndex"
 DUMP_DIR = "2022-04-07"
 
@@ -23,147 +24,25 @@ DUMP_DIR = "2022-04-07"
 
 ## takes about 15 minutes
 
-
-_num_threads = 1
-
-def upload_part(part, bucket, key, upload_id):
-    s3 = boto3.session.Session().client('s3')
-
-    resp = s3.upload_part_copy(
-        Bucket=bucket,
-        Key=key,
-        PartNumber=part['part_num'],
-        UploadId=upload_id,
-        CopySource=part['source_part']
-    )
-
-    msg = "Setup S3 part #{}, with path: {}".format(part['part_num'],
-                                                    part['source_part'])
-    logger.debug("{}, got response: {}".format(msg, resp))
-
-    # ceph doesn't return quoted etags
-    etag = (resp['CopyPartResult']['ETag']
-            .replace("'", "").replace("\"", ""))
-
-    return {'ETag': etag, 'PartNumber': part['part_num']}
-
-
-def _assemble_parts(self, s3):
-    parts_mapping = []
-    part_num = 0
-
-    s3_parts = ["{}/{}".format(self.bucket, p[0])
-                for p in self.parts_list if p[1] > MIN_S3_SIZE]
-
-    local_parts = [p for p in self.parts_list if p[1] <= MIN_S3_SIZE]
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=_num_threads) as pool:
-        parts_mappings = pool.map(
-            partial(upload_part, bucket=self.bucket, key=self.result_filepath, upload_id=self.upload_id),
-            [{'part_num': part_num, 'source_part': source_part} for part_num, source_part in enumerate(s3_parts, 1)],
-            chunksize=1
-        )
-
-    parts_mapping.extend([pm for pm in parts_mappings])
-
-    # assemble parts too small for direct S3 copy by downloading them,
-    # combining them, and then reuploading them as the last part of the
-    # multi-part upload (which is not constrained to the 5mb limit)
-
-    # Concat the small_parts into the minium size then upload
-    # this way not to much data is kept in memory
-    def get_small_parts(data):
-        part_num, part = data
-        small_part_count = len(part[1])
-
-        logger.debug("Start sub-part #{} from {} files"
-                     .format(part_num, small_part_count))
-
-        small_parts = []
-        for p in part[1]:
-            try:
-                small_parts.append(
-                    s3.get_object(
-                        Bucket=self.bucket,
-                        Key=p[0]
-                    )['Body'].read()
-                )
-            except Exception as e:
-                logger.critical(
-                    f"{e}: When getting {p[0]} from the bucket {self.bucket}")  # noqa: E501
-                raise
-
-        if len(small_parts) > 0:
-            last_part = b''.join(small_parts)
-
-            small_parts = None  # cleanup
-            resp = s3.upload_part(Bucket=self.bucket,
-                                  Key=self.result_filepath,
-                                  PartNumber=part_num,
-                                  UploadId=self.upload_id,
-                                  Body=last_part)
-            msg = "Finish sub-part #{} from {} files" \
-                .format(part_num, small_part_count)
-            logger.debug("{}, got response: {}".format(msg, resp))
-
-            last_part = None
-            # Handles both quoted and unquoted etags
-            etag = resp['ETag'].replace("'", "").replace("\"", "")
-            return {'ETag': etag,
-                    'PartNumber': part_num}
-        return {}
-
-    data_to_thread = []
-    for idx, data in enumerate(_chunk_by_size(local_parts,
-                                              MIN_S3_SIZE * 2),
-                               start=1):
-        data_to_thread.append([part_num + idx, data])
-
-    parts_mapping.extend(
-        _threads(self.small_parts_threads,
-                 data_to_thread,
-                 get_small_parts)
-    )
-
-    # Sort part mapping by part number
-    return sorted(parts_mapping, key=lambda i: i['PartNumber'])
-
-
-MultipartUploadJob._assemble_parts = _assemble_parts
-
-
 def concat_table(table, bucket_name, delete, dry_run):
     if not table["output_key"]:
         return
 
-    job = S3Concat(
-        bucket=bucket_name,
-        key=table['output_key'],
-        min_file_size=None,
-        s3_client_kwargs={
-            'aws_access_key_id': getenv('AWS_ACCESS_KEY_ID'),
-            'aws_secret_access_key': getenv('AWS_SECRET_ACCESS_KEY')
-        }
-    )
+    work_dir = tempfile.mkdtemp()
+    work_file = work_dir + '/' + table["output_key"].split('/')[-1]
 
-    for part_key in table['part_keys']:
-        job.add_files(part_key)
+    s3 = boto3.client('s3')
 
-    logger.info(f'concatenating these files into s3://{bucket_name}/{table["output_key"]}')
-    for part_file in job.all_files:
-        logger.info(f'  s3://{bucket_name}/{part_file[0]}')
+    with open(work_file, 'ab') as f:
+        if 'header_key' in table:
+            logger.info(f"append {table['header_key']} to {work_file}")
+            s3.download_fileobj(bucket_name, table['header_key'], f)
+        for part_key in table.get('part_keys', []):
+            logger.info(f"append {part_key} to {work_file}")
+            s3.download_fileobj(bucket_name, part_key, f)
 
-    if not dry_run:
-        job.concat()
-
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket(bucket_name)
-
-    if delete:
-        for part_file in job.all_files:
-            logger.info(f'deleting s3://{bucket_name}/{part_file[0]}')
-            if not dry_run:
-                bucket.delete_key(part_file[0])
+    logger.info(f'uploading {work_file} to {table["output_key"]}')
+    s3.upload_file(work_file, bucket_name, table["output_key"])
 
     return table
 
@@ -178,7 +57,7 @@ def get_tables(bucket, base_prefix):
         key_without_base_prefix = str(obj.key)
         key_without_base_prefix = key_without_base_prefix.replace(base_prefix, "")
         if "/" in key_without_base_prefix:
-            table_prefix = re.sub(PART_SUFFIX, '', obj.key)
+            table_prefix = re.sub(PART_SUFFIX, '.txt', obj.key)
             if "HEADER_" in obj.key:
                 table_prefix = table_prefix.replace("HEADER_", "")
                 tables[table_prefix]['header_key'] = obj.key
@@ -233,110 +112,22 @@ def do_directory_cleanups(bucket_name):
         print(f"continuing anyway")
 
 
-from io import BufferedReader
-MAX_SSL_CONTENT_LENGTH = 2**30 - 1
-
-# from https://medium.com/in-the-weeds/remedial-data-science-engineering-424a15f8ea0c
-class S3StreamingBodyIO(BufferedReader):
-  def read_all(self, *args):
-      if args:
-          size = args[0]
-      else:
-          size = -1
-
-      if size > MAX_SSL_CONTENT_LENGTH:
-          logger.debug("Read requested with size {:,}; chunking".format(size))
-          data_out = bytearray()
-          remaining_size = size
-
-          while remaining_size > 0:
-              chunk_size = min(remaining_size, MAX_SSL_CONTENT_LENGTH)
-              data_out += self.read_all(chunk_size)
-              remaining_size = remaining_size - chunk_size
-
-          return data_out
-      else:
-          return self.read(size)
-
-
-def merge_in_headers(table, bucket_name):
-    if not table["part_keys"]:
-        return
-
-    if not table["header_key"]:
-        return
-
-    s3_client = boto3.client('s3')
-
-    header_key = table["header_key"]
-    first_part_key = table["part_keys"][0]
-
-    print(f"downloading header file {header_key}")
-    header_object = s3_client.get_object(Bucket=bucket_name, Key=header_key)
-    header_data = header_object['Body'].read().decode('utf-8')
-
-    print(f"downloading first part file {first_part_key}")
-    first_part_object = s3_client.get_object(Bucket=bucket_name, Key=first_part_key)
-    # first_part_data = first_part_object['Body'].read().decode('utf-8')
-
-    first_part_data = S3StreamingBodyIO(first_part_object['Body']._raw_stream).read_all(first_part_object['ContentLength']).decode("utf-8")
-
-    # need to do it this way to get around ssl error in pyton < 3.10
-    # from https://stackoverflow.com/a/70909130/596939
-    # buf = bytearray(first_part_object['ContentLength'])
-    # first_part_data = memoryview(buf)
-    # pos = 0
-    # while True:
-    #     chunk = (first_part_object['Body'].read(67108864)).decode('utf-8')
-    #     if len(chunk) == 0:
-    #         break
-    #     first_part_data[pos:pos+len(chunk)] = chunk
-    #     pos += len(chunk)
-
-    print(f"merging {first_part_key}")
-    merged_data = header_data + first_part_data
-
-    print(f"uploading {first_part_key}")
-    buffer_to_upload = io.BytesIO(merged_data.encode())
-    # s3_client.put_object(Body=buffer_to_upload, Bucket=bucket_name, Key=first_part_key)
-
-    from boto3.s3.transfer import TransferConfig
-
-    # Set the desired multipart threshold value (5GB)
-    GB = 1024 ** 3
-    config = TransferConfig(multipart_threshold=5*GB)
-
-    # Perform the transfer
-    s3_client.upload_fileobj(buffer_to_upload, bucket_name, first_part_key, Config=config)
-
-    print(f"DONE MERGE for {first_part_key}")
-
-    # then delete header
-    print(f"DELETING HEADER {header_key}")
-    s3 = boto3.resource('s3')
-    s3.Object(bucket_name, header_key).delete()
-
-
 def run(bucket_name, prefixes, delete, dry_run, threads):
-
     tables = []
     s3 = boto.connect_s3()
     bucket = s3.get_bucket(bucket_name)
+
     for prefix in prefixes:
         tables.extend(get_tables(bucket, prefix))
 
-    for table in tables:
-        merge_in_headers(table, bucket_name)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=threads) as pool:
+        pool.map(
+            partial(concat_table, bucket_name=bucket_name, delete=delete, dry_run=dry_run),
+            tables,
+            chunksize=1
+        )
 
-    global _num_threads
-    _num_threads = threads
-
-    for table in tables:
-        concat_table(table, bucket_name, delete, dry_run)
-
-    do_directory_cleanups(bucket_name)
-
-
+    #do_directory_cleanups(bucket_name)
 
 
 if __name__ == '__main__':
