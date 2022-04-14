@@ -79,21 +79,23 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
-    # work_matches_by_title = db.relationship(
-    #     'Work',
-    #     lazy='subquery',
-    #     viewonly=True,
-    #     # foreign_keys="Work.match_title",
-    #     primaryjoin="and_(func.length(foreign(Record.match_title)) > 20, foreign(Record.match_title) == remote(Work.match_title))"
-    # )
-    #
-    # work_matches_by_doi = db.relationship(
-    #     'Work',
-    #     lazy='subquery',
-    #     viewonly=True,
-    #     # foreign_keys="Work.doi_lower",
-    #     primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
-    # )
+    work_matches_by_title = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        uselist=True,
+        # foreign_keys="Work.match_title",
+        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 20, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
+    )
+
+    work_matches_by_doi = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        uselist=True,
+        # foreign_keys="Work.doi_lower",
+        primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
+    )
 
     @property
     def score(self):
@@ -140,7 +142,7 @@ class Record(db.Model):
         matching_work_id = None
         print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
 
-        if False:
+        if True:
             # by doi
             if self.work_matches_by_doi:
                 print("found by doi")
@@ -152,40 +154,47 @@ class Record(db.Model):
             # by title
             if not matching_works and self.genre != "component":
                 if self.work_matches_by_title:
-                    print("found by title")
+                    print(f"found by title {self.normalized_title}")
                     matching_works = self.work_matches_by_title
 
             # by url
-            if not matching_works:
-                q = """
-                select paper_id
-                from mid.location t1
-                where (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url1, 'https', 'http'))
-                or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
-                """
-                matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
-                if matching_works:
-                    print(f"found by url")
-                    matching_work_id = matching_works[0]
+            if False:
+                if not matching_works:
+                    q = """
+                    select paper_id
+                    from mid.location t1
+                    where (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url1, 'https', 'http'))
+                    or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
+                    """
+                    matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
+                    if matching_works:
+                        print(f"found by url")
+                        matching_work_id = matching_works[0]
 
-            # by pmhid
-            if not matching_works:
-                q = """
-                select paper_id
-                from mid.location t1
-                where pmh_id=:pmh_id
-                """
-                matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
-                if matching_works:
-                    print(f"found by pmhid")
-                    matching_work_id = matching_works[0]
+                # by pmhid
+                if not matching_works:
+                    q = """
+                    select paper_id
+                    from mid.location t1
+                    where pmh_id=:pmh_id
+                    """
+                    matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
+                    if matching_works:
+                        print(f"found by pmhid")
+                        matching_work_id = matching_works[0]
 
         if matching_works:
             if not matching_work_id:
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
-                matching_work = sorted_matching_works[0]
+                # print(f"matching_works {matching_works}")
+                try:
+                    sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
+                    matching_work = sorted_matching_works[0]
+                except TypeError:
+                    matching_work = matching_works
+                    pass
                 matching_work_id = matching_work.id
             url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
+            self.work_id = matching_work_id
             print(f"*********found a match for this work: {url}")
             print(f"don't do anything else with this")
             # don't do anything else
@@ -195,6 +204,7 @@ class Record(db.Model):
             # mint a work
 
             self.mint_work(new_work_id_if_needed)
+            self.work_id = new_work_id_if_needed
             matching_work_id = "null"
 
         # self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
@@ -204,19 +214,16 @@ class Record(db.Model):
         #                       added=datetime.datetime.utcnow().isoformat()
         #                     )}]
 
-        return matching_work
+        return
 
 
     def mint_work(self, new_work_id):
         from models import Work
-        from models import Venue
 
         journal_id = self.journal.journal_id if self.journal else None
 
-        # assumes already tried a match
-        self.work_id = new_work_id
-
         new_work = Work()
+        new_work.created_date = datetime.datetime.utcnow().isoformat()
         new_work.paper_id = new_work_id
         new_work.doi = self.doi
         new_work.doi_lower = self.doi  # already lowered from recordthresher
@@ -227,7 +234,7 @@ class Record(db.Model):
         new_work.doc_type = self.normalized_doc_type
         db.session.add(new_work)
 
-        print(f"MADE A NEW WORK!!! {new_work}")
+        print(f"MADE A NEW WORK!!! {new_work} with recordthresher id {self.id}")
 
     @property
     def normalized_doc_type(self):
@@ -253,7 +260,7 @@ class Record(db.Model):
         self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
-        self.work = self.get_or_mint_work(new_work_id_if_needed)
+        self.get_or_mint_work(new_work_id_if_needed)
         # self.work.mint()
 
 

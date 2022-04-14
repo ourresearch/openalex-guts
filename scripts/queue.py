@@ -99,6 +99,7 @@ class DbQueue(object):
 
                 method_to_run = getattr(obj, method_name)
                 if method_name == "process_record":
+                    print(f"max_openalex_id {max_openalex_id}, total_count {total_count} ")
                     method_to_run(new_work_id_if_needed=(1 + max_openalex_id + total_count))
                 else:
                     method_to_run()
@@ -289,7 +290,7 @@ class DbQueue(object):
                text_query_pattern_select = """
                     select id from ins.recordthresher_record 
                     where work_id is null
-                    order by random()
+                    -- order by random()
                     limit {chunk};
                 """
             else:
@@ -458,9 +459,9 @@ class DbQueue(object):
                          orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Record:
                     objects = db.session.query(models.Record).options(
-                         # selectinload(models.Record.work_matches_by_title).raiseload('*'),
-                         # selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-                         selectinload(models.Record.journal),
+                         selectinload(models.Record.work_matches_by_title).raiseload('*'),
+                         selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+                         selectinload(models.Record.journals),
                          orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Author:
                     objects = db.session.query(models.Author).options(
@@ -512,7 +513,7 @@ class DbQueue(object):
                     continue
 
 
-                self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=max_openalex_id)
+                self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=models.max_openalex_id)
 
                 index += 1
                 if single_obj_id:
