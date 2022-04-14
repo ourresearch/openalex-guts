@@ -464,14 +464,15 @@ class DbQueue(object):
                          orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Author:
                     objects = db.session.query(models.Author).options(
-                         selectinload(models.Author.counts_by_year_papers),
-                         selectinload(models.Author.counts_by_year_citations),
+                         # selectinload(models.Author.counts_by_year_papers),
+                         # selectinload(models.Author.counts_by_year_citations),
                          selectinload(models.Author.alternative_names),
-                         selectinload(models.Author.author_concepts),
+                         selectinload(models.Author.author_concepts).raiseload('*'),
                          selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
                          selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
                          selectinload(models.Author.last_known_institution).raiseload('*'),
-                         orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                         # orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                         orm.Load(models.Author).lazyload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Institution:
                     objects = db.session.query(models.Institution).options(
                          # selectinload(models.Institution.counts_by_year_papers),
