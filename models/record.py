@@ -192,7 +192,7 @@ class Record(db.Model):
                 except TypeError:
                     matching_work = matching_works
                     pass
-                matching_work_id = matching_work.id
+                matching_work_id = matching_work.paper_id
             url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
             self.work_id = matching_work_id
             print(f"*********found a match for this work: {url}")
