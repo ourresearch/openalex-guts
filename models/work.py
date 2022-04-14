@@ -115,10 +115,7 @@ class Work(db.Model):
     finished = db.Column(db.DateTime)
     started_label = db.Column(db.Text)
 
-
     def __init__(self, **kwargs):
-        self.created = datetime.datetime.utcnow().isoformat()
-        self.updated = self.created
         super(Work, self).__init__(**kwargs)
 
     @property
