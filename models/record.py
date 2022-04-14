@@ -186,12 +186,8 @@ class Record(db.Model):
         if matching_works:
             if not matching_work_id:
                 # print(f"matching_works {matching_works}")
-                try:
-                    sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count, reverse=True)
-                    matching_work = sorted_matching_works[0]
-                except TypeError:
-                    matching_work = matching_works
-                    pass
+                sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+                matching_work = sorted_matching_works[0]
                 matching_work_id = matching_work.paper_id
             url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
             self.work_id = matching_work_id
