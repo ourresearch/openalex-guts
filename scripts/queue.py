@@ -248,14 +248,14 @@ class DbQueue(object):
                     select {id_field_name} 
                         from {queue_table} t1
                         where updated_date is not null
-                        and updated_date > '2022-02-01'
+                        --and updated_date > '2022-02-01'
                         and NOT EXISTS (
                            SELECT 1
                            FROM   {insert_table} t2
                            WHERE  (t1.{id_field_name}=t2.id) and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
-                           and updated > '2022-02-01'
+                           --and updated > '2022-02-01'
                            )      
-                        order by random()
+                        -- order by random()
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
