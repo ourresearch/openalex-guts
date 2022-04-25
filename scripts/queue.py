@@ -70,7 +70,7 @@ class DbQueue(object):
         super(DbQueue, self).__init__(**kwargs)
 
 
-    def update_fn(self, cls, method_name, objects, index=1, max_openalex_id=None):
+    def update_fn(self, cls, method_name, objects, index=1):
         # we are in a fork!  dispose of our engine.
         # will get a new one automatically. if is pooling, need to do .dispose() instead
         db.engine.dispose()
@@ -98,11 +98,7 @@ class DbQueue(object):
                     method_name=method_name))
 
                 method_to_run = getattr(obj, method_name)
-                if method_name == "process_record":
-                    print(f"max_openalex_id {max_openalex_id}, total_count {total_count} ")
-                    method_to_run(new_work_id_if_needed=(1 + max_openalex_id + total_count))
-                else:
-                    method_to_run()
+                method_to_run()
 
                 logger.info("finished {repr}.{method_name}(). took {elapsed} seconds".format(
                     repr=obj,
@@ -117,6 +113,8 @@ class DbQueue(object):
         if self.myclass == models.Concept and method_name=="clean_metadata":
             db.session.commit()
         if self.myclass == models.Record and method_name=="process_record":
+            db.session.commit()
+        if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
             db.session.commit()
 
         delete_dict_all_objects = defaultdict(list)
@@ -224,7 +222,7 @@ class DbQueue(object):
                     where mid.work_concept_for_api_mv.paper_id > 4200000000
                     and mid.related_work.paper_id is null
                     -- order by random() 
-                    limit 10000; """
+                    limit {chunk}; """
             elif run_method in ["store"]:
                 # text_query_pattern_select = """
                 #     select distinct {id_field_name}
@@ -300,14 +298,14 @@ class DbQueue(object):
         start_time = time()
 
 
-        if (run_method == "process_record") or (run_method == "add_everything"):
-            from app import get_db_cursor
-            with get_db_cursor() as cur:
-                cur.execute("select max_id from util.max_openalex_id")
-                rows = cur.fetchall()
-                if rows:
-                    models.max_openalex_id = rows[0]["max_id"]
-                    print(f"max_openalex_id: {models.max_openalex_id}")
+        # if (run_method == "process_record") or (run_method == "add_everything"):
+        #     from app import get_db_cursor
+        #     with get_db_cursor() as cur:
+        #         cur.execute("select max_id from util.max_openalex_id")
+        #         rows = cur.fetchall()
+        #         if rows:
+        #             models.max_openalex_id = rows[0]["max_id"]
+        #             print(f"max_openalex_id: {models.max_openalex_id}")
 
         while True:
             started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
@@ -423,6 +421,9 @@ class DbQueue(object):
                              selectinload(models.Work.records),
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.journal),
+                             selectinload(models.Work.locations),
+                             selectinload(models.Work.related_works),
+                             selectinload(models.Work.affiliations),
                              selectinload(models.Work.concepts).raiseload('*'),
                              orm.Load(models.Work).raiseload('*'))
                         objects = query.filter(self.myid.in_(object_ids)).all()
@@ -513,7 +514,7 @@ class DbQueue(object):
                     continue
 
 
-                self.update_fn(run_class, run_method, objects, index=index, max_openalex_id=models.max_openalex_id)
+                self.update_fn(run_class, run_method, objects, index=index)
 
                 index += 1
                 if single_obj_id:

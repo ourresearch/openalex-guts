@@ -11,6 +11,7 @@ from app import db
 from app import USER_AGENT
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
+from app import get_db_cursor
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -338,6 +339,63 @@ class Institution(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    @classmethod
+    def matching_institution_name(cls, raw_string):
+        from util import normalize_title_like_sql
+        if not raw_string:
+            return None
+
+        # for backwards compatibility
+        remove_stop_words = False
+        return normalize_title_like_sql(raw_string, remove_stop_words)
+
+
+        # sql_for_match = f"""
+        #     select f_matching_string(%s) as match_string;
+        #     """
+        # with get_db_cursor() as cur:
+        #     cur.execute(sql_for_match, (raw_string, ))
+        #     rows = cur.fetchall()
+        #     if rows:
+        #         return rows[0]["match_string"]
+        # return None
+
+    @classmethod
+    def try_to_match(cls, raw_affiliation_string):
+        if not raw_affiliation_string:
+            return None
+
+        raw_affiliation_string = raw_affiliation_string.replace("'", "''")
+        exact_matching_papers_sql = f"""
+                select lookup.affiliation_id 
+                from mid.affiliation_institution_lookup_view lookup 
+                where lookup.original_affiliation = '{raw_affiliation_string}'
+            """
+
+        ilike_matching_papers_sql = f"""
+            select affil.affiliation_id
+            from mid.affiliation affil 
+            where affil.original_affiliation ilike '%{raw_affiliation_string}%'
+            and affil.affiliation_id is not null
+            and affil.affiliation_id not in (select affiliation_id from mid.institutions_with_names_bad_for_ilookup)
+        """
+
+        with get_db_cursor() as cur:
+            # print(cur.mogrify(exact_matching_papers_sql))
+            cur.execute(exact_matching_papers_sql)
+            rows = cur.fetchall()
+            if rows:
+                response = rows[0]["affiliation_id"]
+                print(f"matched: affiliation {response} using exact match")
+                return response
+            # cur.execute(ilike_matching_papers_sql)
+            # rows = cur.fetchall()
+            # if rows:
+            #     response = rows[0]["affiliation_id"]
+            #     print(f"matched: affiliation {response} using ilike")
+            #     return response
+
+        return None
 
     def to_dict(self, return_level="full"):
         response = {
@@ -359,7 +417,7 @@ class Institution(db.Model):
                 "display_name_acronyms": self.acronyms,
                 "display_name_alternatives": self.aliases,
                 "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count,
+                "cited_by_count": self.citation_count if self.citation_count else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "ror": self.ror_url,
@@ -396,6 +454,6 @@ class Institution(db.Model):
         return response
 
     def __repr__(self):
-        return "<Institution ( {} ) {}>".format(self.openalex_api_url, self.display_name)
+        return "<Institution ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 

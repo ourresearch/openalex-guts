@@ -125,7 +125,7 @@ class Venue(db.Model):
         if return_level == "full":
             response.update({
                 "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count,
+                "cited_by_count": self.citation_count if self.citation_count else 0,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
                 "homepage_url": self.webpage,
@@ -151,7 +151,7 @@ class Venue(db.Model):
 
 
     def __repr__(self):
-        return "<Venue ( {} ) {}>".format(self.openalex_api_url, self.display_name)
+        return "<Venue ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
 # select count(distinct work.paper_id)

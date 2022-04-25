@@ -17,7 +17,9 @@ from util import normalize_simple
 from util import clean_doi
 from util import normalize_orcid
 from util import normalize_title_like_sql
+from util import clean_html
 from app import get_db_cursor
+import models
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
@@ -220,19 +222,8 @@ class Work(db.Model):
             if not self.concepts_for_related_works:
                 return
 
-        if not hasattr(self, "insert_dicts"):
-            self.insert_dicts = []
-
-        # matching_papers_sql = """
-        #     select
-        #         concepts_of_related.paper_id as related_paper_id,
-        #         avg(concepts_of_related.score) as average_related_score,
-        #         count(distinct concepts_of_related.field_of_study) as n
-        #     from mid.work_concept_for_api_mv concepts_of_related
-        #     where field_of_study in %s
-        #     group by concepts_of_related.paper_id
-        #     order by n desc
-        #     limit 10"""
+        # if not hasattr(self, "insert_dicts"):
+        #     self.insert_dicts = []
 
         matching_papers_sql = """
             with matches as (
@@ -257,14 +248,20 @@ class Work(db.Model):
             cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_works), ))
             rows = cur.fetchall()
             # print(rows)
-            for row in rows:
-                score = row["average_related_score"] * row["average_related_score"]
 
-                self.insert_dicts += [{"WorkRelatedWork": {"paper_id": self.paper_id,
-                                                           "recommended_paper_id": row["related_paper_id"],
-                                                           "score": score,
-                                                           "updated": datetime.datetime.utcnow().isoformat()
-                                                           }}]
+            # for row in rows:
+            #     score = row["average_related_score"] * row["average_related_score"]
+            #
+            #     self.insert_dicts += [{"WorkRelatedWork": {"paper_id": self.paper_id,
+            #                                                "recommended_paper_id": row["related_paper_id"],
+            #                                                "score": score,
+            #                                                "updated": datetime.datetime.utcnow().isoformat()
+            #                                                }}]
+            self.related_works = [models.WorkRelatedWork(paper_id = self.paper_id,
+                                                       recommended_paper_id = row["related_paper_id"],
+                                                       score = row["average_related_score"] * row["average_related_score"],
+                                                       updated = datetime.datetime.utcnow().isoformat())
+                                  for row in rows]
 
 
     def add_abstract(self):
@@ -276,7 +273,8 @@ class Work(db.Model):
                     # truncate the abstract if too long
                     indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
                 insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
-                self.insert_dicts += [{"Abstract": insert_dict}]
+                # self.insert_dicts += [{"Abstract": insert_dict}]
+                self.abstract = models.Abstract(**insert_dict)
                 self.abstract_indexed_abstract = indexed_abstract
                 return
 
@@ -284,15 +282,17 @@ class Work(db.Model):
         for record in self.records:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
-                for mesh_dict in mesh_dict_list:
-                    mesh_dict["paper_id"] = self.paper_id
-                    self.insert_dicts += [{"Mesh": mesh_dict}]
+                self.mesh = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
+                # for mesh_dict in mesh_dict_list:
+                #     mesh_dict["paper_id"] = self.paper_id
+                #     self.insert_dicts += [{"Mesh": mesh_dict}]
                 return
 
     def add_ids(self):
         for record in self.records:
             if record.pmid:
-                self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
+                # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
+                self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
                 return
 
     def add_locations(self):
@@ -303,6 +303,7 @@ class Work(db.Model):
             return
         record_to_use = records_with_unpaywall[0]
 
+        self.locations = []
         for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
             insert_dict = {
                 "paper_id": self.id,
@@ -322,7 +323,8 @@ class Work(db.Model):
                 "license": unpaywall_oa_location["license"]}
             if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
                 insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
-            self.insert_dicts += [{"Location": insert_dict}]
+            # self.insert_dicts += [{"Location": insert_dict}]
+            self.locations += [models.Location(**insert_dict)]
 
     def add_citations(self):
         from models import WorkExtraIds
@@ -346,82 +348,143 @@ class Work(db.Model):
         citation_paper_ids = list(set(citation_paper_ids))
         self.citation_paper_ids = citation_paper_ids
 
-        for reference_id in citation_paper_ids:
-            self.insert_dicts += [{"Citation": {
-                "paper_id": self.id,
-                "paper_reference_id": reference_id}}]
+        # for reference_id in citation_paper_ids:
+            # self.insert_dicts += [{"Citation": {insert_dicts
+            #     "paper_id": self.id,
+            #     "paper_reference_id": reference_id}}]
+        self.citations = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
 
 
     def add_affiliations(self):
-        from models import Affiliation
-        from models import Author
-        new_authors = []
+        self.affiliations = []
 
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
             print("no affiliation data found in any of the records")
-            return new_authors
+            return
+
         record = records_with_affiliations[0]
         try:
             author_dict_list = json.loads(record.authors)
         except Exception as e:
             print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
-            return new_authors
+            return
 
         for i, author_dict in enumerate(author_dict_list):
-            new_author = None
+            my_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
 
-            author_id = None
             raw_author_string = original_name if original_name else None
             original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
             if raw_author_string:
-                author_id = Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
-            if raw_author_string and not author_id:
-                new_author = Author(display_name=raw_author_string)
-                print(f"new_author: {new_author}")
-                author_id = new_author.author_id
+                my_author = models.Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
 
-            author_match_name = Author.matching_author_string(raw_author_string)
+            author_match_name = models.Author.matching_author_string(raw_author_string)
             # print(f"author_match_name: {author_match_name}")
+
+            if raw_author_string and not my_author:
+                my_author = models.Author(display_name=raw_author_string,
+                    match_name=author_match_name,
+                    created_date=datetime.datetime.utcnow().isoformat(),
+                    updated_date=datetime.datetime.utcnow().isoformat())
+                if original_orcid:
+                    my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
+                    my_author.orcids = [my_author_orcid]
+
             for affiliation_dict in author_dict["affiliation"]:
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
-                affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
+                raw_affiliation_string = clean_html(raw_affiliation_string)
+                my_institution = models.Institution.try_to_match(raw_affiliation_string)
+                if my_institution:
+                    my_author.last_known_affiliation_id = my_institution.affiliation_id
                 if raw_author_string or raw_affiliation_string:
-                    self.insert_dicts += [{"Affiliation": {
-                        "paper_id": self.paper_id,
-                        "author_id": author_id,
-                        "affiliation_id": affiliation_id,
-                        "author_sequence_number": i,
-                        "original_author": raw_author_string,
-                        "original_affiliation": raw_affiliation_string,
-                        "original_orcid": original_orcid,
-                        "match_author": author_match_name,
-                        "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
-                        "updated_date": datetime.datetime.utcnow().isoformat()
-                    }}]
+                    my_affiliation = models.Affiliation(
+                        author_sequence_number=i,
+                        original_author=raw_author_string,
+                        original_affiliation=raw_affiliation_string,
+                        original_orcid=original_orcid,
+                        match_author=author_match_name,
+                        match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
+                        updated_date=datetime.datetime.utcnow().isoformat())
+                    my_affiliation.author = my_author
+                    my_affiliation.institution = my_institution
+                    self.affiliations += [my_affiliation]
 
-            if new_author:
-                self.insert_dicts += [{"Author": {
-                    "author_id": author_id,
-                    "display_name": raw_author_string,
-                    "last_known_affiliation_id": affiliation_id,
-                    "match_name": author_match_name,
-                    "created_date": datetime.datetime.utcnow().isoformat(),
-                    "updated_date": datetime.datetime.utcnow().isoformat()
-                    }}]
-                if original_orcid:
-                    self.insert_dicts += [{"AuthorOrcid": {
-                        "author_id": author_id,
-                        "orcid": original_orcid
-                        }}]
-            new_authors += [new_author]
-        return new_authors
+        return
 
+    # def add_affiliations(self):
+    #     from models import Affiliation
+    #     from models import Author
+    #     new_authors = []
+    #
+    #     records_with_affiliations = [record for record in self.records_sorted if record.authors]
+    #     if not records_with_affiliations:
+    #         print("no affiliation data found in any of the records")
+    #         return new_authors
+    #     record = records_with_affiliations[0]
+    #     try:
+    #         author_dict_list = json.loads(record.authors)
+    #     except Exception as e:
+    #         print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
+    #         return new_authors
+    #
+    #     for i, author_dict in enumerate(author_dict_list):
+    #         new_author = None
+    #         original_name = author_dict["raw"]
+    #         if author_dict["family"]:
+    #             original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+    #         if not author_dict["affiliation"]:
+    #             author_dict["affiliation"] = [defaultdict(str)]
+    #
+    #         author_id = None
+    #         raw_author_string = original_name if original_name else None
+    #         original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+    #         if raw_author_string:
+    #             author_id = Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
+    #         if raw_author_string and not author_id:
+    #             new_author = Author(display_name=raw_author_string)
+    #             print(f"new_author: {new_author}")
+    #             author_id = new_author.author_id
+    #
+    #         author_match_name = Author.matching_author_string(raw_author_string)
+    #         # print(f"author_match_name: {author_match_name}")
+    #         for affiliation_dict in author_dict["affiliation"]:
+    #             raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+    #             affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
+    #             if raw_author_string or raw_affiliation_string:
+    #                 self.insert_dicts += [{"Affiliation": {
+    #                     "paper_id": self.paper_id,
+    #                     "author_id": author_id,
+    #                     "affiliation_id": affiliation_id,
+    #                     "author_sequence_number": i,
+    #                     "original_author": raw_author_string,
+    #                     "original_affiliation": raw_affiliation_string,
+    #                     "original_orcid": original_orcid,
+    #                     "match_author": author_match_name,
+    #                     "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
+    #                     "updated_date": datetime.datetime.utcnow().isoformat()
+    #                 }}]
+    #
+    #         if new_author:
+    #             self.insert_dicts += [{"Author": {
+    #                 "author_id": author_id,
+    #                 "display_name": raw_author_string,
+    #                 "last_known_affiliation_id": affiliation_id,
+    #                 "match_name": author_match_name,
+    #                 "created_date": datetime.datetime.utcnow().isoformat(),
+    #                 "updated_date": datetime.datetime.utcnow().isoformat()
+    #                 }}]
+    #             if original_orcid:
+    #                 self.insert_dicts += [{"AuthorOrcid": {
+    #                     "author_id": author_id,
+    #                     "orcid": original_orcid
+    #                     }}]
+    #         new_authors += [new_author]
+    #     return new_authors
 
     def set_fields_from_record(self, record):
         if not self.created_date:
@@ -489,12 +552,13 @@ class Work(db.Model):
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
 
-        self.delete_dict["Work"] += [self.paper_id]
+        # self.delete_dict["Work"] += [self.paper_id]
         insert_dict = {}
         work_insert_fieldnames = Work.__table__.columns.keys()
         for key in work_insert_fieldnames:
-            insert_dict[key] = getattr(self, key)
-        self.insert_dicts += [{"Work": insert_dict}]
+            # insert_dict[key] = getattr(self, key)
+            setattr(self, key, getattr(self, key))
+        # self.insert_dicts += [{"Work": insert_dict}]
 
 
     def mint(self):
@@ -506,8 +570,9 @@ class Work(db.Model):
         insert_dict = {}
         work_insert_fieldnames = Work.__table__.columns.keys()
         for key in work_insert_fieldnames:
-            insert_dict[key] = getattr(self, key)
-        self.insert_dicts = [{"Work": insert_dict}]
+            # insert_dict[key] = getattr(self, key)
+            setattr(self, key, getattr(self, key))
+        # self.insert_dicts = [{"Work": insert_dict}]
         print(f"done! {self.id}")
 
     @cached_property
@@ -754,7 +819,7 @@ class Work(db.Model):
         if return_level in ("full", "store"):
             response.update({
                 # "doc_type": self.doc_type,
-                "cited_by_count": self.citation_count,
+                "cited_by_count": self.citation_count if self.citation_count else 0,
                 "biblio": {
                     "volume": self.volume,
                     "issue": self.issue,
@@ -785,7 +850,7 @@ class Work(db.Model):
 
 
     def __repr__(self):
-        return "<Work ( {} ) {} '{}...'>".format(self.openalex_api_url, self.doi, self.original_title[0:20] if self.original_title else None)
+        return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
 
 
 

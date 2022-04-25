@@ -112,29 +112,8 @@ class Record(db.Model):
             return None
         return self.journals[0]
 
-    @cached_property
-    def siblings(self):
-        from models import Work
-        response = [self.to_dict()]
-        work_id = self.work_id #previously linked
-        work_obj = self.get_or_mint_work()
-        if work_obj:
-            work_to_dict = {"RECORD_TYPE": "WORK"}
-            work_to_dict.update(work_obj.to_dict())
-            work_to_dict["work_id"] = work_to_dict["id"]
-            del work_to_dict["id"]
-            work_to_dict["score"] = 100
-            work_to_dict["abstract_inverted_index"] = work_to_dict["abstract_inverted_index"] != None
-            response += [work_to_dict]
-            work_id = work_obj.id
-        if work_id:
-            work_linked_records = Record.query.filter(Record.work_id==work_obj.id).all()
-            response += [record.to_dict() for record in work_linked_records]
-        response = sorted(response, key=lambda x: x["score"], reverse=True)
-        return response
 
-
-    def get_or_mint_work(self, new_work_id_if_needed):
+    def get_or_mint_work(self):
         from models.work import Work
 
         matching_works = []
@@ -199,9 +178,9 @@ class Record(db.Model):
             print("_____________no match")
             # mint a work
 
-            self.mint_work(new_work_id_if_needed)
-            self.work_id = new_work_id_if_needed
-            matching_work_id = "null"
+            self.mint_work()
+            # self.work_id = new_work_id_if_needed
+            # matching_work_id = "null"
 
         # self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
         #                       record_id=self.id,
@@ -213,14 +192,14 @@ class Record(db.Model):
         return
 
 
-    def mint_work(self, new_work_id):
+    def mint_work(self):
         from models import Work
 
         journal_id = self.journal.journal_id if self.journal else None
 
         new_work = Work()
         new_work.created_date = datetime.datetime.utcnow().isoformat()
-        new_work.paper_id = new_work_id
+        # new_work.paper_id = new_work_id
         new_work.doi = self.doi
         new_work.doi_lower = self.doi  # already lowered from recordthresher
         new_work.original_title = self.title
@@ -229,6 +208,7 @@ class Record(db.Model):
         new_work.genre = self.normalized_work_type
         new_work.doc_type = self.normalized_doc_type
         db.session.add(new_work)
+        self.work = new_work
 
         print(f"MADE A NEW WORK!!! {new_work} with recordthresher id {self.id}")
 
@@ -250,14 +230,13 @@ class Record(db.Model):
         except KeyError:
             return None
 
-    def process_record(self, new_work_id_if_needed):
+    def process_record(self):
         from models import Work
 
         self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
-        self.get_or_mint_work(new_work_id_if_needed)
-        # self.work.mint()
+        self.get_or_mint_work()
 
 
     def to_dict(self, return_level="full"):

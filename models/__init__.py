@@ -36,45 +36,45 @@ from models.counts_by_year import WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
 
-max_openalex_id = None
+# max_openalex_id = None
 
 # relationships without association tables
-Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work")
-Work.references = db.relationship("Citation", lazy='selectin', backref="work")
-Work.locations = db.relationship("Location", lazy='selectin', backref="work")
-Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False)
-Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False)
-Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work")
-Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work")
+Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.references = db.relationship("Citation", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.locations = db.relationship("Location", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False, cascade="all, delete-orphan")
+Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False) #don't delete orphan
+Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for mint
 
 # relationships with association tables
-Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work")
-Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work")
+Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work") #don't delete orphan
 
-Affiliation.author = db.relationship("Author")
-Affiliation.institution = db.relationship("Institution")
+Affiliation.author = db.relationship("Author") # don't delete orphan
+Affiliation.institution = db.relationship("Institution") #don't delete orphan
 
 Institution.ror = db.relationship("Ror", uselist=False)
-Author.orcids = db.relationship("AuthorOrcid", backref="author")
+Author.orcids = db.relationship("AuthorOrcid", backref="author", cascade="all, delete-orphan")
 AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
 Author.last_known_institution = db.relationship("Institution")
-Author.alternative_names = db.relationship("AuthorAlternativeName")
-Author.author_concepts = db.relationship("AuthorConcept")
+Author.alternative_names = db.relationship("AuthorAlternativeName", cascade="all, delete-orphan")
+Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-orphan")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 
-Author.counts_by_year_papers = db.relationship("AuthorCountsByYearPapers", lazy='selectin', backref="work")
-Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations", lazy='selectin', backref="work")
-# Concept.counts_by_year_papers = db.relationship("ConceptCountsByYearPapers", lazy='selectin', backref="work")
-# Concept.counts_by_year_citations = db.relationship("ConceptCountsByYearCitations", lazy='selectin', backref="work")
-Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', backref="work")
-Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', backref="work")
-Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', backref="work")
-Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='selectin', backref="work")
-Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', backref="work")
-Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', backref="work")
+Author.counts_by_year_papers = db.relationship("AuthorCountsByYearPapers", lazy='selectin', cascade="all, delete-orphan")
+Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations", lazy='selectin', cascade="all, delete-orphan")
+# Concept.counts_by_year_papers = db.relationship("ConceptCountsByYearPapers", lazy='selectin', cascade="all, delete-orphan")
+# Concept.counts_by_year_citations = db.relationship("ConceptCountsByYearCitations", lazy='selectin', cascade="all, delete-orphan")
+Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', cascade="all, delete-orphan")
+Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', cascade="all, delete-orphan")
+Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', cascade="all, delete-orphan")
+Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='selectin', cascade="all, delete-orphan")
+Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', cascade="all, delete-orphan")
+Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', cascade="all, delete-orphan")
 
 Record.journals = db.relationship("Venue", lazy='selectin', uselist=True)  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
 # Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)

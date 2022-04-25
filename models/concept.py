@@ -464,7 +464,7 @@ class Concept(db.Model):
             response.update({
                 "description": self.description,
                 "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count,
+                "cited_by_count": self.citation_count if self.citation_count else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "wikidata": self.wikidata_id,
@@ -494,6 +494,6 @@ class Concept(db.Model):
         return response
 
     def __repr__(self):
-        return "<Concept ( {} ) {}>".format(self.openalex_api_url, self.display_name)
+        return "<Concept ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
