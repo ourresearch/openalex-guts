@@ -176,46 +176,46 @@ def get_db_cursor(readonly=True):
 def get_apiurl_from_openalex_url(openalex_url):
     if not openalex_url:
         return None
-    return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "https://api.openalex.org/\g<id>?apiurls", openalex_url)
+    return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "http://localhost:5007/\g<id>?apiurls", openalex_url)
 
 
-reserved_openalex_ids = defaultdict(list)
-
-def get_next_openalex_id(entity):
-    global reserved_openalex_ids
-
-    try:
-        my_id = reserved_openalex_ids[entity].pop()
-    except IndexError:
-        reserved_openalex_ids[entity] = reserve_more_openalex_ids(entity, 100)
-        my_id = reserved_openalex_ids[entity].pop()
-    return my_id
-
-def reserve_more_openalex_ids(entity, number_to_reserve=100):
-    print(f"getting {number_to_reserve} more {entity} openalex ids")
-    values_string_list = []
-    assigned_labels = []
-    for i in range(0, number_to_reserve):
-        assigned_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
-        assigned_labels += [assigned_label]
-        values_string_list += [f"(now(), '{assigned_label}', '{entity}')"]
-
-    values_string = ",".join(values_string_list)
-    text_query_pattern_select = f"""
-        insert into mid.openalex_assigned_ids (assigned, assigned_label, entity) values {values_string};
-        commit;
-        select id from mid.openalex_assigned_ids where assigned_label in %s order by id desc; """
-    # text_query_pattern_select = f"""
-    #     begin transaction read write;
-    #     lock mid.openalex_assigned_ids;
-    #     insert into mid.openalex_assigned_ids (assigned, assigned_label, entity) values {values_string};
-    #     commit;
-    #     end;
-    #     select id from mid.openalex_assigned_ids where assigned_label in %s; """
-    with get_db_cursor(readonly=False) as cur:
-        # print(cur.mogrify(text_query_pattern_select, (tuple(assigned_labels), )))
-        cur.execute(text_query_pattern_select, (tuple(assigned_labels),))
-        rows = cur.fetchall()
-        ids = [row["id"] for row in rows]
-    return ids
+# reserved_openalex_ids = defaultdict(list)
+#
+# def get_next_openalex_id(entity):
+#     global reserved_openalex_ids
+#
+#     try:
+#         my_id = reserved_openalex_ids[entity].pop()
+#     except IndexError:
+#         reserved_openalex_ids[entity] = reserve_more_openalex_ids(entity, 100)
+#         my_id = reserved_openalex_ids[entity].pop()
+#     return my_id
+#
+# def reserve_more_openalex_ids(entity, number_to_reserve=100):
+#     print(f"getting {number_to_reserve} more {entity} openalex ids")
+#     values_string_list = []
+#     assigned_labels = []
+#     for i in range(0, number_to_reserve):
+#         assigned_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
+#         assigned_labels += [assigned_label]
+#         values_string_list += [f"(now(), '{assigned_label}', '{entity}')"]
+#
+#     values_string = ",".join(values_string_list)
+#     text_query_pattern_select = f"""
+#         insert into mid.openalex_assigned_ids (assigned, assigned_label, entity) values {values_string};
+#         commit;
+#         select id from mid.openalex_assigned_ids where assigned_label in %s order by id desc; """
+#     # text_query_pattern_select = f"""
+#     #     begin transaction read write;
+#     #     lock mid.openalex_assigned_ids;
+#     #     insert into mid.openalex_assigned_ids (assigned, assigned_label, entity) values {values_string};
+#     #     commit;
+#     #     end;
+#     #     select id from mid.openalex_assigned_ids where assigned_label in %s; """
+#     with get_db_cursor(readonly=False) as cur:
+#         # print(cur.mogrify(text_query_pattern_select, (tuple(assigned_labels), )))
+#         cur.execute(text_query_pattern_select, (tuple(assigned_labels),))
+#         rows = cur.fetchall()
+#         ids = [row["id"] for row in rows]
+#     return ids
 

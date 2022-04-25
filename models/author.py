@@ -7,7 +7,7 @@ from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
-from app import get_next_openalex_id
+# from app import get_next_openalex_id
 
 # truncate mid.author
 # insert into mid.author (select * from legacy.mag_main_authors)
@@ -30,11 +30,11 @@ class Author(db.Model):
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
 
-    def __init__(self, **kwargs):
-        self.author_id = get_next_openalex_id("author")
-        # self.created = datetime.datetime.utcnow().isoformat()
-        # self.updated = self.created
-        super(Author, self).__init__(**kwargs)
+    # def __init__(self, **kwargs):
+    #     self.author_id = get_next_openalex_id("author")
+    #     # self.created = datetime.datetime.utcnow().isoformat()
+    #     # self.updated = self.created
+    #     super(Author, self).__init__(**kwargs)
 
     @classmethod
     def matching_author_string(cls, raw_author_string):
@@ -86,13 +86,13 @@ class Author(db.Model):
                 rows = cur.fetchall()
                 if rows:
                     print(f"matched: author using orcid")
-                    return rows[0]["author_id"]
+                    return Author.query.get(rows[0]["author_id"])
             if citation_paper_ids:
                 cur.execute(match_with_citations)
                 rows = cur.fetchall()
                 if rows:
                     print(f"matched: author using citations")
-                    return rows[0]["author_id"]
+                    return Author.query.get(rows[0]["author_id"])
         return None
 
 
@@ -268,6 +268,6 @@ class Author(db.Model):
         return response
 
     def __repr__(self):
-        return "<Author ( {} ) {}>".format(self.openalex_api_url, self.display_name)
+        return "<Author ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 

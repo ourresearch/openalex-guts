@@ -20,72 +20,16 @@ class Affiliation(db.Model):
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True, nullable=True)
-    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True, nullable=True)
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     author_sequence_number = db.Column(db.Numeric, primary_key=True)
     original_author = db.Column(db.Text)
-    original_affiliation = db.Column(db.Text, primary_key=True)
+    original_affiliation = db.Column(db.Text, primary_key=True, nullable=True)
     original_orcid = db.Column(db.Text)
     match_author = db.Column(db.Text)
     match_institution_name = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
 
-    @classmethod
-    def matching_affiliation_string(cls, raw_string):
-        from util import normalize_title_like_sql
-        if not raw_string:
-            return None
 
-        # for backwards compatibility
-        remove_stop_words = False
-        return normalize_title_like_sql(raw_string, remove_stop_words)
-
-
-        # sql_for_match = f"""
-        #     select f_matching_string(%s) as match_string;
-        #     """
-        # with get_db_cursor() as cur:
-        #     cur.execute(sql_for_match, (raw_string, ))
-        #     rows = cur.fetchall()
-        #     if rows:
-        #         return rows[0]["match_string"]
-        # return None
-
-    @classmethod
-    def try_to_match(cls, raw_affiliation_string):
-        if not raw_affiliation_string:
-            return None
-
-        raw_affiliation_string = raw_affiliation_string.replace("'", "''")
-        exact_matching_papers_sql = f"""
-                select lookup.affiliation_id 
-                from mid.affiliation_institution_lookup_view lookup 
-                where lookup.original_affiliation = '{raw_affiliation_string}'
-            """
-
-        ilike_matching_papers_sql = f"""
-            select affil.affiliation_id
-            from mid.affiliation affil 
-            where affil.original_affiliation ilike '%{raw_affiliation_string}%'
-            and affil.affiliation_id is not null
-            and affil.affiliation_id not in (select affiliation_id from mid.institutions_with_names_bad_for_ilookup)
-        """
-
-        with get_db_cursor() as cur:
-            # print(cur.mogrify(exact_matching_papers_sql))
-            cur.execute(exact_matching_papers_sql)
-            rows = cur.fetchall()
-            if rows:
-                response = rows[0]["affiliation_id"]
-                print(f"matched: affiliation {response} using exact match")
-                return response
-            # cur.execute(ilike_matching_papers_sql)
-            # rows = cur.fetchall()
-            # if rows:
-            #     response = rows[0]["affiliation_id"]
-            #     print(f"matched: affiliation {response} using ilike")
-            #     return response
-
-        return None
 
 
     def update(self):
