@@ -37,7 +37,6 @@ class Location(db.Model):
     source_url = db.Column(db.Text, primary_key=True)
     source_type = db.Column(db.Numeric)
     language_code = db.Column(db.Text)
-    source_url = db.Column(db.Text)
     url = db.Column(db.Text)
     url_for_landing_page = db.Column(db.Text)
     url_for_pdf = db.Column(db.Text)
