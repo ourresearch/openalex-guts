@@ -422,6 +422,7 @@ class DbQueue(object):
                              selectinload(models.Work.abstract),
                              selectinload(models.Work.journal),
                              selectinload(models.Work.locations),
+                             selectinload(models.Work.extra_ids),
                              selectinload(models.Work.mesh),
                              selectinload(models.Work.related_works),
                              selectinload(models.Work.affiliations),
