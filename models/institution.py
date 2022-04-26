@@ -385,7 +385,7 @@ class Institution(db.Model):
             cur.execute(exact_matching_papers_sql)
             rows = cur.fetchall()
             if rows:
-                response = Institution.query.get(rows[0]["affiliation_id"])
+                response = Institution.query.options(orm.Load(Institution).raiseload('*')).get(rows[0]["affiliation_id"])
                 print(f"matched: institution {response} using exact match")
                 return response
             # cur.execute(ilike_matching_papers_sql)
