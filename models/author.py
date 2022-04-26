@@ -1,5 +1,7 @@
 from cached_property import cached_property
 from sqlalchemy import text
+from sqlalchemy import orm
+from sqlalchemy.orm import selectinload
 import json
 import datetime
 
@@ -90,13 +92,13 @@ class Author(db.Model):
                 rows = cur.fetchall()
                 if rows:
                     print(f"matched: author using orcid")
-                    return Author.query.get(rows[0]["author_id"])
+                    return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
             if citation_paper_ids:
                 cur.execute(match_with_citations)
                 rows = cur.fetchall()
                 if rows:
                     print(f"matched: author using citations")
-                    return Author.query.get(rows[0]["author_id"])
+                    return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
         return None
 
 

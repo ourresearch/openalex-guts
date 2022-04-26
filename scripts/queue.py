@@ -419,14 +419,18 @@ class DbQueue(object):
                     try:
                         query = db.session.query(models.Work).options(
                              selectinload(models.Work.records),
-                             selectinload(models.Work.abstract),
-                             selectinload(models.Work.journal),
                              selectinload(models.Work.locations),
-                             selectinload(models.Work.extra_ids),
+                             selectinload(models.Work.journal).raiseload('*'),
+                             selectinload(models.Work.references),
                              selectinload(models.Work.mesh),
+                             selectinload(models.Work.counts_by_year),
+                             selectinload(models.Work.abstract),
+                             selectinload(models.Work.extra_ids),
                              selectinload(models.Work.related_works),
-                             selectinload(models.Work.affiliations),
-                             selectinload(models.Work.concepts).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
                              orm.Load(models.Work).raiseload('*'))
                         objects = query.filter(self.myid.in_(object_ids)).all()
                     except Exception as e:
