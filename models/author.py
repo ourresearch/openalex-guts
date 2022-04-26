@@ -36,6 +36,10 @@ class Author(db.Model):
     #     # self.updated = self.created
     #     super(Author, self).__init__(**kwargs)
 
+    @property
+    def id(self):
+        return self.author_id
+
     @classmethod
     def matching_author_string(cls, raw_author_string):
         from util import matching_author_string

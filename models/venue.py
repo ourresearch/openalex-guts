@@ -41,6 +41,10 @@ class Venue(db.Model):
         return as_venue_openalex_id(self.journal_id)
 
     @property
+    def id(self):
+        return self.journal_id
+
+    @property
     def openalex_id_short(self):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
