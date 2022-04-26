@@ -198,6 +198,10 @@ class Work(db.Model):
         self.delete_dict = defaultdict(list)
         self.insert_dicts = []
 
+        if not self.records_sorted:
+            # not associated with a record, so leave it for now
+            return
+
         # workaround to call unpaywall api instead of having it in db for now
         if self.records_sorted[0].doi:
             from models import Unpaywall
