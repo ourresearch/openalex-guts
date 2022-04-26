@@ -80,9 +80,12 @@ def calculate_percentile(refset, value):
     return percentile
 
 def clean_html(raw_html):
-  cleanr = re.compile('<.*?>')
-  cleantext = re.sub(cleanr, '', raw_html)
-  return cleantext
+    cleanr = re.compile('<.*?>')
+    try:
+        cleantext = re.sub(cleanr, '', raw_html)
+    except TypeError:
+        cleantext = raw_html
+    return cleantext
 
 # good for deduping strings.  warning: output removes spaces so isn't readable.
 def normalize(text):
