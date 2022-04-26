@@ -115,7 +115,7 @@ class DbQueue(object):
         if self.myclass == models.Record and method_name=="process_record":
             db.session.commit()
         if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
-            db.session.commit()
+            safe_commit(db)
 
         delete_dict_all_objects = defaultdict(list)
         insert_dict_all_objects = defaultdict(list)
