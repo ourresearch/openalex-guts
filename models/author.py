@@ -275,5 +275,3 @@ class Author(db.Model):
 
     def __repr__(self):
         return "<Author ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
-
-
