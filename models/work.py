@@ -374,7 +374,7 @@ class Work(db.Model):
             print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
             return
 
-        for i, author_dict in enumerate(author_dict_list):
+        for author_sequence_order, author_dict in enumerate(author_dict_list):
             my_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
@@ -399,7 +399,7 @@ class Work(db.Model):
                     my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
                     my_author.orcids = [my_author_orcid]
 
-            for affiliation_dict in author_dict["affiliation"]:
+            for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institution = models.Institution.try_to_match(raw_affiliation_string)
@@ -407,7 +407,8 @@ class Work(db.Model):
                     my_author.last_known_affiliation_id = my_institution.affiliation_id
                 if raw_author_string or raw_affiliation_string:
                     my_affiliation = models.Affiliation(
-                        author_sequence_number=i,
+                        author_sequence_number=author_sequence_order+1,
+                        affiliation_sequence_number=affiliation_sequence_order+1,
                         original_author=raw_author_string,
                         original_affiliation=raw_affiliation_string,
                         original_orcid=original_orcid,
