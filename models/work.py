@@ -403,7 +403,7 @@ class Work(db.Model):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institution = models.Institution.try_to_match(raw_affiliation_string)
-                if my_institution:
+                if my_institution and my_author:
                     my_author.last_known_affiliation_id = my_institution.affiliation_id
                 if raw_author_string or raw_affiliation_string:
                     my_affiliation = models.Affiliation(
