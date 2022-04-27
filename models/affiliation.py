@@ -19,11 +19,12 @@ class Affiliation(db.Model):
     __tablename__ = "affiliation"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True, nullable=True)
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"))
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     author_sequence_number = db.Column(db.Numeric, primary_key=True)
+    affiliation_sequence_number = db.Column(db.Numeric, primary_key=True)
     original_author = db.Column(db.Text)
-    original_affiliation = db.Column(db.Text, primary_key=True, nullable=True)
+    original_affiliation = db.Column(db.Text)
     original_orcid = db.Column(db.Text)
     match_author = db.Column(db.Text)
     match_institution_name = db.Column(db.Text)
