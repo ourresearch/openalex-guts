@@ -9,7 +9,7 @@ from app import db
 
 class WorkConcept(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "work_concept_for_api_mv"
+    __tablename__ = "work_concept_for_api_view"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
