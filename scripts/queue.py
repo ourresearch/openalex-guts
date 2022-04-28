@@ -347,6 +347,7 @@ class DbQueue(object):
                              selectinload(models.Work.extra_ids),
                              selectinload(models.Work.related_works),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
@@ -360,24 +361,6 @@ class DbQueue(object):
                                 objects += object_query.filter(self.myid==id).all()
                             except Exception as e:
                                 print(f"error: failed on {run_method} {id} with error {e}")
-                elif (self.myclass == models.Work) and (run_method != "store") and run_method.startswith("store"):
-                    try:
-                        objects = db.session.query(models.Work).options(
-                             selectinload(models.Work.locations),
-                             selectinload(models.Work.journal),
-                             selectinload(models.Work.references),
-                             selectinload(models.Work.mesh),
-                             selectinload(models.Work.counts_by_year),
-                             # selectinload(models.Work.abstract),  # this is the high throughput one, no abstract for this one
-                             selectinload(models.Work.extra_ids),
-                             selectinload(models.Work.related_works),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                             orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                    except Exception as e:
-                        print(f"Exception fetching IDs {object_ids} {e}")
-                        objects = []
                 elif self.myclass == models.Work and (run_method=="mint"):
                     objects = []
                     if object_ids:
@@ -428,6 +411,7 @@ class DbQueue(object):
                              selectinload(models.Work.extra_ids),
                              selectinload(models.Work.related_works),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
@@ -450,20 +434,6 @@ class DbQueue(object):
                         where work.paper_id in ({})
                     """.format(",".join(str(paper_id) for paper_id in object_ids))
                     objects = db.session.execute(text(q)).fetchall()
-                elif self.myclass == models.Work:  # none of the methods types above -- not sure what that leaves?
-                    objects = db.session.query(models.Work).options(
-                         selectinload(models.Work.locations),
-                         selectinload(models.Work.journal),
-                         selectinload(models.Work.references),
-                         selectinload(models.Work.mesh),
-                         selectinload(models.Work.counts_by_year),
-                         selectinload(models.Work.abstract),
-                         selectinload(models.Work.extra_ids),
-                         selectinload(models.Work.related_works),
-                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-                         selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept),
-                         orm.Load(models.Work).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Record:
                     objects = db.session.query(models.Record).options(
                          selectinload(models.Record.work_matches_by_title).raiseload('*'),
