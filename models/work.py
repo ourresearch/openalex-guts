@@ -200,6 +200,7 @@ class Work(db.Model):
 
         if not self.records_sorted:
             # not associated with a record, so leave it for now
+            print(f"No associated records for {self.paper_id}, so skipping")
             return
 
         # workaround to call unpaywall api instead of having it in db for now
@@ -393,6 +394,7 @@ class Work(db.Model):
             if raw_author_string and not my_author:
                 my_author = models.Author(display_name=raw_author_string,
                     match_name=author_match_name,
+                    paper_count=1,
                     created_date=datetime.datetime.utcnow().isoformat(),
                     updated_date=datetime.datetime.utcnow().isoformat())
                 if original_orcid:
