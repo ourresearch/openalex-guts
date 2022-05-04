@@ -90,22 +90,23 @@ class Venue(db.Model):
     @cached_property
     def concepts(self):
         from models.concept import as_concept_openalex_id
-
-        q = """
-            select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct wc.paper_id))/journal.paper_count, 1)::float as score
-            from mid.journal journal 
-            join mid.work work on work.journal_id=journal.journal_id
-            join mid.work_concept_for_api_mv wc on wc.paper_id=work.paper_id
-            join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
-            join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                                    
-            where journal.journal_id=:journal_id
-            group by ancestor_id, wikidata_id, ancestor_name, ancestor_level, journal.paper_count
-            order by score desc
-            """
-        rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
-        response = [dict(row) for row in rows if row["score"] and row["score"] > 20]
-        for row in response:
-            row["id"] = as_concept_openalex_id(row["id"])
+        response = []
+        if self.paper_count:
+            q = """
+                select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct wc.paper_id))/journal.paper_count, 1)::float as score
+                from mid.journal journal 
+                join mid.work work on work.journal_id=journal.journal_id
+                join mid.work_concept_for_api_mv wc on wc.paper_id=work.paper_id
+                join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
+                join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                                    
+                where journal.journal_id=:journal_id
+                group by ancestor_id, wikidata_id, ancestor_name, ancestor_level, journal.paper_count
+                order by score desc
+                """
+            rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
+            response = [dict(row) for row in rows if row["score"] and row["score"] > 20]
+            for row in response:
+                row["id"] = as_concept_openalex_id(row["id"])
         return response
 
     @classmethod
