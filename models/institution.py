@@ -312,7 +312,7 @@ class Institution(db.Model):
             from mid.institution institution 
             join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
             join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
-            join mid.concept_self_and_ancestors_view ancestors on ancestors.id=wc.field_of_study
+            join mid.concept_self_and_ancestors_mv ancestors on ancestors.id=wc.field_of_study
             join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                        
             where affil.affiliation_id=:institution_id
             group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, institution.paper_count
