@@ -219,14 +219,21 @@ class Work(db.Model):
             self.records_sorted[0].unpaywall = Unpaywall(self.records_sorted[0].doi)
 
         self.set_fields_from_all_records()
-        self.add_abstract() # add abstract before work_concepts
+        self.add_abstract() # must be before work_concepts
         self.add_work_concepts()
         self.add_related_works()  # must be after work_concepts
         self.add_mesh()
         self.add_ids()
         self.add_locations()
-        self.add_citations()
-        self.add_affiliations()
+        self.add_citations() # must be before affiliations
+
+        # for now, only add/update affiliations if they aren't there
+        if not self.affiliations:
+            print("adding affiliations because work didn't have any yet")
+            self.add_affiliations()
+        else:
+            print("not adding affiliations because work already has some set")
+
 
     def add_related_works(self):
         if self.concepts:
@@ -459,87 +466,15 @@ class Work(db.Model):
 
         return
 
-    # def add_affiliations(self):
-    #     from models import Affiliation
-    #     from models import Author
-    #     new_authors = []
-    #
-    #     records_with_affiliations = [record for record in self.records_sorted if record.authors]
-    #     if not records_with_affiliations:
-    #         print("no affiliation data found in any of the records")
-    #         return new_authors
-    #     record = records_with_affiliations[0]
-    #     try:
-    #         author_dict_list = json.loads(record.authors)
-    #     except Exception as e:
-    #         print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
-    #         return new_authors
-    #
-    #     for i, author_dict in enumerate(author_dict_list):
-    #         new_author = None
-    #         original_name = author_dict["raw"]
-    #         if author_dict["family"]:
-    #             original_name = "{} {}".format(author_dict["given"], author_dict["family"])
-    #         if not author_dict["affiliation"]:
-    #             author_dict["affiliation"] = [defaultdict(str)]
-    #
-    #         author_id = None
-    #         raw_author_string = original_name if original_name else None
-    #         original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
-    #         if raw_author_string:
-    #             author_id = Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
-    #         if raw_author_string and not author_id:
-    #             new_author = Author(display_name=raw_author_string)
-    #             print(f"new_author: {new_author}")
-    #             author_id = new_author.author_id
-    #
-    #         author_match_name = Author.matching_author_string(raw_author_string)
-    #         # print(f"author_match_name: {author_match_name}")
-    #         for affiliation_dict in author_dict["affiliation"]:
-    #             raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
-    #             affiliation_id = Affiliation.try_to_match(raw_affiliation_string)
-    #             if raw_author_string or raw_affiliation_string:
-    #                 self.insert_dicts += [{"Affiliation": {
-    #                     "paper_id": self.paper_id,
-    #                     "author_id": author_id,
-    #                     "affiliation_id": affiliation_id,
-    #                     "author_sequence_number": i,
-    #                     "original_author": raw_author_string,
-    #                     "original_affiliation": raw_affiliation_string,
-    #                     "original_orcid": original_orcid,
-    #                     "match_author": author_match_name,
-    #                     "match_institution_name": Affiliation.matching_affiliation_string(raw_affiliation_string),
-    #                     "updated_date": datetime.datetime.utcnow().isoformat()
-    #                 }}]
-    #
-    #         if new_author:
-    #             self.insert_dicts += [{"Author": {
-    #                 "author_id": author_id,
-    #                 "display_name": raw_author_string,
-    #                 "last_known_affiliation_id": affiliation_id,
-    #                 "match_name": author_match_name,
-    #                 "created_date": datetime.datetime.utcnow().isoformat(),
-    #                 "updated_date": datetime.datetime.utcnow().isoformat()
-    #                 }}]
-    #             if original_orcid:
-    #                 self.insert_dicts += [{"AuthorOrcid": {
-    #                     "author_id": author_id,
-    #                     "orcid": original_orcid
-    #                     }}]
-    #         new_authors += [new_author]
-    #     return new_authors
-
     def set_fields_from_record(self, record):
         if not self.created_date:
             self.created_date = datetime.datetime.utcnow().isoformat()
         self.original_title = record.title
         self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
-        self.doc_type = record.normalized_doc_type
+        self.unpaywall_normalize_title = record.normalized_title
         self.updated_date = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-        self.unpaywall_normalize_title = record.normalized_title
 
-        # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
         self.original_venue = record.venue_name
         if record.journal:
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
@@ -551,7 +486,6 @@ class Work(db.Model):
         self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
         self.publication_date = record.published_date.isoformat()[0:10]
         self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
-        # self.online_date = record.published_date
 
         self.volume = record.volume
         self.issue = record.issue
@@ -559,6 +493,7 @@ class Work(db.Model):
         self.last_page = record.last_page
         self.doc_sub_types = "Retracted" if record.is_retracted else None
         self.genre = record.normalized_work_type
+        self.doc_type = record.normalized_doc_type
         self.best_url = record.record_webpage_url
 
         if hasattr(record, "unpaywall") and record.unpaywall:
@@ -651,6 +586,74 @@ class Work(db.Model):
                      }
             response.append(response_dict)
         return response
+
+    @classmethod
+    def author_match_names_from_record_json(cls, record_author_json):
+        author_match_names = []
+        if not record_author_json:
+            return []
+        try:
+            author_dict_list = json.loads(record_author_json)
+        except Exception as e:
+            print(f"error: {e}")
+            return []
+
+        for author_sequence_order, author_dict in enumerate(author_dict_list):
+            my_author = None
+            original_name = author_dict["raw"]
+            if author_dict["family"]:
+                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+
+            raw_author_string = original_name if original_name else None
+            author_match_name = models.Author.matching_author_string(raw_author_string)
+            # print(f"author_match_name: {author_match_name}")
+            if author_match_name:
+                author_match_names += [author_match_name]
+        print(f"author_match_names: {author_match_names}")
+        return author_match_names
+
+
+    def matches_authors_in_record(self, record_author_json):
+        # returns True if either of them are missing authors, or if the authors match
+        # returns False if both have authors but neither the first nor last author in the Work is in the author string
+
+        if not record_author_json:
+            print("no record_author_json, so not trying to match")
+            return True
+        if not self.affiliations:
+            print("no self.affiliations, so not trying to match")
+            return True
+        print(f"trying to match existing work {self.id} {self.doi_lower} with record authors")
+
+        for original_name in [self.first_author_original_name, self.last_author_original_name]:
+            print(f"original_name: {original_name}")
+            if original_name:
+                author_match_name = models.Author.matching_author_string(original_name)
+            print(f"author_match_name: {author_match_name}")
+
+            if author_match_name:
+                if author_match_name in Work.author_match_names_from_record_json(record_author_json):
+                    print("author match!")
+                    return True
+
+        print("author no match")
+        return False
+
+    @cached_property
+    def first_author_original_name(self):
+        if not self.affiliations:
+            return None
+        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
+        my_affiliation = affiliations[0]
+        return my_affiliation.original_author
+
+    @cached_property
+    def last_author_original_name(self):
+        if not self.affiliations:
+            return None
+        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
+        my_affiliation = affiliations[-1]
+        return my_affiliation.original_author
 
     @property
     def concepts_sorted(self):

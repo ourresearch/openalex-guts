@@ -107,62 +107,65 @@ class DbQueue(object):
         #         print(obj.id, obj.insert_dicts)
         # print(1/0)
 
-        if self.myclass == models.Concept and method_name=="clean_metadata":
-            db.session.commit()
-        if self.myclass == models.Record and method_name=="process_record":
-            db.session.commit()
-        if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
-            safe_commit(db)
+        # set to False if want to test without committing anything
+        if True:
 
-        delete_dict_all_objects = defaultdict(list)
-        insert_dict_all_objects = defaultdict(list)
-        for count, obj in enumerate(objects):
-            if not hasattr(obj, "delete_dict"):
-                obj.delete_dict = defaultdict(list)
+            if self.myclass == models.Concept and method_name=="clean_metadata":
+                safe_commit(db)
+            if self.myclass == models.Record and method_name=="process_record":
+                safe_commit(db)
+            if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
+                safe_commit(db)
 
-            if hasattr(obj, "insert_dicts"):
-                for row in obj.insert_dicts:
-                    for table_name, insert_dict in row.items():
-                        insert_dict_all_objects[table_name] += [insert_dict]
-                        if table_name.startswith("Json"):
-                            obj.delete_dict[table_name] += [insert_dict["id"]]
+            delete_dict_all_objects = defaultdict(list)
+            insert_dict_all_objects = defaultdict(list)
+            for count, obj in enumerate(objects):
+                if not hasattr(obj, "delete_dict"):
+                    obj.delete_dict = defaultdict(list)
 
-            for table_name, ids in obj.delete_dict.items():
-                delete_dict_all_objects[table_name] += ids
+                if hasattr(obj, "insert_dicts"):
+                    for row in obj.insert_dicts:
+                        for table_name, insert_dict in row.items():
+                            insert_dict_all_objects[table_name] += [insert_dict]
+                            if table_name.startswith("Json"):
+                                obj.delete_dict[table_name] += [insert_dict["id"]]
+
+                for table_name, ids in obj.delete_dict.items():
+                    delete_dict_all_objects[table_name] += ids
 
 
-        start_time = time()
-        for table_name, delete_ids in delete_dict_all_objects.items():
-            if table_name == "Work" or table_name == "WorkConceptFull":
-                # print("TO DELETE")
-                # print(delete_ids)
+            start_time = time()
+            for table_name, delete_ids in delete_dict_all_objects.items():
+                if table_name == "Work" or table_name == "WorkConceptFull":
+                    # print("TO DELETE")
+                    # print(delete_ids)
+                    my_table = globals()[table_name]
+                    db.session.remove()
+                    db.session.execute(delete(my_table).where(my_table.paper_id.in_(delete_ids)))
+                    db.session.commit()
+                    print("delete done")
+                elif table_name.startswith("Json"):
+                    # print("TO DELETE")
+                    # print(delete_ids)
+                    my_table = globals()[table_name]
+                    db.session.remove()
+                    db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
+                    db.session.commit()
+                    print("delete done")
+
+            for table_name, all_insert_strings in insert_dict_all_objects.items():
+                # look up the model from the name
                 my_table = globals()[table_name]
+                # print("TO INSERT")
+                # print(my_table)
+                # print(all_insert_strings)
                 db.session.remove()
-                db.session.execute(delete(my_table).where(my_table.paper_id.in_(delete_ids)))
+                db.session.execute(insert(my_table).values(all_insert_strings))
                 db.session.commit()
-                print("delete done")
-            elif table_name.startswith("Json"):
-                # print("TO DELETE")
-                # print(delete_ids)
-                my_table = globals()[table_name]
-                db.session.remove()
-                db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
-                db.session.commit()
-                print("delete done")
 
-        for table_name, all_insert_strings in insert_dict_all_objects.items():
-            # look up the model from the name
-            my_table = globals()[table_name]
-            # print("TO INSERT")
-            # print(my_table)
-            # print(all_insert_strings)
-            db.session.remove()
-            db.session.execute(insert(my_table).values(all_insert_strings))
-            db.session.commit()
-
-        if insert_dict_all_objects:
-            logger.info("insert and commit took {} seconds".format(elapsed(start_time, 2)))
-            # db.session.remove()  # close connection nicely
+            if insert_dict_all_objects:
+                logger.info("insert and commit took {} seconds".format(elapsed(start_time, 2)))
+                # db.session.remove()  # close connection nicely
 
         return None  # important for if we use this on RQ
 
@@ -234,7 +237,7 @@ class DbQueue(object):
                text_query_pattern_select = """
                     select id from ins.recordthresher_record 
                     where work_id is null
-                    -- order by random()
+                    -- order by random() 
                     limit {chunk};
                 """
             else:
@@ -336,6 +339,7 @@ class DbQueue(object):
                 elif self.myclass == models.Record:
                     objects = db.session.query(models.Record).options(
                          selectinload(models.Record.work_matches_by_title).raiseload('*'),
+                         selectinload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
                          selectinload(models.Record.work_matches_by_doi).raiseload('*'),
                          selectinload(models.Record.journals),
                          orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
