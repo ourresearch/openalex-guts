@@ -629,10 +629,8 @@ class Work(db.Model):
             print(f"original_name: {original_name}")
             if original_name:
                 author_match_name = models.Author.matching_author_string(original_name)
-            print(f"author_match_name: {author_match_name}")
-
-            if author_match_name:
-                if author_match_name in Work.author_match_names_from_record_json(record_author_json):
+                print(f"author_match_name: {author_match_name}")
+                if author_match_name and (author_match_name in Work.author_match_names_from_record_json(record_author_json)):
                     print("author match!")
                     return True
 

@@ -141,7 +141,8 @@ class Record(db.Model):
                 matching_works = self.work_matches_by_title
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
 
-                for matching_work_temp in sorted_matching_works:
+                # just look at the first 20 matches
+                for matching_work_temp in sorted_matching_works[:20]:
                     if matching_work_temp.doi_lower and self.doi and matching_work_temp.doi_lower != self.doi:
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
