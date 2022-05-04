@@ -46,7 +46,7 @@ Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", use
 Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False) #don't delete orphan
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for mint
+Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
