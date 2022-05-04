@@ -33,6 +33,8 @@ class Record(db.Model):
     doi = db.Column(db.Text)
     pmid = db.Column(db.Text)
     pmh_id = db.Column(db.Text)
+    pmcid = db.Column(db.Text)
+    arxiv_id = db.Column(db.Text)
 
     # metadata
     title = db.Column(db.Text)
@@ -116,79 +118,64 @@ class Record(db.Model):
     def get_or_mint_work(self):
         from models.work import Work
 
-        matching_works = []
+        if self.genre == "component":
+            self.work_id = -1
+            print(f"{self.id} is a component, so skipping")
+            return
+
         matching_work = None
-        matching_work_id = None
         print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
 
-        if True:
-            # by doi
-            if self.work_matches_by_doi:
-                print("found by doi")
-                matching_works = self.work_matches_by_doi
+        # by doi
+        if self.work_matches_by_doi:
+            print("found by doi")
+            matching_works = self.work_matches_by_doi
+            sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+            matching_work = sorted_matching_works[0]
 
-            # by pmid
-            # later
+        # by pmid or pmc_id or arxiv_id, later. match by id before match by title.
 
-            # by title
-            if not matching_works and self.genre != "component":
-                if self.work_matches_by_title:
-                    print(f"found by title {self.normalized_title}")
-                    matching_works = self.work_matches_by_title
-
-            # by url
-            if False:
-                if not matching_works:
-                    q = """
-                    select paper_id
-                    from mid.location t1
-                    where (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url1, 'https', 'http'))
-                    or (lower(replace(t1.source_url, 'https', 'http')) = lower(replace(:url2, 'https', 'http'))))
-                    """
-                    matching_works = db.session.execute(text(q), {"url1": self.record_webpage_url, "url2": self.work_pdf_url}).first()
-                    if matching_works:
-                        print(f"found by url")
-                        matching_work_id = matching_works[0]
-
-                # by pmhid
-                if not matching_works:
-                    q = """
-                    select paper_id
-                    from mid.location t1
-                    where pmh_id=:pmh_id
-                    """
-                    matching_works = db.session.execute(text(q), {"pmh_id": self.pmh_id}).first()
-                    if matching_works:
-                        print(f"found by pmhid")
-                        matching_work_id = matching_works[0]
-
-        if matching_works:
-            if not matching_work_id:
-                # print(f"matching_works {matching_works}")
+        # by title
+        if not matching_work:
+            if self.work_matches_by_title:
+                matching_works = self.work_matches_by_title
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
-                matching_work = sorted_matching_works[0]
-                matching_work_id = matching_work.paper_id
-            url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
-            self.work_id = matching_work_id
-            print(f"FOUND A MATCH: {url}")
-            print(f"don't do anything else with this")
-            # don't do anything else
-            # sleep(10)
+
+                for matching_work_temp in sorted_matching_works:
+                    if matching_work_temp.doi_lower and self.doi and matching_work_temp.doi_lower != self.doi:
+                        print(f"titles match but dois don't so don't merge this for now")
+                        continue
+
+                    if not self.authors:
+                        # is considered a match
+                        matching_work = matching_work_temp
+                        print(f"no authors for {self.id}, so considering it an author match")
+                        break
+
+                    if matching_work_temp.matches_authors_in_record(self.authors):
+                        matching_work = matching_work_temp
+                        print(f"MATCHING AUTHORS for {self.id}!")
+                        break
+                    else:
+                        print(f"authors don't match for {self.id}!")
+
+                if matching_work:
+                    print(f"found by title {self.normalized_title} on {matching_work.id} to {self.id}")
+
+        if (not matching_work) \
+                and (not self.doi) and (not self.pmid) and (not self.pmcid) and (not self.arxiv_id) \
+                and ((not self.title) or (len(self.title) < 20)):
+            self.work_id = -1
+            print(f"{self.id} does not have a strong identifier and has no title, or title is too short, skipping")
+            return
+
+        if matching_work:
+            print(f"FOUND A MATCH: https://openalex-guts.herokuapp.com/W{matching_work.paper_id}")
+            self.work_id = matching_work.paper_id   # link the record to the work
+            matching_work.full_updated_date = None  # prep the work for needing an update
         else:
-            print("no match")
-            # mint a work
-
+            print("no match, so minting")
             self.mint_work()
-            # self.work_id = new_work_id_if_needed
-            # matching_work_id = "null"
-
-        # self.insert_dict = [{"mid.record_match": "('{record_id}', '{updated}', {matching_work_id}, '{added}')".format(
-        #                       record_id=self.id,
-        #                       updated=self.updated,
-        #                       matching_work_id=matching_work_id,
-        #                       added=datetime.datetime.utcnow().isoformat()
-        #                     )}]
-
         return
 
 
@@ -231,8 +218,6 @@ class Record(db.Model):
             return None
 
     def process_record(self):
-        from models import Work
-
         self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
 
