@@ -78,9 +78,6 @@ class DbQueue(object):
         start = time()
         num_obj_rows = len(objects)
 
-        if method_name.startswith("store"):
-            method_name = "store"
-
         if method_name == "new_work_concepts":
             from models.work import call_sagemaker_bulk_lookup_new_work_concepts
             objects = call_sagemaker_bulk_lookup_new_work_concepts(objects)
@@ -188,26 +185,10 @@ class DbQueue(object):
                 limit = 1000
 
             if run_method == "add_everything":
-                # text_query_pattern_select = """
-                # --begin transaction read write;
-                # lock mid.work;
-                # update mid.work set started=sysdate, started_label='{started_label}'
-                #     where paper_id in
-                #         (SELECT paper_id
-                #         FROM   mid.work
-                #         WHERE  started is null and finished is null and started_label is null
-                #         and updated_date is null
-                #         -- order by random()
-                #         LIMIT  {chunk});
-                # commit;
-                # --end;
-                # select paper_id from mid.work where started_label='{started_label}'; """
-
                 # temp override
                 # pubmed ones: 4214798165 4214797353 4214794591
                 # crossref ones: 4214778246 4214778318 4214778274
                 # text_query_pattern_select = """select 4214704367"""
-
                 text_query_pattern_select = """
                     select paper_id from mid.work
                         where updated_date is null
@@ -224,34 +205,15 @@ class DbQueue(object):
                     -- order by random() 
                     limit {chunk}; """
             elif run_method in ["store"]:
-                # text_query_pattern_select = """
-                #     select distinct {id_field_name}
-                #         from {queue_table}
-                #         left outer join {insert_table} on {queue_table}.{id_field_name} = {insert_table}.id
-                #         where (({insert_table}.updated is null)
-                #              -- or ({insert_table}.updated < {queue_table}.updated_date)
-                #             )
-                #             and {queue_table}.updated_date is not null
-                #         order by random()
-                #         limit {chunk};
-                # """
-                # text_query_pattern_select = """
-                # with select_some as (select mid.related_work.paper_id from mid.related_work
-                #     left outer join mid.json_works on mid.json_works.id=mid.related_work.paper_id
-                #     where ((mid.json_works.id is null) or (mid.json_works.updated < mid.related_work.updated))
-                #     and mid.related_work.updated > '2022-03-10'::timestamp
-                #     limit {chunk}*10)
-                # select distinct paper_id from select_some
-                # """
                 text_query_pattern_select = """  
                     select {id_field_name} 
                         from {queue_table} t1
-                        where updated_date is not null
-                        and updated_date > '2022-03-01'
+                        where full_updated_date is not null
+                        and full_updated_date > '2022-03-01'
                         and NOT EXISTS (
                            SELECT 1
                            FROM   {insert_table} t2
-                           WHERE  (t1.{id_field_name}=t2.id) and ((t1.updated_date is not null) and (t1.updated_date < t2.updated))
+                           WHERE  (t1.{id_field_name}=t2.id) and ((t1.full_updated_date is not null) and (t1.full_updated_date < t2.updated))
                            and updated > '2022-03-01'
                            )      
                         order by random()
@@ -259,15 +221,6 @@ class DbQueue(object):
                 """
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
-                # text_query_pattern_select = """
-                #     select paper_id from mid.work
-                #         where paper_id not in
-                #             (select paper_id from mid.work_concept)
-                #         and paper_title is not null
-                #         -- and work.paper_id > {MAX_MAG_ID}
-                #         order by random()
-                #         limit {chunk};
-                # """
                 text_query_pattern_select = """
                     select distinct mid.work_concept.paper_id from mid.work_concept 
                         join mid.work on mid.work.paper_id=mid.work_concept.paper_id
@@ -277,13 +230,6 @@ class DbQueue(object):
                         limit {chunk};
                 """
                 insert_table = "mid.work_concept"
-            elif self.myclass == models.Work and run_method=="mint":
-                text_query_pattern_select = """
-                    select work_id from mid.work_match_recordthresher wrt
-                    left outer join mid.work work on wrt.work_id=work.paper_id
-                    where work.paper_id is null
-                        limit {chunk};
-                """
             elif self.myclass == models.Record:
                text_query_pattern_select = """
                     select id from ins.recordthresher_record 
@@ -296,16 +242,6 @@ class DbQueue(object):
 
         index = 0
         start_time = time()
-
-
-        # if (run_method == "process_record") or (run_method == "add_everything"):
-        #     from app import get_db_cursor
-        #     with get_db_cursor() as cur:
-        #         cur.execute("select max_id from util.max_openalex_id")
-        #         rows = cur.fetchall()
-        #         if rows:
-        #             models.max_openalex_id = rows[0]["max_id"]
-        #             print(f"max_openalex_id: {models.max_openalex_id}")
 
         while True:
             started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
@@ -361,43 +297,6 @@ class DbQueue(object):
                                 objects += object_query.filter(self.myid==id).all()
                             except Exception as e:
                                 print(f"error: failed on {run_method} {id} with error {e}")
-                elif self.myclass == models.Work and (run_method=="mint"):
-                    objects = []
-                    if object_ids:
-                        q = """select work_id, recordthresher_id from mid.work_match_recordthresher
-                            where work_id in ({})
-                        """.format(",".join(str(paper_id) for paper_id in object_ids))
-                        pairs = db.session.execute(text(q)).fetchall()
-
-                        recordthresher_ids = [pair["recordthresher_id"] for pair in pairs]
-                        work_record_dicts = defaultdict(list)
-                        for work_id, recordthresher_id in pairs:
-                            work_record_dicts[work_id] += [recordthresher_id]
-
-                        # get records in bulk to get them fast
-                        try:
-                            query = db.session.query(models.Record).options(
-                                 selectinload(models.Record.journals),
-                                 selectinload(models.Record.unpaywall),
-                                 orm.Load(models.Record).raiseload('*'))
-                            record_objects = query.filter(models.Record.id.in_(recordthresher_ids)).all()
-                        except:
-                            # running in to some "invalid continuation byte" problems, see if I can figure them out
-                            record_objects = []
-                            for id in recordthresher_ids:
-                                try:
-                                    record_objects += query.filter(models.Record.id == id).all()
-                                except Exception as e:
-                                    print(f"error: failed on recordthresher_id {id} with error {e}")
-
-                        objects = []
-                        for work_id in work_record_dicts:
-                            if work_id:
-                                new_work = models.Work()
-                                new_work.paper_id = work_id
-                                new_work.records = [my_record for my_record in record_objects if my_record.id in work_record_dicts[work_id]]
-                                objects += [new_work]
-
                 elif self.myclass == models.Work and run_method.startswith("add_"):
                     try:
                         query = db.session.query(models.Work).options(

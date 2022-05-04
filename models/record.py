@@ -170,12 +170,12 @@ class Record(db.Model):
                 matching_work_id = matching_work.paper_id
             url = f"https://openalex-guts.herokuapp.com/W{matching_work_id}"
             self.work_id = matching_work_id
-            print(f"*********found a match for this work: {url}")
+            print(f"FOUND A MATCH: {url}")
             print(f"don't do anything else with this")
             # don't do anything else
             # sleep(10)
         else:
-            print("_____________no match")
+            print("no match")
             # mint a work
 
             self.mint_work()

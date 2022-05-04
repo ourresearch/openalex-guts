@@ -101,6 +101,8 @@ class Work(db.Model):
     estimated_citation = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
+    full_updated_date = db.Column(db.DateTime)
+
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
     original_venue = db.Column(db.Text)
@@ -142,6 +144,8 @@ class Work(db.Model):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
     def add_work_concepts(self):
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
         api_key = os.getenv("SAGEMAKER_API_KEY")
         has_abstract = True if self.abstract_indexed_abstract else False
         data = {
@@ -164,6 +168,7 @@ class Work(db.Model):
             concept_names = None
 
         self.concepts_for_related_works = []
+        fields_of_study = []
         if concept_names:
             # concept_names_string = "({})".format(", ".join(["'{}'".format(concept_name) for concept_name in concept_names]))
             # q = """
@@ -177,6 +182,8 @@ class Work(db.Model):
             for i, concept_name in enumerate(concept_names):
                 score = response_json[0]["scores"][i]
                 field_of_study = response_json[0]["tag_ids"][i]
+                if field_of_study:
+                    fields_of_study += [field_of_study]
                 self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
                                                        "field_of_study": field_of_study,
                                                        "score": score,
@@ -192,7 +199,10 @@ class Work(db.Model):
                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
         self.delete_dict["WorkConceptFull"] += [self.id]
 
-
+        # need to do it this way because updating concept table not the materialized view
+        update_concepts_sql = "update mid.concept set full_updated_date = now() where field_of_study_id in %s;"
+        with get_db_cursor(readonly=False) as cur:
+            cur.execute(update_concepts_sql, (tuple(fields_of_study), ))
 
     def add_everything(self):
         self.delete_dict = defaultdict(list)
@@ -226,6 +236,8 @@ class Work(db.Model):
                 return
             if not self.concepts_for_related_works:
                 return
+
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
         # if not hasattr(self, "insert_dicts"):
         #     self.insert_dicts = []
@@ -271,6 +283,7 @@ class Work(db.Model):
 
     def add_abstract(self):
         self.abstract_indexed_abstract = None
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.abstract:
                 indexed_abstract = f_generate_inverted_index(record.abstract)
@@ -284,6 +297,8 @@ class Work(db.Model):
                 return
 
     def add_mesh(self):
+        self.mesh = []
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
@@ -294,21 +309,24 @@ class Work(db.Model):
                 return
 
     def add_ids(self):
+        # this one appends, doesn't clear out old values
         for record in self.records:
             if record.pmid:
+                self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
                 self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
                 return
 
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
+        self.locations = []
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
         records_with_unpaywall = [record for record in self.records_sorted if hasattr(record, "unpaywall") and record.unpaywall]
         if not records_with_unpaywall:
             return
         record_to_use = records_with_unpaywall[0]
 
-        self.locations = []
         for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
             insert_dict = {
                 "paper_id": self.id,
@@ -337,6 +355,9 @@ class Work(db.Model):
         citation_pmids = []
         citation_paper_ids = []
 
+        self.citation_paper_ids = []
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
         for record in self.records:
             if record.citations:
                 try:
@@ -347,11 +368,18 @@ class Work(db.Model):
                     print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
-            citation_paper_ids += [row[0] for row in db.session.query(Work.paper_id).filter(Work.doi_lower.in_(citation_dois)).all()]
+            works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
+            for my_work in works:
+                my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            citation_paper_ids += [row.paper_id for row in works]
         if citation_pmids:
-            citation_paper_ids += [row[0] for row in db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()]
+            work_ids = db.session.query(WorkExtraIds).options(orm.Load(Work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
+            for my_work_id in work_ids:
+                my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            citation_paper_ids += [row.paper_id for row in work_ids]
         citation_paper_ids = list(set(citation_paper_ids))
-        self.citation_paper_ids = citation_paper_ids
+        if citation_paper_ids:
+            self.citation_paper_ids = citation_paper_ids
 
         # for reference_id in citation_paper_ids:
             # self.insert_dicts += [{"Citation": {insert_dicts
@@ -362,6 +390,7 @@ class Work(db.Model):
 
     def add_affiliations(self):
         self.affiliations = []
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
@@ -396,15 +425,22 @@ class Work(db.Model):
                     match_name=author_match_name,
                     paper_count=1,
                     created_date=datetime.datetime.utcnow().isoformat(),
+                    full_updated_date=datetime.datetime.utcnow().isoformat(),
                     updated_date=datetime.datetime.utcnow().isoformat())
                 if original_orcid:
                     my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
                     my_author.orcids = [my_author_orcid]
 
+            if my_author:
+                my_author.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
+
             for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institution = models.Institution.try_to_match(raw_affiliation_string)
+                if my_institution:
+                    my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
+
                 if my_institution and my_author:
                     my_author.last_known_affiliation_id = my_institution.affiliation_id
                 if raw_author_string or raw_affiliation_string:
@@ -500,6 +536,7 @@ class Work(db.Model):
         self.paper_title = normalize_simple(record.title, remove_articles=False, remove_spaces=False)
         self.doc_type = record.normalized_doc_type
         self.updated_date = datetime.datetime.utcnow().isoformat()
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
         self.unpaywall_normalize_title = record.normalized_title
 
         # ideally this would also handle non-normalized journals but that info isn't in recordthresher yet
@@ -508,6 +545,7 @@ class Work(db.Model):
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
             self.publisher = record.journal.publisher
             self.journal_id = record.journal.journal_id
+            record.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
         self.doi = record.doi
         self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
@@ -538,6 +576,7 @@ class Work(db.Model):
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
         self.finished = datetime.datetime.utcnow().isoformat()
 
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
@@ -566,21 +605,6 @@ class Work(db.Model):
             # insert_dict[key] = getattr(self, key)
             setattr(self, key, getattr(self, key))
         # self.insert_dicts += [{"Work": insert_dict}]
-
-
-    def mint(self):
-        from models import Record
-
-        print(f"minting! {self.id}")
-        self.set_fields_from_all_records()
-
-        insert_dict = {}
-        work_insert_fieldnames = Work.__table__.columns.keys()
-        for key in work_insert_fieldnames:
-            # insert_dict[key] = getattr(self, key)
-            setattr(self, key, getattr(self, key))
-        # self.insert_dicts = [{"Work": insert_dict}]
-        print(f"done! {self.id}")
 
     @cached_property
     def is_retracted(self):
@@ -783,14 +807,6 @@ class Work(db.Model):
         }
         return response
 
-    @cached_property
-    def updated_json_response_date(self):
-        updated_date = self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date[0:10]
-        for related_work in self.related_works:
-            if related_work.updated.isoformat() > updated_date:
-                updated_date = related_work.updated.isoformat()[0:10]
-        return updated_date
-
     def to_dict(self, return_level="full"):
         from models import Venue
 
@@ -845,7 +861,7 @@ class Work(db.Model):
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
-            response["updated_date"] = self.updated_json_response_date
+            response["updated_date"] = self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10]
             response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
 
         # only include non-null IDs

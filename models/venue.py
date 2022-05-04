@@ -33,8 +33,9 @@ class Venue(db.Model):
     webpage = db.Column(db.Text)
     paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
-    updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
+    updated_date = db.Column(db.DateTime)
+    full_updated_date = db.Column(db.DateTime)
 
     @property
     def openalex_id(self):
@@ -142,7 +143,7 @@ class Venue(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
-                "updated_date": self.updated_date.isoformat()[0:10] if isinstance(self.updated_date, datetime.datetime) else self.updated_date[0:10],
+                "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 
