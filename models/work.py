@@ -445,8 +445,10 @@ class Work(db.Model):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institution = models.Institution.try_to_match(raw_affiliation_string)
-                if my_institution:
-                    my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
+
+                # comment this out for now because it is too slow, but later comment it back in
+                # if my_institution:
+                #     my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
                 if my_institution and my_author:
                     my_author.last_known_affiliation_id = my_institution.affiliation_id
