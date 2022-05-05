@@ -11,22 +11,26 @@ from app import db
 class Unpaywall(object):
 
     def __init__(self, doi):
+        self.response = None
         self.doi = doi
         # print(f"calling unpaywall api for workaround for now till we get data in postgres")
         start_time = time()
         url = f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org"
-        r = requests.get(url)
-        self.response = r.json()
-        print(f"called unpaywall for workaround for now till we get data in postgres with {url} took {elapsed(start_time)}")
+        try:
+            r = requests.get(url)
+            self.response = r.json()
+            print(f"called unpaywall for workaround for now till we get data in postgres with {url} took {elapsed(start_time)}")
+        except Exception as e:
+            print(f"error {e} calling unpaywall with {url}")
         super(Unpaywall, self).__init__()
 
     @cached_property
     def oa_status(self):
-        return self.response.get("oa_status", None)
+        return self.response.get("oa_status", None) if self.response else None
 
     @cached_property
     def is_paratext(self):
-        return self.response.get("is_paratext", None)
+        return self.response.get("is_paratext", None) if self.response else None
 
     @cached_property
     def best_oa_location(self):
