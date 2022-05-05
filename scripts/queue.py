@@ -307,7 +307,8 @@ class DbQueue(object):
                 elif self.myclass == models.Work and run_method.startswith("add_"):
                     try:
                         query = db.session.query(models.Work).options(
-                             selectinload(models.Work.records),
+                             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+                             selectinload(models.Work.records).raiseload('*'),
                              selectinload(models.Work.locations),
                              selectinload(models.Work.journal).raiseload('*'),
                              selectinload(models.Work.references),
