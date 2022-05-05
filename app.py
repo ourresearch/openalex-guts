@@ -80,7 +80,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppress warning
 
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
-# app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_ECHO'] = True
 
 database_to_use = os.getenv("DATABASE_TO_USE", "")
 MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
