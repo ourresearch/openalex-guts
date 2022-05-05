@@ -840,7 +840,7 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
 
-        updated_date = None
+        updated_date = self.updated_date # backup in case full_updated_date is null waiting for update
         if self.full_updated_date:
             if isinstance(self.full_updated_date, datetime.datetime):
                 updated_date = self.full_updated_date.isoformat()[0:10]
