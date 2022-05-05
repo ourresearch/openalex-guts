@@ -1,6 +1,6 @@
 web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
 
-run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=100 --name=queue_record$DYNO
+run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=1000 --name=queue_record$DYNO
 
 run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=100 --name=$DYNO --randstart
 
