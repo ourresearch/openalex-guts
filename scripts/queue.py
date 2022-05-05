@@ -350,8 +350,8 @@ class DbQueue(object):
                          orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Author:
                     objects = db.session.query(models.Author).options(
-                         # selectinload(models.Author.counts_by_year_papers),
-                         # selectinload(models.Author.counts_by_year_citations),
+                         selectinload(models.Author.counts_by_year_papers).raiseload('*'),
+                         selectinload(models.Author.counts_by_year_citations).raiseload('*'),
                          selectinload(models.Author.alternative_names),
                          selectinload(models.Author.author_concepts).raiseload('*'),
                          selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
@@ -361,12 +361,10 @@ class DbQueue(object):
                          orm.Load(models.Author).lazyload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Institution:
                     objects = db.session.query(models.Institution).options(
-                         # selectinload(models.Institution.counts_by_year_papers),
-                         # selectinload(models.Institution.counts_by_year_citations),
+                         selectinload(models.Institution.counts_by_year_papers.raiseload('*')),
+                         selectinload(models.Institution.counts_by_year_citations.raiseload('*')),
                          selectinload(models.Institution.ror).raiseload('*'),
                          orm.Load(models.Institution).lazyload('*')).filter(self.myid.in_(object_ids)).all()
-                         # selectinload(models.Institution.counts_by_year_papers),
-                         # selectinload(models.Institution.counts_by_year_citations),
                          # selectinload(models.Institution.ror).raiseload('*'),
                          # orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
@@ -378,8 +376,6 @@ class DbQueue(object):
                          # selectinload(models.Concept.counts_by_year_citations),
                          selectinload(models.Concept.ancestors),
                          orm.Load(models.Concept).lazyload('*')).filter(self.myid.in_(object_ids)).all()
-                         # selectinload(models.Concept.counts_by_year_papers),
-                         # selectinload(models.Concept.counts_by_year_citations),
                          # selectinload(models.Concept.ancestors),
                          # orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Venue:
