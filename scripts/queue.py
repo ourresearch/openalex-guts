@@ -346,7 +346,7 @@ class DbQueue(object):
                          selectinload(models.Record.work_matches_by_title).raiseload('*'),
                          selectinload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
                          selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-                         selectinload(models.Record.journals),
+                         selectinload(models.Record.journals).raiseload('*'),
                          orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
                 elif self.myclass == models.Author:
                     objects = db.session.query(models.Author).options(
