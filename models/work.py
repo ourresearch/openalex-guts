@@ -380,7 +380,7 @@ class Work(db.Model):
                 my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [row.paper_id for row in works]
         if citation_pmids:
-            work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
+            work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
             for my_work_id in work_ids:
                 my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [row.paper_id for row in work_ids]
