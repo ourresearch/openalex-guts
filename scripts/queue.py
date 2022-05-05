@@ -12,6 +12,8 @@ from collections import defaultdict
 import argparse
 import logging
 import os
+import random
+import string
 
 from app import db
 from app import logger
@@ -234,10 +236,12 @@ class DbQueue(object):
                 """
                 insert_table = "mid.work_concept"
             elif self.myclass == models.Record:
-               text_query_pattern_select = """
+                # first_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                # second_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                text_query_pattern_select = """
                     select id from ins.recordthresher_record 
                     where work_id is null
-                    -- order by random() 
+                    order by random() 
                     limit {chunk};
                 """
             else:
