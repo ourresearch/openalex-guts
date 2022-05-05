@@ -840,6 +840,12 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
 
+        updated_date = None
+        if self.full_updated_date:
+            if isinstance(self.full_updated_date, datetime.datetime):
+                updated_date = self.full_updated_date.isoformat()[0:10]
+            else:
+                updated_date = self.full_updated_date[0:10]
         if return_level in ("full", "store"):
             response.update({
                 # "doc_type": self.doc_type,
@@ -862,7 +868,7 @@ class Work(db.Model):
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
-            response["updated_date"] = self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10]
+            response["updated_date"] = updated_date
             response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
 
         # only include non-null IDs
