@@ -446,7 +446,7 @@ class Work(db.Model):
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institution = models.Institution.try_to_match(raw_affiliation_string)
 
-                # comment this out for now because it is too slow, but later comment it back in
+                # comment this out for now because it is too slow for some reason, but later comment it back in
                 # if my_institution:
                 #     my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
@@ -479,9 +479,9 @@ class Work(db.Model):
 
         self.original_venue = record.venue_name
         if record.journal:
+            self.journal = record.journal
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
             self.publisher = record.journal.publisher
-            self.journal_id = record.journal.journal_id
             record.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
         self.doi = record.doi

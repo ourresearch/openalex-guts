@@ -112,7 +112,8 @@ class Record(db.Model):
     def journal(self):
         if not self.journals:
             return None
-        return self.journals[0]
+        sorted_journals = sorted(self.journals, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+        return sorted_journals[0]
 
 
     def get_or_mint_work(self):
