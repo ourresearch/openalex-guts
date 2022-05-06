@@ -11,7 +11,7 @@ class Mesh(db.Model):
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     descriptor_ui = db.Column(db.Text, primary_key=True)
     descriptor_name = db.Column(db.Text)
-    qualifier_ui = db.Column(db.Text)
+    qualifier_ui = db.Column(db.Text, primary_key=True)
     qualifier_name = db.Column(db.Text)
     is_major_topic = db.Column(db.Boolean)
 
