@@ -479,10 +479,15 @@ class Work(db.Model):
 
         self.original_venue = record.venue_name
         if record.journal:
-            self.journal = record.journal
+            print(f"record.journal: {record.journal}")
+            print(f"self.journal: {self.journal}")
+            self.journal_id = record.journal.journal_id
+            print("set worked ok")
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
             self.publisher = record.journal.publisher
-            record.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
+
+            # don't include line below, it makes sqlalchemy errors, handle another way
+            # self.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
         self.doi = record.doi
         self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
