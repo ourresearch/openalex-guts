@@ -309,7 +309,11 @@ class Work(db.Model):
         for record in self.records:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
-                self.mesh = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
+                mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
+                for mesh_object in mesh_objects:
+                    if mesh_object.qualifier_ui == None:
+                        mesh_object.qualifier_ui = ""  # can't be null for primary key
+                self.mesh = mesh_objects
                 # for mesh_dict in mesh_dict_list:
                 #     mesh_dict["paper_id"] = self.paper_id
                 #     self.insert_dicts += [{"Mesh": mesh_dict}]
