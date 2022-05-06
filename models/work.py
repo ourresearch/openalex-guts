@@ -479,10 +479,7 @@ class Work(db.Model):
 
         self.original_venue = record.venue_name
         if record.journal:
-            print(f"record.journal: {record.journal}")
-            print(f"self.journal: {self.journal}")
             self.journal_id = record.journal.journal_id
-            print("set worked ok")
             self.original_venue = record.journal.display_name  # overwrite record.venue_name if have a normalized name
             self.publisher = record.journal.publisher
 
