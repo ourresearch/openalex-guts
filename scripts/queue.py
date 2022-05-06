@@ -197,7 +197,7 @@ class DbQueue(object):
                 # text_query_pattern_select = """select 4214704367"""
                 text_query_pattern_select = """
                     select paper_id from mid.work
-                        where updated_date is null
+                        where full_updated_date is null
                         order by random() 
                         limit {chunk}; """
             elif run_method == "add_related_works":
