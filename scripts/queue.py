@@ -112,12 +112,13 @@ class DbQueue(object):
         # set to False if want to test without committing anything
         if True:
 
+            # don't use safe_commit for now, want to see the db errors clearly
             if self.myclass == models.Concept and method_name=="clean_metadata":
-                safe_commit(db)
+                db.session.commit()
             if self.myclass == models.Record and method_name=="process_record":
-                safe_commit(db)
+                db.session.commit()
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
-                safe_commit(db)
+                db.session.commit()
 
             delete_dict_all_objects = defaultdict(list)
             insert_dict_all_objects = defaultdict(list)
