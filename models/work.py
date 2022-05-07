@@ -325,7 +325,8 @@ class Work(db.Model):
             if record.pmid:
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
-                self.extra_ids = [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
+                if record.pmid not in [extra.attribute_value for extra in self.extra_ids if extra.attribute_type==2]:
+                    self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
                 return
 
     def add_locations(self):
