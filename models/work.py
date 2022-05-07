@@ -461,7 +461,7 @@ class Work(db.Model):
                         author_sequence_number=author_sequence_order+1,
                         affiliation_sequence_number=affiliation_sequence_order+1,
                         original_author=raw_author_string,
-                        original_affiliation=raw_affiliation_string[:2500],
+                        original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
                         original_orcid=original_orcid,
                         match_author=author_match_name,
                         match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
