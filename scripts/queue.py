@@ -122,7 +122,8 @@ class DbQueue(object):
                 try:
                     db.session.commit()
                 except exc.IntegrityError:
-                    print(f"IntegrityError on commit, so skipping this chunk")
+                    print(f"IntegrityError on commit, so rollback and skipping this chunk")
+                    db.session.rollback()
                     keep_going_committing_chunk = False
 
             if keep_going_committing_chunk:

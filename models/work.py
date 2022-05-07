@@ -320,12 +320,12 @@ class Work(db.Model):
                 return
 
     def add_ids(self):
-        # this one appends, doesn't clear out old values
         for record in self.records:
+            # just pmid for now
             if record.pmid:
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
-                self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
+                self.extra_ids = [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
                 return
 
     def add_locations(self):
@@ -382,12 +382,12 @@ class Work(db.Model):
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
             for my_work in works:
                 my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
-            citation_paper_ids += [row.paper_id for row in works]
+            citation_paper_ids += [row.paper_id for row in works if row.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
             for my_work_id in work_ids:
                 my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
-            citation_paper_ids += [row.paper_id for row in work_ids]
+            citation_paper_ids += [row.paper_id for row in work_ids if row.paper_id]
         citation_paper_ids = list(set(citation_paper_ids))
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids
