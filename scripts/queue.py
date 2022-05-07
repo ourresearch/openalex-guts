@@ -121,8 +121,8 @@ class DbQueue(object):
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
                     db.session.commit()
-                except exc.IntegrityError:
-                    print(f"IntegrityError on commit, so rollback and skipping this chunk")
+                except exc.IntegrityError as e:
+                    print(f"IntegrityError on commit, so rollback and skipping this chunk.  Error message {e}")
                     db.session.rollback()
                     keep_going_committing_chunk = False
 
