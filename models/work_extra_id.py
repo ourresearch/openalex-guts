@@ -10,8 +10,8 @@ class WorkExtraIds(db.Model):
     __tablename__ = "work_extra_ids"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    attribute_type = db.Column(db.Numeric)
-    attribute_value = db.Column(db.Text)
+    attribute_type = db.Column(db.Numeric, primary_key=True)
+    attribute_value = db.Column(db.Text, primary_key=True)
 
     @property
     def id_type(self):
