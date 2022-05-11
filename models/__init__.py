@@ -76,8 +76,33 @@ Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='s
 Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', cascade="all, delete-orphan")
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', cascade="all, delete-orphan")
 
-Record.journals = db.relationship("Venue", lazy='selectin', uselist=True)  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
+# join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
+Record.journals = db.relationship("Venue",
+                                  lazy='selectin',
+                                  uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
+                                  viewonly=True,
+                                  primaryjoin="remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%')")
+
 # Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
+
+Record.work_matches_by_title = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        uselist=True,
+        # foreign_keys="Work.match_title",
+        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 20, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
+    )
+
+Record.work_matches_by_doi = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        uselist=True,
+        # foreign_keys="Work.doi_lower",
+        primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
+    )
+
 
 def author_from_id(author_id):
     return Author.query.filter(Author.author_id==author_id).first()
