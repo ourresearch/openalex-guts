@@ -131,13 +131,14 @@ class Record(db.Model):
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.authors:
+                    if not self.authors or self.authors=='[]':
                         # is considered a match
                         matching_work = matching_work_temp
                         print(f"no authors for {self.id}, so considering it an author match")
                         break
 
-                    if matching_work_temp.matches_authors_in_record(self.authors):
+                    author_json_string = self.authors
+                    if matching_work_temp.matches_authors_in_record(author_json_string):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
                         break

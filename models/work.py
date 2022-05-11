@@ -51,7 +51,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
-        print(f"error: status code {r} reason {r.reason}")
+        print(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
         return []
 
     api_json = r.json()
@@ -614,7 +614,7 @@ class Work(db.Model):
         try:
             author_dict_list = json.loads(record_author_json)
         except Exception as e:
-            print(f"error: {e}")
+            print(f"error in author_match_names_from_record_json: {e}")
             return []
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
@@ -637,6 +637,9 @@ class Work(db.Model):
         # returns False if both have authors but neither the first nor last author in the Work is in the author string
 
         if not record_author_json:
+            print("no record_author_json, so not trying to match")
+            return True
+        if record_author_json == '[]':
             print("no record_author_json, so not trying to match")
             return True
         if not self.affiliations:
