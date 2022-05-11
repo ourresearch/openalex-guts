@@ -246,8 +246,16 @@ class DbQueue(object):
             elif self.myclass == models.Record:
                 # first_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
                 # second_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+
+                # CATCHUP temporarily other table
+                # text_query_pattern_select = """
+                #     select id from ins.recordthresher_record
+                #     where work_id is null
+                #     order by random()
+                #     limit {chunk};
+                # """
                 text_query_pattern_select = """
-                    select id from ins.recordthresher_record 
+                    select id from ins.recordthresher_record_catchup 
                     where work_id is null
                     order by random() 
                     limit {chunk};

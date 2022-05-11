@@ -221,7 +221,10 @@ class Work(db.Model):
         self.set_fields_from_all_records()
         self.add_abstract() # must be before work_concepts
         self.add_work_concepts()
-        self.add_related_works()  # must be after work_concepts
+
+        # CATCHUP this is very slow, so comment out for now. comment back in once missing crossref dois are added, and run backfill
+        # self.add_related_works()  # must be after work_concepts
+
         self.add_mesh()
         self.add_ids()
         self.add_locations()
@@ -381,14 +384,20 @@ class Work(db.Model):
 
         if citation_dois:
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
-            for my_work in works:
-                my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
+
+            # CATCHUP comment out for now. comment back in once missing crossref dois are added
+            # for my_work in works:
+            #     my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
+
             citation_paper_ids += [work.paper_id for work in works if work.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
-            for my_work_id in work_ids:
-                if my_work_id.work:
-                    my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
+
+            # CATCHUP comment out for now. comment back in once missing crossref dois are added
+            # for my_work_id in work_ids:
+            #     if my_work_id.work:
+            #         my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
+
             citation_paper_ids += [work_id.paper_id for work_id in work_ids if work_id and work_id.paper_id]
         citation_paper_ids = list(set(citation_paper_ids))
         if citation_paper_ids:

@@ -23,7 +23,8 @@ from util import normalize_title_like_sql
 
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
-    __tablename__ = "recordthresher_record"
+    # __tablename__ = "recordthresher_record"
+    __tablename__ = "recordthresher_record_catchup"  # CATCHUP modification, temporary
 
     id = db.Column(db.Text, primary_key=True)
     updated = db.Column(db.DateTime)
@@ -80,24 +81,6 @@ class Record(db.Model):
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
-
-    work_matches_by_title = db.relationship(
-        'Work',
-        lazy='subquery',
-        viewonly=True,
-        uselist=True,
-        # foreign_keys="Work.match_title",
-        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 20, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
-    )
-
-    work_matches_by_doi = db.relationship(
-        'Work',
-        lazy='subquery',
-        viewonly=True,
-        uselist=True,
-        # foreign_keys="Work.doi_lower",
-        primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
-    )
 
     @property
     def score(self):
