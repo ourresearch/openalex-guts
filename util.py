@@ -984,7 +984,7 @@ def matching_author_string(origName):
             response = "{};{}".format(last, first_initial)
 
     except Exception as e:
-        print(f"Exception {e} {e.message}")
+        print(f"Exception in matching_author_string {e} {e.message}")
         pass
 
 
