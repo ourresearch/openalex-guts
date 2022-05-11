@@ -165,6 +165,7 @@ class Record(db.Model):
         return
 
 
+
     def mint_work(self):
         from models import Work
 
