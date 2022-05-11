@@ -114,7 +114,7 @@ def finish_object_ids(object_ids):
     '''
 
     db.session.execute(text(query_text).bindparams(ids=object_ids))
-    logger.info(f'finished_queue_chunk in {elapsed(start_time, 4)}s')
+    logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
 
 
 def get_objects(object_ids):
