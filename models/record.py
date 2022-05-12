@@ -59,7 +59,7 @@ class Record(db.Model):
     # venue links
     repository_id = db.Column(db.Text)
     journal_id = db.Column(db.Text)
-    journal_issn_l = db.Column(db.Text, db.ForeignKey("mid.journal.issn"))
+    journal_issn_l = db.Column(db.Text)
     venue_name = db.Column(db.Text)
 
     # record data
