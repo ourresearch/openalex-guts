@@ -7,13 +7,13 @@ from sqlalchemy.orm import selectinload
 import models
 from app import db
 from app import logger
-from scripts.queue import JsonAuthors
+from scripts.queue import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 from util import elapsed
 
 
 def run(**kwargs):
     if single_id := kwargs.get('id'):
-        if objects := get_objects([single_id]):
+        if objects := get_author_objects([single_id]):
             logger.info(f'found object {objects[0]}')
             store_json_objects(objects)
             db.session.commit()
@@ -27,7 +27,7 @@ def run(**kwargs):
         while limit is None or objects_updated < limit:
             loop_start = time()
             if object_ids := fetch_queue_chunk_ids(chunk):
-                objects = get_objects(object_ids)
+                objects = get_author_objects(object_ids)
                 store_json_objects(objects)
                 finish_object_ids(object_ids)
 
@@ -74,7 +74,7 @@ def store_json_objects(objects):
 def fetch_queue_chunk_ids(chunk_size):
     text_query = """
           with chunk as (
-              select author_id
+              select id
               from queue.author_store
               where started is null
               order by
@@ -86,8 +86,8 @@ def fetch_queue_chunk_ids(chunk_size):
           update queue.author_store
           set started = now()
           from chunk
-          where queue.author_store.author_id = chunk.author_id
-          returning chunk.author_id;
+          where queue.author_store.id = chunk.id
+          returning chunk.id;
     """
 
     logger.info(f'getting {chunk_size} ids from the queue')
@@ -110,14 +110,14 @@ def finish_object_ids(object_ids):
     query_text = '''
         update queue.author_store
         set finished = now(), started=null
-        where author_id = any(:ids)
+        where id = any(:ids)
     '''
 
     db.session.execute(text(query_text).bindparams(ids=object_ids))
     logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
 
 
-def get_objects(object_ids):
+def get_author_objects(object_ids):
     logger.info(f'getting {len(object_ids)} objects')
 
     start_time = time()
@@ -130,19 +130,21 @@ def get_objects(object_ids):
         selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
         selectinload(models.Author.last_known_institution).raiseload('*'),
         orm.Load(models.Author).raiseload('*')
-    ).filter(models.Author.author_id.in_(object_ids)).all()
+    ).filter(models.Author.id.in_(object_ids)).all()
 
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
-
     return objects
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Store author JSON.")
+    parser = argparse.ArgumentParser(description="Run fast queue.")
     parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many objects to work on")
     parser.add_argument(
         '--chunk', "-ch", nargs="?", default=100, type=int, help="how many objects to take off the queue at once"
     )
+    # table
+    # method
+
     parsed_args = parser.parse_args()
     run(**vars(parsed_args))

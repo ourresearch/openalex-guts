@@ -421,9 +421,9 @@ class Work(db.Model):
 
         record = records_with_affiliations[0]
         try:
-            author_dict_list = json.loads(record.authors)
+            author_dict_list = record.authors
         except Exception as e:
-            print(f"error json parsing authors, but continuing on other papers {self.paper_id} {e}")
+            print(f"error in add_affiliations for {self.paper_id} {e}")
             return
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
@@ -449,6 +449,7 @@ class Work(db.Model):
                     created_date=datetime.datetime.utcnow().isoformat(),
                     full_updated_date=datetime.datetime.utcnow().isoformat(),
                     updated_date=datetime.datetime.utcnow().isoformat())
+                my_author.queue = models.QueueAuthors()
                 if original_orcid:
                     my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
                     my_author.orcids = [my_author_orcid]
