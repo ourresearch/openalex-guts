@@ -137,6 +137,7 @@ class Record(db.Model):
                         print(f"no authors for {self.id}, so considering it an author match")
                         break
 
+                    # make a copy so isn't overritten w json
                     author_json_string = self.authors.copy()
                     if matching_work_temp.matches_authors_in_record(author_json_string):
                         matching_work = matching_work_temp
