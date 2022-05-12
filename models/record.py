@@ -131,16 +131,13 @@ class Record(db.Model):
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.authors or self.authors=='[]':
+                    if not self.authors or self.authors == []:
                         # is considered a match
                         matching_work = matching_work_temp
                         print(f"no authors for {self.id}, so considering it an author match")
                         break
 
-                    # make a copy so isn't overritten w json
-                    author_json_string = self.authors.copy() if self.authors else None
-
-                    if matching_work_temp.matches_authors_in_record(author_json_string):
+                    if matching_work_temp.matches_authors_in_record(self.authors):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
                         break
@@ -170,6 +167,7 @@ class Record(db.Model):
 
     def mint_work(self):
         from models import Work
+        from models import QueueWorks
 
         journal_id = self.journal.journal_id if self.journal else None
 
@@ -183,6 +181,7 @@ class Record(db.Model):
         new_work.journal_id = journal_id
         new_work.genre = self.normalized_work_type
         new_work.doc_type = self.normalized_doc_type
+        new_work.queue = QueueWorks()
         db.session.add(new_work)
         self.work = new_work
 
@@ -230,7 +229,7 @@ class Record(db.Model):
             "abstract": self.abstract[:100] if self.abstract else None,
             "mesh": json.loads(self.mesh) if self.mesh else None,
             "citations": json.loads(self.citations) if self.citations else None,
-            "authors": json.loads(self.authors) if self.authors else None,
+            "authors": self.authors if self.authors else None,
             "repository_id": self.repository_id,
             "journal_id": self.journal_id,
             "journal_issn_l": self.journal_issn_l,

@@ -348,6 +348,7 @@ class DbQueue(object):
                                 objects += query.filter(self.myid==id).all()
                             except Exception as e:
                                 print(f"error: failed on {run_method} {id} with error {e}")
+
                 elif self.myclass == models.Work and run_method=="new_work_concepts":
                     q = """select work.paper_id, work.paper_title, work.doc_type, 
                             journal.display_name as journal_title, abstract.indexed_abstract
