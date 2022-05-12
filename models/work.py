@@ -613,6 +613,9 @@ class Work(db.Model):
             return []
         try:
             author_dict_list = json.loads(record_author_json)
+        except TypeError as e:
+            print(f"error in author_match_names_from_record_json, but continuing: {e}")
+            author_dict_list = record_author_json
         except Exception as e:
             print(f"error in author_match_names_from_record_json: {e}")
             return []

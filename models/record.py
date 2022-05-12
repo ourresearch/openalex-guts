@@ -138,7 +138,8 @@ class Record(db.Model):
                         break
 
                     # make a copy so isn't overritten w json
-                    author_json_string = self.authors.copy()
+                    author_json_string = self.authors.copy() if self.authors else None
+
                     if matching_work_temp.matches_authors_in_record(author_json_string):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
