@@ -311,7 +311,7 @@ class Work(db.Model):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.mesh:
-                mesh_dict_list = json.loads(record.mesh)
+                mesh_dict_list = record.mesh
                 mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
                 for mesh_object in mesh_objects:
                     if mesh_object.qualifier_ui == None:
@@ -376,7 +376,7 @@ class Work(db.Model):
         for record in self.records:
             if record.citations:
                 try:
-                    citations_dict_list = json.loads(record.citations)
+                    citations_dict_list = record.citations
                     citation_dois += [clean_doi(my_dict.get("doi", None)) for my_dict in citations_dict_list if my_dict.get("doi", None)]
                     citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
                 except Exception as e:
@@ -613,9 +613,6 @@ class Work(db.Model):
         if not record_author_json:
             return []
         try:
-            author_dict_list = json.loads(record_author_json)
-        except TypeError as e:
-            # print(f"error in author_match_names_from_record_json, but continuing: {e}")
             author_dict_list = record_author_json
         except Exception as e:
             print(f"error in author_match_names_from_record_json: {e}")
