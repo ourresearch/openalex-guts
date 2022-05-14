@@ -51,7 +51,8 @@ Work.records = db.relationship("Record", lazy='selectin', backref="work")  # nor
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work") #don't delete orphan
+Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.concepts_full = db.relationship("WorkConceptFull", lazy='selectin', backref="work", cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author") # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan

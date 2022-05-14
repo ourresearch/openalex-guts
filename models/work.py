@@ -145,6 +145,7 @@ class Work(db.Model):
 
     def add_work_concepts(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
+        self.concepts_full = []
 
         api_key = os.getenv("SAGEMAKER_API_KEY")
         has_abstract = True if self.abstract_indexed_abstract else False
@@ -184,25 +185,32 @@ class Work(db.Model):
                 field_of_study = response_json[0]["tag_ids"][i]
                 if field_of_study:
                     fields_of_study += [field_of_study]
-                self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
-                                                       "field_of_study": field_of_study,
-                                                       "score": score,
-                                                       "algorithm_version": 2,
-                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
+                new_work_concept = models.WorkConceptFull(field_of_study=field_of_study,
+                                                       score=score,
+                                                       algorithm_version=2,
+                                                       updated_date=datetime.datetime.utcnow().isoformat())
+                self.concepts_full += [new_work_concept]
+                # self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
+                #                                        "field_of_study": field_of_study,
+                #                                        "score": score,
+                #                                        "algorithm_version": 2,
+                #                                         "updated_date": datetime.datetime.utcnow().isoformat()}}]
                 if score > 0.3:
                     self.concepts_for_related_works.append(field_of_study)
         else:
-            self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
-                                                       "field_of_study": None,
-                                                       "score": None,
-                                                       "algorithm_version": 2,
-                                                       "updated_date": datetime.datetime.utcnow().isoformat()}}]
-        self.delete_dict["WorkConceptFull"] += [self.id]
+            pass
+            # self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
+            #                                            "field_of_study": None,
+            #                                            "score": None,
+            #                                            "algorithm_version": 2,
+            #                                            "updated_date": datetime.datetime.utcnow().isoformat()}}]
+        # self.delete_dict["WorkConceptFull"] += [self.id]
 
         # need to do it this way because updating concept table not the materialized view
-        update_concepts_sql = "update mid.concept set full_updated_date = now() where field_of_study_id in %s;"
-        with get_db_cursor(readonly=False) as cur:
-            cur.execute(update_concepts_sql, (tuple(fields_of_study), ))
+        # CATCHUP too slow for now and not sure this is how we should do it anyway
+        # update_concepts_sql = "update mid.concept set full_updated_date = now() where field_of_study_id in %s;"
+        # with get_db_cursor(readonly=False) as cur:
+        #     cur.execute(update_concepts_sql, (tuple(fields_of_study), ))
 
     def add_everything(self):
         self.delete_dict = defaultdict(list)
