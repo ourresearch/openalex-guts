@@ -13,4 +13,5 @@ run_queue_store_concept: python -m scripts.queue --run --table=concept --method=
 run_queue_work_add_related_works: python -m scripts.queue --run --table=work --method=add_related_works --chunk=100 --name=$DYNO
 run_queue_work_add_concepts: python -m scripts.queue --run --table=work --method=new_work_concepts --chunk=10 --name=$DYNO
 
-store_authors: bash scripts/run_author_store_worker.sh
+fast_add_everything: bash scripts/run_add_everything_worker.sh
+fast_store_authors: bash scripts/run_author_store_worker.sh

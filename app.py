@@ -82,24 +82,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppres
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 # app.config['SQLALCHEMY_ECHO'] = True
 
-database_to_use = os.getenv("DATABASE_TO_USE", "")
-MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_BASE"
-if database_to_use.startswith("q") or database_to_use.startswith("h") or (database_to_use=="api") or (database_to_use=="spare"):
-    MY_DATABASE = f"DATABASE_URL_{database_to_use}"
-elif database_to_use == "6-HIGH":
-    MY_DATABASE = "DATABASE_URL_OPENALEX_REDSHIFT_FAST"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("POSTGRES_URL")
 
-MY_DATABASE = "POSTGRES_URL"
-
-print(f"Using database {MY_DATABASE}")
-
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(MY_DATABASE)  # don't use this though, default is unclear, use binds
-app.config["SQLALCHEMY_BINDS"] = {
-    "redshift_db": os.getenv(MY_DATABASE)
-}
-
-database_url = urlparse(os.getenv(MY_DATABASE))
-# database_url = urlparse(os.getenv(MY_DATABASE))
+database_url = urlparse(os.getenv("POSTGRES_URL"))
+# database_url = urlparse(os.getenv("POSTGRES_URL))
 app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
                                   database=database_url.path[1:],
                                   user=database_url.username,
