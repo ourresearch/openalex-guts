@@ -28,6 +28,7 @@ def run(**kwargs):
         objects_updated = 0
         limit = kwargs.get('limit')
         chunk = kwargs.get('chunk')
+        total_count = 0
 
         while limit is None or objects_updated < limit:
             loop_start = time()
@@ -35,8 +36,21 @@ def run(**kwargs):
                 objects = get_objects(entity_type, object_ids)
 
                 for obj in objects:
+                    method_start_time = time()
+                    total_count += 1
+
+                    logger.info("*** #{count} starting {repr}.{method_name}() method".format(
+                        count=total_count,
+                        repr=obj,
+                        method_name=method_name))
+
                     method_to_run = getattr(obj, method_name)
                     method_to_run()
+
+                    logger.info("finished {repr}.{method_name}(). took {elapsed} seconds ***".format(
+                        repr=obj,
+                        method_name=method_name,
+                        elapsed=elapsed(method_start_time, 4)))
 
                 finish_object_ids(queue_table, object_ids)
 
