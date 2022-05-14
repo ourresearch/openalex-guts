@@ -39,18 +39,12 @@ def run(**kwargs):
                     method_start_time = time()
                     total_count += 1
 
-                    logger.info("*** #{count} starting {repr}.{method_name}() method".format(
-                        count=total_count,
-                        repr=obj,
-                        method_name=method_name))
+                    print(f"*** #{total_count} starting {obj}.{method_name}() method")
 
                     method_to_run = getattr(obj, method_name)
                     method_to_run()
 
-                    logger.info("finished {repr}.{method_name}(). took {elapsed} seconds ***".format(
-                        repr=obj,
-                        method_name=method_name,
-                        elapsed=elapsed(method_start_time, 4)))
+                    print(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
 
                 finish_object_ids(queue_table, object_ids)
 
