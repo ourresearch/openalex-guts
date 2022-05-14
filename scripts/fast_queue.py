@@ -12,10 +12,15 @@ from util import elapsed
 
 
 def run(**kwargs):
+    entity_type = kwargs.get("entity")
+    method_name = kwargs.get("method")
+    if entity_type == "work" and method_name == "add_everything":
+        queue_table = "queue.work_add_everything"
+
     if single_id := kwargs.get('id'):
-        if objects := get_author_objects([single_id]):
+        if objects := get_objects(entity_type, [single_id]):
             logger.info(f'found object {objects[0]}')
-            store_json_objects(objects)
+            store_objects(objects)
             db.session.commit()
         else:
             logger.warn(f'found no object with id {single_id}')
@@ -26,10 +31,14 @@ def run(**kwargs):
 
         while limit is None or objects_updated < limit:
             loop_start = time()
-            if object_ids := fetch_queue_chunk_ids(chunk):
-                objects = get_author_objects(object_ids)
-                store_json_objects(objects)
-                finish_object_ids(object_ids)
+            if object_ids := fetch_queue_chunk_ids(queue_table, chunk):
+                objects = get_objects(entity_type, object_ids)
+
+                for obj in objects:
+                    method_to_run = getattr(obj, method_name)
+                    method_to_run()
+
+                finish_object_ids(queue_table, object_ids)
 
                 objects_updated += len(objects)
 
@@ -50,7 +59,7 @@ def run(**kwargs):
                 sleep(5)
 
 
-def store_json_objects(objects):
+def store_objects(objects):
     json_row_dicts = []
     logger.info(f'calculating json rows')
     start_time = time()
@@ -71,11 +80,11 @@ def store_json_objects(objects):
     logger.info(f'merged json rows in {elapsed(start_time, 4)}s')
 
 
-def fetch_queue_chunk_ids(chunk_size):
-    text_query = """
+def fetch_queue_chunk_ids(queue_table, chunk_size):
+    text_query = f"""
           with chunk as (
               select id
-              from queue.author_store
+              from {queue_table}
               where started is null
               order by
                   finished asc nulls first,
@@ -83,10 +92,10 @@ def fetch_queue_chunk_ids(chunk_size):
               limit :chunk
               for update skip locked
           )
-          update queue.author_store
+          update {queue_table}
           set started = now()
           from chunk
-          where queue.author_store.id = chunk.id
+          where {queue_table}.id = chunk.id
           returning chunk.id;
     """
 
@@ -103,12 +112,12 @@ def fetch_queue_chunk_ids(chunk_size):
     return ids
 
 
-def finish_object_ids(object_ids):
+def finish_object_ids(queue_table, object_ids):
     logger.info(f'finishing queue chunk')
     start_time = time()
 
-    query_text = '''
-        update queue.author_store
+    query_text = f'''
+        update {queue_table}
         set finished = now(), started=null
         where id = any(:ids)
     '''
@@ -117,34 +126,56 @@ def finish_object_ids(object_ids):
     logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
 
 
-def get_author_objects(object_ids):
+def get_objects(entity_type, object_ids):
     logger.info(f'getting {len(object_ids)} objects')
 
     start_time = time()
-    objects = db.session.query(models.Author).options(
-        selectinload(models.Author.counts_by_year_papers),
-        selectinload(models.Author.counts_by_year_citations),
-        selectinload(models.Author.alternative_names),
-        selectinload(models.Author.author_concepts),
-        selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
-        selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
-        selectinload(models.Author.last_known_institution).raiseload('*'),
-        orm.Load(models.Author).raiseload('*')
-    ).filter(models.Author.id.in_(object_ids)).all()
-
+    if entity_type == "work":
+        objects = db.session.query(models.Work).options(
+             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+             selectinload(models.Work.records).raiseload('*'),
+             selectinload(models.Work.locations).raiseload('*'),
+             selectinload(models.Work.journal).raiseload('*'),
+             selectinload(models.Work.references).raiseload('*'),
+             selectinload(models.Work.mesh),
+             selectinload(models.Work.counts_by_year).raiseload('*'),
+             selectinload(models.Work.abstract),
+             selectinload(models.Work.extra_ids).raiseload('*'),
+             selectinload(models.Work.related_works).raiseload('*'),
+             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
+             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+             selectinload(models.Work.concepts_full).raiseload('*'),
+             orm.Load(models.Work).raiseload('*')
+        ).filter(models.Work.paper_id.in_(object_ids)).all()
+    elif entity_type == "author":
+        objects = db.session.query(models.Author).options(
+            selectinload(models.Author.counts_by_year_papers),
+            selectinload(models.Author.counts_by_year_citations),
+            selectinload(models.Author.alternative_names),
+            selectinload(models.Author.author_concepts),
+            selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
+            selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
+            selectinload(models.Author.last_known_institution).raiseload('*'),
+            orm.Load(models.Author).raiseload('*')
+        ).filter(models.Author.id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
 
+
+# python -m scripts.fast_queue --entity=work --method=add_everything --limit=3
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run fast queue.")
+    parser.add_argument('--entity', type=str, help="the entity type to run")
+    parser.add_argument('--method', type=str, help="the method to run")
     parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many objects to work on")
     parser.add_argument(
         '--chunk', "-ch", nargs="?", default=100, type=int, help="how many objects to take off the queue at once"
     )
-    # table
-    # method
 
     parsed_args = parser.parse_args()
     run(**vars(parsed_args))
