@@ -1,5 +1,8 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
+RELEASE 2022-05-12
+- added new papers and corresponding data
+
 RELEASE 2022-05-02
 - added new papers and corresponding data
 - updated 8715 issns to Journals

@@ -1,5 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2022-05-12
+- added new papers and corresponding data
+
 RELEASE 2022-04-30
 - added new papers and corresponding data
 - updated 8715 venues that had issn_l listed but no issns in "issns" key
