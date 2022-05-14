@@ -121,7 +121,7 @@ def fetch_queue_chunk_ids(queue_table, chunk_size):
 
 
 def finish_object_ids(queue_table, object_ids):
-    logger.info(f'finishing queue chunk')
+    # logger.info(f'finishing queue chunk')
     start_time = time()
 
     query_text = f'''
@@ -131,7 +131,7 @@ def finish_object_ids(queue_table, object_ids):
     '''
 
     db.session.execute(text(query_text).bindparams(ids=object_ids))
-    logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
+    # logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
 
 
 def get_objects(entity_type, object_ids):
