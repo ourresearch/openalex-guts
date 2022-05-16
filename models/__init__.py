@@ -83,7 +83,7 @@ Record.journals = db.relationship("Venue",
                                   lazy='selectin',
                                   uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
                                   viewonly=True,
-                                  primaryjoin="remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%')")
+                                  primaryjoin="and_(remote(Venue.merge_into_id) == None, remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'))")
 
 # Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
