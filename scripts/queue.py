@@ -57,6 +57,7 @@ class JsonVenues(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
+    merge_into = db.Column(db.BigInteger)
 
 class JsonConcepts(db.Model):
     __table_args__ = {'schema': 'mid'}

@@ -32,10 +32,13 @@ class Venue(db.Model):
     publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
     paper_count = db.Column(db.Numeric)
+    paper_family_count = db.Column(db.Numeric)  # column can be deleted after MAG format goes away
     citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
+    merge_into_id = db.Column(db.BigInteger)
+    merge_into_date = db.Column(db.DateTime)
 
     @property
     def openalex_id(self):
@@ -68,7 +71,12 @@ class Venue(db.Model):
         if len(self.json_save) > 65000:
             print("Error: self.json_save too long for paper_id {}, skipping".format(self.openalex_id))
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"JsonVenues": {"id": self.journal_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
+        self.insert_dicts = [{"JsonVenues": {"id": self.journal_id,
+                                             "updated": updated,
+                                             "json_save": self.json_save,
+                                             "version": VERSION_STRING,
+                                             "merge_into_id": self.merge_into_id
+                                             }}]
 
 
     @cached_property
