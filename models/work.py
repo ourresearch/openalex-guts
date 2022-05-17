@@ -751,32 +751,36 @@ class Work(db.Model):
         # response = [obj.to_dict("minimum") for obj in objs]
         # return response
 
+
     def store(self):
-        VERSION_STRING = "saved on postgres"
+        VERSION_STRING = "postgres fast queue"
 
         # print("processing work! {}".format(self.id))
-        self.json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
-        self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
-        self.json_save_with_abstract = jsonify_fast_no_sort_raw(self.to_dict("full"))
+        json_save = None
+        json_save_with_abstract = None
+        if not self.merge_into_id:
+            json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
+            self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
+            json_save_with_abstract = jsonify_fast_no_sort_raw(self.to_dict("full"))
 
-        # has to match order of get_insert_dict_fieldnames
-        if len(self.json_save) > 65000:
+        if len(json_save) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            self.json_save = None
-        if len(self.json_save_with_abstract) > 65000:
+            json_save = None
+        if len(json_save_with_abstract) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            self.json_save_with_abstract = self.json_save
+            json_save_with_abstract = json_save
         updated = datetime.datetime.utcnow().isoformat()
         self.insert_dicts = [{"JsonWorks": {"id": self.paper_id,
                                             "updated": updated,
-                                            "json_save": self.json_save,
+                                            "json_save": json_save,
                                             "version": VERSION_STRING,
                                             "abstract_inverted_index": self.abstract_inverted_index, # comment out if going fast
-                                            "json_save_with_abstract": self.json_save_with_abstract, # comment out if going fast
+                                            "json_save_with_abstract": json_save_with_abstract, # comment out if going fast
+                                            "merge_into_id": self.merge_into_id
                                             }}]
 
         # print(self.insert_dicts)
-        # print(self.json_save[0:100])
+        # print(json_save[0:100])
 
     @cached_property
     def display_counts_by_year(self):

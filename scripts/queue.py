@@ -33,6 +33,7 @@ class JsonWorks(db.Model):
     version = db.Column(db.Text)
     abstract_inverted_index = db.Column(db.Text)
     json_save_with_abstract = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
 
 class JsonAuthors(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -41,6 +42,7 @@ class JsonAuthors(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
 
 class JsonInstitutions(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -49,6 +51,7 @@ class JsonInstitutions(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
 
 class JsonVenues(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -57,7 +60,7 @@ class JsonVenues(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
-    merge_into = db.Column(db.BigInteger)
+    merge_into_id = db.Column(db.BigInteger)
 
 class JsonConcepts(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -66,6 +69,7 @@ class JsonConcepts(db.Model):
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
 
 class DbQueue(object):
 

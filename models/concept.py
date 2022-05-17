@@ -362,19 +362,23 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        VERSION_STRING = "with concepts fix"
+        from util import jsonify_fast_no_sort_raw
+        VERSION_STRING = "postgres fast queue"
 
-        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
+        json_save = None
+        if not self.merge_into_id:
+            json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
-        # has to match order of get_insert_dict_fieldnames
-        if len(self.json_save) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            self.json_save = None
+        if len(json_save) > 65000:
+            print("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
+            json_save = None
         updated = datetime.datetime.utcnow().isoformat()
         self.insert_dicts = [{"JsonConcepts": {"id": self.field_of_study_id,
-                                               "updated": updated,
-                                               "json_save": self.json_save,
-                                                "version": VERSION_STRING}}]
+                                             "updated": updated,
+                                             "json_save": json_save,
+                                             "version": VERSION_STRING,
+                                             "merge_into_id": self.merge_into_id
+                                             }}]
 
 
     def clean_metadata(self):
