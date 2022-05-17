@@ -289,18 +289,23 @@ class Institution(db.Model):
         return data
 
     def store(self):
-        import datetime
         from util import jsonify_fast_no_sort_raw
-        VERSION_STRING = "with concepts fix"
+        VERSION_STRING = "postgres fast queue"
 
-        self.json_save = jsonify_fast_no_sort_raw(self.to_dict())
+        json_save = None
+        if not self.merge_into_id:
+            json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
-        # has to match order of get_insert_dict_fieldnames
-        if len(self.json_save) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            self.json_save = None
+        if len(json_save) > 65000:
+            print("Error: json_save too long for affiliation_id {}, skipping".format(self.openalex_id))
+            json_save = None
         updated = datetime.datetime.utcnow().isoformat()
-        self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id, "updated": updated, "json_save": self.json_save, "version": VERSION_STRING}}]
+        self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id,
+                                             "updated": updated,
+                                             "json_save": json_save,
+                                             "version": VERSION_STRING,
+                                             "merge_into_id": self.merge_into_id
+                                             }}]
 
 
     @cached_property
