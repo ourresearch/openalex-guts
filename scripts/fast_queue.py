@@ -49,10 +49,6 @@ def run(**kwargs):
 
                     print(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
 
-                finish_object_ids(queue_table, object_ids)
-
-                objects_updated += len(objects)
-
                 logger.info('committing')
                 start_time = time()
 
@@ -60,8 +56,11 @@ def run(**kwargs):
                     store_json_objects(objects)
                 else:
                     db.session.commit() # fail loudly for now
-
                 logger.info(f'commit took {elapsed(start_time, 4)}s')
+
+                finish_object_ids(queue_table, object_ids)
+                objects_updated += len(objects)
+
                 logger.info(f'processed chunk of {chunk} objects in {elapsed(loop_start, 2)} seconds')
             else:
                 logger.info('nothing ready in the queue, waiting 5 seconds...')
@@ -139,7 +138,8 @@ def finish_object_ids(queue_table, object_ids):
     '''
 
     db.session.execute(text(query_text).bindparams(ids=object_ids))
-    # logger.info(f'finished queue chunk in {elapsed(start_time, 4)}s')
+    db.session.commit()
+    logger.info(f'finished saving finish_objects chunk in {elapsed(start_time, 4)}s')
 
 
 def get_objects(entity_type, object_ids):
