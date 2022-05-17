@@ -15,3 +15,4 @@ run_queue_work_add_concepts: python -m scripts.queue --run --table=work --method
 
 fast_add_everything: bash scripts/run_add_everything_worker.sh
 fast_store_authors: bash scripts/run_author_store_worker.sh
+fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=10

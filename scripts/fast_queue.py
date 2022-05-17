@@ -1,7 +1,8 @@
 import argparse
 from time import sleep, time
+from collections import defaultdict
 
-from sqlalchemy import orm, text
+from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
 
 import models
@@ -16,6 +17,8 @@ def run(**kwargs):
     method_name = kwargs.get("method")
     if entity_type == "work" and method_name == "add_everything":
         queue_table = "queue.work_add_everything"
+    elif method_name == "store":
+        queue_table = f"queue.{entity_type.lower()}_store"
 
     if single_id := kwargs.get('id'):
         if objects := get_objects(entity_type, [single_id]):
@@ -52,13 +55,11 @@ def run(**kwargs):
 
                 logger.info('committing')
                 start_time = time()
-                # fail loudly for now
-                db.session.commit()
 
-                # commit_success = safe_commit(db)
-                #
-                # if not commit_success:
-                #     logger.info("COMMIT fail")
+                if method_name == "store":
+                    store_json_objects(objects)
+                else:
+                    db.session.commit() # fail loudly for now
 
                 logger.info(f'commit took {elapsed(start_time, 4)}s')
                 logger.info(f'processed chunk of {chunk} objects in {elapsed(loop_start, 2)} seconds')
@@ -67,25 +68,31 @@ def run(**kwargs):
                 sleep(5)
 
 
-def store_objects(objects):
-    json_row_dicts = []
-    logger.info(f'calculating json rows')
-    start_time = time()
-    for obj in objects:
-        obj.store()
-        for insert_dict in obj.insert_dicts:
-            if insert_dict_value := insert_dict.get('JsonAuthors'):
-                json_row_dicts.append(insert_dict_value)
-
-    logger.info(f'made {len(json_row_dicts)} json rows in {elapsed(start_time, 4)}s')
-
-    logger.info('merging json rows')
+def store_json_objects(objects):
+    delete_dict_all_objects = defaultdict(list)
+    insert_dict_all_objects = defaultdict(list)
+    for count, obj in enumerate(objects):
+        obj.delete_dict = defaultdict(list)
+        for row in obj.insert_dicts:
+            for table_name, insert_dict in row.items():
+                insert_dict_all_objects[table_name] += [insert_dict]
+                obj.delete_dict[table_name] += [insert_dict["id"]]
+        for table_name, ids in obj.delete_dict.items():
+            delete_dict_all_objects[table_name] += ids
 
     start_time = time()
-    for json_row_dict in json_row_dicts:
-        json_author = JsonAuthors(**json_row_dict)
-        db.session.merge(json_author)
-    logger.info(f'merged json rows in {elapsed(start_time, 4)}s')
+    for table_name, delete_ids in delete_dict_all_objects.items():
+        my_table = globals()[table_name]
+        db.session.remove()
+        db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
+        db.session.commit()
+        print("delete done")
+    for table_name, all_insert_strings in insert_dict_all_objects.items():
+        my_table = globals()[table_name]
+        db.session.remove()
+        db.session.execute(insert(my_table).values(all_insert_strings))
+        db.session.commit()
+    print("insert and commit took {} seconds".format(elapsed(start_time, 2)))
 
 
 def fetch_queue_chunk_ids(queue_table, chunk_size):
@@ -116,6 +123,7 @@ def fetch_queue_chunk_ids(queue_table, chunk_size):
     ]
 
     logger.info(f'got {len(ids)} ids from the queue in {elapsed(start_time, 4)}s')
+    logger.info(f'got these ids: {ids}')
 
     return ids
 
@@ -169,6 +177,12 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.last_known_institution).raiseload('*'),
             orm.Load(models.Author).raiseload('*')
         ).filter(models.Author.id.in_(object_ids)).all()
+    elif entity_type == "venue":
+        objects = db.session.query(models.Venue).options(
+             selectinload(models.Venue.counts_by_year_papers),
+             selectinload(models.Venue.counts_by_year_citations),
+             orm.Load(models.Venue).raiseload('*')
+        ).filter(models.Venue.journal_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
