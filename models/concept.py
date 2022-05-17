@@ -369,7 +369,7 @@ class Concept(db.Model):
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
-        if len(json_save) > 65000:
+        if json_save and len(json_save) > 65000:
             print("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
             json_save = None
         updated = datetime.datetime.utcnow().isoformat()

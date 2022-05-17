@@ -763,10 +763,10 @@ class Work(db.Model):
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
             json_save_with_abstract = jsonify_fast_no_sort_raw(self.to_dict("full"))
 
-        if len(json_save) > 65000:
+        if json_save and len(json_save) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             json_save = None
-        if len(json_save_with_abstract) > 65000:
+        if json_save_with_abstract and len(json_save_with_abstract) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             json_save_with_abstract = json_save
         updated = datetime.datetime.utcnow().isoformat()
