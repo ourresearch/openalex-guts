@@ -454,6 +454,7 @@ class Work(db.Model):
                 my_author = models.Author(display_name=raw_author_string,
                     match_name=author_match_name,
                     paper_count=1,
+                    paper_family_count=1,
                     created_date=datetime.datetime.utcnow().isoformat(),
                     full_updated_date=datetime.datetime.utcnow().isoformat(),
                     updated_date=datetime.datetime.utcnow().isoformat())
