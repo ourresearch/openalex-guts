@@ -27,6 +27,7 @@ class Author(db.Model):
     display_name = db.Column(db.Text)
     last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     paper_count = db.Column(db.Numeric)
+    paper_family_count = db.Column(db.Numeric) # column can be deleted after MAG format goes away
     citation_count = db.Column(db.Numeric)
     match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)

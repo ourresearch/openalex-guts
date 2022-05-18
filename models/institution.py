@@ -41,6 +41,7 @@ class Institution(db.Model):
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
     paper_count = db.Column(db.Numeric)
+    paper_family_count = db.Column(db.Numeric) # column can be deleted after MAG format goes away
     citation_count = db.Column(db.Numeric)
     wiki_page = db.Column(db.Text)
     latitude = db.Column(db.Float)
