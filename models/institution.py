@@ -379,14 +379,6 @@ class Institution(db.Model):
                 where lookup.original_affiliation = '{raw_affiliation_string}'
             """
 
-        ilike_matching_papers_sql = f"""
-            select affil.affiliation_id
-            from mid.affiliation affil 
-            where affil.original_affiliation ilike '%{raw_affiliation_string}%'
-            and affil.affiliation_id is not null
-            and affil.affiliation_id not in (select affiliation_id from mid.institutions_with_names_bad_for_ilookup)
-        """
-
         with get_db_cursor() as cur:
             # print(cur.mogrify(exact_matching_papers_sql))
             cur.execute(exact_matching_papers_sql)
@@ -395,12 +387,7 @@ class Institution(db.Model):
                 response = Institution.query.options(orm.Load(Institution).raiseload('*')).get(rows[0]["affiliation_id"])
                 print(f"matched: institution {response} using exact match")
                 return response
-            # cur.execute(ilike_matching_papers_sql)
-            # rows = cur.fetchall()
-            # if rows:
-            #     response = rows[0]["affiliation_id"]
-            #     print(f"matched: affiliation {response} using ilike")
-            #     return response
+
 
         return None
 
