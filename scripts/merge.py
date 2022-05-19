@@ -100,7 +100,8 @@ def run(entity, merge_away_id, merge_into_id):
         for affil_obj in affiliation_objects:
             affil_obj.affiliation_id = merge_into_id
             affil_obj.updated_date = now
-            affil_obj.work.full_updated_date = now
+            if affil_obj.work:
+                affil_obj.work.full_updated_date = now
 
         author_objects = models.Author.query.options(
                 orm.Load(models.Author).raiseload('*')
