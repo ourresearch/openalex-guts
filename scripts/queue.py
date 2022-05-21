@@ -249,13 +249,10 @@ class DbQueue(object):
                 """
                 insert_table = "mid.work_concept"
             elif self.myclass == models.Record:
-                # first_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
-                # second_character = random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
-
+                # NOT ok to do in parallel because it doesn't set a placeholder, can end up with dups
                 text_query_pattern_select = """
                     select id from ins.recordthresher_record
                     where work_id is null
-                    order by random()
                     limit {chunk};
                 """
             else:
