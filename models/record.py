@@ -175,7 +175,7 @@ class Record(db.Model):
         # new_work.paper_id = new_work_id
         new_work.doi = self.doi
         new_work.doi_lower = self.doi  # already lowered from recordthresher
-        new_work.original_title = self.title
+        new_work.original_title = self.title[:60000] if self.title else None
         new_work.unpaywall_normalize_title = self.normalized_title if self.normalized_title else normalize_title_like_sql(self.title)
         new_work.journal_id = journal_id
         new_work.genre = self.normalized_work_type
