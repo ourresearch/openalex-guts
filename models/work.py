@@ -64,8 +64,6 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
                                                        "algorithm_version": 2,
                                                        "uses_newest_algorithm": True,
                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
-        else:
-
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
     response.delete_dict = {"WorkConceptFull": [row["paper_id"] for row in rows]}
