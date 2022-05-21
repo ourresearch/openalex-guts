@@ -111,6 +111,79 @@ def run(entity, merge_away_id, merge_into_id):
             author_obj.last_known_affiliation_id = merge_into_id
             author_obj.updated = now
             author_obj.full_updated_date = now
+    elif entity == "author":
+        affiliation_objects = models.Affiliation.query.options(selectinload(models.Affiliation.work).raiseload('*'),
+                                                               selectinload(models.Affiliation.author).raiseload('*'),
+                                                               orm.Load(models.Affiliation).raiseload('*')
+                                                               ).filter(models.Affiliation.author_id==merge_away_id).all()
+        print(f"updating author_id for {len(affiliation_objects)} works")
+        for affil_obj in affiliation_objects:
+            affil_obj.author_id = merge_into_id
+            affil_obj.updated_date = now
+            if affil_obj.work:
+                affil_obj.work.full_updated_date = now
+            if affil_obj.author:
+                affil_obj.author.full_updated_date = now
+    elif entity == "work":
+        objs = models.Record.query.options(orm.Load(models.Record).raiseload('*')).filter(models.Record.work_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} Record work_id rows")
+        for obj in objs:
+            obj.work_id = merge_into_id
+
+        objs = models.Abstract.query.options(orm.Load(models.Abstract).raiseload('*')).filter(models.Abstract.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} Abstract rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.Mesh.query.options(orm.Load(models.Mesh).raiseload('*')).filter(models.Mesh.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} Mesh rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} Citation paper_id rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_reference_id==merge_away_id).all()
+        print(f"updating paper_reference_id for {len(objs)} Citation paper_reference_id rows")
+        for obj in objs:
+            obj.paper_reference_id = merge_into_id
+            # need to set the full_updated_date on this entity
+
+        objs = models.Location.query.options(orm.Load(models.Location).raiseload('*')).filter(models.Location.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} Location rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.WorkExtraIds.query.options(orm.Load(models.WorkExtraIds).raiseload('*')).filter(models.WorkExtraIds.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} WorkExtraIds rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.WorkConceptFull.query.options(orm.Load(models.WorkConceptFull).raiseload('*')).filter(models.WorkConceptFull.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} WorkConceptFull rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} WorkRelatedWork paper_id rows")
+        for obj in objs:
+            obj.paper_id = merge_into_id
+
+        objs = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.recommended_paper_id.merge_away_id).all()
+        print(f"updating paper_id for {len(objs)} WorkRelatedWork recommended_paper_id rows")
+        for obj in objs:
+            obj.recommended_paper_id = merge_into_id
+            # need to set the full_updated_date on this entity
+
+        affiliation_objects = models.Affiliation.query.options(orm.Load(models.Affiliation).raiseload('*')).filter(models.Affiliation.paper_id==merge_away_id).all()
+        print(f"updating paper_id for {len(affiliation_objects)} works")
+        for affil_obj in affiliation_objects:
+            affil_obj.paper_id = merge_into_id
+            affil_obj.updated_date = now
+
+
 
     db.session.commit()
     print("done\n")

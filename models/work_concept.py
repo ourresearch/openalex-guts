@@ -31,6 +31,7 @@ class WorkConceptFull(db.Model):
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     field_of_study = db.Column(db.BigInteger, primary_key=True)
     score = db.Column(db.Float)
-    algorithm_version = db.Column(db.Numeric)
+    algorithm_version = db.Column(db.Numeric, primary_key=True)
+    uses_newest_algorithm = db.Column(db.Boolean, primary_key=True)
     updated_date = db.Column(db.DateTime)
 
