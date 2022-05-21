@@ -301,7 +301,7 @@ class Work(db.Model):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.mesh:
-                mesh_dict_list = record.mesh
+                mesh_dict_list = json.loads(record.mesh)
                 mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
                 for mesh_object in mesh_objects:
                     if mesh_object.qualifier_ui == None:
@@ -366,7 +366,7 @@ class Work(db.Model):
         for record in self.records:
             if record.citations:
                 try:
-                    citations_dict_list = record.citations
+                    citations_dict_list = json.loads(record.citations)
                     citation_dois += [clean_doi(my_dict.get("doi", None)) for my_dict in citations_dict_list if my_dict.get("doi", None)]
                     citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
                 except Exception as e:

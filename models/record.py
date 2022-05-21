@@ -211,45 +211,6 @@ class Record(db.Model):
         self.get_or_mint_work()
 
 
-    def to_dict(self, return_level="full"):
-        print("here")
-        response = {
-            "RECORD_TYPE": "RECORD",
-            "id": self.id,
-            "api_url": f"http://localhost:5007/records/{self.id}",
-            "published_date": self.published_date,
-            "updated": self.updated,
-            "record_type": self.record_type,
-            "doi": self.doi,
-            "pmid": self.pmid,
-            "pmh_id": self.pmh_id,
-            "title": self.title,
-            "genre": self.genre,
-            "abstract": self.abstract[:100] if self.abstract else None,
-            "mesh": self.mesh if self.mesh else None,
-            "citations": self.citations if self.citations else None,
-            "authors": self.authors if self.authors else None,
-            "repository_id": self.repository_id,
-            "journal_id": self.journal_id,
-            "journal_issn_l": self.journal_issn_l,
-            "record_webpage_url": self.record_webpage_url,
-            # "record_webpage_archive_url": self.record_webpage_archive_url,
-            "record_structured_url": self.record_structured_url,
-            # "record_structured_archive_url": self.record_structured_archive_url,
-            "work_pdf_url": self.work_pdf_url,
-            # "work_pdf_archive_url": self.work_pdf_archive_url,
-            "is_work_pdf_url_free_to_read": self.is_work_pdf_url_free_to_read,
-            "is_oa": self.is_oa,
-            "oa_date": self.oa_date,
-            "open_license": self.open_license,
-            "open_version": self.open_version,
-            "publisher": self.publisher,
-            "institution_host": self.institution_host,
-            "is_retracted": self.is_retracted,
-            }
-        response["score"] = self.score
-        return response
-
     def __repr__(self):
         return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
 
