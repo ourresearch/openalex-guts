@@ -23,8 +23,7 @@ from util import normalize_title_like_sql
 
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
-    # __tablename__ = "recordthresher_record"
-    __tablename__ = "recordthresher_record_catchup"  # CATCHUP modification, temporary
+    __tablename__ = "recordthresher_record"
 
     id = db.Column(db.Text, primary_key=True)
     updated = db.Column(db.DateTime)
@@ -58,7 +57,7 @@ class Record(db.Model):
 
     # venue links
     repository_id = db.Column(db.Text)
-    journal_id = db.Column(db.Text)
+    # the journal_id in record is not the openalex journal ID
     journal_issn_l = db.Column(db.Text)
     venue_name = db.Column(db.Text)
 

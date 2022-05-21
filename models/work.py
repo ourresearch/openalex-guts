@@ -62,14 +62,9 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
                                                        "field_of_study": api_dict["tag_ids"][i],
                                                        "score": api_dict["scores"][i],
                                                        "algorithm_version": 2,
+                                                       "uses_newest_algorithm": True,
                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
         else:
-            matching_ids = []
-            insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
-                                                       "field_of_study": None,
-                                                       "score": None,
-                                                       "algorithm_version": 2,
-                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
 
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
@@ -91,7 +86,7 @@ class Work(db.Model):
     publication_date = db.Column(db.DateTime)
     online_date = db.Column(db.DateTime)
     publisher = db.Column(db.Text)
-    journal_id = db.Column(db.BigInteger)
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"))
     volume = db.Column(db.Text)
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
@@ -188,26 +183,16 @@ class Work(db.Model):
                 new_work_concept = models.WorkConceptFull(field_of_study=field_of_study,
                                                        score=score,
                                                        algorithm_version=2,
+                                                       uses_newest_algorithm=True,
                                                        updated_date=datetime.datetime.utcnow().isoformat())
                 self.concepts_full += [new_work_concept]
-                # self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
-                #                                        "field_of_study": field_of_study,
-                #                                        "score": score,
-                #                                        "algorithm_version": 2,
-                #                                         "updated_date": datetime.datetime.utcnow().isoformat()}}]
                 if score > 0.3:
                     self.concepts_for_related_works.append(field_of_study)
         else:
             pass
-            # self.insert_dicts += [{"WorkConceptFull": {"paper_id": self.id,
-            #                                            "field_of_study": None,
-            #                                            "score": None,
-            #                                            "algorithm_version": 2,
-            #                                            "updated_date": datetime.datetime.utcnow().isoformat()}}]
-        # self.delete_dict["WorkConceptFull"] += [self.id]
 
         # need to do it this way because updating concept table not the materialized view
-        # CATCHUP too slow for now and not sure this is how we should do it anyway
+        # too slow for now and not sure this is how we should do it anyway
         # update_concepts_sql = "update mid.concept set full_updated_date = now() where field_of_study_id in %s;"
         # with get_db_cursor(readonly=False) as cur:
         #     cur.execute(update_concepts_sql, (tuple(fields_of_study), ))
@@ -230,8 +215,7 @@ class Work(db.Model):
         self.add_abstract() # must be before work_concepts
         self.add_work_concepts()
 
-        # CATCHUP this is very slow, so comment out for now. comment back in once missing crossref dois are added, and run backfill
-        # self.add_related_works()  # must be after work_concepts
+        self.add_related_works()  # must be after work_concepts
 
         self.add_mesh()
         self.add_ids()
@@ -393,18 +377,16 @@ class Work(db.Model):
         if citation_dois:
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
 
-            # CATCHUP comment out for now. comment back in once missing crossref dois are added
-            # for my_work in works:
-            #     my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            for my_work in works:
+                my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
 
             citation_paper_ids += [work.paper_id for work in works if work.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
 
-            # CATCHUP comment out for now. comment back in once missing crossref dois are added
-            # for my_work_id in work_ids:
-            #     if my_work_id.work:
-            #         my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            for my_work_id in work_ids:
+                if my_work_id.work:
+                    my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
 
             citation_paper_ids += [work_id.paper_id for work_id in work_ids if work_id and work_id.paper_id]
         citation_paper_ids = list(set(citation_paper_ids))
