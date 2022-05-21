@@ -167,13 +167,14 @@ class Record(db.Model):
     def mint_work(self):
         from models import Work
         from models import QueueWorks
+        from util import normalize_doi
 
         journal_id = self.journal.journal_id if self.journal else None
 
         new_work = Work()
         new_work.created_date = datetime.datetime.utcnow().isoformat()
         # new_work.paper_id = new_work_id
-        new_work.doi = self.doi
+        new_work.doi = normalize_doi(self.doi)
         new_work.doi_lower = self.doi  # already lowered from recordthresher
         new_work.original_title = self.title[:60000] if self.title else None
         new_work.unpaywall_normalize_title = self.normalized_title if self.normalized_title else normalize_title_like_sql(self.title)

@@ -470,6 +470,8 @@ class Work(db.Model):
         return
 
     def set_fields_from_record(self, record):
+        from util import normalize_doi
+
         if not self.created_date:
             self.created_date = datetime.datetime.utcnow().isoformat()
         self.original_title = record.title
@@ -487,7 +489,7 @@ class Work(db.Model):
             # don't include line below, it makes sqlalchemy errors, handle another way
             # self.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
-        self.doi = record.doi
+        self.doi = normalize_doi(record.doi)
         self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
         self.publication_date = record.published_date.isoformat()[0:10]
         self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
