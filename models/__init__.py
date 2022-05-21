@@ -102,7 +102,7 @@ Record.work_matches_by_doi = db.relationship(
         viewonly=True,
         uselist=True,
         # foreign_keys="Work.doi_lower",
-        primaryjoin="and_(foreign(Record.doi) != None, foreign(Record.doi) == remote(Work.doi_lower))"
+        primaryjoin="and_(foreign(Record.doi) != None, func.lower(foreign(Record.doi)) == remote(Work.doi_lower))"
     )
 
 Work.queue = db.relationship("QueueWorks", lazy='selectin', uselist=False, backref="work", cascade="all, delete-orphan")
