@@ -408,11 +408,7 @@ class Work(db.Model):
             return
 
         record = records_with_affiliations[0]
-        try:
-            author_dict_list = record.authors
-        except Exception as e:
-            print(f"error in add_affiliations for {self.paper_id} {e}")
-            return
+        author_dict_list = json.loads(record.authors)
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
             my_author = None
@@ -601,11 +597,7 @@ class Work(db.Model):
         author_match_names = []
         if not record_author_json:
             return []
-        try:
-            author_dict_list = record_author_json
-        except Exception as e:
-            print(f"error in author_match_names_from_record_json: {e}")
-            return []
+        author_dict_list = json.loads(record_author_json)
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
             my_author = None
