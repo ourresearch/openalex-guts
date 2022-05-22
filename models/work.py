@@ -489,8 +489,8 @@ class Work(db.Model):
             # don't include line below, it makes sqlalchemy errors, handle another way
             # self.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
-        self.doi = normalize_doi(record.doi)
-        self.doi_lower = clean_doi(self.doi, return_none_if_error=True)
+        self.doi = normalize_doi(record.doi, return_none_if_error=True)
+        self.doi_lower = self.doi
         self.publication_date = record.published_date.isoformat()[0:10]
         self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
 
