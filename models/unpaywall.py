@@ -14,7 +14,7 @@ class Unpaywall(object):
         from util import normalize_doi
 
         self.response = None
-        self.doi = normalize_doi(doi)
+        self.doi = normalize_doi(doi, return_none_if_error=True)
         # print(f"calling unpaywall api for workaround for now till we get data in postgres")
         start_time = time()
         url = f"https://api.unpaywall.org/{doi}?email=team+openalex-postgres-temp@ourresearch.org"
