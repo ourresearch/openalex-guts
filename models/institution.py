@@ -370,6 +370,9 @@ class Institution(db.Model):
 
     @classmethod
     def get_institution_ids_from_strings(self, institution_names):
+        if not institution_names:
+            return []
+
         api_key = os.getenv("SAGEMAKER_API_KEY")
         data = [{"affiliation_string": inst_name} for inst_name in institution_names]
         headers = {"X-API-Key": api_key}
