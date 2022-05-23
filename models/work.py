@@ -136,6 +136,37 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
+    def update_institutions(self):
+        institution_names = [affil.original_affiliation for affil in self.affiliations if affil.original_affiliation]
+
+        api_key = os.getenv("SAGEMAKER_API_KEY")
+        data = [{"affiliation_string": inst_name} for inst_name in institution_names]
+        headers = {"X-API-Key": api_key}
+        api_url = "https://vcjawdnhfh.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
+
+        r = requests.post(api_url, json=json.dumps(data), headers=headers)
+        if r.status_code != 200:
+            print(r"Error back from API endpoint: {r} {r.status_code} {r.text}")
+            return
+
+        try:
+            response_json = r.json()
+            institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+        except Exception as e:
+            print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+            institution_ids = []
+
+        lookup = dict(zip(institution_names, institution_ids))
+        # print(lookup)
+        for affil in self.affiliations:
+            if affil.original_affiliation:
+                new_affiliation = lookup.get(affil.original_affiliation, None)
+                if new_affiliation != affil.affiliation_id:
+                    affil.affiliation_id = new_affiliation
+                    affil.updated_date = datetime.datetime.utcnow().isoformat()
+                    self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
+
     def add_work_concepts(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         self.concepts_full = []
@@ -225,7 +256,8 @@ class Work(db.Model):
             print("adding affiliations because work didn't have any yet")
             self.add_affiliations()
         else:
-            print("not adding affiliations because work already has some set")
+            print("not adding affiliations because work already has some set, but updating institutions")
+            self.update_institutions()
 
 
     def add_related_works(self):
