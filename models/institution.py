@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 import requests
+import os
 import urllib.parse
 import json
 import datetime
@@ -368,28 +369,25 @@ class Institution(db.Model):
         # return None
 
     @classmethod
-    def try_to_match(cls, raw_affiliation_string):
-        if not raw_affiliation_string:
-            return None
+    def get_institution_id_from_string(self, institution_names):
+        api_key = os.getenv("SAGEMAKER_API_KEY")
+        data = [{"affiliation_string": inst_name} for inst_name in institution_names]
+        headers = {"X-API-Key": api_key}
+        api_url = "https://vcjawdnhfh.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
-        raw_affiliation_string = raw_affiliation_string.replace("'", "''")
-        exact_matching_papers_sql = f"""
-                select lookup.affiliation_id 
-                from mid.affiliation_institution_lookup_view lookup 
-                where lookup.original_affiliation = '{raw_affiliation_string}'
-            """
+        r = requests.post(api_url, json=json.dumps(data), headers=headers)
+        if r.status_code != 200:
+            print(r"Error back from API endpoint: {r} {r.status_code} {r.text}")
+            return
 
-        with get_db_cursor() as cur:
-            # print(cur.mogrify(exact_matching_papers_sql))
-            cur.execute(exact_matching_papers_sql)
-            rows = cur.fetchall()
-            if rows:
-                response = Institution.query.options(orm.Load(Institution).raiseload('*')).get(rows[0]["affiliation_id"])
-                print(f"matched: institution {response} using exact match")
-                return response
+        try:
+            response_json = r.json()
+            institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+        except Exception as e:
+            print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+            institution_ids = []
+        return institution_ids
 
-
-        return None
 
     def to_dict(self, return_level="full"):
         response = {
