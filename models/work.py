@@ -136,25 +136,10 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
+
     def update_institutions(self):
         institution_names = [affil.original_affiliation for affil in self.affiliations if affil.original_affiliation]
-
-        api_key = os.getenv("SAGEMAKER_API_KEY")
-        data = [{"affiliation_string": inst_name} for inst_name in institution_names]
-        headers = {"X-API-Key": api_key}
-        api_url = "https://vcjawdnhfh.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
-
-        r = requests.post(api_url, json=json.dumps(data), headers=headers)
-        if r.status_code != 200:
-            print(r"Error back from API endpoint: {r} {r.status_code} {r.text}")
-            return
-
-        try:
-            response_json = r.json()
-            institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
-        except Exception as e:
-            print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
-            institution_ids = []
+        institution_ids = models.Institution.get_institution_id_from_string(institution_names)
 
         lookup = dict(zip(institution_names, institution_ids))
         # print(lookup)
@@ -478,7 +463,10 @@ class Work(db.Model):
             for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
-                my_institution = models.Institution.try_to_match(raw_affiliation_string)
+                institution_id_matches = models.Institution.get_institution_id_from_string([raw_affiliation_string])
+                my_institution = None
+                if institution_id_matches and institution_id_matches[0]:
+                    my_institution = models.Institution.query.get(institution_id_matches[0])
 
                 # comment this out for now because it is too slow for some reason, but later comment it back in
                 # if my_institution:
