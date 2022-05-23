@@ -139,17 +139,18 @@ class Work(db.Model):
 
     def update_institutions(self):
         institution_names = [affil.original_affiliation for affil in self.affiliations if affil.original_affiliation]
-        institution_ids = models.Institution.get_institution_id_from_string(institution_names)
+        institution_ids = models.Institution.get_institution_ids_from_strings(institution_names)
 
-        lookup = dict(zip(institution_names, institution_ids))
-        # print(lookup)
-        for affil in self.affiliations:
-            if affil.original_affiliation:
-                new_affiliation = lookup.get(affil.original_affiliation, None)
-                if new_affiliation != affil.affiliation_id:
-                    affil.affiliation_id = new_affiliation
-                    affil.updated_date = datetime.datetime.utcnow().isoformat()
-                    self.full_updated_date = datetime.datetime.utcnow().isoformat()
+        if institution_ids:
+            lookup = dict(zip(institution_names, institution_ids))
+            # print(lookup)
+            for affil in self.affiliations:
+                if affil.original_affiliation:
+                    new_affiliation = lookup.get(affil.original_affiliation, None)
+                    if new_affiliation != affil.affiliation_id:
+                        affil.affiliation_id = new_affiliation
+                        affil.updated_date = datetime.datetime.utcnow().isoformat()
+                        self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
 
     def add_work_concepts(self):
@@ -463,7 +464,7 @@ class Work(db.Model):
             for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
-                institution_id_matches = models.Institution.get_institution_id_from_string([raw_affiliation_string])
+                institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
                 my_institution = None
                 if institution_id_matches and institution_id_matches[0]:
                     my_institution = models.Institution.query.get(institution_id_matches[0])
