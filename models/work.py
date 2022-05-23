@@ -464,10 +464,11 @@ class Work(db.Model):
             for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
-                institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
                 my_institution = None
-                if institution_id_matches and institution_id_matches[0]:
-                    my_institution = models.Institution.query.get(institution_id_matches[0])
+                if raw_affiliation_string:
+                    institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
+                    if institution_id_matches and institution_id_matches[0]:
+                        my_institution = models.Institution.query.get(institution_id_matches[0])
 
                 # comment this out for now because it is too slow for some reason, but later comment it back in
                 # if my_institution:
