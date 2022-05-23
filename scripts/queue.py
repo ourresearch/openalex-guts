@@ -334,6 +334,7 @@ class DbQueue(object):
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
                              selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
                              selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+                             selectinload(models.Work.concepts_full).raiseload('*'),
                              orm.Load(models.Work).raiseload('*'))
                         objects = query.filter(self.myid.in_(object_ids)).all()
                     except Exception as e:

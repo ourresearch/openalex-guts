@@ -17,6 +17,8 @@ def run(**kwargs):
     method_name = kwargs.get("method")
     if entity_type == "work" and method_name == "add_everything":
         queue_table = "queue.work_add_everything"
+    if method_name == "update_institutions":
+        queue_table = "queue.update_institutions"
     elif method_name == "store":
         queue_table = f"queue.{entity_type.lower()}_store"
 
@@ -49,6 +51,7 @@ def run(**kwargs):
 
                     print(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
 
+                # print(1/0)
                 logger.info('committing')
                 start_time = time()
 
