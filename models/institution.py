@@ -370,6 +370,9 @@ class Institution(db.Model):
 
     @classmethod
     def get_institution_ids_from_strings(self, institution_names):
+        # temporary while we debug sagemaker
+        return []
+
         if not institution_names:
             return []
 
