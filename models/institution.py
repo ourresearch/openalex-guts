@@ -369,7 +369,7 @@ class Institution(db.Model):
         # return None
 
     @classmethod
-    def get_institution_id_from_string(self, institution_names):
+    def get_institution_ids_from_strings(self, institution_names):
         api_key = os.getenv("SAGEMAKER_API_KEY")
         data = [{"affiliation_string": inst_name} for inst_name in institution_names]
         headers = {"X-API-Key": api_key}
@@ -377,8 +377,8 @@ class Institution(db.Model):
 
         r = requests.post(api_url, json=json.dumps(data), headers=headers)
         if r.status_code != 200:
-            print(r"Error back from API endpoint: {r} {r.status_code} {r.text}")
-            return
+            print(f"Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+            return []
 
         try:
             response_json = r.json()
