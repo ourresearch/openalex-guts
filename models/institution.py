@@ -378,18 +378,28 @@ class Institution(db.Model):
         headers = {"X-API-Key": api_key}
         api_url = "https://vcjawdnhfh.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
-        r = requests.post(api_url, json=json.dumps(data), headers=headers)
-        if r.status_code != 200:
-            print(f"Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
-            return []
+        number_tries = 0
 
-        try:
-            response_json = r.json()
-            institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
-        except Exception as e:
-            print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
-            institution_ids = []
-        return institution_ids
+        while True:
+            r = requests.post(api_url, json=json.dumps(data), headers=headers)
+
+            if r.status_code == 200:
+                try:
+                    response_json = r.json()
+                    institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+                except Exception as e:
+                    print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                    institution_ids = []
+                return institution_ids
+
+            elif r.status_code == 500:
+                print(f"Try ${number_tries}, trying again: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                number_tries += 1
+
+            else:
+                print(f"Not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                return []
+
 
 
     def to_dict(self, return_level="full"):
