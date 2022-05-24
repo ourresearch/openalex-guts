@@ -142,7 +142,7 @@ def finish_object_ids(queue_table, object_ids):
 
     db.session.execute(text(query_text).bindparams(ids=object_ids))
     db.session.commit()
-    logger.info(f'finished saving finish_objects chunk in {elapsed(start_time, 4)}s')
+    # logger.info(f'finished saving finish_objects in {elapsed(start_time, 4)}s')
 
 
 def get_objects(entity_type, object_ids):
