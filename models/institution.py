@@ -388,16 +388,16 @@ class Institution(db.Model):
                     response_json = r.json()
                     institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
                 except Exception as e:
-                    print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                    print(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     institution_ids = []
                 return institution_ids
 
             elif r.status_code == 500:
-                print(f"Try ${number_tries}, trying again: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 number_tries += 1
 
             else:
-                print(f"Not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                print(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 return []
 
 
