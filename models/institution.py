@@ -22,9 +22,18 @@ from app import get_db_cursor
 # insert into mid.institution (select * from legacy.mag_main_affiliations)
 # update mid.institution set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
+
+
 def as_institution_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/I{id}"
+
+def follow_merged_into_id(lookup_institution_id):
+    if not lookup_institution_id:
+        return lookup_institution_id
+    global merged_into_institutions_dict
+    merged_id = merged_into_institutions_dict.get(lookup_institution_id, lookup_institution_id)
+    return merged_id
 
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -53,6 +62,7 @@ class Institution(db.Model):
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
+    merge_into_id = db.Column(db.BigInteger)
 
     @cached_property
     def id(self):
@@ -387,6 +397,8 @@ class Institution(db.Model):
                 try:
                     response_json = r.json()
                     institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+                    # now replace any that have been merged with what they have been merged into
+                    institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
                 except Exception as e:
                     print(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     institution_ids = []
@@ -462,3 +474,6 @@ class Institution(db.Model):
         return "<Institution ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
+print(f"loading merged_into_institutions_dict")
+merged_into_institutions = db.session.query(Institution).options(orm.Load(Institution).raiseload('*')).filter(Institution.merge_into_id != None).all()
+merged_into_institutions_dict = dict((inst.affiliation_id, inst.merge_into_id) for inst in merged_into_institutions)
