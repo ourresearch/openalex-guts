@@ -383,12 +383,14 @@ class Work(db.Model):
         self.references = []
         self.references_unmatched = []
 
+        reference_source_num = 0
         for record in self.records:
             if record.citations:
                 try:
                     # citations_dict_list = json.loads(record.citations)
                     citation_dict_list = record.citations
-                    for i, citation_dict in enumerate(citation_dict_list):
+                    for citation_dict in citation_dict_list:
+                        reference_source_num += 1
                         if "doi" in citation_dict:
                             my_clean_doi = clean_doi(citation_dict["doi"], return_none_if_error=True)
                             if my_clean_doi:
@@ -398,7 +400,7 @@ class Work(db.Model):
                             if my_clean_pmid:
                                 citation_pmids += [my_clean_pmid]
                         else:
-                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=i, raw_json=json.dumps(citation_dict))]
+                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=reference_source_num, raw_json=json.dumps(citation_dict))]
 
                 except Exception as e:
                     print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
