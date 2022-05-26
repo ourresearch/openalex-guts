@@ -378,14 +378,14 @@ class Work(db.Model):
         citation_paper_ids = []
 
         self.citation_paper_ids = []
-        self.full_updated_date = datetime.datetime.utcnow().isoformat()
-
-        self.references = []
-        self.references_unmatched = []
 
         reference_source_num = 0
         for record in self.records:
             if record.citations:
+                self.references = []
+                self.references_unmatched = []
+                self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
                 try:
                     citation_dict_list = json.loads(record.citations)
                     for citation_dict in citation_dict_list:
