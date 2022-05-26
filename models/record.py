@@ -23,7 +23,7 @@ from util import normalize_title_like_sql
 
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
-    __tablename__ = "recordthresher_record"
+    __tablename__ = "recordthresher_record_catchup"
 
     id = db.Column(db.Text, primary_key=True)
     updated = db.Column(db.DateTime)

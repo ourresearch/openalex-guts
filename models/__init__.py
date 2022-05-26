@@ -11,7 +11,7 @@ from models.abstract import Abstract
 from models.author import Author
 from models.author_orcid import AuthorOrcid
 from models.orcid import Orcid
-from models.citation import Citation
+from models.citation import Citation, CitationUnmatched
 from models.concept import Concept
 from models.author_alternative_name import AuthorAlternativeName
 from models.author_concept import AuthorConcept
