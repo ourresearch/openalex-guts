@@ -42,6 +42,7 @@ from models.queue_models import QueueWorks, QueueAuthors, QueueConcepts, QueueIn
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.references = db.relationship("Citation", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.references_unmatched = db.relationship("CitationUnmatched", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False, cascade="all, delete-orphan")
 Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False) #don't delete orphan

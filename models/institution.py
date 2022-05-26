@@ -386,7 +386,7 @@ class Institution(db.Model):
         api_key = os.getenv("SAGEMAKER_API_KEY")
         data = [{"affiliation_string": inst_name} for inst_name in institution_names]
         headers = {"X-API-Key": api_key}
-        api_url = "https://vcjawdnhfh.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
+        api_url = "https://phqjyj20n2.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
         number_tries = 0
 

@@ -167,8 +167,7 @@ class Work(db.Model):
             "inverted_abstract": has_abstract
         }
         headers = {"X-API-Key": api_key}
-        # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/"  # for version without abstracts
-        api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+        api_url = "https://t9a5o7qfy2.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
 
         r = requests.post(api_url, json=json.dumps([data]), headers=headers)
         try:
@@ -235,7 +234,7 @@ class Work(db.Model):
         self.add_mesh()
         self.add_ids()
         self.add_locations()
-        self.add_citations() # must be before affiliations
+        self.add_references() # must be before affiliations
 
         # for now, only add/update affiliations if they aren't there
         if not self.affiliations:
@@ -372,7 +371,7 @@ class Work(db.Model):
             # self.insert_dicts += [{"Location": insert_dict}]
             self.locations += [models.Location(**insert_dict)]
 
-    def add_citations(self):
+    def add_references(self):
         from models import WorkExtraIds
         citation_dois = []
         citation_pmids = []
@@ -381,40 +380,45 @@ class Work(db.Model):
         self.citation_paper_ids = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
+        self.references = []
+        self.references_unmatched = []
+
         for record in self.records:
             if record.citations:
                 try:
-                    citations_dict_list = json.loads(record.citations)
-                    citation_dois += [clean_doi(my_dict.get("doi", None), return_none_if_error=True)
-                                      for my_dict in citations_dict_list if (my_dict.get("doi", None) and clean_doi(my_dict.get("doi", None), return_none_if_error=True))]
-                    citation_pmids += [my_dict.get("pmid", None) for my_dict in citations_dict_list if my_dict.get("pmid", None)]
+                    # citations_dict_list = json.loads(record.citations)
+                    citation_dict_list = record.citations
+                    for i, citation_dict in enumerate(citation_dict_list):
+                        if "doi" in citation_dict:
+                            my_clean_doi = clean_doi(my_dict["doi"], return_none_if_error=True)
+                            if my_clean_doi:
+                                citation_dois += [my_clean_doi]
+                        elif "pmid" in citation_dict:
+                            my_clean_pmid = my_dict["pmid"]
+                            if my_clean_pmid:
+                                citation_pmids += [my_clean_pmid]
+                        else:
+                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=i, raw_json=citation_dict)]
+
                 except Exception as e:
                     print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
-
             for my_work in works:
                 my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
-
             citation_paper_ids += [work.paper_id for work in works if work.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
-
             for my_work_id in work_ids:
                 if my_work_id.work:
                     my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
-
             citation_paper_ids += [work_id.paper_id for work_id in work_ids if work_id and work_id.paper_id]
-        citation_paper_ids = list(set(citation_paper_ids))
-        if citation_paper_ids:
-            self.citation_paper_ids = citation_paper_ids
 
-        # for reference_id in citation_paper_ids:
-            # self.insert_dicts += [{"Citation": {insert_dicts
-            #     "paper_id": self.id,
-            #     "paper_reference_id": reference_id}}]
-        self.citations = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
+        citation_paper_ids = list(set(citation_paper_ids))
+        self.references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
+        if citation_paper_ids:
+            self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
 
     def add_affiliations(self):
