@@ -390,15 +390,15 @@ class Work(db.Model):
                     citation_dict_list = record.citations
                     for i, citation_dict in enumerate(citation_dict_list):
                         if "doi" in citation_dict:
-                            my_clean_doi = clean_doi(my_dict["doi"], return_none_if_error=True)
+                            my_clean_doi = clean_doi(citation_dict["doi"], return_none_if_error=True)
                             if my_clean_doi:
                                 citation_dois += [my_clean_doi]
                         elif "pmid" in citation_dict:
-                            my_clean_pmid = my_dict["pmid"]
+                            my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
                                 citation_pmids += [my_clean_pmid]
                         else:
-                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=i, raw_json=citation_dict)]
+                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=i, raw_json=json.dumps(citation_dict))]
 
                 except Exception as e:
                     print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
