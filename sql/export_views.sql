@@ -341,6 +341,7 @@ as (
         t1.paper_id as "PaperId",                --- FOREIGN KEY REFERENCES Papers.PaperId
         paper_reference_id as "PaperReferenceId"      --- FOREIGN KEY REFERENCES Papers.PaperId
     from mid.citation t1
+    where paper_reference_id is not null
    )
 with no schema binding;
 

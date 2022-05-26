@@ -324,6 +324,7 @@ class DbQueue(object):
                              selectinload(models.Work.locations).raiseload('*'),
                              selectinload(models.Work.journal).raiseload('*'),
                              selectinload(models.Work.references).raiseload('*'),
+                             selectinload(models.Work.references_unmatched).raiseload('*'),
                              selectinload(models.Work.mesh),
                              selectinload(models.Work.counts_by_year).raiseload('*'),
                              selectinload(models.Work.abstract),
