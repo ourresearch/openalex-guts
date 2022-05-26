@@ -387,8 +387,7 @@ class Work(db.Model):
         for record in self.records:
             if record.citations:
                 try:
-                    # citations_dict_list = json.loads(record.citations)
-                    citation_dict_list = record.citations
+                    citation_dict_list = json.loads(record.citations)
                     for citation_dict in citation_dict_list:
                         reference_source_num += 1
                         if "doi" in citation_dict:
