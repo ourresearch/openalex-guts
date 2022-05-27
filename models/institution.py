@@ -63,6 +63,7 @@ class Institution(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     merge_into_id = db.Column(db.BigInteger)
+    merge_into_date = db.Column(db.DateTime)
 
     @cached_property
     def id(self):

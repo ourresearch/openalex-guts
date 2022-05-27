@@ -33,6 +33,8 @@ class Author(db.Model):
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
+    merge_into_id = db.Column(db.BigInteger)
+    merge_into_date = db.Column(db.DateTime)
 
     # def __init__(self, **kwargs):
     #     self.author_id = get_next_openalex_id("author")

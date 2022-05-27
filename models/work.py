@@ -111,6 +111,8 @@ class Work(db.Model):
     started = db.Column(db.DateTime)
     finished = db.Column(db.DateTime)
     started_label = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
+    merge_into_date = db.Column(db.DateTime)
 
     def __init__(self, **kwargs):
         super(Work, self).__init__(**kwargs)

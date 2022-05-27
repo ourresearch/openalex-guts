@@ -85,65 +85,63 @@ def run(entity, merge_away_id, merge_into_id):
             if affil_obj.author:
                 affil_obj.author.full_updated_date = now
     elif entity == "work":
+        merge_away_work_object = models.Work.query.get(merge_away_id)
+        print(f"updating work_object {merge_away_work_object}")
+
+        # things to clear
+        merge_away_work_object.references_unmatched = []
+        merge_away_work_object.concepts_full = []
+        merge_away_work_object.related_works = []
+        merge_away_work_object.affiliations = []
+
+        # things to merge in if missing
+        merge_into_work_object = models.Work.query.get(merge_into_id)
+        print(f"updating work_object {merge_into_work_object}")
+        if not merge_into_work_object.abstract:
+            merge_into_work_object.abstract = merge_away_work_object.abstract
+        if not merge_into_work_object.mesh:
+            merge_into_work_object.mesh = merge_away_work_object.mesh
+
+        # things to update
         objs = models.Record.query.options(orm.Load(models.Record).raiseload('*')).filter(models.Record.work_id==merge_away_id).all()
         print(f"updating paper_id for {len(objs)} Record work_id rows")
         for obj in objs:
             obj.work_id = merge_into_id
 
-        objs = models.Abstract.query.options(orm.Load(models.Abstract).raiseload('*')).filter(models.Abstract.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} Abstract rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
+         # things to merge
 
-        objs = models.Mesh.query.options(orm.Load(models.Mesh).raiseload('*')).filter(models.Mesh.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} Mesh rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
+        for merge_away_location in merge_away_work_object.locations:
+            location_source_urls = [loc.source_url for loc in merge_into_work_object.locations]
+            if merge_away_location.source_url not in location_source_urls:
+                merge_into_work_object.locations += [merge_away_location]
 
-        objs = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} Citation paper_id rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
+        for merge_away_reference in merge_away_work_object.references:
+            paper_reference_ids = [ref.paper_reference_id for ref in merge_into_work_object.references]
+            if merge_away_reference.paper_reference_id not in paper_reference_ids:
+                merge_into_work_object.references += [merge_away_reference]
 
-        objs = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_reference_id==merge_away_id).all()
-        print(f"updating paper_reference_id for {len(objs)} Citation paper_reference_id rows")
-        for obj in objs:
-            obj.paper_reference_id = merge_into_id
-            # need to set the full_updated_date on this entity
+        for merge_away_extra_id in merge_away_work_object.extra_ids:
+            extra_id_attribute_values = [extra_id.attribute_value for extra_id in merge_into_work_object.extra_ids]
+            if merge_away_extra_id.attribute_value not in extra_id_attribute_values:
+                merge_into_work_object.extra_ids += [merge_away_extra_id]
 
-        objs = models.Location.query.options(orm.Load(models.Location).raiseload('*')).filter(models.Location.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} Location rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
+        # and now merge things pointing to them
 
-        objs = models.WorkExtraIds.query.options(orm.Load(models.WorkExtraIds).raiseload('*')).filter(models.WorkExtraIds.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} WorkExtraIds rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
+        citations_to_merge_away = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_reference_id==merge_away_id).all()
+        citations_to_merge_into = models.Citation.query.options(orm.Load(models.Citation).raiseload('*')).filter(models.Citation.paper_reference_id==merge_into_id).all()
+        papers_citing_merge_into = [obj.paper_id for obj in citations_to_merge_into]
+        for obj in citations_to_merge_away:
+            if obj.paper_id not in papers_citing_merge_into:
+                obj.paper_reference_id = merge_into_id
+                # need to set the full_updated_date on the paper_id work
 
-        objs = models.WorkConceptFull.query.options(orm.Load(models.WorkConceptFull).raiseload('*')).filter(models.WorkConceptFull.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} WorkConceptFull rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
-
-        objs = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} WorkRelatedWork paper_id rows")
-        for obj in objs:
-            obj.paper_id = merge_into_id
-
-        objs = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.recommended_paper_id.merge_away_id).all()
-        print(f"updating paper_id for {len(objs)} WorkRelatedWork recommended_paper_id rows")
-        for obj in objs:
-            obj.recommended_paper_id = merge_into_id
-            # need to set the full_updated_date on this entity
-
-        affiliation_objects = models.Affiliation.query.options(orm.Load(models.Affiliation).raiseload('*')).filter(models.Affiliation.paper_id==merge_away_id).all()
-        print(f"updating paper_id for {len(affiliation_objects)} works")
-        for affil_obj in affiliation_objects:
-            affil_obj.paper_id = merge_into_id
-            affil_obj.updated_date = now
-
-
+        related_works_to_merge_away = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.recommended_paper_id==merge_away_id).all()
+        related_works_to_merge_into = models.WorkRelatedWork.query.options(orm.Load(models.WorkRelatedWork).raiseload('*')).filter(models.WorkRelatedWork.recommended_paper_id==merge_into_id).all()
+        papers_relating_to_merge_into = [obj.paper_id for obj in related_works_to_merge_into]
+        for obj in related_works_to_merge_away:
+            if obj.paper_id not in papers_relating_to_merge_into:
+                obj.recommended_paper_id = merge_into_id
+                # need to set the full_updated_date on the paper_id work
 
     db.session.commit()
     print("done\n")
