@@ -153,7 +153,7 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Work).options(
              selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
              selectinload(models.Work.records).raiseload('*'),
-             selectinload(models.Work.locations).raiseload('*'),
+             selectinload(models.Work.locations),
              selectinload(models.Work.journal).raiseload('*'),
              selectinload(models.Work.references).raiseload('*'),
              selectinload(models.Work.references_unmatched).raiseload('*'),
@@ -180,7 +180,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
             selectinload(models.Author.last_known_institution).raiseload('*'),
             orm.Load(models.Author).raiseload('*')
-        ).filter(models.Author.id.in_(object_ids)).all()
+        ).filter(models.Author.author_id.in_(object_ids)).all()
     elif entity_type == "venue":
         objects = db.session.query(models.Venue).options(
              selectinload(models.Venue.counts_by_year_papers),
