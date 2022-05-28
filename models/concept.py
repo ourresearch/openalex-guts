@@ -366,8 +366,7 @@ class Concept(db.Model):
         VERSION_STRING = "postgres fast queue"
 
         json_save = None
-        if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(self.to_dict())
+        json_save = jsonify_fast_no_sort_raw(self.to_dict())
 
         if json_save and len(json_save) > 65000:
             print("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
@@ -377,7 +376,7 @@ class Concept(db.Model):
                                              "updated": updated,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
-                                             "merge_into_id": self.merge_into_id
+                                             "merge_into_id": None
                                              }}]
 
 

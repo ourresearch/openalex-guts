@@ -187,6 +187,10 @@ def get_objects(entity_type, object_ids):
              selectinload(models.Venue.counts_by_year_citations),
              orm.Load(models.Venue).raiseload('*')
         ).filter(models.Venue.journal_id.in_(object_ids)).all()
+    elif entity_type == "institution":
+        objects = db.session.query(models.Institution).filter(models.Institution.affiliation_id.in_(object_ids)).all()
+    elif entity_type == "concept":
+        objects = db.session.query(models.Concept).filter(models.Concept.field_of_study_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
