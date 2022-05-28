@@ -325,6 +325,9 @@ class Institution(db.Model):
     def concepts(self):
         from models.concept import as_concept_openalex_id
 
+        if not self.paper_count:
+            return []
+
         q = """
             select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct affil.paper_id))/institution.paper_count, 1)::float as score
             from mid.institution institution 
