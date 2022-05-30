@@ -487,7 +487,8 @@ class Concept(db.Model):
                 "related_concepts": self.related_concepts,
                 "counts_by_year": self.display_counts_by_year,
                 "works_api_url": f"https://api.openalex.org/works?filter=concepts.id:{self.openalex_id_short}",
-                "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
+                # "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
+                "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 
