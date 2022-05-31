@@ -26,9 +26,6 @@ class Author(db.Model):
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
     last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
-    paper_count = db.Column(db.Numeric)
-    paper_family_count = db.Column(db.Numeric) # column can be deleted after MAG format goes away
-    citation_count = db.Column(db.Numeric)
     match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
@@ -258,8 +255,8 @@ class Author(db.Model):
         if return_level == "full":
             response.update({
                 "display_name_alternatives": self.all_alternative_names,
-                "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count if self.citation_count else 0,
+                "works_count": self.counts.paper_count if self.counts else 0,
+                "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,

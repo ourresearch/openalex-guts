@@ -31,9 +31,6 @@ class Venue(db.Model):
     is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
-    paper_count = db.Column(db.Numeric)
-    paper_family_count = db.Column(db.Numeric)  # column can be deleted after MAG format goes away
-    citation_count = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
@@ -140,8 +137,8 @@ class Venue(db.Model):
         }
         if return_level == "full":
             response.update({
-                "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count if self.citation_count else 0,
+                "works_count": self.counts.paper_count if self.counts else 0,
+                "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
                 "homepage_url": self.webpage,
