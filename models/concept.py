@@ -28,8 +28,6 @@ class Concept(db.Model):
     display_name = db.Column(db.Text)
     main_type = db.Column(db.Text)
     level = db.Column(db.Numeric)
-    paper_count = db.Column(db.Numeric)
-    citation_count = db.Column(db.Numeric)
     wikipedia_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     wikipedia_json = db.Column(db.Text)
@@ -467,8 +465,8 @@ class Concept(db.Model):
         if return_level == "full":
             response.update({
                 "description": self.description,
-                "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count if self.citation_count else 0,
+                "works_count": self.counts.paper_count if self.counts else 0,
+                "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "wikidata": self.wikidata_id,

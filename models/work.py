@@ -89,9 +89,6 @@ class Work(db.Model):
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
     last_page = db.Column(db.Text)
-    reference_count = db.Column(db.Numeric)
-    citation_count = db.Column(db.Numeric)
-    estimated_citation = db.Column(db.Numeric)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
@@ -108,9 +105,6 @@ class Work(db.Model):
 
     unpaywall_normalize_title = db.Column(db.Text)
 
-    started = db.Column(db.DateTime)
-    finished = db.Column(db.DateTime)
-    started_label = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
 
@@ -889,7 +883,7 @@ class Work(db.Model):
         if return_level in ("full", "store"):
             response.update({
                 # "doc_type": self.doc_type,
-                "cited_by_count": self.citation_count if self.citation_count else 0,
+                "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "biblio": {
                     "volume": self.volume,
                     "issue": self.issue,

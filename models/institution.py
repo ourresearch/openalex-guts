@@ -50,9 +50,6 @@ class Institution(db.Model):
     country = db.Column(db.Text)
     ror_id = db.Column(db.Text)
     grid_id = db.Column(db.Text)
-    paper_count = db.Column(db.Numeric)
-    paper_family_count = db.Column(db.Numeric) # column can be deleted after MAG format goes away
-    citation_count = db.Column(db.Numeric)
     wiki_page = db.Column(db.Text)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
@@ -437,8 +434,8 @@ class Institution(db.Model):
                 "image_thumbnail_url": self.image_thumbnail_url,
                 "display_name_acronyms": self.acronyms,
                 "display_name_alternatives": self.aliases,
-                "works_count": self.paper_count if self.paper_count else 0,
-                "cited_by_count": self.citation_count if self.citation_count else 0,
+                "works_count": self.counts.paper_count if self.counts else 0,
+                "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "ids": {
                     "openalex": self.openalex_id,
                     "ror": self.ror_url,
