@@ -183,6 +183,7 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Author.author_id.in_(object_ids)).all()
     elif entity_type == "venue":
         objects = db.session.query(models.Venue).options(
+             selectinload(models.Venue.counts),
              selectinload(models.Venue.counts_by_year_papers),
              selectinload(models.Venue.counts_by_year_citations),
              orm.Load(models.Venue).raiseload('*')

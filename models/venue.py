@@ -98,7 +98,7 @@ class Venue(db.Model):
     def concepts(self):
         from models.concept import as_concept_openalex_id
         response = []
-        if self.paper_count:
+        if self.counts and self.counts.paper_count:
             q = """
                 select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct wc.paper_id))/journal.paper_count, 1)::float as score
                 from mid.journal journal 
