@@ -322,18 +322,19 @@ class Institution(db.Model):
     def concepts(self):
         from models.concept import as_concept_openalex_id
 
-        if not self.paper_count:
+        if not self.counts or not self.counts.paper_count:
             return []
 
         q = """
-            select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct affil.paper_id))/institution.paper_count, 1)::float as score
+            select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct affil.paper_id))/counts.paper_count, 1)::float as score
             from mid.institution institution 
+            join mid.citation_institutions_mv counts on counts.affiliation_id=institution.affiliation_id            
             join mid.affiliation affil on affil.affiliation_id=institution.affiliation_id            
             join mid.work_concept_for_api_mv wc on wc.paper_id=affil.paper_id
             join mid.concept_self_and_ancestors_mv ancestors on ancestors.id=wc.field_of_study
             join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                        
             where affil.affiliation_id=:institution_id
-            group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, institution.paper_count
+            group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, counts.paper_count
             order by score desc
             """
         rows = db.session.execute(text(q), {"institution_id": self.institution_id}).fetchall()
