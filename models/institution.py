@@ -289,9 +289,9 @@ class Institution(db.Model):
             url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
             print(f"calling wikidata live with {url} for {self.openalex_id}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
-            data = r.json()
-            # are claims too big?
             try:
+                data = r.json()
+                # are claims too big?
                 del data["entities"][self.wikidata_id_short]["claims"]
             except:
                 pass
