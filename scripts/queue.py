@@ -263,14 +263,12 @@ class DbQueue(object):
         start_time = time()
 
         while True:
-            started_label = "{}_{}".format(datetime.datetime.utcnow().isoformat(), shortuuid.uuid()[0:10])
             text_query_select = text_query_pattern_select.format(
                 chunk=chunk,
                 queue_table=queue_table,
                 insert_table=insert_table,
                 id_field_name=self.id_field_name,
-                MAX_MAG_ID=MAX_MAG_ID,
-                started_label=started_label
+                MAX_MAG_ID=MAX_MAG_ID
             )
             # logger.info("the queues query is:\n{}".format(text_query))
 
