@@ -22,7 +22,7 @@ class AuthorCountsByYearPapers(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<AuthorCountsByYearPapers ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+        return "<AuthorCountsByYearPapers ( {} ) {} {} >".format(self.author_id, self.year, self.n)
 
 class AuthorCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -34,7 +34,7 @@ class AuthorCountsByYearCitations(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<AuthorCountsByYearCitations ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+        return "<AuthorCountsByYearCitations ( {} ) {} {} >".format(self.author_id, self.year, self.n)
 
 
 class VenueCounts(db.Model):
@@ -59,7 +59,7 @@ class VenueCountsByYearPapers(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<VenueCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+        return "<VenueCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 
 class VenueCountsByYearCitations(db.Model):
@@ -72,7 +72,7 @@ class VenueCountsByYearCitations(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<VenueCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+        return "<VenueCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 class InstitutionCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -96,7 +96,7 @@ class InstitutionCountsByYearPapers(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<InstitutionCountsByYearPapers ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+        return "<InstitutionCountsByYearPapers ( {} ) {} {} >".format(self.affiliation_id, self.year, self.n)
 
 
 class InstitutionCountsByYearCitations(db.Model):
@@ -109,33 +109,8 @@ class InstitutionCountsByYearCitations(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<InstitutionCountsByYearCitations ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+        return "<InstitutionCountsByYearCitations ( {} ) {} {} >".format(self.affiliation_id, self.year, self.n)
 
-
-# class ConceptCountsByYearPapers(db.Model):
-#     __table_args__ = {'schema': 'mid'}
-#     __tablename__ = "citation_concepts_by_year_paper_count_view"
-#
-#     field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
-#     type = db.Column(db.Text, primary_key=True)
-#     year = db.Column(db.Numeric, primary_key=True)
-#     n = db.Column(db.Numeric)
-#
-#     def __repr__(self):
-#         return "<ConceptCountsByYearPapers ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
-#
-#
-# class ConceptCountsByYearCitations(db.Model):
-#     __table_args__ = {'schema': 'mid'}
-#     __tablename__ = "citation_concepts_by_year_citation_count_view"
-#
-#     field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
-#     type = db.Column(db.Text, primary_key=True)
-#     year = db.Column(db.Numeric, primary_key=True)
-#     n = db.Column(db.Numeric)
-#
-#     def __repr__(self):
-#         return "<ConceptCountsByYearCitations ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
 class ConceptCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -159,7 +134,7 @@ class ConceptCountsByYear(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<ConceptCountsByYear ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
+        return "<ConceptCountsByYear ( {} ) {} {} >".format(self.field_of_study_id, self.year, self.n)
 
 
 class WorkCounts(db.Model):
@@ -182,5 +157,5 @@ class WorkCountsByYear(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<WorkCountsByYear ( {} ) {} >".format(self.paper_id, self.citation_count)
+        return "<WorkCountsByYear ( {} ) {} >".format(self.paper_id, self.year, self.n)
 
