@@ -17,7 +17,7 @@ fast_add_everything: bash scripts/run_add_everything_worker.sh
 fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=500
 fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=500
 fast_store_concepts: python -m scripts.fast_queue --entity=concept --method=store --chunk=100
-fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=100
+fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=1
 fast_store_institutions: python -m scripts.fast_queue --entity=institution --method=store --chunk=10
 
 fast_update_institutions: python -m scripts.fast_queue --entity=work --method=update_institutions --chunk=100
