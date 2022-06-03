@@ -59,33 +59,6 @@ class Venue(db.Model):
         return self.issn
 
     def store(self):
-        # temporary one time transfer of homepage urls
-        if self.webpage:
-            print("has a webpage already")
-        else:
-            import requests
-            url = f"https://api.journalsdb.org/journals/{self.issn}"
-            print(f"calling journalsdb with {url}")
-            r = requests.get(url)
-            if r.status_code == 200:
-                data = r.json()
-                if data["journal_metadata"] and data["journal_metadata"][0]["home_page_url"]:
-                    self.webpage = data["journal_metadata"][0]["home_page_url"]
-                    print(f"!!!SETTING webpage for {self.journal_id} {self.issn} to {self.webpage}")
-                    self.updated_date = datetime.datetime.utcnow().isoformat()
-                    self.full_updated_date = datetime.datetime.utcnow().isoformat()
-            if not self.webpage:
-                url = f"https://doaj.org/api/search/journals/issn%3A{self.issn}"
-                print(f"calling doaj with {url}")
-                r = requests.get(url)
-                if r.status_code == 200:
-                    data = r.json()
-                    if data["results"] and data["results"][0]["bibjson"] and data["results"][0]["bibjson"]["ref"] and data["results"][0]["bibjson"]["ref"]["journal"]:
-                        self.webpage = data["results"][0]["bibjson"]["ref"]["journal"]
-                        print(f"!!!SETTING doaj webpage for {self.journal_id} {self.issn} to {self.webpage}")
-                        self.updated_date = datetime.datetime.utcnow().isoformat()
-                        self.full_updated_date = datetime.datetime.utcnow().isoformat()
-
         from util import jsonify_fast_no_sort_raw
         VERSION_STRING = "postgres fast queue"
 
