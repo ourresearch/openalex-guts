@@ -1,6 +1,12 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE early June 2022 (pending)
+- added new papers and corresponding data
 - added about 28 million papers with Crossref DOIs
+- added 23 thousand new journal webpage links, thanks in large part to DOAJ data
+- fixed a bug with cited_by_year in venues
+- new works now use an improved algorithm for mapping affiliation data to ROR IDs
+- merged some duplicate institutions and venues (all references have been consolidated to one of the IDs)
 
 RELEASE 2022-05-12
 - added new papers and corresponding data
