@@ -71,11 +71,20 @@ class Venue(db.Model):
                 data = r.json()
                 if data["journal_metadata"] and data["journal_metadata"][0]["home_page_url"]:
                     self.webpage = data["journal_metadata"][0]["home_page_url"]
-                    print(f"setting webpage for {self.journal_id} {self.issn} to {self.webpage}")
+                    print(f"!!!SETTING webpage for {self.journal_id} {self.issn} to {self.webpage}")
                     self.updated_date = datetime.datetime.utcnow().isoformat()
                     self.full_updated_date = datetime.datetime.utcnow().isoformat()
-                else:
-                    print("didn't have medadata url")
+            if not self.webpage:
+                url = f"https://doaj.org/api/search/journals/issn%3A{self.issn}"
+                print(f"calling doaj with {url}")
+                r = requests.get(url)
+                if r.status_code == 200:
+                    data = r.json()
+                    if data["results"] and data["results"][0]["bibjson"] and data["results"][0]["bibjson"]["ref"] and data["results"][0]["bibjson"]["ref"]["journal"]:
+                        self.webpage = data["results"][0]["bibjson"]["ref"]["journal"]
+                        print(f"!!!SETTING doaj webpage for {self.journal_id} {self.issn} to {self.webpage}")
+                        self.updated_date = datetime.datetime.utcnow().isoformat()
+                        self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
         from util import jsonify_fast_no_sort_raw
         VERSION_STRING = "postgres fast queue"
