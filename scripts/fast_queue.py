@@ -56,7 +56,6 @@ def run(**kwargs):
                 start_time = time()
 
                 if method_name == "store":
-                    db.session.commit() # temporary
                     store_json_objects(objects)
                 else:
                     db.session.commit() # fail loudly for now
