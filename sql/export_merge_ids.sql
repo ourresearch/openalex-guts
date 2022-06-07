@@ -3,7 +3,7 @@ $$
 declare distinct_merge_dates date[];
 declare merge_date date;
 declare bucket text := 'openalex-sandbox';
-declare data_prefix text := 'data_20220407/data';
+declare data_prefix text := 'snapshot-merged-ids';
 declare csv_file_name text;
 begin
     execute format('select array_agg(distinct updated::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
