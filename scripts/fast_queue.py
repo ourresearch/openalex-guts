@@ -15,6 +15,7 @@ from util import elapsed
 def run(**kwargs):
     entity_type = kwargs.get("entity")
     method_name = kwargs.get("method")
+
     if entity_type == "work" and method_name == "add_everything":
         queue_table = "queue.work_add_everything"
     elif method_name == "store":
@@ -46,6 +47,7 @@ def run(**kwargs):
 
                     print(f"*** #{total_count} starting {obj}.{method_name}() method")
 
+                    method_name = method_name.replace("update_once_", "")
                     method_to_run = getattr(obj, method_name)
                     method_to_run()
 
@@ -210,3 +212,14 @@ if __name__ == "__main__":
 
     parsed_args = parser.parse_args()
     run(**vars(parsed_args))
+
+# for reference, currently running queues
+
+# get those that don't have the new concepts yet
+# insert into queue.update_once_work_concepts (id) (select distinct paper_id from mid.work_concept where uses_newest_algorithm=False and algorithm_version=2)
+
+# got all those that don't have related works already
+# insert into queue.update_once_work_related_works (id) (select distinct paper_id from mid.work w where not exists (select 1 from mid.related_work rw where rw.paper_id=w.paper_id))
+
+# affiliations with paper_id > 4200 already updated
+# insert into queue.update_once_affiliation_institutions (id) (select distinct paper_id from mid.affiliation where original_affiliation is not null and paper_id<4200000000)

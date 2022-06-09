@@ -35,7 +35,6 @@ from models.counts import ConceptCountsByYear
 from models.counts import WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
-from models.queue_models import QueueWorks, QueueAuthors, QueueConcepts, QueueInstitutions, QueueVenues
 
 # max_openalex_id = None
 
@@ -110,12 +109,6 @@ Record.work_matches_by_doi = db.relationship(
         # foreign_keys="Work.doi_lower",
         primaryjoin="and_(foreign(Record.doi) != None, func.lower(foreign(Record.doi)) == remote(Work.doi_lower))"
     )
-
-Work.queue = db.relationship("QueueWorks", lazy='selectin', uselist=False, backref="work", cascade="all, delete-orphan")
-Author.queue = db.relationship("QueueAuthors", lazy='selectin', uselist=False, backref="author", cascade="all, delete-orphan")
-Concept.queue = db.relationship("QueueConcepts", lazy='selectin', uselist=False, backref="concept", cascade="all, delete-orphan")
-Institution.queue = db.relationship("QueueInstitutions", lazy='selectin', uselist=False, backref="institution", cascade="all, delete-orphan")
-Venue.queue = db.relationship("QueueVenues", lazy='selectin', uselist=False, backref="venue", cascade="all, delete-orphan")
 
 
 def author_from_id(author_id):

@@ -454,7 +454,6 @@ class Work(db.Model):
                     created_date=datetime.datetime.utcnow().isoformat(),
                     full_updated_date=datetime.datetime.utcnow().isoformat(),
                     updated_date=datetime.datetime.utcnow().isoformat())
-                my_author.queue = models.QueueAuthors()
                 if original_orcid:
                     my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
                     my_author.orcids = [my_author_orcid]
