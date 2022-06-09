@@ -151,15 +151,24 @@ class Work(db.Model):
 
     def add_work_concepts(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-        self.concepts_full = []
+
+        # keep all the version 1s for now but remove all the version 2s
+        self.concepts_full = [concept for concept in self.concepts_full if concept.algorithm_version == 1]
+
+        abstract_dict = None
+        # for when abstract was added and not included in table yet
+        if hasattr(self, "abstract_indexed_abstract"):
+            abstract_dict = self.abstract_indexed_abstract
+        elif self.abstract:
+            abstract_dict = self.abstract.indexed_abstract
 
         api_key = os.getenv("SAGEMAKER_API_KEY")
-        has_abstract = True if self.abstract_indexed_abstract else False
+        has_abstract = True if abstract_dict else False
         data = {
             "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
-            "abstract": self.abstract_indexed_abstract,
+            "abstract": abstract_dict,
             "inverted_abstract": has_abstract
         }
         headers = {"X-API-Key": api_key}
@@ -201,11 +210,6 @@ class Work(db.Model):
         else:
             pass
 
-        # need to do it this way because updating concept table not the materialized view
-        # too slow for now and not sure this is how we should do it anyway
-        # update_concepts_sql = "update mid.concept set full_updated_date = now() where field_of_study_id in %s;"
-        # with get_db_cursor(readonly=False) as cur:
-        #     cur.execute(update_concepts_sql, (tuple(fields_of_study), ))
 
     def add_everything(self):
         self.delete_dict = defaultdict(list)
