@@ -181,7 +181,6 @@ class Record(db.Model):
         new_work.journal_id = journal_id
         new_work.genre = self.normalized_work_type
         new_work.doc_type = self.normalized_doc_type
-        new_work.queue = QueueWorks()
         db.session.add(new_work)
         self.work = new_work
 
