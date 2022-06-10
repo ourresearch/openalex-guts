@@ -65,7 +65,7 @@ class JsonVenues(db.Model):
 class JsonConcepts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_concepts"
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
