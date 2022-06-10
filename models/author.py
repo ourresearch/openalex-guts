@@ -9,6 +9,9 @@ from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
+from util import dictionary_nested_diff
+from util import jsonify_fast_no_sort_raw
+
 # from app import get_next_openalex_id
 
 # truncate mid.author

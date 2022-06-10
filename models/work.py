@@ -18,6 +18,8 @@ from util import clean_doi
 from util import normalize_orcid
 from util import normalize_title_like_sql
 from util import clean_html
+from util import dictionary_nested_diff
+from util import jsonify_fast_no_sort_raw
 from app import get_db_cursor
 import models
 

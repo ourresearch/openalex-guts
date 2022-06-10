@@ -27,7 +27,7 @@ from util import safe_commit
 class JsonWorks(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_works"
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
@@ -38,7 +38,7 @@ class JsonWorks(db.Model):
 class JsonAuthors(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_authors"
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
@@ -47,7 +47,7 @@ class JsonAuthors(db.Model):
 class JsonInstitutions(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_institutions"
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)

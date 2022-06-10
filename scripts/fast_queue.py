@@ -152,6 +152,7 @@ def get_objects(entity_type, object_ids):
     start_time = time()
     if entity_type == "work":
         objects = db.session.query(models.Work).options(
+            selectinload(models.Author.stored),
              selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
              selectinload(models.Work.records).raiseload('*'),
              selectinload(models.Work.locations),
@@ -173,6 +174,7 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Work.paper_id.in_(object_ids)).all()
     elif entity_type == "author":
         objects = db.session.query(models.Author).options(
+            selectinload(models.Author.stored),
             selectinload(models.Author.counts_by_year_papers),
             selectinload(models.Author.counts_by_year_citations),
             selectinload(models.Author.alternative_names),

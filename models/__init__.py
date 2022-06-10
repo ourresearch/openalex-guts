@@ -113,6 +113,9 @@ Record.work_matches_by_doi = db.relationship(
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
 Venue.stored = db.relationship("JsonVenues", lazy='selectin', uselist=False, viewonly=True)
+Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
+Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
+Work.stored = db.relationship("JsonWorks", lazy='selectin', uselist=False, viewonly=True)
 
 
 def author_from_id(author_id):
