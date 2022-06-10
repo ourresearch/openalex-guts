@@ -57,10 +57,9 @@ def run(**kwargs):
                 logger.info('committing')
                 start_time = time()
 
+                db.session.commit() # fail loudly for now
                 if method_name == "store":
                     store_json_objects(objects)
-                else:
-                    db.session.commit() # fail loudly for now
                 logger.info(f'commit took {elapsed(start_time, 4)}s')
 
                 finish_object_ids(queue_table, object_ids)

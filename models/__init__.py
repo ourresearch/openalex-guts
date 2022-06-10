@@ -35,6 +35,7 @@ from models.counts import ConceptCountsByYear
 from models.counts import WorkCountsByYear
 from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
+from scripts.queue import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 
 # max_openalex_id = None
 
@@ -109,6 +110,8 @@ Record.work_matches_by_doi = db.relationship(
         # foreign_keys="Work.doi_lower",
         primaryjoin="and_(foreign(Record.doi) != None, func.lower(foreign(Record.doi)) == remote(Work.doi_lower))"
     )
+
+Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
 
 
 def author_from_id(author_id):

@@ -20,6 +20,21 @@ from subprocess import call
 from requests.adapters import HTTPAdapter
 import csv
 
+def dictionary_nested_diff(old_dict, new_dict, top_level_keys_to_ignore):
+    from deepdiff import DeepDiff
+
+    d1_copy = old_dict.copy()
+    d2_copy = new_dict.copy()
+
+    for my_key in top_level_keys_to_ignore:
+        if my_key in d1_copy:
+            del d1_copy[my_key]
+        if my_key in d2_copy:
+            del d2_copy[my_key]
+
+    return DeepDiff(d1_copy, d2_copy, ignore_order=True)
+
+
 def str2bool(v):
     if not v:
         return False

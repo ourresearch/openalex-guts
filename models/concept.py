@@ -9,8 +9,8 @@ from app import db
 from app import USER_AGENT
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
+from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
-
 
 # truncate mid.concept
 # insert into mid.concept (select * from legacy.mag_advanced_fields_of_study)
@@ -360,18 +360,28 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        from util import jsonify_fast_no_sort_raw
-        VERSION_STRING = "postgres fast queue"
+        VERSION_STRING = "new: updated if different"
+        self.insert_dicts = []
+        my_dict = self.to_dict()
 
-        json_save = None
-        json_save = jsonify_fast_no_sort_raw(self.to_dict())
+        if self.stored and self.stored.json_save:
+            # check merged here for everything but concept
+            diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
+            if not diff:
+                print(f"dictionary not changed, don't save again {self.openalex_id}")
+                return
 
+        print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+        now = datetime.datetime.utcnow().isoformat()
+        # self.full_updated_date = now  # can't do this for now because for concepts it is a view
+        my_dict["updated"] = now
+
+        json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
             print("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
             json_save = None
-        updated = datetime.datetime.utcnow().isoformat()
         self.insert_dicts = [{"JsonConcepts": {"id": self.field_of_study_id,
-                                             "updated": updated,
+                                             "updated": now,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
                                              "merge_into_id": None
