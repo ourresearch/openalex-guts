@@ -175,16 +175,19 @@ class Work(db.Model):
         api_url = "https://t9a5o7qfy2.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
 
         number_tries = 0
-        while True:
+        keep_calling = True
+        while keep_calling:
             r = requests.post(api_url, json=json.dumps([data]), headers=headers)
 
             if r.status_code == 200:
                 try:
                     response_json = r.json()
                     concept_names = response_json[0]["tags"]
+                    keep_calling = False
                 except Exception as e:
                     print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     concept_names = None
+                    keep_calling = False
 
             elif r.status_code == 500:
                 print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
@@ -192,7 +195,8 @@ class Work(db.Model):
 
             else:
                 print(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
-                return
+                concept_names = None
+                keep_calling = False
 
 
         self.concepts_for_related_works = []
