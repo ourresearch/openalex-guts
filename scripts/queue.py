@@ -56,7 +56,7 @@ class JsonInstitutions(db.Model):
 class JsonVenues(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_venues"
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
