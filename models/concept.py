@@ -360,7 +360,7 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        VERSION_STRING = "new: updated if different"
+        VERSION_STRING = "new: updated if changed"
         self.insert_dicts = []
         my_dict = self.to_dict()
 
