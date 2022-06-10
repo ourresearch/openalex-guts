@@ -187,7 +187,7 @@ class Work(db.Model):
                     concept_names = None
 
             elif r.status_code == 500:
-                print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 number_tries += 1
 
             else:
