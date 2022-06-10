@@ -765,9 +765,23 @@ class Work(db.Model):
 
 
     def store(self):
-        VERSION_STRING = "postgres fast queue"
+        VERSION_STRING = "new: updated if changed"
+        self.insert_dicts = []
+        my_dict = self.to_dict("full")
 
-        # print("processing work! {}".format(self.id))
+        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
+            if self.stored.json_save:
+                # check merged here for everything but concept
+                diff = dictionary_nested_diff(json.loads(self.stored.json_save_with_abstract), my_dict, ["updated_date"])
+                if not diff:
+                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    return
+            print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+
+        now = datetime.datetime.utcnow().isoformat()
+        self.full_updated_date = now
+        my_dict["updated"] = now
+
         json_save = None
         json_save_with_abstract = None
         if not self.merge_into_id:
@@ -781,9 +795,9 @@ class Work(db.Model):
         if json_save_with_abstract and len(json_save_with_abstract) > 65000:
             print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
             json_save_with_abstract = json_save
-        updated = datetime.datetime.utcnow().isoformat()
+
         self.insert_dicts = [{"JsonWorks": {"id": self.paper_id,
-                                            "updated": updated,
+                                            "updated": now,
                                             "json_save": json_save,
                                             "version": VERSION_STRING,
                                             "abstract_inverted_index": self.abstract_inverted_index, # comment out if going fast
@@ -791,8 +805,9 @@ class Work(db.Model):
                                             "merge_into_id": self.merge_into_id
                                             }}]
 
-        # print(self.insert_dicts)
-        # print(json_save[0:100])
+        # print("processing work! {}".format(self.id))
+
+
 
     @cached_property
     def display_counts_by_year(self):
