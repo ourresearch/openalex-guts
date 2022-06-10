@@ -207,19 +207,31 @@ class Author(db.Model):
 
 
     def store(self):
-        from util import jsonify_fast_no_sort_raw
-        VERSION_STRING = "postgres fast queue"
+        VERSION_STRING = "new: updated if changed"
+        self.insert_dicts = []
+        my_dict = self.to_dict()
+
+        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
+            if self.stored.json_save:
+                # check merged here for everything but concept
+                diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
+                if not diff:
+                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    return
+            print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+
+        now = datetime.datetime.utcnow().isoformat()
+        self.full_updated_date = now
+        my_dict["updated"] = now
 
         json_save = None
         if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(self.to_dict())
-
+            json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
             print("Error: json_save too long for author_id {}, skipping".format(self.openalex_id))
             json_save = None
-        updated = datetime.datetime.utcnow().isoformat()
         self.insert_dicts = [{"JsonAuthors": {"id": self.author_id,
-                                             "updated": updated,
+                                             "updated": now,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
                                              "merge_into_id": self.merge_into_id
