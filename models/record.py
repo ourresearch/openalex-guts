@@ -92,14 +92,16 @@ class Record(db.Model):
     # necessary right now because multiple journals can match on issn_ls in the mid.journal table alas. once that is fixed can normalize this.
     @cached_property
     def journal(self):
+        now = datetime.datetime.utcnow()
         if not self.journals:
             return None
-        sorted_journals = sorted(self.journals, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
+        sorted_journals = sorted(self.journals, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
         return sorted_journals[0]
 
 
     def get_or_mint_work(self):
         from models.work import Work
+        now = datetime.datetime.utcnow()
 
         if self.genre == "component":
             self.work_id = -1
@@ -113,7 +115,7 @@ class Record(db.Model):
         if self.work_matches_by_doi:
             print("found by doi")
             matching_works = self.work_matches_by_doi
-            sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
+            sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
             matching_work = sorted_matching_works[0]
 
         # by pmid or pmc_id or arxiv_id, later. match by id before match by title.
@@ -122,7 +124,7 @@ class Record(db.Model):
         if not matching_work:
             if self.work_matches_by_title:
                 matching_works = self.work_matches_by_title
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
+                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
 
                 # just look at the first 20 matches
                 for matching_work_temp in sorted_matching_works[:20]:

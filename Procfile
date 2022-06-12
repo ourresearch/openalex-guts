@@ -2,8 +2,7 @@ web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
 
 run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=10 --name=queue_record$DYNO
 
-run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=$DYNO
-fast_add_everything: python -m scripts.fast_queue --entity=work --method=add_everything --chunk=500
+run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=work_add_everything$DYNO
 
 fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=500
 fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=500
