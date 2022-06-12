@@ -763,6 +763,10 @@ class Work(db.Model):
 
 
     def store(self):
+        if not self.merge_into_id and not self.full_updated_date:
+            print(f"Not storing anything for {self.openalex_id} yet because no full_updated_date or merge_into_id, so is a stub waiting for add_everything")
+            return
+
         VERSION_STRING = "new: updated if changed"
         self.insert_dicts = []
         my_dict = self.to_dict("full")
