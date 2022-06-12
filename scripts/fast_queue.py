@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 import models
 from app import db
 from app import logger
-from scripts.queue import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
+from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 from util import elapsed
 
 

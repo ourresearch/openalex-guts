@@ -94,7 +94,7 @@ class Record(db.Model):
     def journal(self):
         if not self.journals:
             return None
-        sorted_journals = sorted(self.journals, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+        sorted_journals = sorted(self.journals, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
         return sorted_journals[0]
 
 
@@ -113,7 +113,7 @@ class Record(db.Model):
         if self.work_matches_by_doi:
             print("found by doi")
             matching_works = self.work_matches_by_doi
-            sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+            sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
             matching_work = sorted_matching_works[0]
 
         # by pmid or pmc_id or arxiv_id, later. match by id before match by title.
@@ -122,7 +122,7 @@ class Record(db.Model):
         if not matching_work:
             if self.work_matches_by_title:
                 matching_works = self.work_matches_by_title
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.citation_count if x.citation_count else 0, reverse=True)
+                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else 0, reverse=True)
 
                 # just look at the first 20 matches
                 for matching_work_temp in sorted_matching_works[:20]:
@@ -166,7 +166,6 @@ class Record(db.Model):
 
     def mint_work(self):
         from models import Work
-        from models import QueueWorks
         from util import normalize_doi
 
         journal_id = self.journal.journal_id if self.journal else None
