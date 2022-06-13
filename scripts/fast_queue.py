@@ -16,9 +16,7 @@ def run(**kwargs):
     entity_type = kwargs.get("entity")
     method_name = kwargs.get("method")
 
-    if entity_type == "work" and method_name == "add_everything":
-        queue_table = "queue.work_add_everything"
-    elif method_name == "store":
+    if method_name == "store":
         queue_table = f"queue.{entity_type.lower()}_store"
     else:
         queue_table = f"queue.{method_name.lower()}"
