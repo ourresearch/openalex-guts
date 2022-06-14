@@ -17,7 +17,7 @@ from app import logger
 
 PART_SUFFIX = r'\.txt(?:_part\d+)?$'
 SKIP_FILE_PREFIX = "PaperAbstractsInvertedIndex"
-DUMP_DIR = "2022-04-07"
+DUMP_DIR = "2022-06-13"
 
 ##  python -m scripts.concat_s3_files  data_dump_v1/2022-04-07/mag  data_dump_v1/2022-04-07/advanced  data_dump_v1/2022-04-07/nlp --delete
 ## heroku run --size=performance-l python -m scripts.concat_s3_files openalex-mag-format data_dump_v1/2022-04-07/mag  data_dump_v1/2022-04-07/advanced  data_dump_v1/2022-04-07/nlp --delete --threads=20
@@ -80,22 +80,26 @@ def do_directory_cleanups(bucket_name):
     my_bucket = s3.Bucket(bucket_name)
 
     # do this before the listing
-    try:
-        print(f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
-        s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt').copy_from(
-            CopySource=f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
-        s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt000').delete()
-    except Exception as e:
-        print("Tried to rename README.txt000 file, but there wasn't one")
-        pass
+    #try:
+    #    print(f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
+    #    s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt').copy_from(
+    #        CopySource=f'{bucket_name}/data_dump_v1/{DUMP_DIR}/README.txt000')
+    #    s3.Object(bucket_name, f'data_dump_v1/{DUMP_DIR}/README.txt000').delete()
+    #except Exception as e:
+    #    print("Tried to rename README.txt000 file, but there wasn't one")
+    #    pass
 
     # do the listing
     print(f"Creating the LISTING.txt file at data_dump_v1/{DUMP_DIR}/LISTING.txt")
     my_string = ""
     for object_summary in my_bucket.objects.filter(Prefix=f"data_dump_v1/{DUMP_DIR}/"):
         filename = object_summary.key
-        size_in_mb = round(my_bucket.Object(filename).content_length / (1000 * 1000))
-        my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
+        size_in_mb = round(my_bucket.Object(filename).content_length / (1024 * 1024))
+        if size_in_mb == 0:
+            size_in_kb = round(my_bucket.Object(filename).content_length / 1024)
+            my_string += f"{filename:70}{size_in_kb:>10,d} KB\n"
+        else:
+            my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
 
     s3.Object(bucket_name, f"data_dump_v1/{DUMP_DIR}/LISTING.txt").put(Body=my_string.encode("utf-8"))
 
