@@ -1,5 +1,11 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+Release After That
+- added new papers and corresponding data
+- added missing related works
+- updated many concepts using improved algorithm
+- updated many affiliation mappings using improved algorithm
+
 RELEASE early June 2022 (pending)
 - added new papers and corresponding data
 - added about 28 million papers with Crossref DOIs
