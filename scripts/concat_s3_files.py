@@ -94,11 +94,12 @@ def do_directory_cleanups(bucket_name):
     my_string = ""
     for object_summary in my_bucket.objects.filter(Prefix=f"data_dump_v1/{DUMP_DIR}/"):
         filename = object_summary.key
-        size_in_mb = round(my_bucket.Object(filename).content_length / (1000 * 1000))
-        my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
+        size_in_mb = round(my_bucket.Object(filename).content_length / (1024 * 1024))
         if size_in_mb == 0:
-            size_in_kb = round(my_bucket.Object(filename).content_length / 1000)
+            size_in_kb = round(my_bucket.Object(filename).content_length / 1024)
             my_string += f"{filename:70}{size_in_kb:>10,d} KB\n"
+        else:
+            my_string += f"{filename:70}{size_in_mb:>10,d} MB\n"
 
     s3.Object(bucket_name, f"data_dump_v1/{DUMP_DIR}/LISTING.txt").put(Body=my_string.encode("utf-8"))
 
