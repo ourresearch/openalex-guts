@@ -6,7 +6,7 @@ run_queue_work_add_everything: python -m scripts.queue --run --table=work --meth
 fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=500
 fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=500
 fast_store_concepts: python -m scripts.fast_queue --entity=concept --method=store --chunk=100
-fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=10
+fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=1
 fast_store_institutions: python -m scripts.fast_queue --entity=institution --method=store --chunk=10
 
 fast_update_once_update_institutions: python -m scripts.fast_queue --entity=work --method=update_once_update_institutions --chunk=100
