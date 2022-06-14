@@ -312,7 +312,7 @@ class Institution(db.Model):
                 if not diff:
                     print(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-            print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
