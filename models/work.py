@@ -271,20 +271,20 @@ class Work(db.Model):
 
         matching_papers_sql = """
             with matches as (
-            select 
-                            paper_id as related_paper_id, 
-                            avg(score) as average_related_score, 
+            select
+                            paper_id as related_paper_id,
+                            avg(score) as average_related_score,
                             count(distinct field_of_study) as n
-                        from mid.work_concept_for_api_mv 
+                        from mid.work_concept_for_api_mv
                         where field_of_study in %s
-                        group by paper_id                      
+                        group by paper_id
                         limit 100000
             )
-            select matches.*, n*average_related_score  
-            from matches 
-            -- where n >= 3 
+            select matches.*, n*average_related_score
+            from matches
+            -- where n >= 3
             order by n desc, average_related_score desc
-            limit 10        
+            limit 10
         """
 
         with get_db_cursor() as cur:
@@ -570,7 +570,7 @@ class Work(db.Model):
         for record in records:
             if record.record_type == "pubmed_record":
                 self.set_fields_from_record(record)
-       
+
         for record in records:
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
@@ -600,7 +600,7 @@ class Work(db.Model):
 
     @cached_property
     def affiliations_list(self):
-        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
+        affiliations = [affiliation for affiliation in self.affiliations_sorted]
         if not affiliations:
             return []
 
@@ -792,12 +792,12 @@ class Work(db.Model):
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
             json_save_with_abstract = jsonify_fast_no_sort_raw(self.to_dict("full"))
 
-        if json_save and len(json_save) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            json_save = None
-        if json_save_with_abstract and len(json_save_with_abstract) > 65000:
-            print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-            json_save_with_abstract = json_save
+        #if json_save and len(json_save) > 65000:
+        #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
+        #    json_save = None
+        #if json_save_with_abstract and len(json_save_with_abstract) > 65000:
+        #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
+        #    json_save_with_abstract = json_save
 
         self.insert_dicts = [{"JsonWorks": {"id": self.paper_id,
                                             "updated": now,
