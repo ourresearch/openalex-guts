@@ -23,8 +23,9 @@ def run(**kwargs):
 
     if single_id := kwargs.get('id'):
         if objects := get_objects(entity_type, [single_id]):
+            [o.store() for o in objects]
             logger.info(f'found object {objects[0]}')
-            store_objects(objects)
+            store_json_objects(objects)
             db.session.commit()
         else:
             logger.warn(f'found no object with id {single_id}')
