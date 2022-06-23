@@ -682,17 +682,13 @@ class Work(db.Model):
     def first_author_original_name(self):
         if not self.affiliations:
             return None
-        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
-        my_affiliation = affiliations[0]
-        return my_affiliation.original_author
+        return self.affiliations_sorted[0].original_author
 
     @cached_property
     def last_author_original_name(self):
         if not self.affiliations:
             return None
-        affiliations = [affiliation for affiliation in self.affiliations_sorted[:100]]
-        my_affiliation = affiliations[-1]
-        return my_affiliation.original_author
+        return self.affiliations_sorted[-1].original_author
 
     @property
     def concepts_sorted(self):
