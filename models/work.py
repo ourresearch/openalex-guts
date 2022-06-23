@@ -770,12 +770,20 @@ class Work(db.Model):
             return
 
         VERSION_STRING = "new: updated if changed"
-        my_dict = self.to_dict("full")
+        my_full_dict = self.to_dict("full")
 
         if self.stored and (self.stored.merge_into_id == self.merge_into_id):
             if self.stored.json_save:
+                stored_full_dict = json.loads(self.stored.json_save_with_abstract)
+
+                # freeze publication date/year until elastic partitioning is fixed
+                if stored_pub_year := stored_full_dict.get('publication_year'):
+                    my_full_dict['publication_year'] = stored_pub_year
+                if stored_pub_date := stored_full_dict.get('publication_date'):
+                    my_full_dict['publication_date'] = stored_pub_date
+
                 # check merged here for everything but concept
-                diff = dictionary_nested_diff(json.loads(self.stored.json_save_with_abstract), my_dict, ["updated_date"])
+                diff = dictionary_nested_diff(stored_full_dict, my_full_dict, ["updated_date"])
                 if not diff:
                     print(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
@@ -783,14 +791,17 @@ class Work(db.Model):
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
-        my_dict["updated"] = now
+        my_full_dict["updated"] = now
 
         json_save = None
         json_save_with_abstract = None
         if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(self.to_dict("store"))
+            my_store_dict = self.to_dict("store")
+            my_store_dict['publication_year'] = my_full_dict.get('publication_year')
+            my_store_dict['publication_date'] = my_full_dict.get('publication_date')
+            json_save = jsonify_fast_no_sort_raw(my_store_dict)
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
-            json_save_with_abstract = jsonify_fast_no_sort_raw(self.to_dict("full"))
+            json_save_with_abstract = jsonify_fast_no_sort_raw(my_full_dict)
 
         #if json_save and len(json_save) > 65000:
         #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
