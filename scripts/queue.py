@@ -163,21 +163,21 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select paper_id from mid.work
                         where full_updated_date is null
-                        order by random() 
+                        order by publication_date desc nulls last, random()
                         limit {chunk}; """
             elif run_method == "add_related_works":
                 text_query_pattern_select = """
-                select distinct mid.work_concept_for_api_mv.paper_id 
+                select distinct mid.work_concept_for_api_mv.paper_id
                     from mid.work_concept_for_api_mv
                     join mid.work on mid.work.paper_id=mid.work_concept_for_api_mv.paper_id
                     left outer join mid.related_work on mid.related_work.paper_id=mid.work_concept_for_api_mv.paper_id
                     where mid.work_concept_for_api_mv.paper_id > 4200000000
                     and mid.related_work.paper_id is null
-                    -- order by random() 
+                    -- order by random()
                     limit {chunk}; """
             elif run_method in ["store"]:
-                text_query_pattern_select = """  
-                    select {id_field_name} 
+                text_query_pattern_select = """
+                    select {id_field_name}
                         from {queue_table} t1
                         where full_updated_date is not null
                         and full_updated_date > '2022-05-01'
@@ -186,14 +186,14 @@ class DbQueue(object):
                            FROM   {insert_table} t2
                            WHERE  (t1.{id_field_name}=t2.id) and ((t1.full_updated_date is not null) and (t1.full_updated_date < t2.updated))
                            and updated > '2022-05-01'
-                           )      
+                           )
                         -- order by random()
                         limit {chunk};
                 """
                 insert_table = self.store_json_insert_tablename
             elif self.myclass == models.Work and run_method=="new_work_concepts":
                 text_query_pattern_select = """
-                    select distinct mid.work_concept.paper_id from mid.work_concept 
+                    select distinct mid.work_concept.paper_id from mid.work_concept
                         join mid.work on mid.work.paper_id=mid.work_concept.paper_id
                         join mid.abstract on mid.abstract.paper_id=mid.work_concept.paper_id
                         where mid.work_concept.updated_date is null
@@ -299,7 +299,7 @@ class DbQueue(object):
                                 print(f"error: failed on {run_method} {id} with error {e}")
 
                 elif self.myclass == models.Work and run_method=="new_work_concepts":
-                    q = """select work.paper_id, work.paper_title, work.doc_type, 
+                    q = """select work.paper_id, work.paper_title, work.doc_type,
                             journal.display_name as journal_title, abstract.indexed_abstract
                         from mid.work work
                         left outer join mid.journal journal on journal.journal_id=work.journal_id
