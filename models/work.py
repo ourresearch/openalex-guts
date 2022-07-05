@@ -787,7 +787,7 @@ class Work(db.Model):
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
-        my_full_dict["updated"] = now
+        my_full_dict["updated_date"] = now
 
         json_save = None
         json_save_with_abstract = None
@@ -795,6 +795,7 @@ class Work(db.Model):
             my_store_dict = self.to_dict("store")
             my_store_dict['publication_year'] = my_full_dict.get('publication_year')
             my_store_dict['publication_date'] = my_full_dict.get('publication_date')
+            my_store_dict['updated_date'] = my_full_dict.get('updated_date')
             json_save = jsonify_fast_no_sort_raw(my_store_dict)
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
             json_save_with_abstract = jsonify_fast_no_sort_raw(my_full_dict)
