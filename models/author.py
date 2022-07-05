@@ -222,7 +222,7 @@ class Author(db.Model):
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
-        my_dict["updated"] = now
+        my_dict["updated_date"] = now
 
         json_save = None
         if not self.merge_into_id:

@@ -373,7 +373,7 @@ class Concept(db.Model):
             print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
         now = datetime.datetime.utcnow().isoformat()
         # self.full_updated_date = now  # can't do this for now because for concepts it is a view
-        my_dict["updated"] = now
+        my_dict["updated_date"] = now
 
         json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
