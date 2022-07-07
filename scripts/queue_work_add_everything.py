@@ -51,6 +51,15 @@ class QueueWorkAddEverything:
                     ''').bindparams(work_ids=work_ids)
                 )
 
+                db.session.execute(
+                    text('''
+                        update queue.work_store q
+                        set finished = null
+                        where q.id = any(:work_ids)
+                        and started = null
+                    ''').bindparams(work_ids=work_ids)
+                )
+
                 commit_start_time = time()
                 db.session.commit()
                 logger.info(f'commit took {elapsed(commit_start_time, 2)} seconds')
