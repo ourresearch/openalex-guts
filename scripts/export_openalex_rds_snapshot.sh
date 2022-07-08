@@ -54,6 +54,8 @@ export_table() {
 
     table_snapshot="${table_name}_${today_yyyy_mm_dd}"
 
+    echo "creating ${table_snapshot} - this will take a while"
+
     psql $OPENALEX_DB -c "\
           create table ${table_snapshot} as (\
             select updated, ${json_field_name} \
