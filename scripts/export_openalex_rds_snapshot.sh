@@ -32,7 +32,7 @@
 #   aws s3 sync ${data_dir}/..  s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging
 
 data_dir=$(mktemp -d)/data
-today_yyyy_mm_dd=$(date +%Y-%m-%d)
+today_yyyy_mm_dd=$(date +%Y_%m_%d)
 
 echo "dumping entity rows to local data dir ${data_dir}"
 
