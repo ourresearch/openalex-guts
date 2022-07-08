@@ -5,6 +5,7 @@ Next Release
 - added missing related works
 - updated many concepts using improved algorithm
 - updated many affiliation mappings using improved algorithm
+- removed duplicate Authors and Works
 
 RELEASE 2022-06-09
 - added new papers and corresponding data
