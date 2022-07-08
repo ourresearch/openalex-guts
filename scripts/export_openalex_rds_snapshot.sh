@@ -79,7 +79,7 @@ export_table() {
           where ${updated_field_name} >= '$d'::date and ${updated_field_name} < ('$d'::date + interval '1 day')::date \
           and merge_into_id is null and ${json_field_name} is not null \
         ) to stdout" |
-        sed 's|\\\\|\\' |
+        sed 's|\\\\|\\|' |
         split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
     done
 }
