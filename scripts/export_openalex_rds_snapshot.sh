@@ -62,6 +62,7 @@ export_table() {
           );"
 
     psql $OPENALEX_DB -c "create index on ${table_snapshot} (updated);"
+    psql $OPENALEX_DB -c "analyze ${table_snapshot};"
 
     local updated_dates
     get_distinct_updated_dates $table_snapshot updated_dates
@@ -75,9 +76,8 @@ export_table() {
         part_file_prefix="$date_dir/part_"
 
         psql $OPENALEX_DB -c "\\copy ( \
-          select ${json_field_name} from $table_name \
-          where ${updated_field_name} >= '$d'::date and ${updated_field_name} < ('$d'::date + interval '1 day')::date \
-          and merge_into_id is null and ${json_field_name} is not null \
+          select ${json_field_name} from table_snapshot \
+          where updated >= '$d'::date and updated < ('$d'::date + interval '1 day')::date \
         ) to stdout" |
         sed 's|\\\\|\\|' |
         split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
