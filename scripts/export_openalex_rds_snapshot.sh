@@ -58,7 +58,7 @@ export_table() {
           create table ${table_snapshot} as (\
             select updated, ${json_field_name} \
             from ${table_name} \
-            where merge_into_id is null and ${json_field_name} is not null \
+            where merge_into_id is null and ${json_field_name} is not null limit 100000 \
           );"
 
     psql $OPENALEX_DB -c "create index on ${table_snapshot} (updated);"
@@ -76,7 +76,7 @@ export_table() {
         part_file_prefix="$date_dir/part_"
 
         psql $OPENALEX_DB -c "\\copy ( \
-          select ${json_field_name} from table_snapshot \
+          select ${json_field_name} from ${table_snapshot} \
           where updated >= '$d'::date and updated < ('$d'::date + interval '1 day')::date \
         ) to stdout" |
         sed 's|\\\\|\\|' |
