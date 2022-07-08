@@ -24,6 +24,13 @@ class QueueWorkAddEverything:
         if single_id:
             work = QueueWorkAddEverything.fetch_works([single_id])[0]
             work.add_everything()
+            db.session.execute(
+                text('''
+                    insert into queue.work_store (id) values (:work_id)
+                    on conflict (id)
+                    do update set finished = null
+                ''').bindparams(work_id=single_id)
+            )
             db.session.commit()
         else:
             num_updated = 0
@@ -53,10 +60,12 @@ class QueueWorkAddEverything:
 
                 db.session.execute(
                     text('''
-                        update queue.work_store q
-                        set finished = null
-                        where q.id = any(:work_ids)
-                        and started = null
+                        insert into queue.work_store (id) (
+                            select paper_id from mid.work
+                            where paper_id = any(:work_ids)
+                        )
+                        on conflict (id)
+                        do update set finished = null
                     ''').bindparams(work_ids=work_ids)
                 )
 
