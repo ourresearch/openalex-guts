@@ -1,6 +1,6 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-Next Release
+RELEASE 2022-07-09
 - added new papers and corresponding data
 - added missing related works
 - updated many concepts using improved algorithm
