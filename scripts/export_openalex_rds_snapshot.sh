@@ -4,7 +4,7 @@
 #   $ aws s3 sync s3://openalex s3://openalex-sandbox/snapshot-backups/openalex-jsonl/current-date-yyyy-mm-dd
 
 # 2. run this script to creates the new contents of s3://openalex/data/ in a local temp directory ${data_dir}
-#   $ ./scripts/export_openalex_rds_snapshot.sh
+#   $ bash ./scripts/export_openalex_rds_snapshot.sh
 #   "dumping entity rows to local data dir ${data_dir}"
 
 # 3. export merged ids
@@ -12,11 +12,14 @@
 #   $ aws s3 rm s3://openalex-sandbox/snapshot-merged-ids/merged_ids --recursive
 
 #   # 3.2 export the new list
-#   run /sql/export_merge_ids.sql in your favorite client
+#   psql $OPENALEX_DB -f ./sql/export_merge_ids.sql
 
 #   # 3.3 copy the result to your local snapshot, gzip the files
 #   aws s3 sync s3://openalex-sandbox/snapshot-merged-ids/merged_ids ${data_dir}/merged_ids
 #   gzip ${data_dir}/merged_ids/*/*.csv
+#
+#   # 3.4 copy files to s3 staging folder
+#   aws s3 cp ${data_dir}/merged_ids s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging/data/merged_ids/ --recursive
 
 # 4. make manifests somehow
 #    like s3://openalex-sandbox/snapshot-backups/openalex-jsonl/2022-05-12/data/authors/manifest
@@ -57,7 +60,7 @@ export_table() {
     echo "creating ${table_snapshot} - this will take a while"
 
     psql $OPENALEX_DB -c "\
-          create table ${table_snapshot} as (\
+          create table if not exists ${table_snapshot} as (\
             select updated, ${json_field_name} \
             from ${table_name} \
             where merge_into_id is null and ${json_field_name} is not null limit 100000 \
