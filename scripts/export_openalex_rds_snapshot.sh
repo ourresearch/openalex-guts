@@ -84,7 +84,7 @@ export_table() {
           select ${json_field_name} from ${table_snapshot} \
           where updated >= '$d'::date and updated < ('$d'::date + interval '1 day')::date \
         ) to stdout" |
-        sed 's|\\\\|\\|' |
+        sed 's|\\\\|\\|g' |
         split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
     done
 }
