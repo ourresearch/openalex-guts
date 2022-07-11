@@ -1,5 +1,10 @@
 OPENALEX MAG-FORMAT DATA RELEASE NOTES
 
+RELEASE 2022-07-08
+- added new papers and corresponding data
+- updated many paper fields of study using improved algorithm
+- updated many affiliation mappings using improved algorithm
+
 RELEASE 2022-06-13
 - added new papers and corresponding data
 - added about 28 million papers with Crossref DOIs
