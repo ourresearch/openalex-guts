@@ -213,7 +213,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select id from ins.recordthresher_record
                     where work_id is null
-                    order by random()
+                    order by published_date desc nulls last
                     limit {chunk};
                 """
             else:
