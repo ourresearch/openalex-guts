@@ -713,9 +713,9 @@ class Work(db.Model):
 
     @cached_property
     def is_oa(self):
-        if self.best_free_url != None:
+        if self.best_free_url:
             return True
-        if self.oa_status != "closed":
+        if self.oa_status and self.oa_status != "closed":
             return True
         return False
 
