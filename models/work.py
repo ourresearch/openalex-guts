@@ -230,13 +230,8 @@ class Work(db.Model):
             print(f"No associated records for {self.paper_id}, so skipping")
             return
 
-        # workaround to call unpaywall api instead of having it in db for now
-        if self.records_sorted[0].doi:
-            from models import Unpaywall
-            self.records_sorted[0].unpaywall = Unpaywall(self.records_sorted[0].doi)
-
         self.set_fields_from_all_records()
-        self.add_abstract() # must be before work_concepts
+        self.add_abstract()  # must be before work_concepts
         self.add_work_concepts()
 
         self.add_related_works()  # must be after work_concepts
