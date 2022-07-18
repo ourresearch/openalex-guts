@@ -110,6 +110,11 @@ class QueueWorkAddEverything:
             ).selectinload(
                 models.Record.journals
             ).raiseload('*'),
+            selectinload(
+                models.Work.records
+            ).selectinload(
+                models.Record.unpaywall
+            ).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),

@@ -91,7 +91,7 @@ Record.journals = db.relationship("Venue",
                                   viewonly=True,
                                   primaryjoin="and_(remote(Venue.merge_into_id) == None, remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'))")
 
-# Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
+Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
 Record.work_matches_by_title = db.relationship(
         'Work',
