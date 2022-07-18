@@ -1,43 +1,37 @@
-from sqlalchemy.orm import selectinload
 from sqlalchemy import orm
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
-import datetime
-import shortuuid
 
 from app import db
-from app import get_db_cursor
-
 from models.abstract import Abstract
+from models.affiliation import Affiliation
 from models.author import Author
-from models.author_orcid import AuthorOrcid
-from models.orcid import Orcid
-from models.citation import Citation, CitationUnmatched
-from models.concept import Concept
 from models.author_alternative_name import AuthorAlternativeName
 from models.author_concept import AuthorConcept
+from models.author_orcid import AuthorOrcid
+from models.citation import Citation, CitationUnmatched
+from models.concept import Concept
+from models.concept_ancestor import ConceptAncestor
+from models.counts import AuthorCountsByYearPapers, AuthorCountsByYearCitations
+from models.counts import ConceptCountsByYear
+from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
+from models.counts import VenueCountsByYearPapers, VenueCountsByYearCitations
+from models.counts import WorkCountsByYear
 from models.institution import Institution
-from models.venue import Venue
+from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 from models.location import Location
 from models.mesh import Mesh
+from models.orcid import Orcid
 from models.record import Record
+from models.ror import Ror
 from models.unpaywall import Unpaywall
+from models.venue import Venue
 from models.work import Work
-from models.affiliation import Affiliation
 from models.work_concept import WorkConcept
 from models.work_concept import WorkConceptFull
-from models.ror import Ror
 from models.work_extra_id import WorkExtraIds
-from models.counts import AuthorCountsByYearPapers, AuthorCountsByYearCitations
-from models.counts import VenueCountsByYearPapers, VenueCountsByYearCitations
-from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
-# from models.counts_by_year import ConceptCountsByYearPapers, ConceptCountsByYearCitations
-from models.counts import ConceptCountsByYear
-from models.counts import WorkCountsByYear
-from models.concept_ancestor import ConceptAncestor
 from models.work_related_work import WorkRelatedWork
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 
-# max_openalex_id = None
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
