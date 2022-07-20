@@ -72,17 +72,22 @@ class DbQueue(object):
         if True:
             keep_going_committing_chunk = True
             # don't use safe_commit for now, want to see the db errors clearly
-            if self.myclass == models.Concept and method_name=="clean_metadata":
+            if self.myclass == models.Concept and method_name == "clean_metadata":
                 db.session.commit()
-            if self.myclass == models.Record and method_name=="process_record":
-                assigned_work_ids = list(set([o.work_id for o in objects if o.work_id and o.work_id > 0]))
-                for assigned_work_id in assigned_work_ids:
-                    db.session.execute(
-                        text(
-                            'insert into queue.run_once_work_add_everything (work_id) values (:work_id) on conflict do nothing'
-                        ).bindparams(work_id=assigned_work_id)
-                    )
-                db.session.commit()
+            if self.myclass == models.Record and method_name == "process_record":
+                for o in objects:
+                    if o.work_id > 0:
+                        db.session.execute(
+                            text(
+                                '''
+                                insert into queue.run_once_work_add_everything
+                                (work_id, published_date)
+                                values (:work_id, :published_date)
+                                on conflict do nothing
+                                '''
+                            ).bindparams(work_id=o.work_id, published_date=o.published_date)
+                        )
+                        db.session.commit()
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
                     db.session.commit()
