@@ -76,7 +76,7 @@ class DbQueue(object):
                 db.session.commit()
             if self.myclass == models.Record and method_name == "process_record":
                 for o in objects:
-                    if o.work_id > 0:
+                    if o.work_id and o.work_id > 0:
                         db.session.execute(
                             text(
                                 '''
