@@ -75,6 +75,7 @@ class DbQueue(object):
             if self.myclass == models.Concept and method_name == "clean_metadata":
                 db.session.commit()
             if self.myclass == models.Record and method_name == "process_record":
+                db.session.commit()
                 for o in objects:
                     if o.work_id and o.work_id > 0:
                         db.session.execute(
