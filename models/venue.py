@@ -119,7 +119,7 @@ class Venue(db.Model):
                 from mid.journal journal 
                 join mid.citation_journals_mv counts on counts.journal_id=journal.journal_id                            
                 join mid.work work on work.journal_id=journal.journal_id
-                join mid.work_concept_for_api_mv wc on wc.paper_id=work.paper_id
+                join mid.work_concept_for_api_view wc on wc.paper_id=work.paper_id
                 join mid.concept_self_and_ancestors_mv ancestors on ancestors.id=wc.field_of_study
                 join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                                    
                 where journal.journal_id=:journal_id
