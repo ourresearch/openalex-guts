@@ -79,19 +79,24 @@ class DbQueue(object):
                 db.session.commit()
                 logger.info(f'committing records and works took {elapsed(commit_start, 2)} seconds')
                 commit_start = time()
-                for o in objects:
-                    if o.work_id and o.work_id > 0:
-                        db.session.execute(
-                            text(
-                                '''
-                                insert into queue.run_once_work_add_everything
-                                (work_id, published_date)
-                                values (:work_id, :published_date)
-                                on conflict do nothing
-                                '''
-                            ).bindparams(work_id=o.work_id, published_date=o.published_date)
+                mapped_record_ids = [
+                    o.id for o in objects if o.work_id and o.work_id > 0
+                ]
+                db.session.execute(
+                    text(
+                        '''
+                        insert into queue.run_once_work_add_everything
+                        (work_id, published_date)
+                        (
+                            select work_id, published_date
+                            from ins.recordthresher_record
+                            where id = any(:record_ids)
                         )
-                        db.session.commit()
+                        on conflict do nothing
+                        '''
+                    ).bindparams(record_ids=mapped_record_ids)
+                )
+                db.session.commit()
                 logger.info(f'enqueueing mapped works took {elapsed(commit_start, 2)} seconds')
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
