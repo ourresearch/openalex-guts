@@ -75,7 +75,10 @@ class DbQueue(object):
             if self.myclass == models.Concept and method_name == "clean_metadata":
                 db.session.commit()
             if self.myclass == models.Record and method_name == "process_record":
+                commit_start = time()
                 db.session.commit()
+                logger.info(f'committing records and works took {elapsed(commit_start, 2)} seconds')
+                commit_start = time()
                 for o in objects:
                     if o.work_id and o.work_id > 0:
                         db.session.execute(
@@ -89,6 +92,7 @@ class DbQueue(object):
                             ).bindparams(work_id=o.work_id, published_date=o.published_date)
                         )
                         db.session.commit()
+                logger.info(f'enqueueing mapped works took {elapsed(commit_start, 2)} seconds')
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
                     db.session.commit()
