@@ -227,6 +227,8 @@ class Work(db.Model):
 
         if not self.records_sorted:
             # not associated with a record, so leave it for now
+            # merged-away works have their records' work ids updated,
+            # so also do nothing for merged-away works
             print(f"No associated records for {self.paper_id}, so skipping")
             return
 
