@@ -112,9 +112,8 @@ class Record(db.Model):
         print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
 
         # by doi
-        if self.work_matches_by_doi:
+        if matching_works := [w for w in self.work_matches_by_doi if not w.merge_into_id]:
             print("found by doi")
-            matching_works = self.work_matches_by_doi
             sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
             matching_work = sorted_matching_works[0]
 
@@ -122,8 +121,7 @@ class Record(db.Model):
 
         # by title
         if not matching_work:
-            if self.work_matches_by_title:
-                matching_works = self.work_matches_by_title
+            if matching_works := [w for w in self.work_matches_by_title if not w.merge_into_id]:
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
 
                 # just look at the first 20 matches
