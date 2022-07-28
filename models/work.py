@@ -788,6 +788,7 @@ class Work(db.Model):
 
         json_save = None
         json_save_with_abstract = None
+        self.abstract_inverted_index = None
         if not self.merge_into_id:
             my_store_dict = self.to_dict("store")
             my_store_dict['publication_year'] = my_full_dict.get('publication_year')
@@ -796,6 +797,7 @@ class Work(db.Model):
             json_save = jsonify_fast_no_sort_raw(my_store_dict)
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
             json_save_with_abstract = jsonify_fast_no_sort_raw(my_full_dict)
+
 
         #if json_save and len(json_save) > 65000:
         #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
