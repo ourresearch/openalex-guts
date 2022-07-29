@@ -75,13 +75,13 @@ class DbQueue(object):
             if self.myclass == models.Concept and method_name == "clean_metadata":
                 db.session.commit()
             if self.myclass == models.Record and method_name == "process_record":
-                commit_start = time()
+                record_ids = [o.id for o in objects]
+
+                timing_start = time()
                 db.session.commit()
-                logger.info(f'committing records and works took {elapsed(commit_start, 2)} seconds')
-                commit_start = time()
-                mapped_record_ids = [
-                    o.id for o in objects if o.work_id and o.work_id > 0
-                ]
+                logger.info(f'committing records and works took {elapsed(timing_start, 2)} seconds')
+
+                timing_start = time()
                 db.session.execute(
                     text(
                         '''
@@ -91,13 +91,13 @@ class DbQueue(object):
                             select work_id, published_date
                             from ins.recordthresher_record
                             where id = any(:record_ids)
+                            and work_id > 0
                         )
                         on conflict do nothing
                         '''
-                    ).bindparams(record_ids=mapped_record_ids)
+                    ).bindparams(record_ids=record_ids).execution_options(autocommit=True)
                 )
-                db.session.commit()
-                logger.info(f'enqueueing mapped works took {elapsed(commit_start, 2)} seconds')
+                logger.info(f'enqueueing mapped works took {elapsed(timing_start, 2)} seconds')
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
                     db.session.commit()
