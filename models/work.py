@@ -808,6 +808,7 @@ class Work(db.Model):
 
         self.insert_dicts = [{"JsonWorks": {"id": self.paper_id,
                                             "updated": now,
+                                            "changed": now,
                                             "json_save": json_save,
                                             "version": VERSION_STRING,
                                             "abstract_inverted_index": self.abstract_inverted_index, # comment out if going fast

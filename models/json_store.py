@@ -9,6 +9,7 @@ class JsonWorks(db.Model):
     __tablename__ = "json_works"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     abstract_inverted_index = db.Column(db.Text)
