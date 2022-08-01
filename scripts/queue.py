@@ -97,6 +97,9 @@ class DbQueue(object):
                         '''
                     ).bindparams(record_ids=record_ids).execution_options(autocommit=True)
                 )
+                db.session.execute(
+                    text('delete from tmp_map_record_now where id = any(:ids)').bindparams(ids=record_ids).execution_options(autocommit=True)
+                )
                 logger.info(f'enqueueing mapped works took {elapsed(timing_start, 2)} seconds')
             if self.myclass == models.Work and method_name in ["add_everything", "add_related_works"]:
                 try:
@@ -226,9 +229,7 @@ class DbQueue(object):
             elif self.myclass == models.Record:
                 # NOT ok to do in parallel because it doesn't set a placeholder, can end up with dups
                 text_query_pattern_select = """
-                    select id from ins.recordthresher_record
-                    where work_id is null
-                    order by published_date desc nulls last
+                    select id from tmp_map_record_now
                     limit {chunk};
                 """
             else:
@@ -260,6 +261,10 @@ class DbQueue(object):
                 new_loop_start_time = time()
 
                 object_ids = [row[0] for row in row_list]
+                if not object_ids:
+                    print('none left')
+                    return
+
 
                 job_time = time()
                 print(object_ids)
