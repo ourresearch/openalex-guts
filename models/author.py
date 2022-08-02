@@ -232,6 +232,7 @@ class Author(db.Model):
             json_save = None
         self.insert_dicts = [{"JsonAuthors": {"id": self.author_id,
                                              "updated": now,
+                                             "changed": now,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
                                              "merge_into_id": self.merge_into_id

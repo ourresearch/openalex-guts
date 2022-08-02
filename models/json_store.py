@@ -21,6 +21,7 @@ class JsonAuthors(db.Model):
     __tablename__ = "json_authors"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
@@ -30,6 +31,7 @@ class JsonInstitutions(db.Model):
     __tablename__ = "json_institutions"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
@@ -39,6 +41,7 @@ class JsonVenues(db.Model):
     __tablename__ = "json_venues"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
     updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
@@ -48,6 +51,7 @@ class JsonConcepts(db.Model):
     __tablename__ = "json_concepts"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
