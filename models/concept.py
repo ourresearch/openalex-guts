@@ -381,6 +381,7 @@ class Concept(db.Model):
             json_save = None
         self.insert_dicts = [{"JsonConcepts": {"id": self.field_of_study_id,
                                              "updated": now,
+                                             "changed": now,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
                                              "merge_into_id": None

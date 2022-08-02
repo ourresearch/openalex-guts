@@ -326,6 +326,7 @@ class Institution(db.Model):
             json_save = None
         self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id,
                                              "updated": now,
+                                             "changed": now,
                                              "json_save": json_save,
                                              "version": VERSION_STRING,
                                              "merge_into_id": self.merge_into_id
