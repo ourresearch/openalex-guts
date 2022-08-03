@@ -150,6 +150,20 @@ class Work(db.Model):
                         affil.updated_date = datetime.datetime.utcnow().isoformat()
                         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
+        if self.affiliations:
+            all_affiliations = sorted(
+                self.affiliations,
+                key=lambda a: (a.author_sequence_number, a.affiliation_sequence_number)
+            )
+            self.affiliations = []
+            seen_institutions_by_author = defaultdict(set)
+            for a in all_affiliations:
+                if a.author_id and a.affiliation_id and a.affiliation_id in seen_institutions_by_author[a.author_id]:
+                    continue
+                self.affiliations.append(a)
+                seen_institutions_by_author[a.author_id].add(a.affiliation_id)
+
+
 
     def add_work_concepts(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -470,6 +484,8 @@ class Work(db.Model):
             if my_author:
                 my_author.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
+            seen_institution_ids = set()
+
             for affiliation_sequence_order, affiliation_dict in enumerate(author_dict["affiliation"]):
                 raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
@@ -478,7 +494,9 @@ class Work(db.Model):
                     institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
                     if institution_id_matches and institution_id_matches[0]:
                         my_institution = models.Institution.query.options(orm.Load(models.Institution).raiseload('*')).get(institution_id_matches[0])
-
+                        if my_institution.affiliation_id and my_institution.affiliation_id in seen_institution_ids:
+                            continue
+                        seen_institution_ids.add(my_institution.affiliation_id)
                 # comment this out for now because it is too slow for some reason, but later comment it back in
                 # if my_institution:
                 #     my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
