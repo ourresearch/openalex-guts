@@ -32,7 +32,7 @@ def dictionary_nested_diff(old_dict, new_dict, top_level_keys_to_ignore):
         if my_key in d2_copy:
             del d2_copy[my_key]
 
-    return DeepDiff(d1_copy, d2_copy, ignore_order=True)
+    return DeepDiff(d1_copy, d2_copy, ignore_order=True, report_repetition=True)
 
 
 def str2bool(v):
