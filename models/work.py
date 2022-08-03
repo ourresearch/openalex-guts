@@ -493,8 +493,14 @@ class Work(db.Model):
                 if raw_affiliation_string:
                     institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
                     if institution_id_matches and institution_id_matches[0]:
-                        my_institution = models.Institution.query.options(orm.Load(models.Institution).raiseload('*')).get(institution_id_matches[0])
-                        if my_institution.affiliation_id and my_institution.affiliation_id in seen_institution_ids:
+                        my_institution = models.Institution.query.options(
+                            orm.Load(models.Institution).raiseload('*')
+                        ).get(institution_id_matches[0])
+
+                        if (
+                            my_institution and my_institution.affiliation_id
+                            and my_institution.affiliation_id in seen_institution_ids
+                        ):
                             continue
                         seen_institution_ids.add(my_institution.affiliation_id)
                 # comment this out for now because it is too slow for some reason, but later comment it back in
