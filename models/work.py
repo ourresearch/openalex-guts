@@ -1,27 +1,28 @@
-from cached_property import cached_property
-from sqlalchemy import text
-from sqlalchemy import orm
-from sqlalchemy.orm import selectinload
 import datetime
-from collections import defaultdict
-import requests
-import os
 import json
+import os
+from collections import defaultdict
+from time import time
 
-from app import db
+import requests
+from cached_property import cached_property
+from sqlalchemy import orm
+
+import models
 from app import MAX_MAG_ID
+from app import db
 from app import get_apiurl_from_openalex_url
-from util import f_generate_inverted_index
-from util import jsonify_fast_no_sort_raw
-from util import normalize_simple
+from app import get_db_cursor
+from app import logger
 from util import clean_doi
-from util import normalize_orcid
-from util import normalize_title_like_sql
 from util import clean_html
 from util import dictionary_nested_diff
+from util import elapsed
+from util import f_generate_inverted_index
 from util import jsonify_fast_no_sort_raw
-from app import get_db_cursor
-import models
+from util import normalize_orcid
+from util import normalize_simple
+
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
@@ -246,25 +247,48 @@ class Work(db.Model):
             print(f"No associated records for {self.paper_id}, so skipping")
             return
 
+        start_time = time()
         self.set_fields_from_all_records()
+        logger.info(f'set_fields_from_all_records took {elapsed(start_time, 2)} seconds')
+
+        start_time = time()
         self.add_abstract()  # must be before work_concepts
+        logger.info(f'add_abstract took {elapsed(start_time, 2)} seconds')
+
+        start_time = time()
         self.add_work_concepts()
+        logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
+        start_time = time()
         self.add_related_works()  # must be after work_concepts
+        logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
 
+        start_time = time()
         self.add_mesh()
+        logger.info(f'add_mesh took {elapsed(start_time, 2)} seconds')
+
+        start_time = time()
         self.add_ids()
+        logger.info(f'add_ids took {elapsed(start_time, 2)} seconds')
+
+        start_time = time()
         self.add_locations()
-        self.add_references() # must be before affiliations
+        logger.info(f'add_locations took {elapsed(start_time, 2)} seconds')
+
+        start_time = time()
+        self.add_references()  # must be before affiliations
+        logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
 
         # for now, only add/update affiliations if they aren't there
+        start_time = time()
         if not self.affiliations:
             print("adding affiliations because work didn't have any yet")
             self.add_affiliations()
+            logger.info(f'add_affiliations took {elapsed(start_time, 2)} seconds')
         else:
             print("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
-
+            logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
 
     def add_related_works(self):
         if self.concepts:
@@ -764,7 +788,6 @@ class Work(db.Model):
 
     @cached_property
     def references_list(self):
-        import models
 
         reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
         return reference_paper_ids
