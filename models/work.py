@@ -286,7 +286,7 @@ class Work(db.Model):
                             paper_id as related_paper_id,
                             avg(score) as average_related_score,
                             count(distinct field_of_study) as n
-                        from mid.work_concept_for_api_view
+                        from mid.work_concept_for_api_mv
                         where field_of_study in %s
                         group by paper_id
                         limit 100000
