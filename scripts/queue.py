@@ -86,9 +86,9 @@ class DbQueue(object):
                     text(
                         '''
                         insert into queue.run_once_work_add_everything
-                        (work_id, published_date)
+                        (work_id, work_updated)
                         (
-                            select work_id, published_date
+                            select work_id, updated
                             from ins.recordthresher_record
                             where id = any(:record_ids)
                             and work_id > 0
@@ -228,7 +228,7 @@ class DbQueue(object):
                 text_query_pattern_select = """
                     select id from ins.recordthresher_record
                     where work_id is null
-                    order by published_date desc nulls last
+                    order by updated desc nulls last
                     limit {chunk};
                 """
             else:

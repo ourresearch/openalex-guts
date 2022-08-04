@@ -85,7 +85,7 @@ class QueueWorkAddEverything:
                 select work_id
                 from queue.run_once_work_add_everything
                 where started is null
-                order by published_date desc nulls last, rand
+                order by work_updated desc nulls last, rand
                 limit :chunk
                 for update skip locked
             )
