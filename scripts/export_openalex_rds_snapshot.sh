@@ -27,11 +27,11 @@
 # 5. add txt files and browse page
 #   date the current release notes
 #   in files-for-datadumps/standard-format/RELEASE_NOTES.txt, change "Next Release" to "RELEASE YYYY-MM-DD"
-#   $ git add in files-for-datadumps/RELEASE_NOTES.txt
+#   $ git add files-for-datadumps/RELEASE_NOTES.txt
 #   $ git commit -m "added YYYY-MM-DD release notes"
 #   cp files-for-datadumps/standard-format/*.txt ${data_dir}/..
 #
-# 5. upload to 3 for QA
+# 5. upload to S3 for QA
 #   aws s3 sync ${data_dir}/..  s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging
 
 data_dir=$(mktemp -d)/data
@@ -39,14 +39,14 @@ today_yyyy_mm_dd=$(date +%Y_%m_%d)
 
 echo "dumping entity rows to local data dir ${data_dir}"
 
-get_distinct_updated_dates() {
+get_distinct_changed_dates() {
     table_name=$1
     local -n dates=$2
 
-    echo "get distinct updated dates for ${table_name}"
+    echo "get distinct changed dates for ${table_name}"
 
     dates=( $(
-        psql $OPENALEX_DB -q -t  -c "select distinct updated::date from ${table_name}"
+        psql $OPENALEX_DB -q -t  -c "select distinct changed_date from ${table_name}"
     ) )
 }
 
@@ -61,18 +61,18 @@ export_table() {
 
     psql $OPENALEX_DB -c "\
           create table if not exists ${table_snapshot} as (\
-            select updated, ${json_field_name} \
+            select changed::date as changed_date, ${json_field_name} \
             from ${table_name} \
             where merge_into_id is null and ${json_field_name} is not null limit 100000 \
           );"
 
-    psql $OPENALEX_DB -c "create index on ${table_snapshot} (updated);"
+    psql $OPENALEX_DB -c "create index on ${table_snapshot} (changed_date);"
     psql $OPENALEX_DB -c "analyze ${table_snapshot};"
 
-    local updated_dates
-    get_distinct_updated_dates $table_snapshot updated_dates
+    local changed_dates
+    get_distinct_changed_dates $table_snapshot changed_dates
 
-    for d in ${updated_dates[@]}
+    for d in ${changed_dates[@]}
     do
         date_dir="${data_dir}/${entity_type}/updated_date=${d}"
         mkdir -p $date_dir
@@ -82,7 +82,7 @@ export_table() {
 
         psql $OPENALEX_DB -c "\\copy ( \
           select ${json_field_name} from ${table_snapshot} \
-          where updated >= '$d'::date and updated < ('$d'::date + interval '1 day')::date \
+          where changed_date = '$d' \
         ) to stdout" |
         sed 's|\\\\|\\|g' |
         split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
