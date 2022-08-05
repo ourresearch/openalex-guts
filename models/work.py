@@ -305,21 +305,23 @@ class Work(db.Model):
         #     self.insert_dicts = []
 
         matching_papers_sql = """
-            with matches as (
-            select
-                            paper_id as related_paper_id,
-                            avg(score) as average_related_score,
-                            count(distinct field_of_study) as n
-                        from mid.work_concept_for_api_mv
-                        where field_of_study in %s
-                        group by paper_id
-                        limit 100000
-            )
-            select matches.*, n*average_related_score
-            from matches
-            -- where n >= 3
-            order by n desc, average_related_score desc
-            limit 10
+        with fos as (
+            select field_of_study_id from mid.concept where field_of_study_id in %s
+        )
+        select
+            paper_id as related_paper_id,
+            avg(score) as average_related_score,
+            count(distinct field_of_study) as n
+        from
+            fos
+            cross join lateral (
+                select paper_id, field_of_study, score
+                from mid.work_concept_for_api_mv wc
+                where wc.field_of_study = fos.field_of_study_id order by score desc limit 50000
+            ) papers_by_fos
+        group by paper_id
+        order by n desc, average_related_score desc
+        limit 10;
         """
 
         with get_db_cursor() as cur:
