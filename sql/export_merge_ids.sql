@@ -16,7 +16,7 @@ begin
 
             perform aws_s3.query_export_to_s3(
                 format(
-                    'select changed::date as merge_date, %L || id as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and updated::date = %L',
+                    'select changed::date as merge_date, %L || id as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and changed::date = %L',
                     id_prefix, id_prefix, tbl, merge_date
                 ),
                 aws_commons.create_s3_uri(bucket, csv_file_name, 'us-east-1'),
