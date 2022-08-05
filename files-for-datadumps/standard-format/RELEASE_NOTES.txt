@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+NEXT RELEASE
+- removed duplicate institutions for each author in Work.authorships
+- made DOIs unique across Works. removed incorrect DOIs from 500K works and merged 1M sets of works with the same DOI.
+- added 900K new Works
+
 RELEASE 2022-07-09
 - added new papers and corresponding data
 - added missing related works
