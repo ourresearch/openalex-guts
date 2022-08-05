@@ -6,7 +6,7 @@ declare bucket text := 'openalex-sandbox';
 declare data_prefix text := 'snapshot-merged-ids';
 declare csv_file_name text;
 begin
-    execute format('select array_agg(distinct updated::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
+    execute format('select array_agg(distinct changed::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
 
     if distinct_merge_dates is not null then
         foreach merge_date in array distinct_merge_dates
@@ -16,7 +16,7 @@ begin
 
             perform aws_s3.query_export_to_s3(
                 format(
-                    'select updated::date as merge_date, %L || id as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and updated::date = %L',
+                    'select changed::date as merge_date, %L || id as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and updated::date = %L',
                     id_prefix, id_prefix, tbl, merge_date
                 ),
                 aws_commons.create_s3_uri(bucket, csv_file_name, 'us-east-1'),
