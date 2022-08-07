@@ -105,6 +105,16 @@ Record.work_matches_by_doi = db.relationship(
         primaryjoin="and_(foreign(Record.doi) != None, func.lower(foreign(Record.doi)) == remote(Work.doi_lower))"
     )
 
+Record.work_matches_by_pmid = db.relationship(
+    'Work',
+    lazy='subquery',
+    viewonly=True,
+    uselist=True,
+    secondary="mid.work_extra_ids",
+    primaryjoin="and_(Record.pmid == WorkExtraIds.attribute_value, WorkExtraIds.attribute_type == 2)",
+    secondaryjoin="Work.paper_id == WorkExtraIds.paper_id"
+)
+
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
 Venue.stored = db.relationship("JsonVenues", lazy='selectin', uselist=False, viewonly=True)
 Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)

@@ -238,157 +238,156 @@ class DbQueue(object):
         start_time = time()
 
         while True:
-            text_query_select = text_query_pattern_select.format(
-                chunk=chunk,
-                queue_table=queue_table,
-                insert_table=insert_table,
-                id_field_name=self.id_field_name,
-                MAX_MAG_ID=MAX_MAG_ID
-            )
             # logger.info("the queues query is:\n{}".format(text_query))
+            new_loop_start_time = time()
 
             if single_obj_id:
-                single_obj_id = normalize_doi(single_obj_id)
-                objects = [run_class.query.filter(run_class.id == single_obj_id).first()]
+                object_ids = [single_obj_id]
+                # objects = [run_class.query.filter(run_class.id == single_obj_id).first()]
             else:
+                text_query_select = text_query_pattern_select.format(
+                    chunk=chunk,
+                    queue_table=queue_table,
+                    insert_table=insert_table,
+                    id_field_name=self.id_field_name,
+                    MAX_MAG_ID=MAX_MAG_ID
+                )
                 logger.info("{}: looking for new jobs".format(worker_name))
                 job_time = time()
                 print(text_query_select)
                 row_list = db.session.execute(text(text_query_select)).fetchall()
                 logger.info("{}: got ids, took {} seconds".format(worker_name, elapsed(job_time)))
-
-                new_loop_start_time = time()
-
                 object_ids = [row[0] for row in row_list]
 
-                job_time = time()
-                print(object_ids)
-                if (self.myclass == models.Work) and (run_method == "store"):
-                    try:
-                        object_query = db.session.query(models.Work).options(
-                             selectinload(models.Work.locations),
-                             selectinload(models.Work.journal).raiseload('*'),
-                             selectinload(models.Work.references).raiseload('*'),
-                             selectinload(models.Work.mesh),
-                             selectinload(models.Work.counts_by_year).raiseload('*'),
-                             selectinload(models.Work.abstract),
-                             selectinload(models.Work.extra_ids).raiseload('*'),
-                             selectinload(models.Work.related_works).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
-                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
-                             orm.Load(models.Work).raiseload('*'))
-                        objects = object_query.filter(self.myid.in_(object_ids)).all()
-                    except Exception as e:
-                        print(f"Exception getting objects {e} for {object_ids} so trying individually")
-                        objects = []
-                        for id in object_ids:
-                            try:
-                                objects += object_query.filter(self.myid==id).all()
-                            except Exception as e:
-                                print(f"error: failed on {run_method} {id} with error {e}")
-                elif self.myclass == models.Work and run_method.startswith("add_"):
-                    try:
-                        query = db.session.query(models.Work).options(
-                             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
-                             selectinload(models.Work.records).raiseload('*'),
-                             selectinload(models.Work.locations).raiseload('*'),
-                             selectinload(models.Work.journal).raiseload('*'),
-                             selectinload(models.Work.references).raiseload('*'),
-                             selectinload(models.Work.references_unmatched).raiseload('*'),
-                             selectinload(models.Work.mesh),
-                             selectinload(models.Work.counts_by_year).raiseload('*'),
-                             selectinload(models.Work.abstract),
-                             selectinload(models.Work.extra_ids).raiseload('*'),
-                             selectinload(models.Work.related_works).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
-                             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
-                             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
-                             selectinload(models.Work.concepts_full).raiseload('*'),
-                             orm.Load(models.Work).raiseload('*'))
-                        objects = query.filter(self.myid.in_(object_ids)).all()
-                    except Exception as e:
-                        print(f"Exception {e} getting records for {object_ids} so trying individually")
-                        objects = []
-                        for id in object_ids:
-                            try:
-                                objects += query.filter(self.myid==id).all()
-                            except Exception as e:
-                                print(f"error: failed on {run_method} {id} with error {e}")
+            job_time = time()
+            print(object_ids)
+            if (self.myclass == models.Work) and (run_method == "store"):
+                try:
+                    object_query = db.session.query(models.Work).options(
+                         selectinload(models.Work.locations),
+                         selectinload(models.Work.journal).raiseload('*'),
+                         selectinload(models.Work.references).raiseload('*'),
+                         selectinload(models.Work.mesh),
+                         selectinload(models.Work.counts_by_year).raiseload('*'),
+                         selectinload(models.Work.abstract),
+                         selectinload(models.Work.extra_ids).raiseload('*'),
+                         selectinload(models.Work.related_works).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+                         selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+                         orm.Load(models.Work).raiseload('*'))
+                    objects = object_query.filter(self.myid.in_(object_ids)).all()
+                except Exception as e:
+                    print(f"Exception getting objects {e} for {object_ids} so trying individually")
+                    objects = []
+                    for id in object_ids:
+                        try:
+                            objects += object_query.filter(self.myid==id).all()
+                        except Exception as e:
+                            print(f"error: failed on {run_method} {id} with error {e}")
+            elif self.myclass == models.Work and run_method.startswith("add_"):
+                try:
+                    query = db.session.query(models.Work).options(
+                         selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+                         selectinload(models.Work.records).raiseload('*'),
+                         selectinload(models.Work.locations).raiseload('*'),
+                         selectinload(models.Work.journal).raiseload('*'),
+                         selectinload(models.Work.references).raiseload('*'),
+                         selectinload(models.Work.references_unmatched).raiseload('*'),
+                         selectinload(models.Work.mesh),
+                         selectinload(models.Work.counts_by_year).raiseload('*'),
+                         selectinload(models.Work.abstract),
+                         selectinload(models.Work.extra_ids).raiseload('*'),
+                         selectinload(models.Work.related_works).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+                         selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+                         selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+                         selectinload(models.Work.concepts_full).raiseload('*'),
+                         orm.Load(models.Work).raiseload('*'))
+                    objects = query.filter(self.myid.in_(object_ids)).all()
+                except Exception as e:
+                    print(f"Exception {e} getting records for {object_ids} so trying individually")
+                    objects = []
+                    for id in object_ids:
+                        try:
+                            objects += query.filter(self.myid==id).all()
+                        except Exception as e:
+                            print(f"error: failed on {run_method} {id} with error {e}")
 
-                elif self.myclass == models.Work and run_method=="new_work_concepts":
-                    q = """select work.paper_id, work.paper_title, work.doc_type,
-                            journal.display_name as journal_title, abstract.indexed_abstract
-                        from mid.work work
-                        left outer join mid.journal journal on journal.journal_id=work.journal_id
-                        left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
-                        where work.paper_id in ({})
-                    """.format(",".join(str(paper_id) for paper_id in object_ids))
-                    objects = db.session.execute(text(q)).fetchall()
-                elif self.myclass == models.Record:
-                    objects = db.session.query(models.Record).options(
-                         selectinload(models.Record.work_matches_by_title).raiseload('*'),
-                         selectinload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
-                         selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-                         selectinload(models.Record.journals).raiseload('*'),
-                         orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                elif self.myclass == models.Author:
-                    objects = db.session.query(models.Author).options(
-                         selectinload(models.Author.counts_by_year_papers).raiseload('*'),
-                         selectinload(models.Author.counts_by_year_citations).raiseload('*'),
-                         selectinload(models.Author.alternative_names),
-                         selectinload(models.Author.author_concepts).raiseload('*'),
-                         selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
-                         selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
-                         selectinload(models.Author.last_known_institution).raiseload('*'),
-                         # orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                         orm.Load(models.Author).lazyload('*')).filter(self.myid.in_(object_ids)).all()
-                elif self.myclass == models.Institution:
-                    objects = db.session.query(models.Institution).options(
-                         selectinload(models.Institution.counts_by_year_papers.raiseload('*')),
-                         selectinload(models.Institution.counts_by_year_citations.raiseload('*')),
-                         selectinload(models.Institution.ror).raiseload('*'),
-                         orm.Load(models.Institution).lazyload('*')).filter(self.myid.in_(object_ids)).all()
-                         # selectinload(models.Institution.ror).raiseload('*'),
-                         # orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
-                    objects = db.session.query(models.Concept).options(
-                         orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                elif self.myclass == models.Concept:
-                    objects = db.session.query(models.Concept).options(
-                         # selectinload(models.Concept.counts_by_year_papers),
-                         # selectinload(models.Concept.counts_by_year_citations),
-                         selectinload(models.Concept.ancestors),
-                         orm.Load(models.Concept).lazyload('*')).filter(self.myid.in_(object_ids)).all()
-                         # selectinload(models.Concept.ancestors),
-                         # orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                elif self.myclass == models.Venue:
-                    objects = db.session.query(models.Venue).options(
-                         selectinload(models.Venue.counts_by_year_papers),
-                         selectinload(models.Venue.counts_by_year_citations),
-                         orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
-                else:
-                    objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Work and run_method=="new_work_concepts":
+                q = """select work.paper_id, work.paper_title, work.doc_type,
+                        journal.display_name as journal_title, abstract.indexed_abstract
+                    from mid.work work
+                    left outer join mid.journal journal on journal.journal_id=work.journal_id
+                    left outer join mid.abstract abstract on work.paper_id=abstract.paper_id
+                    where work.paper_id in ({})
+                """.format(",".join(str(paper_id) for paper_id in object_ids))
+                objects = db.session.execute(text(q)).fetchall()
+            elif self.myclass == models.Record:
+                objects = db.session.query(models.Record).options(
+                     selectinload(models.Record.work_matches_by_title).raiseload('*'),
+                     selectinload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
+                     selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+                     selectinload(models.Record.work_matches_by_pmid).raiseload('*'),
+                     selectinload(models.Record.journals).raiseload('*'),
+                     orm.Load(models.Record).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Author:
+                objects = db.session.query(models.Author).options(
+                     selectinload(models.Author.counts_by_year_papers).raiseload('*'),
+                     selectinload(models.Author.counts_by_year_citations).raiseload('*'),
+                     selectinload(models.Author.alternative_names),
+                     selectinload(models.Author.author_concepts).raiseload('*'),
+                     selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
+                     selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
+                     selectinload(models.Author.last_known_institution).raiseload('*'),
+                     # orm.Load(models.Author).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+                     orm.Load(models.Author).lazyload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Institution:
+                objects = db.session.query(models.Institution).options(
+                     selectinload(models.Institution.counts_by_year_papers.raiseload('*')),
+                     selectinload(models.Institution.counts_by_year_citations.raiseload('*')),
+                     selectinload(models.Institution.ror).raiseload('*'),
+                     orm.Load(models.Institution).lazyload('*')).filter(self.myid.in_(object_ids)).all()
+                     # selectinload(models.Institution.ror).raiseload('*'),
+                     # orm.Load(models.Institution).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Concept and (run_method == "calculate_ancestors"):
+                objects = db.session.query(models.Concept).options(
+                     orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Concept:
+                objects = db.session.query(models.Concept).options(
+                     # selectinload(models.Concept.counts_by_year_papers),
+                     # selectinload(models.Concept.counts_by_year_citations),
+                     selectinload(models.Concept.ancestors),
+                     orm.Load(models.Concept).lazyload('*')).filter(self.myid.in_(object_ids)).all()
+                     # selectinload(models.Concept.ancestors),
+                     # orm.Load(models.Concept).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            elif self.myclass == models.Venue:
+                objects = db.session.query(models.Venue).options(
+                     selectinload(models.Venue.counts_by_year_papers),
+                     selectinload(models.Venue.counts_by_year_citations),
+                     orm.Load(models.Venue).raiseload('*')).filter(self.myid.in_(object_ids)).all()
+            else:
+                objects = db.session.query(self.myclass).options(orm.Load(self.myclass).raiseload('*')).filter(self.myid.in_(object_ids)).all()
 
-                logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
+            logger.info("{}: got objects in {} seconds".format(worker_name, elapsed(job_time)))
 
-                if not objects:
-                    logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
-                    sleep(5)
-                    continue
+            if not objects:
+                logger.info(u"{}: no objects, so sleeping for 5 seconds, then going again".format(worker_name))
+                sleep(5)
+                continue
 
 
-                self.update_fn(run_class, run_method, objects, index=index)
+            self.update_fn(run_class, run_method, objects, index=index)
 
-                index += 1
-                if single_obj_id:
-                    return
-                else:
-                    self.print_update(new_loop_start_time, chunk, limit, start_time, index)
+            index += 1
+            if single_obj_id:
+                return
+            else:
+                self.print_update(new_loop_start_time, chunk, limit, start_time, index)
 
     def run(self, parsed_args):
         start = time()
