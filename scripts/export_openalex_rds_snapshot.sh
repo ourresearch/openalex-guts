@@ -63,7 +63,7 @@ export_table() {
           create table if not exists ${table_snapshot} as (\
             select changed::date as changed_date, ${json_field_name} \
             from ${table_name} \
-            where merge_into_id is null and ${json_field_name} is not null limit 100000 \
+            where merge_into_id is null and ${json_field_name} is not null \
           );"
 
     psql $OPENALEX_DB -c "create index on ${table_snapshot} (changed_date);"
