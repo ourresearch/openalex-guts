@@ -21,8 +21,8 @@
 #   # 3.4 copy files to s3 staging folder
 #   aws s3 cp ${data_dir}/merged_ids s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging/data/merged_ids/ --recursive
 
-# 4. make manifests somehow
-#    like s3://openalex-sandbox/snapshot-backups/openalex-jsonl/2022-05-12/data/authors/manifest
+# 4. make manifests
+#   $ bash ./scripts/make-manifests.sh
 
 # 5. add txt files and browse page
 #   date the current release notes
