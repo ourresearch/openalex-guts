@@ -2,7 +2,7 @@ import argparse
 from time import sleep, time
 
 from sqlalchemy import orm, text
-from sqlalchemy.orm import lazyload, joinedload
+from sqlalchemy.orm import lazyload, selectinload
 
 import models
 from app import db
@@ -101,11 +101,11 @@ def get_record(record_id):
     logger.info(f'getting record {record_id}')
 
     record = db.session.query(models.Record).options(
-        joinedload(models.Record.work_matches_by_title).raiseload('*'),
+        selectinload(models.Record.work_matches_by_title).raiseload('*'),
         lazyload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
-        joinedload(models.Record.work_matches_by_doi).raiseload('*'),
-        joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
-        joinedload(models.Record.journals).raiseload('*'),
+        selectinload(models.Record.work_matches_by_doi).raiseload('*'),
+        selectinload(models.Record.work_matches_by_pmid).raiseload('*'),
+        selectinload(models.Record.journals).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
     ).filter(models.Record.id == record_id).scalar()
 
