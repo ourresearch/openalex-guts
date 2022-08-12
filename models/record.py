@@ -99,7 +99,7 @@ class Record(db.Model):
         return sorted_journals[0]
 
 
-    def get_or_mint_work(self):
+    def get_work(self):
         from models.work import Work
         now = datetime.datetime.utcnow()
 
@@ -114,14 +114,18 @@ class Record(db.Model):
         # by doi
         if matching_works := [w for w in self.work_matches_by_doi if not w.merge_into_id]:
             print("found by doi")
-            sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+            sorted_matching_works = sorted(matching_works,
+                                           key=lambda x: x.full_updated_date if x.full_updated_date else now,
+                                           reverse=True)
             matching_work = sorted_matching_works[0]
 
         # by pmid
         if not matching_works:
             if matching_works := [w for w in self.work_matches_by_pmid if not w.merge_into_id]:
                 print("found by pmid")
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+                sorted_matching_works = sorted(matching_works,
+                                               key=lambda x: x.full_updated_date if x.full_updated_date else now,
+                                               reverse=True)
                 matching_work = sorted_matching_works[0]
 
         # by pmc_id or arxiv_id, later. match by id before match by title.
@@ -129,7 +133,9 @@ class Record(db.Model):
         # by title
         if not matching_work:
             if matching_works := [w for w in self.work_matches_by_title if not w.merge_into_id]:
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+                sorted_matching_works = sorted(matching_works,
+                                               key=lambda x: x.full_updated_date if x.full_updated_date else now,
+                                               reverse=True)
 
                 # just look at the first 20 matches
                 for matching_work_temp in sorted_matching_works[:20]:
@@ -158,18 +164,21 @@ class Record(db.Model):
                 and ((not self.title) or (len(self.title) < 20)):
             self.work_id = -1
             print(f"{self.id} does not have a strong identifier and has no title, or title is too short, skipping")
-            return
+            return True
 
         if matching_work:
             print(f"FOUND A MATCH: https://openalex-guts.herokuapp.com/W{matching_work.paper_id}")
-            self.work_id = matching_work.paper_id   # link the record to the work
+            self.work_id = matching_work.paper_id  # link the record to the work
             matching_work.full_updated_date = None  # prep the work for needing an update
+            return True
         else:
-            print("no match, so minting")
+            print("no match")
+            return False
+
+    def get_or_mint_work(self):
+        if not self.get_work():
             self.mint_work()
         return
-
-
 
     def mint_work(self):
         from models import Work
@@ -215,9 +224,7 @@ class Record(db.Model):
             return None
 
     def process_record(self):
-        self.insert_dict = [{}]
         print("processing record! {}".format(self.id))
-
         self.get_or_mint_work()
 
 
