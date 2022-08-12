@@ -2,7 +2,7 @@ import argparse
 from time import sleep, time
 
 from sqlalchemy import orm, text
-from sqlalchemy.orm import lazyload, selectinload
+from sqlalchemy.orm import joinedload, lazyload
 
 import models
 from app import db
@@ -12,8 +12,8 @@ from util import elapsed
 
 def run(**kwargs):
     if single_id := kwargs.get('id'):
-        if record := get_record(single_id):
-            record.process_record()
+        if record := get_records([single_id]):
+            record[0].get_or_mint_work()
             finish_object_ids([single_id])
         else:
             logger.warn(f'found no recordthresher record with id {single_id}')
@@ -25,24 +25,34 @@ def run(**kwargs):
         while limit is None or objects_updated < limit:
             if record_ids := fetch_queue_chunk_ids(chunk):
                 loop_start = time()
-                for record_id in record_ids:
+
+                start_time = time()
+                records = get_records(record_ids)
+                logger.info(f'loaded {len(records)} records in {elapsed(start_time, 4)}s')
+
+                start_time = time()
+                for record in records:
                     record_start_time = time()
-                    # No point bulk loading objects. When a new work is created it commits itself,
-                    # and later objects in the batch must be reloaded.
-
-                    logger.info(f"*** #{objects_updated}: starting {record_id}.process_record()")
-
-                    start_time = time()
-                    record = get_record(record_id)
-                    logger.info(f"fetched recordthresher record {record_id} in {elapsed(start_time, 4)} seconds")
-
-                    start_time = time()
-                    record.process_record()
-                    logger.info(f"processed recordthresher record {record_id} in {elapsed(start_time, 4)} seconds")
-
+                    logger.info(f"*** #{objects_updated}: starting {record.id}.get_work()")
+                    record.get_work()
+                    logger.info(f"tried to match record {record.id} in {elapsed(record_start_time, 4)} seconds")
                     objects_updated += 1
 
-                    logger.info(f"*** finished {record_id}.process_record() in {elapsed(record_start_time, 4)} seconds")
+                mapped_records = [r for r in records if r.work_id is not None]
+                logger.info(f'completed first pass matching {len(mapped_records)} records in {elapsed(start_time, 4)}s')
+
+                unmapped_records = [r for r in records if r.work_id is None]
+                start_time = time()
+                for um in unmapped_records:
+                    record_start_time = time()
+                    um.get_or_mint_work()
+                    logger.info(f"got or minted a work for {um.id} in {elapsed(record_start_time, 4)} seconds")
+
+                num_unmapped = len(unmapped_records)
+                num_new_records = len(set([r.work_id for r in unmapped_records]))
+                logger.info(
+                    f'made {num_new_records} new works for {num_unmapped} unmapped records in {elapsed(start_time, 4)}s'
+                )
 
                 finish_object_ids(record_ids)
                 logger.info(f'processed chunk of {chunk} records in {elapsed(loop_start, 2)} seconds')
@@ -97,17 +107,17 @@ def finish_object_ids(object_ids):
     logger.info(f'enqueueing mapped works took {elapsed(start_time, 2)} seconds')
 
 
-def get_record(record_id):
-    logger.info(f'getting record {record_id}')
+def get_records(record_ids):
+    logger.info(f'getting {len(record_ids)} records')
 
     record = db.session.query(models.Record).options(
-        selectinload(models.Record.work_matches_by_title).raiseload('*'),
+        joinedload(models.Record.work_matches_by_title).raiseload('*'),
         lazyload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
-        selectinload(models.Record.work_matches_by_doi).raiseload('*'),
-        selectinload(models.Record.work_matches_by_pmid).raiseload('*'),
-        selectinload(models.Record.journals).raiseload('*'),
+        joinedload(models.Record.work_matches_by_doi).raiseload('*'),
+        joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
+        joinedload(models.Record.journals).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
-    ).filter(models.Record.id == record_id).scalar()
+    ).filter(models.Record.id.in_(record_ids)).all()
 
     return record
 
