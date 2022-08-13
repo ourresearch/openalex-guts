@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import json
 import os
 from collections import defaultdict
@@ -54,7 +55,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
-        print(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
+        logger.error(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
         return []
 
     api_json = r.json()
@@ -95,6 +96,7 @@ class Work(db.Model):
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
+    concepts_input_hash = db.Column(db.Text)
 
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
@@ -165,13 +167,7 @@ class Work(db.Model):
                 seen_institutions_by_author[a.author_id].add(a.affiliation_id)
 
 
-
-    def add_work_concepts(self):
-        self.full_updated_date = datetime.datetime.utcnow().isoformat()
-
-        # keep all the version 1s for now but remove all the version 2s
-        self.concepts_full = [concept for concept in self.concepts_full if concept.algorithm_version == 1]
-
+    def concept_api_input_data(self):
         abstract_dict = None
         # for when abstract was added and not included in table yet
         if hasattr(self, "abstract_indexed_abstract"):
@@ -179,15 +175,30 @@ class Work(db.Model):
         elif self.abstract:
             abstract_dict = self.abstract.indexed_abstract
 
-        api_key = os.getenv("SAGEMAKER_API_KEY")
         has_abstract = True if abstract_dict else False
-        data = {
+
+        return {
             "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
             "abstract": abstract_dict,
             "inverted_abstract": has_abstract
         }
+
+    def add_work_concepts(self):
+        current_concepts_input_hash = hashlib.md5(
+            json.dumps(self.concept_api_input_data(), sort_keys=True).encode('utf-8')
+        ).hexdigest()
+
+        if self.concepts_input_hash == current_concepts_input_hash:
+            logger.info('skipping concept tagging because inputs are unchanged')
+            return
+
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
+        data = self.concept_api_input_data()
+        api_key = os.getenv("SAGEMAKER_API_KEY")
+
         headers = {"X-API-Key": api_key}
         api_url = "https://t9a5o7qfy2.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
 
@@ -202,39 +213,41 @@ class Work(db.Model):
                     concept_names = response_json[0]["tags"]
                     keep_calling = False
                 except Exception as e:
-                    print(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                    logger.error(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     concept_names = None
                     keep_calling = False
 
             elif r.status_code == 500:
-                print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 number_tries += 1
 
             else:
-                print(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 concept_names = None
                 keep_calling = False
 
+        if r.status_code == 200:
+            # keep all the version 1s for now but remove all the version 2s
+            self.concepts_full = [concept for concept in self.concepts_full if concept.algorithm_version == 1]
+            self.concepts_for_related_works = []
 
-        self.concepts_for_related_works = []
-        fields_of_study = []
-        if concept_names:
-            for i, concept_name in enumerate(concept_names):
-                score = response_json[0]["scores"][i]
-                field_of_study = response_json[0]["tag_ids"][i]
-                if field_of_study:
-                    fields_of_study += [field_of_study]
-                new_work_concept = models.WorkConceptFull(field_of_study=field_of_study,
-                                                       score=score,
-                                                       algorithm_version=2,
-                                                       uses_newest_algorithm=True,
-                                                       updated_date=datetime.datetime.utcnow().isoformat())
-                self.concepts_full += [new_work_concept]
-                if score > 0.3:
-                    self.concepts_for_related_works.append(field_of_study)
-        else:
-            pass
+            fields_of_study = []
+            if concept_names:
+                for i, concept_name in enumerate(concept_names):
+                    score = response_json[0]["scores"][i]
+                    field_of_study = response_json[0]["tag_ids"][i]
+                    if field_of_study:
+                        fields_of_study += [field_of_study]
+                    new_work_concept = models.WorkConceptFull(field_of_study=field_of_study,
+                                                           score=score,
+                                                           algorithm_version=2,
+                                                           uses_newest_algorithm=True,
+                                                           updated_date=datetime.datetime.utcnow().isoformat())
+                    self.concepts_full += [new_work_concept]
+                    if score > 0.3:
+                        self.concepts_for_related_works.append(field_of_study)
 
+            self.concepts_input_hash = current_concepts_input_hash
 
     def add_everything(self):
         self.delete_dict = defaultdict(list)
@@ -244,7 +257,7 @@ class Work(db.Model):
             # not associated with a record, so leave it for now
             # merged-away works have their records' work ids updated,
             # so also do nothing for merged-away works
-            print(f"No associated records for {self.paper_id}, so skipping")
+            logger.info(f"No associated records for {self.paper_id}, so skipping")
             return
 
         start_time = time()
@@ -282,22 +295,23 @@ class Work(db.Model):
         # for now, only add/update affiliations if they aren't there
         start_time = time()
         if not self.affiliations:
-            print("adding affiliations because work didn't have any yet")
+            logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
             logger.info(f'add_affiliations took {elapsed(start_time, 2)} seconds')
         else:
-            print("not adding affiliations because work already has some set, but updating institutions")
+            logger.info("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
 
     def add_related_works(self):
-        if self.concepts:
-            self.concepts_for_related_works = [concept.field_of_study for concept in self.concepts]
-        else:
-            if not hasattr(self, "concepts_for_related_works"):
+        if not hasattr(self, "concepts_for_related_works"):
+            if self.concepts:
+                self.concepts_for_related_works = [c.field_of_study for c in self.concepts if c.score > .3]
+            else:
                 return
-            if not self.concepts_for_related_works:
-                return
+
+        if not self.concepts_for_related_works:
+            return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -317,7 +331,7 @@ class Work(db.Model):
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept_for_api_mv wc
-                where wc.field_of_study = fos.field_of_study_id order by score desc limit 50000
+                where wc.field_of_study = fos.field_of_study_id and wc.score > .3 order by score desc limit 50000
             ) papers_by_fos
         group by paper_id
         order by n desc, average_related_score desc
@@ -449,7 +463,7 @@ class Work(db.Model):
                             self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=reference_source_num, raw_json=json.dumps(citation_dict))]
 
                 except Exception as e:
-                    print(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
+                    logger.exception(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
@@ -475,7 +489,7 @@ class Work(db.Model):
 
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
-            print("no affiliation data found in any of the records")
+            logger.info("no affiliation data found in any of the records")
             return
 
         record = records_with_affiliations[0]
@@ -609,7 +623,7 @@ class Work(db.Model):
         records = self.records_sorted
         records.reverse()
 
-        print(f"my records: {records}")
+        logger.info(f"my records: {records}")
 
         for record in records:
             if record.record_type == "pmh_record":
@@ -694,7 +708,7 @@ class Work(db.Model):
             # print(f"author_match_name: {author_match_name}")
             if author_match_name:
                 author_match_names += [author_match_name]
-        print(f"author_match_names: {author_match_names}")
+        logger.info(f"author_match_names: {author_match_names}")
         return author_match_names
 
 
@@ -703,26 +717,26 @@ class Work(db.Model):
         # returns False if both have authors but neither the first nor last author in the Work is in the author string
 
         if not record_author_json:
-            print("no record_author_json, so not trying to match")
+            logger.info("no record_author_json, so not trying to match")
             return True
         if record_author_json == '[]':
-            print("no record_author_json, so not trying to match")
+            logger.info("no record_author_json, so not trying to match")
             return True
         if not self.affiliations:
-            print("no self.affiliations, so not trying to match")
+            logger.info("no self.affiliations, so not trying to match")
             return True
-        print(f"trying to match existing work {self.id} {self.doi_lower} with record authors")
+        logger.info(f"trying to match existing work {self.id} {self.doi_lower} with record authors")
 
         for original_name in [self.first_author_original_name, self.last_author_original_name]:
-            print(f"original_name: {original_name}")
+            logger.info(f"original_name: {original_name}")
             if original_name:
                 author_match_name = models.Author.matching_author_string(original_name)
-                print(f"author_match_name: {author_match_name}")
+                logger.info(f"author_match_name: {author_match_name}")
                 if author_match_name and (author_match_name in Work.author_match_names_from_record_json(record_author_json)):
-                    print("author match!")
+                    logger.info("author match!")
                     return True
 
-        print("author no match")
+        logger.info("author no match")
         return False
 
     @cached_property
@@ -808,7 +822,7 @@ class Work(db.Model):
         self.insert_dicts = []
 
         if not self.merge_into_id and not self.full_updated_date:
-            print(f"Not storing anything for {self.openalex_id} yet because no full_updated_date or merge_into_id, so is a stub waiting for add_everything")
+            logger.info(f"Not storing anything for {self.openalex_id} yet because no full_updated_date or merge_into_id, so is a stub waiting for add_everything")
             return
 
         VERSION_STRING = "new: updated if changed"
@@ -827,9 +841,9 @@ class Work(db.Model):
                 # check merged here for everything but concept
                 diff = dictionary_nested_diff(stored_full_dict, my_full_dict, ["updated_date"])
                 if not diff:
-                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-                print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
