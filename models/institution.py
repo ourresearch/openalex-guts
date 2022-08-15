@@ -314,7 +314,7 @@ class Institution(db.Model):
                     logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                logger.info(f"Institution JSON Diff: {diff}")
+                logger.debug(f"Institution JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
