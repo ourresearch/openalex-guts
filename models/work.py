@@ -843,7 +843,8 @@ class Work(db.Model):
                 if not diff:
                     logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
+                logger.info(f"Work JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now

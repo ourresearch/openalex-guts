@@ -9,6 +9,7 @@ import json
 import datetime
 
 from app import db
+from app import logger
 from app import USER_AGENT
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
@@ -247,7 +248,7 @@ class Institution(db.Model):
         if not data:
             wikipedia_page_name = self.wiki_page.rsplit("/", 1)[-1]
             url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&pilicense=any&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-            print(f"calling wikipedia live for {self.openalex_id} with {url}")
+            logger.info(f"calling wikipedia live for {self.openalex_id} with {url}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
             # print(r.json())
             data = r.json()
@@ -289,7 +290,7 @@ class Institution(db.Model):
             data = None
         if not data:
             url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
-            print(f"calling wikidata live with {url} for {self.openalex_id}")
+            logger.info(f"calling wikidata live with {url} for {self.openalex_id}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
             try:
                 data = r.json()
@@ -310,9 +311,10 @@ class Institution(db.Model):
                 # check merged here for everything but concept
                 diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
                 if not diff:
-                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-                print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+                logger.info(f"Institution JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
@@ -322,7 +324,7 @@ class Institution(db.Model):
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
-            print("Error: json_save too long for affiliation_id {}, skipping".format(self.openalex_id))
+            logger.error("Error: json_save too long for affiliation_id {}, skipping".format(self.openalex_id))
             json_save = None
         self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id,
                                              "updated": now,
@@ -417,16 +419,16 @@ class Institution(db.Model):
                     # now replace any that have been merged with what they have been merged into
                     institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
                 except Exception as e:
-                    print(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                    logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     institution_ids = []
                 return institution_ids
 
             elif r.status_code == 500:
-                print(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 number_tries += 1
 
             else:
-                print(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 return []
 
 
@@ -492,6 +494,6 @@ class Institution(db.Model):
         return "<Institution ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
-print(f"loading merged_into_institutions_dict")
+logger.info(f"loading merged_into_institutions_dict")
 merged_into_institutions = db.session.query(Institution).options(orm.Load(Institution).raiseload('*')).filter(Institution.merge_into_id != None).all()
 merged_into_institutions_dict = dict((inst.affiliation_id, inst.merge_into_id) for inst in merged_into_institutions)
