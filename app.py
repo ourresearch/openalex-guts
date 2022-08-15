@@ -34,9 +34,12 @@ USER_AGENT = "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"
 
 # set up logging
 # see http://wiki.pylonshq.com/display/pylonscookbook/Alternative+logging+configuration
+
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
+
 logging.basicConfig(
     stream=sys.stdout,
-    level=logging.DEBUG,
+    level=log_level,
     format='%(thread)d: %(message)s'  #tried process but it was always "6" on heroku
 )
 logger = logging.getLogger("oadoi")
