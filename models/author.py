@@ -220,7 +220,7 @@ class Author(db.Model):
                     logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
-                logger.info(f"Author JSON Diff: {diff}")
+                logger.debug(f"Author JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
