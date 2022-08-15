@@ -6,6 +6,7 @@ import urllib.parse
 import datetime
 
 from app import db
+from app import logger
 from app import USER_AGENT
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
@@ -271,7 +272,7 @@ class Concept(db.Model):
             data = None
         if not data:
             url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
-            print(f"calling wikidata live with {url} for {self.openalex_id}")
+            logger.info(f"calling wikidata live with {url} for {self.openalex_id}")
             r = requests.get(url, headers={"User-Agent": USER_AGENT})
             data = r.json()
             # are claims too big?
@@ -279,7 +280,6 @@ class Concept(db.Model):
                 del data["entities"][self.wikidata_id_short]["claims"]
             except:
                 pass
-            # print(response)
         return data
 
 
@@ -288,7 +288,7 @@ class Concept(db.Model):
         try:
             return json.loads(self.wikipedia_json)
         except:
-            print(f"Error doing json_loads for {self.openalex_id} in wikipedia_data")
+            logger.exception(f"Error doing json_loads for {self.openalex_id} in wikipedia_data")
             return None
 
     @cached_property
@@ -297,11 +297,8 @@ class Concept(db.Model):
             return None
         wikipedia_page_name = self.wikipedia_url.rsplit("/", 1)[-1]
 
-        # print(f"\noriginal: {self.wikipedia_url} for name {self.display_name}")
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageprops%7Cpageimages%7Cpageterms&piprop=original%7Cthumbnail&titles={wikipedia_page_name}&pithumbsize=100&redirects="
-        # print(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
-        # print(r.json())
 
         return r.json()
 
@@ -345,7 +342,7 @@ class Concept(db.Model):
             return None
 
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{self.wikidata_id_short}.json"
-        print(f"calling {url}")
+        logger.info(f"calling {url}")
         r = requests.get(url, headers={"User-Agent": USER_AGENT})
         response = r.json()
         # claims are too big
@@ -368,16 +365,18 @@ class Concept(db.Model):
             # check merged here for everything but concept
             diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
             if not diff:
-                print(f"dictionary not changed, don't save again {self.openalex_id}")
+                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                 return
-            print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
+            logger.info(f"Concept JSON Diff: {diff}")
+
         now = datetime.datetime.utcnow().isoformat()
         # self.full_updated_date = now  # can't do this for now because for concepts it is a view
         my_dict["updated_date"] = now
 
         json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
-            print("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
+            logger.error("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
             json_save = None
         self.insert_dicts = [{"JsonConcepts": {"id": self.field_of_study_id,
                                              "updated": now,

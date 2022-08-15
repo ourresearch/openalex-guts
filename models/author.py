@@ -9,6 +9,7 @@ from app import db
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
+from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
 
@@ -95,13 +96,13 @@ class Author(db.Model):
                 cur.execute(match_with_orcid)
                 rows = cur.fetchall()
                 if rows:
-                    print(f"matched: author using orcid")
+                    logger.info(f"matched: author using orcid")
                     return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
             if citation_paper_ids:
                 cur.execute(match_with_citations)
                 rows = cur.fetchall()
                 if rows:
-                    print(f"matched: author using citations")
+                    logger.info(f"matched: author using citations")
                     return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
         return None
 
@@ -216,9 +217,10 @@ class Author(db.Model):
                 # check merged here for everything but concept
                 diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
                 if not diff:
-                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-                print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"Author JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
@@ -228,7 +230,7 @@ class Author(db.Model):
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
-            print("Error: json_save too long for author_id {}, skipping".format(self.openalex_id))
+            logger.error("Error: json_save too long for author_id {}, skipping".format(self.openalex_id))
             json_save = None
         self.insert_dicts = [{"JsonAuthors": {"id": self.author_id,
                                              "updated": now,

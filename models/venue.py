@@ -4,6 +4,7 @@ import json
 import datetime
 
 from app import db
+from app import logger
 from app import MAX_MAG_ID
 from app import get_apiurl_from_openalex_url
 from util import dictionary_nested_diff
@@ -70,9 +71,10 @@ class Venue(db.Model):
                 # check merged here for everything but concept
                 diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
                 if not diff:
-                    print(f"dictionary not changed, don't save again {self.openalex_id}")
+                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
-                print(f"dictionary for {self.openalex_id} new or changed, so save again. Diff: {diff}")
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+                logger.info(f"Venue JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
@@ -82,7 +84,7 @@ class Venue(db.Model):
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
         if json_save and len(json_save) > 65000:
-            print("Error: json_save too long for journal_id {}, skipping".format(self.openalex_id))
+            logger.info("Error: json_save too long for journal_id {}, skipping".format(self.openalex_id))
             json_save = None
         self.insert_dicts = [{"JsonVenues": {"id": self.journal_id,
                                              "updated": now,
