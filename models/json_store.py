@@ -14,6 +14,8 @@ class JsonWorks(db.Model):
     version = db.Column(db.Text)
     abstract_inverted_index = db.Column(db.Text)
     json_save_with_abstract = db.Column(db.Text)
+    authors_count = db.Column(db.Integer)
+    concepts_count = db.Column(db.Integer)
     merge_into_id = db.Column(db.BigInteger)
 
 class JsonAuthors(db.Model):
