@@ -877,6 +877,8 @@ class Work(db.Model):
                                             "version": VERSION_STRING,
                                             "abstract_inverted_index": self.abstract_inverted_index, # comment out if going fast
                                             "json_save_with_abstract": json_save_with_abstract, # comment out if going fast
+                                            "authors_count": len(self.affiliations_list),
+                                            "concepts_count": len(self.concepts_sorted),
                                             "merge_into_id": self.merge_into_id
                                             }}]
 
