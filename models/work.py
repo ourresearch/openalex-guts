@@ -469,13 +469,16 @@ class Work(db.Model):
             works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
             for my_work in works:
                 my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
-            citation_paper_ids += [work.paper_id for work in works if work.paper_id]
+            citation_paper_ids += [work.merge_into_id or work.paper_id for work in works if work.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
             for my_work_id in work_ids:
                 if my_work_id.work:
                     my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
-            citation_paper_ids += [work_id.paper_id for work_id in work_ids if work_id and work_id.paper_id]
+            citation_paper_ids += [
+                work_id.work.merge_into_id or work_id.work.paper_id
+                for work_id in work_ids if work_id and work_id.work
+            ]
 
         citation_paper_ids = list(set(citation_paper_ids))
         self.references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
