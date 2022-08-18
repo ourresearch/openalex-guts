@@ -49,7 +49,7 @@ Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="wor
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", viewonly=True) # this is a materialized view, concepts_full is for modifying
 Work.concepts_full = db.relationship("WorkConceptFull", lazy='selectin', backref="work", cascade="all, delete-orphan")
 
-Affiliation.author = db.relationship("Author") # don't delete orphan
+Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan
 
 Institution.ror = db.relationship("Ror", uselist=False)

@@ -4,6 +4,7 @@ from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
 import json
 import datetime
+import re
 
 from app import db
 from app import MAX_MAG_ID
@@ -264,6 +265,28 @@ class Author(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    @cached_property
+    def most_cited_work_string(self):
+        my_works = [a.work for a in self.affiliations if a.work.counts]
+        if my_works:
+            most_cited_work = sorted(my_works, key=lambda w: w.counts.citation_count, reverse=True)[0]
+        else:
+            return None
+
+        if not most_cited_work.work_title:
+            return None
+
+        title_words = re.split(r'\s+', most_cited_work.work_title)
+        if len(title_words) < 20:
+            title_str = most_cited_work.work_title
+        else:
+            title_str = ' '.join(title_words[0:20]) + ' ...'
+
+        if most_cited_work.year:
+            title_str += f' ({most_cited_work.year})'
+
+        return title_str
+
     def to_dict(self, return_level="full"):
         response = {
                 "id": self.openalex_id,
@@ -275,6 +298,7 @@ class Author(db.Model):
                 "display_name_alternatives": self.all_alternative_names,
                 "works_count": self.counts.paper_count if self.counts else 0,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "most_cited_work": self.most_cited_work_string,
                 "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,

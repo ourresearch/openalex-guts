@@ -183,6 +183,8 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
             selectinload(models.Author.last_known_institution).raiseload('*'),
+            selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).selectinload(models.Work.counts),
+            selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).raiseload('*'),
             orm.Load(models.Author).raiseload('*')
         ).filter(models.Author.author_id.in_(object_ids)).all()
     elif entity_type == "venue":
