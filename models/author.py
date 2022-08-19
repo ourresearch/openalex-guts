@@ -267,7 +267,7 @@ class Author(db.Model):
 
     @cached_property
     def most_cited_work_string(self):
-        my_works = [a.work for a in self.affiliations if a.work.counts]
+        my_works = [a.work for a in self.affiliations if a.work and a.work.counts]
         if my_works:
             most_cited_work = sorted(my_works, key=lambda w: w.counts.citation_count, reverse=True)[0]
         else:
