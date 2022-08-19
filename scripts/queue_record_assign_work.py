@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 from time import sleep, time
 
 from sqlalchemy import orm, text
@@ -12,7 +13,7 @@ from util import elapsed
 
 def run(**kwargs):
     if single_id := kwargs.get('id'):
-        if record := get_record(single_id):
+        if record := get_records([single_id]):
             record.process_record()
             finish_object_ids([single_id])
         else:
@@ -25,26 +26,46 @@ def run(**kwargs):
         while limit is None or objects_updated < limit:
             if record_ids := fetch_queue_chunk_ids(chunk):
                 loop_start = time()
-                for record_id in record_ids:
-                    record_start_time = time()
-                    # No point bulk loading objects. When a new work is created it commits itself,
-                    # and later objects in the batch must be reloaded.
+                records = get_records(record_ids)
 
-                    logger.info(f"*** #{objects_updated}: starting {record_id}.process_record()")
+                doi_counts = defaultdict(int)
+                pmid_counts = defaultdict(int)
+                title_counts = defaultdict(int)
 
-                    start_time = time()
-                    record = get_record(record_id)
-                    logger.info(f"fetched recordthresher record {record_id} in {elapsed(start_time, 4)} seconds")
+                for record in records:
+                    if record.doi:
+                        doi_counts[record.doi] += 1
+                    if record.pmid:
+                        pmid_counts[record.pmid] += 1
+                    if record.normalized_title:
+                        title_counts[record.normalized_title] += 1
 
-                    start_time = time()
-                    record.process_record()
-                    logger.info(f"processed recordthresher record {record_id} in {elapsed(start_time, 4)} seconds")
+                unique_records = [
+                    r for r in records if
+                    (not r.doi or doi_counts[r.doi] == 1) and
+                    (not r.pmid or pmid_counts[r.pmid] == 1) and
+                    (not r.normalized_title or title_counts[r.normalized_title]) == 1
+                ]
 
-                    objects_updated += 1
+                unique_record_ids = [u.id for u in unique_records]
 
-                    logger.info(f"*** finished {record_id}.process_record() in {elapsed(record_start_time, 4)} seconds")
+                possibly_colliding_records = [r for r in records if r.id not in unique_record_ids]
+
+                start = time()
+                for u in unique_records:
+                    u.process_record()
+
+                db.session.commit()
+                logger.info(f'mapped {len(unique_records)} unique records in {elapsed(start, 2)} seconds')
+
+                for p in possibly_colliding_records:
+                    start = time()
+                    p.process_record()
+                    db.session.commit()
+                    logger.info(f'did {p.id} in {elapsed(start, 2)} seconds')
 
                 finish_object_ids(record_ids)
+                objects_updated += len(records)
                 logger.info(f'processed chunk of {chunk} records in {elapsed(loop_start, 2)} seconds')
             else:
                 logger.info('nothing ready in the queue, waiting 5 seconds...')
@@ -75,10 +96,6 @@ def fetch_queue_chunk_ids(chunk_size):
 
 def finish_object_ids(object_ids):
     start_time = time()
-    db.session.commit()
-    logger.info(f'committing records and works took {elapsed(start_time, 2)} seconds')
-
-    start_time = time()
     db.session.execute(
         text(
             '''
@@ -97,8 +114,8 @@ def finish_object_ids(object_ids):
     logger.info(f'enqueueing mapped works took {elapsed(start_time, 2)} seconds')
 
 
-def get_record(record_id):
-    logger.info(f'getting record {record_id}')
+def get_records(record_ids):
+    logger.info(f'getting records')
 
     record = db.session.query(models.Record).options(
         joinedload(models.Record.work_matches_by_title).raiseload('*'),
@@ -107,7 +124,7 @@ def get_record(record_id):
         joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
         joinedload(models.Record.journals).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
-    ).filter(models.Record.id == record_id).scalar()
+    ).filter(models.Record.id.in_(record_ids)).all()
 
     return record
 

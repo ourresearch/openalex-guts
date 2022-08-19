@@ -191,10 +191,6 @@ class Record(db.Model):
         self.work = new_work
 
         print(f"MADE A NEW WORK!!! {new_work} with recordthresher id {self.id}")
-        # have to commit, otherwise records in the same chunk
-        # could create duplicate Works when they should be the same Work
-        db.session.merge(self)
-        db.session.commit()
 
     @property
     def normalized_doc_type(self):
