@@ -590,7 +590,7 @@ class Work(db.Model):
 
         self.doi = normalize_doi(record.doi, return_none_if_error=True)
         self.doi_lower = self.doi
-        self.publication_date = record.published_date.isoformat()[0:10]
+        self.publication_date = record.published_date.isoformat()[0:10] if record.published_date else None
         self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
 
         self.volume = record.volume
