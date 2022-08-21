@@ -97,6 +97,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
+    affiliation_names_hash = db.Column(db.Text)
 
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
@@ -137,10 +138,22 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
+    @staticmethod
+    def get_affiliation_names_hash(original_affiliations):
+        input_str = ''.join([f'{i}{s}' for i,s, in enumerate(original_affiliations)])
+        print(input_str)
+        return hashlib.md5(input_str.encode('utf-8')).hexdigest()
 
     def update_institutions(self):
         institution_names = [affil.original_affiliation for affil in self.affiliations if affil.original_affiliation]
+        current_affiliation_names_hash = Work.get_affiliation_names_hash(institution_names)
+
+        if self.affiliation_names_hash == current_affiliation_names_hash:
+            logger.info('skipping update_institutions() because inputs are unchanged')
+            return
+
         institution_ids = models.Institution.get_institution_ids_from_strings(institution_names)
+        self.affiliation_names_hash = current_affiliation_names_hash
 
         if institution_ids:
             lookup = dict(zip(institution_names, institution_ids))
@@ -166,7 +179,6 @@ class Work(db.Model):
                 self.affiliations.append(a)
                 seen_institutions_by_author[a.author_id].add(a.affiliation_id)
 
-
     def concept_api_input_data(self):
         abstract_dict = None
         # for when abstract was added and not included in table yet
@@ -185,10 +197,13 @@ class Work(db.Model):
             "inverted_abstract": has_abstract
         }
 
-    def add_work_concepts(self):
-        current_concepts_input_hash = hashlib.md5(
+    def get_concepts_input_hash(self):
+        return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode('utf-8')
         ).hexdigest()
+
+    def add_work_concepts(self):
+        current_concepts_input_hash = self.get_concepts_input_hash()
 
         if self.concepts_input_hash == current_concepts_input_hash:
             logger.info('skipping concept tagging because inputs are unchanged')
