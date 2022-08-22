@@ -97,7 +97,6 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
-    affiliation_names_hash = db.Column(db.Text)
 
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
@@ -138,22 +137,9 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
-    @staticmethod
-    def get_affiliation_names_hash(original_affiliations):
-        input_str = ''.join([f'{i}{s}' for i,s, in enumerate(original_affiliations)])
-        print(input_str)
-        return hashlib.md5(input_str.encode('utf-8')).hexdigest()
-
     def update_institutions(self):
         institution_names = [affil.original_affiliation for affil in self.affiliations if affil.original_affiliation]
-        current_affiliation_names_hash = Work.get_affiliation_names_hash(institution_names)
-
-        if self.affiliation_names_hash == current_affiliation_names_hash:
-            logger.info('skipping update_institutions() because inputs are unchanged')
-            return
-
         institution_ids = models.Institution.get_institution_ids_from_strings(institution_names)
-        self.affiliation_names_hash = current_affiliation_names_hash
 
         if institution_ids:
             lookup = dict(zip(institution_names, institution_ids))

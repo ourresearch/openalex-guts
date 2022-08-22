@@ -1,21 +1,23 @@
-from cached_property import cached_property
-from sqlalchemy import text
-from sqlalchemy import orm
-from sqlalchemy.orm import selectinload
-import requests
+import datetime
+import json
 import os
 import urllib.parse
-import json
-import datetime
 
-from app import db
-from app import logger
-from app import USER_AGENT
+import requests
+from cached_property import cached_property
+from sqlalchemy import orm
+from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import selectinload
+
 from app import MAX_MAG_ID
+from app import USER_AGENT
+from app import db
 from app import get_apiurl_from_openalex_url
-from app import get_db_cursor
+from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
+
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -402,36 +404,60 @@ class Institution(db.Model):
         if not institution_names:
             return []
 
-        api_key = os.getenv("SAGEMAKER_API_KEY")
-        data = [{"affiliation_string": inst_name} for inst_name in institution_names]
-        headers = {"X-API-Key": api_key}
-        api_url = "https://phqjyj20n2.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
+        name_to_id_dict = dict([(n, None) for n in institution_names])
+        known_names = AffiliationString.query.filter(
+            AffiliationString.original_affiliation.in_(institution_names)
+        ).all()
 
-        number_tries = 0
+        for known_name in known_names:
+            name_to_id_dict[known_name.original_affiliation] = follow_merged_into_id(known_name.affiliation_id)
 
-        while True:
-            r = requests.post(api_url, json=json.dumps(data), headers=headers)
+        unknown_names = [
+            name for name in name_to_id_dict.keys()
+            if name not in
+            [k.original_affiliation for k in known_names]
+        ]
 
-            if r.status_code == 200:
-                try:
-                    response_json = r.json()
-                    institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
-                    # now replace any that have been merged with what they have been merged into
-                    institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
-                except Exception as e:
-                    logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
-                    institution_ids = []
-                return institution_ids
+        if unknown_names:
+            api_key = os.getenv("SAGEMAKER_API_KEY")
+            data = [{"affiliation_string": unknown_name} for unknown_name in unknown_names]
+            headers = {"X-API-Key": api_key}
+            api_url = "https://phqjyj20n2.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
-            elif r.status_code == 500:
-                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
-                number_tries += 1
+            number_tries = 0
+            while True:
+                r = requests.post(api_url, json=json.dumps(data), headers=headers)
 
-            else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
-                return []
+                if r.status_code == 200:
+                    try:
+                        response_json = r.json()
+                        institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+                        # now replace any that have been merged with what they have been merged into
+                        institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
 
+                        for i, institution_id in enumerate(institution_ids):
+                            unknown_name = unknown_names[i]
+                            name_to_id_dict[unknown_name] = institution_id
+                            db.session.execute(
+                                insert(AffiliationString).values(
+                                    original_affiliation=unknown_name,
+                                    affiliation_id=institution_id
+                                ).on_conflict_do_nothing(index_elements=['original_affiliation'])
+                            )
 
+                        break
+
+                    except Exception as e:
+                        logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+
+                elif r.status_code == 500:
+                    logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                    number_tries += 1
+
+                else:
+                    logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+
+        return [name_to_id_dict[n] for n in institution_names]
 
     def to_dict(self, return_level="full"):
         response = {
@@ -497,3 +523,11 @@ class Institution(db.Model):
 logger.info(f"loading merged_into_institutions_dict")
 merged_into_institutions = db.session.query(Institution).options(orm.Load(Institution).raiseload('*')).filter(Institution.merge_into_id != None).all()
 merged_into_institutions_dict = dict((inst.affiliation_id, inst.merge_into_id) for inst in merged_into_institutions)
+
+
+class AffiliationString(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "affiliation_string"
+
+    original_affiliation = db.Column(db.Text, primary_key=True)
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
