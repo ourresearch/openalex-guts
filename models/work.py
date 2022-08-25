@@ -552,7 +552,19 @@ class Work(db.Model):
                 #     my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
                 if my_institution and my_author:
-                    my_author.last_known_affiliation_id = my_institution.affiliation_id
+                    author_last_known_affiliation_date = None
+
+                    if my_author.last_known_affiliation_id_date:
+                        author_last_known_affiliation_date = my_author.last_known_affiliation_id_date
+                        if isinstance(author_last_known_affiliation_date, datetime.datetime):
+                            author_last_known_affiliation_date = author_last_known_affiliation_date.isoformat()[0:10]
+                    if (
+                        not my_author.last_known_affiliation_id
+                        or not author_last_known_affiliation_date
+                        or self.publication_date >= author_last_known_affiliation_date
+                    ):
+                        my_author.last_known_affiliation_id = my_institution.affiliation_id
+                        my_author.last_known_affiliation_id_date = self.publication_date
                 if raw_author_string or raw_affiliation_string:
                     my_affiliation = models.Affiliation(
                         author_sequence_number=author_sequence_order+1,

@@ -31,6 +31,7 @@ class Author(db.Model):
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
     last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
+    last_known_affiliation_id_date = db.Column(db.DateTime)
     match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
