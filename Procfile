@@ -5,8 +5,8 @@ run_queue_record: python -m scripts.queue_record_assign_work --chunk=$RT_RECORD_
 # run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=work_add_everything$DYNO
 run_once_work_add_everything: python -m scripts.queue_work_add_everything --chunk=$WORK_ADD_EVERYTHING_CHUNK_SIZE
 
-fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=500
-fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=500
+fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=$AUTHOR_STORE_CHUNK_SIZE
+fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=$WORK_STORE_CHUNK_SIZE
 fast_store_concepts: python -m scripts.fast_queue --entity=concept --method=store --chunk=100
 fast_store_venues: python -m scripts.fast_queue --entity=venue --method=store --chunk=1
 fast_store_institutions: python -m scripts.fast_queue --entity=institution --method=store --chunk=10
