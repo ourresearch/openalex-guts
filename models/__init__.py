@@ -28,7 +28,6 @@ from models.unpaywall import Unpaywall
 from models.venue import Venue
 from models.work import Work
 from models.work_concept import WorkConcept
-from models.work_concept import WorkConceptFull
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
 
@@ -46,8 +45,7 @@ Work.records = db.relationship("Record", lazy='selectin', backref="work")  # nor
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", viewonly=True) # this is a materialized view, concepts_full is for modifying
-Work.concepts_full = db.relationship("WorkConceptFull", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan

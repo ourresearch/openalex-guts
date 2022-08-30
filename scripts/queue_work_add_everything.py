@@ -154,7 +154,6 @@ class QueueWorkAddEverything:
             ).selectinload(
                 models.WorkConcept.concept
             ).raiseload('*'),
-            selectinload(models.Work.concepts_full).raiseload('*'),
             orm.Load(models.Work).raiseload('*')
         )
 

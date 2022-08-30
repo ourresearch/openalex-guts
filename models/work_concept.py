@@ -1,4 +1,3 @@
-from cached_property import cached_property
 from app import db
 
 
@@ -9,11 +8,14 @@ from app import db
 
 class WorkConcept(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "work_concept_for_api_mv"
+    __tablename__ = "work_concept"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     score = db.Column(db.Float)
+    algorithm_version = db.Column(db.Integer)
+    uses_newest_algorithm = db.Column(db.Boolean)
+    updated_date = db.Column(db.DateTime)
 
     def to_dict(self, return_level="full"):
         response = self.concept.to_dict(return_level)
@@ -22,16 +24,3 @@ class WorkConcept(db.Model):
 
     def __repr__(self):
         return "<WorkConcept ( {} ) {}>".format(self.paper_id, self.field_of_study)
-
-
-class WorkConceptFull(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "work_concept"
-
-    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    field_of_study = db.Column(db.BigInteger, primary_key=True)
-    score = db.Column(db.Float)
-    algorithm_version = db.Column(db.Numeric, primary_key=True)
-    uses_newest_algorithm = db.Column(db.Boolean, primary_key=True)
-    updated_date = db.Column(db.DateTime)
-

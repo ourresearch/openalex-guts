@@ -1,5 +1,5 @@
 from app import db
-from models.concept import Concept
+
 
 class ConceptAncestor(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -10,7 +10,6 @@ class ConceptAncestor(db.Model):
 
     my_concept = db.relationship("Concept", foreign_keys=id, backref="ancestors")
     my_ancestor = db.relationship("Concept", foreign_keys=ancestor_id)
-
 
     def __repr__(self):
         return "<ConceptAncestor ( {} ) {} >".format(self.id, self.ancestor_id)
