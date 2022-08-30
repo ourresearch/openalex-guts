@@ -15,6 +15,7 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
+from models.concept import is_valid_concept_id
 from util import clean_doi
 from util import clean_html
 from util import dictionary_nested_diff
@@ -62,7 +63,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     for row, api_dict in zip(rows, api_json):
         if api_dict["tags"] != []:
             for i, concept_name in enumerate(api_dict["tags"]):
-                insert_dicts += [{"WorkConceptFull": {"paper_id": row["paper_id"],
+                insert_dicts += [{"WorkConcept": {"paper_id": row["paper_id"],
                                                        "field_of_study": api_dict["tag_ids"][i],
                                                        "score": api_dict["scores"][i],
                                                        "algorithm_version": 2,
@@ -70,7 +71,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
-    response.delete_dict = {"WorkConceptFull": [row["paper_id"] for row in rows]}
+    response.delete_dict = {"WorkConcept": [row["paper_id"] for row in rows]}
     return [response]
 
 
@@ -205,8 +206,11 @@ class Work(db.Model):
 
         number_tries = 0
         keep_calling = True
+        concept_names = None
+        response_json = None
+        r = None
         while keep_calling:
-            r = requests.post(api_url, json=json.dumps([data]), headers=headers)
+            r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
 
             if r.status_code == 200:
                 try:
@@ -228,25 +232,26 @@ class Work(db.Model):
                 keep_calling = False
 
         if r.status_code == 200:
-            # keep all the version 1s for now but remove all the version 2s
-            self.concepts_full = [concept for concept in self.concepts_full if concept.algorithm_version == 1]
+            self.concepts = []
             self.concepts_for_related_works = []
-
-            fields_of_study = []
             if concept_names:
                 for i, concept_name in enumerate(concept_names):
                     score = response_json[0]["scores"][i]
                     field_of_study = response_json[0]["tag_ids"][i]
-                    if field_of_study:
-                        fields_of_study += [field_of_study]
-                    new_work_concept = models.WorkConceptFull(field_of_study=field_of_study,
-                                                           score=score,
-                                                           algorithm_version=2,
-                                                           uses_newest_algorithm=True,
-                                                           updated_date=datetime.datetime.utcnow().isoformat())
-                    self.concepts_full += [new_work_concept]
-                    if score > 0.3:
-                        self.concepts_for_related_works.append(field_of_study)
+
+                    if field_of_study and is_valid_concept_id(field_of_study):
+                        new_work_concept = models.WorkConcept(
+                            field_of_study=field_of_study,
+                            score=score,
+                            algorithm_version=2,
+                            uses_newest_algorithm=True,
+                            updated_date=datetime.datetime.utcnow().isoformat()
+                        )
+
+                        self.concepts.append(new_work_concept)
+
+                        if score > 0.3:
+                            self.concepts_for_related_works.append(field_of_study)
 
             self.concepts_input_hash = current_concepts_input_hash
 
@@ -321,7 +326,7 @@ class Work(db.Model):
 
         matching_papers_sql = """
         with fos as (
-            select field_of_study_id from mid.concept where field_of_study_id in %s
+            select field_of_study_id from mid.concept_for_api_mv where field_of_study_id in %s
         )
         select
             paper_id as related_paper_id,
@@ -331,7 +336,7 @@ class Work(db.Model):
             fos
             cross join lateral (
                 select paper_id, field_of_study, score
-                from mid.work_concept_for_api_mv wc
+                from mid.work_concept wc
                 where wc.field_of_study = fos.field_of_study_id order by score desc limit 25000
             ) papers_by_fos
         group by paper_id

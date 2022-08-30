@@ -1,17 +1,20 @@
-from cached_property import cached_property
-from sqlalchemy import text
-import requests
+import datetime
 import json
 import urllib.parse
-import datetime
 
-from app import db
-from app import logger
-from app import USER_AGENT
+import requests
+from cached_property import cached_property
+from sqlalchemy import orm
+from sqlalchemy import text
+
 from app import MAX_MAG_ID
+from app import USER_AGENT
+from app import db
 from app import get_apiurl_from_openalex_url
+from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
+
 
 # truncate mid.concept
 # insert into mid.concept (select * from legacy.mag_advanced_fields_of_study)
@@ -19,6 +22,7 @@ from util import jsonify_fast_no_sort_raw
 def as_concept_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/C{id}"
+
 
 class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -59,7 +63,6 @@ class Concept(db.Model):
         if not self.wikidata_id:
             return None
         return self.wikidata_id.replace("https://www.wikidata.org/wiki/", "")
-
 
     @cached_property
     def ancestors_raw(self):
@@ -509,3 +512,10 @@ class Concept(db.Model):
         return "<Concept ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
+logger.info(f"loading valid concept IDs")
+_valid_concepts = db.session.query(Concept.field_of_study_id).options(orm.Load(Concept).raiseload('*')).all()
+_valid_concept_ids = set([c.field_of_study_id for c in _valid_concepts])
+
+
+def is_valid_concept_id(concept_id):
+    return concept_id and concept_id in _valid_concept_ids
