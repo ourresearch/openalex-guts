@@ -152,25 +152,24 @@ def get_objects(entity_type, object_ids):
     if entity_type == "work":
         objects = db.session.query(models.Work).options(
             selectinload(models.Work.stored),
-             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
-             selectinload(models.Work.records).raiseload('*'),
-             selectinload(models.Work.locations),
-             selectinload(models.Work.journal).raiseload('*'),
-             selectinload(models.Work.references).raiseload('*'),
-             selectinload(models.Work.references_unmatched).raiseload('*'),
-             selectinload(models.Work.mesh),
-             selectinload(models.Work.counts),
-             selectinload(models.Work.counts_by_year).raiseload('*'),
-             selectinload(models.Work.abstract),
-             selectinload(models.Work.extra_ids).raiseload('*'),
-             selectinload(models.Work.related_works).raiseload('*'),
-             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
-             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
-             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
-             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
-             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
-             selectinload(models.Work.concepts_full).raiseload('*'),
-             orm.Load(models.Work).raiseload('*')
+            selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+            selectinload(models.Work.records).raiseload('*'),
+            selectinload(models.Work.locations),
+            selectinload(models.Work.journal).raiseload('*'),
+            selectinload(models.Work.references).raiseload('*'),
+            selectinload(models.Work.references_unmatched).raiseload('*'),
+            selectinload(models.Work.mesh),
+            selectinload(models.Work.counts),
+            selectinload(models.Work.counts_by_year).raiseload('*'),
+            selectinload(models.Work.abstract),
+            selectinload(models.Work.extra_ids).raiseload('*'),
+            selectinload(models.Work.related_works).raiseload('*'),
+            selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
+            selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
+            selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+            selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
+            selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+            orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()
     elif entity_type == "author":
         objects = db.session.query(models.Author).options(
