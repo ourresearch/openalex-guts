@@ -410,7 +410,8 @@ class Institution(db.Model):
         ).all()
 
         for known_name in known_names:
-            name_to_id_dict[known_name.original_affiliation] = follow_merged_into_id(known_name.affiliation_id)
+            known_id = known_name.affiliation_id_override or known_name.affiliation_id
+            name_to_id_dict[known_name.original_affiliation] = follow_merged_into_id(known_id)
 
         unknown_names = [
             name for name in name_to_id_dict.keys()
@@ -531,3 +532,4 @@ class AffiliationString(db.Model):
 
     original_affiliation = db.Column(db.Text, primary_key=True)
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
+    affiliation_id_override = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
