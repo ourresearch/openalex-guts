@@ -954,7 +954,7 @@ def matching_author_string(origName):
         # word in ()
         if len(words[i]) > 2 and words[i][0] == '(' and words[i][-1] == ')':
             del words[i]
-    result = ' '.join(words)
+    result = ' '.join(words[0:10])
     if len(words) == 2:
         # adjust japanese sort
         if len(words[0]) > 1 and popularity_as_japanese_lastname(words[0]) > 0:
