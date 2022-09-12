@@ -14,7 +14,7 @@ from util import elapsed
 def run(**kwargs):
     if single_id := kwargs.get('id'):
         if record := get_records([single_id]):
-            record.process_record()
+            record[0].process_record()
             finish_object_ids([single_id])
         else:
             logger.warn(f'found no recordthresher record with id {single_id}')
@@ -118,7 +118,8 @@ def get_records(record_ids):
     logger.info(f'getting records')
 
     record = db.session.query(models.Record).options(
-        lazyload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
+        lazyload(models.Record.work_matches_by_title).raiseload('*'),
+        lazyload(models.Record.work_matches_by_title).joinedload(models.Work.affiliations).raiseload('*'),
         joinedload(models.Record.work_matches_by_doi).raiseload('*'),
         joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
         joinedload(models.Record.journals).raiseload('*'),
