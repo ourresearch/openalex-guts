@@ -450,6 +450,7 @@ class Institution(db.Model):
 
                     except Exception as e:
                         logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                        break
 
                 elif r.status_code == 500:
                     logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
