@@ -118,7 +118,6 @@ def get_records(record_ids):
     logger.info(f'getting records')
 
     record = db.session.query(models.Record).options(
-        joinedload(models.Record.work_matches_by_title).raiseload('*'),
         lazyload(models.Record.work_matches_by_title).selectinload(models.Work.affiliations).raiseload('*'),
         joinedload(models.Record.work_matches_by_doi).raiseload('*'),
         joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
