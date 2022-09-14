@@ -2,7 +2,7 @@ from app import db
 
 class AuthorCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_authors_mv"
+    __tablename__ = "citation_authors_view"
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
