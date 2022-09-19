@@ -259,6 +259,11 @@ class Work(db.Model):
         self.delete_dict = defaultdict(list)
         self.insert_dicts = []
 
+        if self.merge_into_id:
+            # don't add relation table entries for merged works
+            logger.info(f"not updating W{self.paper_id} because it was perged into W{self.merge_into_id}")
+            return
+
         if not self.records_sorted:
             # not associated with a record, so leave it for now
             # merged-away works have their records' work ids updated,
