@@ -221,7 +221,7 @@ class Affiliation(db.Model):
         response.update({"author": {}, "institution": {}})
 
         if self.original_author:
-            response["author"] = {"id": self.author_id, "display_name": self.original_author, "orcid": None}
+            response["author"] = {"id": None, "display_name": self.original_author, "orcid": None}
         if self.original_affiliation:
             response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
 
