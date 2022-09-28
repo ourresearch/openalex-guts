@@ -44,7 +44,8 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
             "doc_type": row["doc_type"],
             "journal": row["journal_title"].lower() if row["journal_title"] else None,
             "abstract": row["indexed_abstract"],
-            "inverted_abstract": has_abstract
+            "inverted_abstract": has_abstract,
+            "paper_id": row["paper_id"]
         }]
 
     class ConceptLookupResponse:
@@ -53,7 +54,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_key = os.getenv("SAGEMAKER_API_KEY")
     headers = {"X-API-Key": api_key}
     # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/" #for version without abstracts
-    api_url = "https://cm1yuwajpa.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
         logger.error(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
@@ -66,7 +67,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
                 insert_dicts += [{"WorkConcept": {"paper_id": row["paper_id"],
                                                        "field_of_study": api_dict["tag_ids"][i],
                                                        "score": api_dict["scores"][i],
-                                                       "algorithm_version": 2,
+                                                       "algorithm_version": 3,
                                                        "uses_newest_algorithm": True,
                                                        "updated_date": datetime.datetime.utcnow().isoformat()}}]
     response = ConceptLookupResponse()
@@ -181,7 +182,8 @@ class Work(db.Model):
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
             "abstract": abstract_dict,
-            "inverted_abstract": has_abstract
+            "inverted_abstract": has_abstract,
+            "paper_id": self.paper_id
         }
 
     def get_concepts_input_hash(self):
@@ -202,13 +204,14 @@ class Work(db.Model):
         api_key = os.getenv("SAGEMAKER_API_KEY")
 
         headers = {"X-API-Key": api_key}
-        api_url = "https://t9a5o7qfy2.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+        api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
 
         number_tries = 0
         keep_calling = True
         concept_names = None
         response_json = None
         r = None
+
         while keep_calling:
             r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
 
@@ -243,7 +246,7 @@ class Work(db.Model):
                         new_work_concept = models.WorkConcept(
                             field_of_study=field_of_study,
                             score=score,
-                            algorithm_version=2,
+                            algorithm_version=3,
                             uses_newest_algorithm=True,
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
