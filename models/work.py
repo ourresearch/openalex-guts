@@ -458,7 +458,6 @@ class Work(db.Model):
         reference_source_num = 0
         for record in self.records:
             if record.citations:
-                self.references = []
                 self.references_unmatched = []
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -496,7 +495,8 @@ class Work(db.Model):
             ]
 
         citation_paper_ids = list(set(citation_paper_ids))
-        self.references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
+        if citation_paper_ids:
+            self.references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
