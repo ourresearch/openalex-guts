@@ -76,7 +76,7 @@ def fetch_queue_chunk_ids(chunk_size):
     text_query = """
         select id from ins.recordthresher_record
         where work_id is null
-        order by updated desc nulls last
+        order by updated asc nulls last
         limit :chunk;
     """
 

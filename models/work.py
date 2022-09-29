@@ -258,7 +258,7 @@ class Work(db.Model):
 
             self.concepts_input_hash = current_concepts_input_hash
 
-    def add_everything(self):
+    def add_everything(self, skip_concepts_and_related_works=False):
         self.delete_dict = defaultdict(list)
         self.insert_dicts = []
 
@@ -282,13 +282,14 @@ class Work(db.Model):
         self.add_abstract()  # must be before work_concepts
         logger.info(f'add_abstract took {elapsed(start_time, 2)} seconds')
 
-        start_time = time()
-        self.add_work_concepts()
-        logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
+        if not skip_concepts_and_related_works:
+            start_time = time()
+            self.add_work_concepts()
+            logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
-        start_time = time()
-        self.add_related_works()  # must be after work_concepts
-        logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
+            start_time = time()
+            self.add_related_works()  # must be after work_concepts
+            logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_mesh()
