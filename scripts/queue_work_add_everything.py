@@ -17,13 +17,15 @@ class QueueWorkAddEverything:
         single_id = kwargs.get("id", None)
         chunk_size = kwargs.get("chunk", 100)
         limit = kwargs.get("limit", None)
+        partial_update = kwargs.get("partial", False)
+        queue_name = self.queue_name(partial_update)
 
         if limit is None:
             limit = float("inf")
 
         if single_id:
             work = QueueWorkAddEverything.fetch_works([single_id])[0]
-            work.add_everything()
+            work.add_everything(skip_concepts_and_related_works=partial_update)
             db.session.execute(
                 text('''
                     insert into queue.work_store (id) values (:work_id)
@@ -38,7 +40,7 @@ class QueueWorkAddEverything:
             while num_updated < limit:
                 start_time = time()
 
-                work_ids = self.fetch_queue_chunk(chunk_size)
+                work_ids = self.fetch_queue_chunk(chunk_size, partial_update=partial_update)
 
                 if not work_ids:
                     logger.info('no queued Works ready to add_everything. waiting...')
@@ -49,11 +51,11 @@ class QueueWorkAddEverything:
 
                 for work in works:
                     logger.info(f'running add_everything on {work}')
-                    work.add_everything()
+                    work.add_everything(skip_concepts_and_related_works=partial_update)
 
                 db.session.execute(
-                    text('''
-                        delete from queue.run_once_work_add_everything q
+                    text(f'''
+                        delete from queue.{queue_name} q
                         where q.work_id = any(:work_ids)
                     ''').bindparams(work_ids=work_ids)
                 )
@@ -77,19 +79,26 @@ class QueueWorkAddEverything:
                 logger.info(f'processed {len(work_ids)} Works in {elapsed(start_time, 2)} seconds')
 
     @staticmethod
-    def fetch_queue_chunk(chunk_size):
+    def queue_name(partial_update):
+        return 'run_once_work_add_most_things' if partial_update else 'run_once_work_add_everything'
+
+    @staticmethod
+    def fetch_queue_chunk(chunk_size, partial_update=False):
         logger.info("looking for works to add_everything to")
 
-        queue_query = text("""
+        queue_name = QueueWorkAddEverything.queue_name(partial_update)
+        update_sort_order = 'desc' if partial_update else 'asc'
+
+        queue_query = text(f"""
             with queue_chunk as (
                 select work_id
-                from queue.run_once_work_add_everything
+                from queue.{queue_name}
                 where started is null
-                order by work_updated desc nulls last, rand
+                order by work_updated {update_sort_order} nulls last, rand
                 limit :chunk
                 for update skip locked
             )
-            update queue.run_once_work_add_everything q
+            update queue.{queue_name} q
             set started = now()
             from queue_chunk
             where q.work_id = queue_chunk.work_id
@@ -186,6 +195,10 @@ if __name__ == "__main__":
     parser.add_argument('--id', nargs="?", type=str, help="id of the Work you want to add_everything to")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many Works to update")
     parser.add_argument('--chunk', "-ch", nargs="?", default=10, type=int, help="how many Works to update at once")
+    parser.add_argument(
+        '--partial', dest='partial', default=False, action='store_true',
+        help="skip concept tagging and related work assignment"
+    )
 
     parsed_args = parser.parse_args()
 
