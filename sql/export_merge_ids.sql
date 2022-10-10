@@ -1,4 +1,4 @@
-create or replace procedure pg_temp.dump_merged_ids(tbl regclass, id_prefix text, entity_name text) as
+create or replace procedure pg_temp.dump_merged_ids(tbl regclass, id_prefix text, entity_name text, id_column text) as
 $$
 declare distinct_merge_dates date[];
 declare merge_date date;
@@ -6,7 +6,7 @@ declare bucket text := 'openalex-sandbox';
 declare data_prefix text := 'snapshot-merged-ids';
 declare csv_file_name text;
 begin
-    execute format('select array_agg(distinct changed::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
+    execute format('select array_agg(distinct merge_into_date::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
 
     if distinct_merge_dates is not null then
         foreach merge_date in array distinct_merge_dates
@@ -16,8 +16,8 @@ begin
 
             perform aws_s3.query_export_to_s3(
                 format(
-                    'select changed::date as merge_date, %L || id as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and changed::date = %L',
-                    id_prefix, id_prefix, tbl, merge_date
+                    'select merge_into_date::date as merge_date, %L || %s as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and merge_into_date::date = %L',
+                    id_prefix, id_column, id_prefix, tbl, merge_date
                 ),
                 aws_commons.create_s3_uri(bucket, csv_file_name, 'us-east-1'),
                 options :='format csv, header'
@@ -30,9 +30,9 @@ end
 $$
 language 'plpgsql';
 
-call pg_temp.dump_merged_ids('mid.json_works', 'W', 'works');
-call pg_temp.dump_merged_ids('mid.json_authors', 'A', 'authors');
-call pg_temp.dump_merged_ids('mid.json_venues', 'V', 'venues');
-call pg_temp.dump_merged_ids('mid.json_institutions', 'I', 'institutions');
-call pg_temp.dump_merged_ids('mid.json_concepts', 'C', 'concepts');
+call pg_temp.dump_merged_ids('mid.work', 'W', 'works', 'paper_id');
+call pg_temp.dump_merged_ids('mid.author', 'A', 'authors', 'author_id');
+call pg_temp.dump_merged_ids('mid.journal', 'V', 'venues', 'journal_id');
+call pg_temp.dump_merged_ids('mid.institution', 'I', 'institutions', 'affiliation_id');
+call pg_temp.dump_merged_ids('mid.concept', 'C', 'concepts', 'field_of_study_id');
 
