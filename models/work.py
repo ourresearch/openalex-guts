@@ -3,11 +3,12 @@ import hashlib
 import json
 import os
 from collections import defaultdict
+from functools import cache
 from time import time
 
 import requests
 from cached_property import cached_property
-from sqlalchemy import orm
+from sqlalchemy import orm, text
 
 import models
 from app import MAX_MAG_ID
@@ -593,7 +594,44 @@ class Work(db.Model):
                     my_affiliation.institution = my_institution
                     self.affiliations += [my_affiliation]
 
+            self.set_known_authors_from_institutions()
+
         return
+
+    @staticmethod
+    @cache
+    def author_ids_known_by_name_and_institution():
+        known_authors = defaultdict(dict)
+        match_names_query = text(
+            'select match_author, affiliation_id, author_id from mid.author_ids_by_author_name_institution'
+        )
+
+        for row in db.engine.execute(match_names_query).all():
+            match_author, affiliation_id, author_id = row
+            known_authors[match_author][affiliation_id] = author_id
+
+        return known_authors
+
+    def set_known_authors_from_institutions(self):
+        # get all institution affiliations from this paper's authors
+        paper_affiliation_ids = [affiliation_id for affiliation_id in [
+            a.institution and a.institution.affiliation_id
+            for a in self.affiliations
+        ] if affiliation_id]
+
+        for affiliation in self.affiliations:
+            if affiliation.author and affiliation.author_id is None:
+                # we made a new author. see if it's really one we know by name and institution
+                if affiliation.match_author in self.author_ids_known_by_name_and_institution():
+                    for paper_affiliation_id in paper_affiliation_ids:
+                        if author_id := self.author_ids_known_by_name_and_institution()[affiliation.match_author].get(
+                                paper_affiliation_id
+                        ):
+                            logger.info(f'set {affiliation.match_author} author_id to {author_id} based on affiliation {paper_affiliation_id}')
+                            db.session.expunge(affiliation.author)
+                            affiliation.author = models.author.Author.query.options(
+                                orm.Load(models.author.Author).raiseload('*')
+                            ).get(author_id)
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
