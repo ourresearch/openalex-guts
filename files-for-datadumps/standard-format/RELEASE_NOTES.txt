@@ -1,6 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-RELEASE 2022-08-16
+RELEASE 2022-09-16
+- Moved to the V3 tagger API giving complete paths to concept level 0
+- Restored 170M "lost" citations that were in MAG and we deleted
 - added 1.3 million new Works
 - removed 700 thousand duplicate Authors
 
