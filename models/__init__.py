@@ -127,6 +127,8 @@ Record.work_matches_by_pmid = db.relationship(
     secondaryjoin="Work.paper_id == WorkExtraIds.paper_id"
 )
 
+Location.journal = db.relationship('Venue', lazy='subquery', viewonly=True, uselist=False)
+
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
 Venue.stored = db.relationship("JsonVenues", lazy='selectin', uselist=False, viewonly=True)
 Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
