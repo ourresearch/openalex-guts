@@ -77,11 +77,25 @@ Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', viewo
 
 
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
-Record.journals = db.relationship("Venue",
-                                  lazy='selectin',
-                                  uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
-                                  viewonly=True,
-                                  primaryjoin="and_(remote(Venue.merge_into_id) == None, remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'))")
+Record.journals = db.relationship(
+    "Venue",
+    lazy='selectin',
+    uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
+    viewonly=True,
+    primaryjoin="""
+and_(
+    remote(Venue.merge_into_id) == None,
+    or_(
+        remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
+        and_(
+            foreign(Record.record_type) == 'pmh_record',
+            foreign(Record.repository_id) == remote(Venue.repository_id)
+        )
+    )
+)
+"""
+)
+
 
 Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
