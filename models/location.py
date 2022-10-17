@@ -47,7 +47,7 @@ class Location(db.Model):
     pmh_id = db.Column(db.Text)
     is_best = db.Column(db.Boolean)
     oa_date = db.Column(db.Text)
-    endpoint_id = db.Column(db.Text)
+    endpoint_id = db.Column(db.Text, db.ForeignKey("mid.journal.repository_id"))
     evidence = db.Column(db.Text)
     updated = db.Column(db.Text)
 
@@ -120,6 +120,10 @@ class Location(db.Model):
             if self.work.journal:
                 id = self.work.journal.openalex_id
                 display_name = self.work.journal.display_name
+        elif self.journal:
+            id = self.journal.openalex_id
+            display_name = self.journal.display_name
+
         response = {
             "id": id,
             "display_name": display_name,
@@ -130,6 +134,7 @@ class Location(db.Model):
             "license": self.display_license,
             # "repository_institution": self.repository_institution,
         }
+
         # if return_level == "full":
         #     response.update({
         #         "url_for_landing_page": self.url_for_landing_page,
@@ -138,6 +143,7 @@ class Location(db.Model):
         #         "host_type": self.display_host_type,
         #         "oai_pmh_id": self.pmh_id
         #     })
+
         return response
 
     def __repr__(self):
