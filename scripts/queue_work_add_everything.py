@@ -44,7 +44,7 @@ class QueueWorkAddEverything:
 
                 if not work_ids:
                     logger.info('no queued Works ready to add_everything. waiting...')
-                    sleep(5)
+                    sleep(60)
                     continue
 
                 works = QueueWorkAddEverything.fetch_works(work_ids)
