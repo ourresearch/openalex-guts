@@ -90,6 +90,11 @@ and_(
         and_(
             foreign(Record.record_type) == 'pmh_record',
             foreign(Record.repository_id) == remote(Venue.repository_id)
+        ),
+        and_(
+            foreign(Record.record_type) == 'crossref_doi',
+            foreign(Record.genre).like('%book%'),
+            foreign(Record.normalized_book_publisher) == remote(Venue.normalized_book_publisher)
         )
     )
 )

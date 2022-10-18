@@ -33,6 +33,7 @@ class Venue(db.Model):
     is_oa = db.Column(db.Boolean)
     is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
+    normalized_book_publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
