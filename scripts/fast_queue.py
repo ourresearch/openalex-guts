@@ -154,7 +154,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.stored),
             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
-            selectinload(models.Work.locations).selectinload(models.Location.journal),
+            selectinload(models.Work.locations).selectinload(models.Location.journal).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
             selectinload(models.Work.references).raiseload('*'),
             selectinload(models.Work.references_unmatched).raiseload('*'),
