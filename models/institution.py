@@ -437,6 +437,10 @@ class Institution(db.Model):
                         institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
 
                         for i, institution_id in enumerate(institution_ids):
+                            if len(unknown_names[i].encode('utf-8')) > 2700:
+                                # postgres limit for b-tree indices
+                                continue
+
                             unknown_name = unknown_names[i]
                             name_to_id_dict[unknown_name] = institution_id
                             db.session.execute(
