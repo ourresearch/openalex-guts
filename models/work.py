@@ -978,8 +978,8 @@ class Work(db.Model):
             elif not matching_location:
                 if location.host_type == "publisher":
                     matching_location = location
-        if self.locations_sorted and (not matching_location):
-            matching_location = self.locations_sorted[0]
+        #if self.locations_sorted and (not matching_location):
+        #    matching_location = self.locations_sorted[0]
 
         if self.best_url:
             url = self.best_url
@@ -1043,6 +1043,10 @@ class Work(db.Model):
         response["host_venue"].update(self.host_venue_details_dict)
         response["host_venue"]["display_name"] = response["host_venue"]["display_name"] if response["host_venue"]["display_name"] else self.original_venue
         response["host_venue"]["publisher"] = response["host_venue"]["publisher"] if response["host_venue"]["publisher"] else self.publisher
+
+        if self.journal and self.journal.type:
+            response["host_venue"]["type"] = self.journal.type
+
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
