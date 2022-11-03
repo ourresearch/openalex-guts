@@ -36,6 +36,7 @@ class Venue(db.Model):
     normalized_book_publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
+    type = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
