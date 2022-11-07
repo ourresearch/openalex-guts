@@ -1,12 +1,14 @@
+import datetime
+import json
+
 from cached_property import cached_property
 from sqlalchemy import text
-import json
-import datetime
+from sqlalchemy.dialects.postgresql import JSONB
 
-from app import db
-from app import logger
 from app import MAX_MAG_ID
+from app import db
 from app import get_apiurl_from_openalex_url
+from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
 
@@ -37,6 +39,7 @@ class Venue(db.Model):
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
     type = db.Column(db.Text)
+    apc_prices = db.Column(JSONB)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
@@ -170,6 +173,8 @@ class Venue(db.Model):
                     "issn": json.loads(self.issns) if ((self.issns) and (self.issns != '[]')) else None,
                     "mag": self.journal_id if self.journal_id < MAX_MAG_ID else None
                 },
+                "type": self.type,
+                "apc_prices": self.apc_prices,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
