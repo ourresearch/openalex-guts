@@ -40,6 +40,8 @@ class Venue(db.Model):
     repository_id = db.Column(db.Text)
     type = db.Column(db.Text)
     apc_prices = db.Column(JSONB)
+    is_society_journal = db.Column(db.Boolean)
+    societies = db.Column(JSONB)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
@@ -175,6 +177,8 @@ class Venue(db.Model):
                 },
                 "type": self.type,
                 "apc_prices": self.apc_prices,
+                "is_society_journal": self.is_society_journal,
+                "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts,
                 "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
