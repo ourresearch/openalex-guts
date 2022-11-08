@@ -446,6 +446,8 @@ class Work(db.Model):
             if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
                 insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
             # self.insert_dicts += [{"Location": insert_dict}]
+            if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
+                insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
             self.locations += [models.Location(**insert_dict)]
 
     def add_references(self):
