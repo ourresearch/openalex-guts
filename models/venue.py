@@ -43,6 +43,11 @@ class Venue(db.Model):
     apc_usd = db.Column(JSONB)
     is_society_journal = db.Column(db.Boolean)
     societies = db.Column(JSONB)
+    alternate_titles = db.Column(JSONB)
+    abbreviated_title = db.Column(db.Text)
+    country_code = db.Column(db.Text)
+    fatcat_id = db.Column(db.Text)
+    wikidata_id = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
@@ -127,7 +132,9 @@ class Venue(db.Model):
         response = []
         if self.counts and self.counts.paper_count:
             q = """
-                select ancestor_id as id, wikidata_id as wikidata, ancestor_name as display_name, ancestor_level as level, round(100 * (0.0+count(distinct wc.paper_id))/counts.paper_count, 1)::float as score
+                select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name,
+                ancestor_level as level,
+                round(100 * (0.0+count(distinct wc.paper_id))/counts.paper_count, 1)::float as score
                 from mid.journal journal 
                 join mid.citation_journals_mv counts on counts.journal_id=journal.journal_id                            
                 join mid.work work on work.journal_id=journal.journal_id
@@ -135,7 +142,7 @@ class Venue(db.Model):
                 join mid.concept_self_and_ancestors_mv ancestors on ancestors.id=wc.field_of_study
                 join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                                    
                 where journal.journal_id=:journal_id
-                group by ancestor_id, wikidata_id, ancestor_name, ancestor_level, counts.paper_count
+                group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, counts.paper_count
                 order by score desc
                 """
             rows = db.session.execute(text(q), {"journal_id": self.journal_id}).fetchall()
@@ -169,12 +176,17 @@ class Venue(db.Model):
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "is_oa": self.is_oa,
                 "is_in_doaj": self.is_in_doaj,
+                "alternate_titles": self.alternate_titles,
+                "abbreviated_title": self.abbreviated_title,
                 "homepage_url": self.webpage,
+                "country_code": self.country_code,
                 "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
                     "issn": json.loads(self.issns) if ((self.issns) and (self.issns != '[]')) else None,
-                    "mag": self.journal_id if self.journal_id < MAX_MAG_ID else None
+                    "mag": self.journal_id if self.journal_id < MAX_MAG_ID else None,
+                    "fatcat": self.fatcat_id,
+                    "wikidata": self.wikidata_id
                 },
                 "type": self.type,
                 "apc_usd": self.apc_usd,
