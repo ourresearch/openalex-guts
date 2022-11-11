@@ -88,7 +88,7 @@ and_(
     or_(
         remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
         and_(
-            foreign(Record.record_type) == 'pmh_record',
+            foreign(Record.journal_issn_l) == None,
             foreign(Record.repository_id) == remote(Venue.repository_id)
         ),
         and_(
