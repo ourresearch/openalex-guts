@@ -1,3 +1,5 @@
+import json
+
 from app import db
 
 
@@ -107,6 +109,8 @@ class Location(db.Model):
             return True
         if self.host_type == "publisher":
             return True
+        if self.journal:
+            return True
         if self.source_url and "doi" in self.source_url:
             if self.version:
                 return True  # else is probably a component or stub record
@@ -115,18 +119,29 @@ class Location(db.Model):
     def to_dict(self, return_level="full"):
         id = None
         display_name = self.repository_institution
+        publisher = None
+        issn_l = None
+        issn = []
 
-        if self.host_type == "publisher":
-            if self.work.journal:
-                id = self.work.journal.openalex_id
-                display_name = self.work.journal.display_name
-        elif self.journal:
+        if self.journal:
             id = self.journal.openalex_id
             display_name = self.journal.display_name
+            publisher = self.journal.publisher
+            issn_l = self.journal.issn_l
+            issn = json.loads(self.journal.issns) if self.journal.issns else []
+        elif self.host_type == "publisher" and self.work.journal:
+                id = self.work.journal.openalex_id
+                display_name = self.work.journal.display_name
+                publisher = self.work.journal.publisher
+                issn_l = self.work.journal.issn_l
+                issn = json.loads(self.work.journal.issns) if self.work.journal.issns else []
 
         response = {
             "id": id,
+            "issn_l": issn_l,
+            "issn": issn,
             "display_name": display_name,
+            "publisher": publisher,
             "type": self.display_host_type,
             "url": self.source_url,
             "is_oa": self.is_oa,
