@@ -969,52 +969,44 @@ class Work(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    def host_venue_matching_location(self):
+        journal_id_match = None
+        publisher_host_type_match = None
+        legacy_mag_match = None
+
+        for loc in self.locations_sorted:
+            if loc.journal and self.journal_id == loc.journal.journal_id and not journal_id_match:
+                journal_id_match = loc
+            elif loc.host_type == "publisher" and not publisher_host_type_match:
+                publisher_host_type_match = loc
+            elif not self.journal and not self.records and not legacy_mag_match:
+                legacy_mag_match = loc
+
+        return journal_id_match or publisher_host_type_match or legacy_mag_match
+
     @property
     def host_venue_details_dict(self):
         # should match the extra stuff put out in locations.to_dict()
-        matching_location = None
+        matching_location = self.host_venue_matching_location()
+
         url = None
-        for location in self.locations_sorted:
-            if "doi.org/" in location.source_url and not matching_location:
-                matching_location = location
-            elif not matching_location:
-                if location.host_type == "publisher":
-                    matching_location = location
-        #if self.locations_sorted and (not matching_location):
-        #    matching_location = self.locations_sorted[0]
+        version = None
+        license = None
+        is_oa = False
 
-        if self.best_url:
-            url = self.best_url
-        elif matching_location:
+        if matching_location:
             url = matching_location.source_url
-
-        type = None
-        if matching_location and matching_location.host_type != None:
-            type = matching_location.host_type
-        elif self.journal and self.journal.issn_l:
-            type = "publisher"
-        elif url and "doi.org/" in url:
-            type = "publisher"
-
-        version = matching_location.version if matching_location else None
-        license = matching_location.display_license if matching_location else None
-
-        is_oa = None
-        if matching_location and matching_location.is_oa != None:
-            is_oa = matching_location.is_oa
-        elif self.is_oa == False:
-            is_oa = False
-        elif self.oa_status == "gold":
-            is_oa = True
-            version = "publishedVersion"
+            version = matching_location.version
+            license = matching_location.display_license
+            is_oa = matching_location.is_oa or False
 
         response = {
-            "type": type,
             "url": url,
             "is_oa": is_oa,
             "version": version,
             "license": license
         }
+
         return response
 
     def to_dict(self, return_level="full"):
@@ -1043,10 +1035,10 @@ class Work(db.Model):
             "authorships": self.affiliations_list,
         }
         response["host_venue"].update(self.host_venue_details_dict)
-        response["host_venue"]["display_name"] = response["host_venue"]["display_name"] if response["host_venue"]["display_name"] else self.original_venue
 
-        if self.journal and self.journal.type:
-            response["host_venue"]["type"] = self.journal.type
+        if not self.journal:
+            response["host_venue"]["display_name"] = self.original_venue
+            response["host_venue"]["url"] = self.best_url
 
         if self.extra_ids:
             for extra_id in self.extra_ids:

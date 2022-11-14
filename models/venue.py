@@ -158,7 +158,8 @@ class Venue(db.Model):
             "issn_l": None,
             "issn": None,
             "display_name": None,
-            "publisher": None
+            "publisher": None,
+            "type": None,
         }
         return response
 
@@ -169,6 +170,7 @@ class Venue(db.Model):
             "issn": json.loads(self.issns) if self.issns else None,
             "display_name": self.display_name,
             "publisher": self.publisher,
+            "type": self.type,
         }
         if return_level == "full":
             response.update({
@@ -188,7 +190,6 @@ class Venue(db.Model):
                     "fatcat": self.fatcat_id,
                     "wikidata": self.wikidata_id
                 },
-                "type": self.type,
                 "apc_usd": self.apc_usd,
                 "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
