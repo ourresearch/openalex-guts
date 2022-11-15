@@ -1068,6 +1068,26 @@ class Work(db.Model):
                 "referenced_works": self.references_list,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
                 })
+
+            response["alternate_host_venues"] = [response["host_venue"]] + response["alternate_host_venues"]
+            deduped_ahvs = []
+            seen_ids = set()
+            seen_urls = set()
+
+            for ahv in response["alternate_host_venues"]:
+                ahv_id = ahv["id"]
+                ahv_url = ahv["url"]
+
+                if ahv_id:
+                    if ahv_id not in seen_ids:
+                        deduped_ahvs.append(ahv)
+                        seen_ids.add(ahv_id)
+                elif ahv_url not in seen_urls:
+                    deduped_ahvs.append(ahv)
+                    seen_urls.add(ahv_url)
+
+            response["alternate_host_venues"] = deduped_ahvs
+
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
             response["counts_by_year"] = self.display_counts_by_year
