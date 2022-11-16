@@ -847,6 +847,13 @@ class Work(db.Model):
             return None
         return "https://doi.org/{}".format(self.doi.lower())
 
+    @property
+    def is_closed_springer(self):
+        publisher_str = (self.journal and self.journal.publisher) or self.publisher
+        if publisher_str and 'springer' in publisher_str.lower():
+            return not self.is_oa
+        return False
+
     @cached_property
     def is_oa(self):
         if self.best_free_url:
@@ -932,6 +939,8 @@ class Work(db.Model):
             self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
             json_save_with_abstract = jsonify_fast_no_sort_raw(my_full_dict)
 
+        if self.is_closed_springer:
+            self.abstract_inverted_index = None
 
         #if json_save and len(json_save) > 65000:
         #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
@@ -1090,6 +1099,9 @@ class Work(db.Model):
 
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
+                if self.is_closed_springer:
+                    response["abstract_inverted_index"] = None
+
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
             response["updated_date"] = updated_date
