@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2022-11-14
+- new fields in venues: type, apc_usd, alternate_titles, abbreviated_title, fatcat_id, and wikidata_id
+- added new works
+
 RELEASE 2022-10-10
 - moved to the V3 tagger API giving complete paths to concept level 0
 - restored 170M "lost" citations that were in MAG and we deleted
