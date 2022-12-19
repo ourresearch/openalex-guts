@@ -991,7 +991,7 @@ class Work(db.Model):
                 journal_id_match = loc
             elif loc.host_type == "publisher" and not publisher_host_type_match:
                 publisher_host_type_match = loc
-            elif not self.journal and not self.records and not legacy_mag_match:
+            elif not self.records and not legacy_mag_match:
                 legacy_mag_match = loc
 
         return journal_id_match or publisher_host_type_match or legacy_mag_match
@@ -1021,8 +1021,46 @@ class Work(db.Model):
 
         return response
 
+    def dict_locations(self):
+        host_venue_location = self.host_venue_matching_location()
+        other_locations = [loc for loc in self.locations_sorted if loc.include_in_alternative]
+
+        all_locations = [
+            loc.to_locations_dict()
+            for loc in [host_venue_location] + other_locations
+            if loc
+        ]
+
+        if self.journal and all_locations and not all_locations[0].get('venue'):
+            all_locations[0]["venue"] = self.journal.to_dict(return_level='minimum')
+
+        deduped_locations = []
+        seen_ids = set()
+        seen_urls = set()
+
+        for loc in all_locations:
+            loc_venue_id = (loc.get('venue') or {}).get('id')
+            loc_url = loc.get('pdf_url') or loc.get('landing_page_url')
+
+            if loc_venue_id:
+                if loc_venue_id not in seen_ids:
+                    deduped_locations.append(loc)
+            elif loc_url not in seen_urls:
+                deduped_locations.append(loc)
+
+            if loc_venue_id:
+                seen_ids.add(loc_venue_id)
+            if loc_url:
+                seen_urls.add(loc_url)
+
+        return deduped_locations
+
+
     def to_dict(self, return_level="full"):
         from models import Venue
+
+        dict_locations = self.dict_locations()
+        oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
         response = {
             "id": self.openalex_id,
@@ -1038,6 +1076,8 @@ class Work(db.Model):
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
             "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
+            "primary_location": dict_locations[0] if dict_locations else None,
+            "best_oa_location": oa_locations[0] if oa_locations else None,
             "type": self.display_genre,
             "open_access": {
                 "is_oa": self.is_oa,
@@ -1077,6 +1117,7 @@ class Work(db.Model):
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
+                "locations": dict_locations,
                 "referenced_works": self.references_list,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
                 })
