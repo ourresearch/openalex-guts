@@ -161,6 +161,16 @@ class Location(db.Model):
 
         return response
 
+    def to_locations_dict(self):
+        return {
+            'venue': self.journal and self.journal.to_dict(return_level='minimum'),
+            'pdf_url': self.url_for_pdf,
+            'landing_page_url': self.url_for_landing_page or self.source_url,
+            'is_oa': self.is_oa,
+            'version': self.version,
+            'license': self.display_license,
+        }
+
     def __repr__(self):
         return "<Location ( {} ) {}>".format(self.paper_id, self.source_url)
 
