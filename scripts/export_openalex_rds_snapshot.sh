@@ -80,12 +80,22 @@ export_table() {
 
         part_file_prefix="$date_dir/part_"
 
-        psql $OPENALEX_DB -c "\\copy ( \
-          select ${json_field_name} from ${table_snapshot} \
-          where changed_date = '$d' \
-        ) to stdout" |
-        sed 's|\\\\|\\|g' |
-        split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
+        if [ $entity_type == "works" ]
+        then
+          psql $OPENALEX_DB -c "\\copy ( \
+            select json_save_with_abstract::jsonb - 'locations' - 'best_oa_location' - 'primary_location' from ${table_snapshot} \
+            where changed_date = '$d' \
+          ) to stdout" |
+          sed 's|\\\\|\\|g' |
+          split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
+        else
+          psql $OPENALEX_DB -c "\\copy ( \
+            select ${json_field_name} from ${table_snapshot} \
+            where changed_date = '$d' \
+          ) to stdout" |
+          sed 's|\\\\|\\|g' |
+          split --numeric-suffixes --line-bytes=5GB --suffix-length=3 --filter='gzip > $FILE.gz' - $part_file_prefix
+        fi
     done
 }
 
