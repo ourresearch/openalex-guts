@@ -1022,17 +1022,33 @@ class Work(db.Model):
         return response
 
     def dict_locations(self):
-        host_venue_location = self.host_venue_matching_location()
+        work_venue = self.journal
+        work_venue_location = self.host_venue_matching_location()
+
+        work_venue_location_dict = {
+            'venue': work_venue and work_venue.to_dict(return_level='minimum'),
+            'pdf_url': None,
+            'landing_page_url': None,
+            'is_oa': None,
+            'version': None,
+            'license': None
+        }
+
+        if work_venue_location:
+            work_venue_location_details_dict = work_venue_location.to_locations_dict()
+            del work_venue_location_details_dict['venue']
+            work_venue_location_dict.update(work_venue_location_details_dict)
+
+        if work_venue and self.doi and not work_venue_location_dict.get('landing_page_url'):
+            work_venue_location_dict['landing_page_url'] = self.doi_url
+
+        if not work_venue and not work_venue_location:
+            work_venue_location_dict['landing_page_url'] = self.best_url
+
+
         other_locations = [loc for loc in self.locations_sorted if loc.include_in_alternative]
 
-        all_locations = [
-            loc.to_locations_dict()
-            for loc in [host_venue_location] + other_locations
-            if loc
-        ]
-
-        if self.journal and all_locations and not all_locations[0].get('venue'):
-            all_locations[0]["venue"] = self.journal.to_dict(return_level='minimum')
+        all_locations = [work_venue_location_dict] + [loc.to_locations_dict() for loc in other_locations if loc]
 
         deduped_locations = []
         seen_ids = set()
