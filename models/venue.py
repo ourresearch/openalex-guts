@@ -22,6 +22,7 @@ def as_venue_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/V{id}"
 
+
 class Venue(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "journal"
@@ -35,6 +36,7 @@ class Venue(db.Model):
     is_oa = db.Column(db.Boolean)
     is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
     normalized_book_publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
@@ -163,13 +165,21 @@ class Venue(db.Model):
         }
         return response
 
+    @property
+    def publisher_display_name(self):
+        if self.publisher_entity:
+            return self.publisher_entity.display_name
+        else:
+            return self.publisher
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "issn_l": self.issn,
             "issn": json.loads(self.issns) if self.issns else None,
             "display_name": self.display_name,
-            "publisher": self.publisher,
+            "publisher": self.publisher_display_name,
+            "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
         if return_level == "full":

@@ -22,6 +22,7 @@ from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitut
 from models.location import Location
 from models.mesh import Mesh
 from models.orcid import Orcid
+from models.publisher import Publisher
 from models.record import Record
 from models.ror import Ror
 from models.unpaywall import Unpaywall
@@ -30,7 +31,6 @@ from models.work import Work
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
-
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
@@ -75,6 +75,10 @@ Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='s
 Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', viewonly=True)
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', viewonly=True)
 
+Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher_id], lazy='selectin', viewonly=True, uselist=False)
+
+# TODO: rename Venue.publisher to Venue.publisher_name to free up Venue.publisher for this relationship
+Venue.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
 Record.journals = db.relationship(
