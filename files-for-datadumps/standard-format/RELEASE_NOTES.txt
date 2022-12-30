@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2022-12-21
+- the values in host_venue have been added to alternate_host_venues in works, which paves way for the new locations
+list that will contain all possible venues for a work
+- added new works
+
 RELEASE 2022-11-14
 - new fields in venues: type, apc_usd, alternate_titles, abbreviated_title, fatcat_id, and wikidata_id
 - added new works
