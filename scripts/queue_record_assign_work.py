@@ -44,7 +44,7 @@ def run(**kwargs):
                     r for r in records if
                     (not r.doi or doi_counts[r.doi] == 1) and
                     (not r.pmid or pmid_counts[r.pmid] == 1) and
-                    (not r.normalized_title or title_counts[r.normalized_title]) == 1
+                    (not r.normalized_title or title_counts[r.normalized_title] == 1)
                 ]
 
                 unique_record_ids = [u.id for u in unique_records]
