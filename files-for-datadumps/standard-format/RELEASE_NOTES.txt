@@ -10,7 +10,7 @@ RELEASE 2022-11-14
 - added new works
 
 RELEASE 2022-10-10
-- moved to the V3 tagger API giving complete paths to concept level 0
+- implemented automated concept tagger v3, which provides complete paths to concept level 0
 - restored 170M "lost" citations that were in MAG and we deleted
 - added new works
 
@@ -42,6 +42,7 @@ RELEASE 2022-05-12
 - added new papers and corresponding data
 
 RELEASE 2022-04-30
+- implemented automated concept tagger v2, which uses more fields to assign concepts to works
 - added new papers and corresponding data
 - updated 8715 venues that had issn_l listed but no issns in "issns" key
 
@@ -79,7 +80,7 @@ Partial release on 2022-02-04 (updated Institutions and Venues)
 RELEASE 2022-01-31
 - added new papers and corresponding data
 - remove blank lines
-- citation counts for Concepts now correspond to algorithm_version 2
+- citation counts for concepts use improved algorithm
 
 RELEASE 2022-01-24
 - added work.abstract_inverted_index
