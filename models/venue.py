@@ -37,6 +37,7 @@ class Venue(db.Model):
     is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
     publisher_id = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
+    institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     normalized_book_publisher = db.Column(db.Text)
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
