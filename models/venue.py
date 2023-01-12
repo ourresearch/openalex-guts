@@ -173,12 +173,22 @@ class Venue(db.Model):
         else:
             return self.publisher
 
+    @property
+    def host_organization(self):
+        if self.type == "journal" and self.publisher_entity and self.publisher_entity.openalex_id:
+            return self.publisher_entity.openalex_id
+        elif self.type == "repository" and self.institution and self.institution.openalex_id:
+            return self.institution.openalex_id
+        else:
+            return None
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "issn_l": self.issn,
             "issn": json.loads(self.issns) if self.issns else None,
             "display_name": self.display_name,
+            "host_organization": self.host_organization,
             "publisher": self.publisher_display_name,
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
