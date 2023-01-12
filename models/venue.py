@@ -188,7 +188,7 @@ class Venue(db.Model):
             "issn_l": self.issn,
             "issn": json.loads(self.issns) if self.issns else None,
             "display_name": self.display_name,
-            "host_organization": self.host_organization,
+            # "host_organization": self.host_organization,
             "publisher": self.publisher_display_name,
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
