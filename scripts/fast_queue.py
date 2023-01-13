@@ -153,11 +153,14 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Work).options(
             selectinload(models.Work.stored),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Venue.publisher_entity).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Venue.institution).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Venue.publisher_entity).raiseload('*'),
+            selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Venue.institution).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Venue.publisher_entity).raiseload('*'),
+            selectinload(models.Work.journal).selectinload(models.Venue.institution).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
             selectinload(models.Work.references).raiseload('*'),
             selectinload(models.Work.references_unmatched).raiseload('*'),
@@ -195,7 +198,8 @@ def get_objects(entity_type, object_ids):
              selectinload(models.Venue.counts),
              selectinload(models.Venue.counts_by_year_papers),
              selectinload(models.Venue.counts_by_year_citations),
-             selectinload(models.Venue.publisher_entity).raiseload('*'),
+             selectinload(models.Venue.publisher_entity),
+             selectinload(models.Venue.institution).raiseload('*'),
              orm.Load(models.Venue).raiseload('*')
         ).filter(models.Venue.journal_id.in_(object_ids)).all()
     elif entity_type == "institution":
