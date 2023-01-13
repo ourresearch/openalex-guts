@@ -79,7 +79,7 @@ Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher
 
 # TODO: rename Venue.publisher to Venue.publisher_name to free up Venue.publisher for this relationship
 Venue.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
-Venue.institution = db.relationship("Institution", lazy='select', uselist=False)
+Venue.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
 Record.journals = db.relationship(
