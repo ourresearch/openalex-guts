@@ -23,7 +23,10 @@ class Unpaywall(db.Model):
     def oa_locations(self):
         if not self.oa_locations_json:
             return []
-        return json.loads(self.oa_locations_json)
+        return [
+            loc for loc in json.loads(self.oa_locations_json)
+            if not loc.get('endpoint_id') == 'trmgzrn8eq4yx7ddvmzs'  # semantic scholar
+        ]
 
     def __repr__(self):
         return "<Unpaywall ( {} ) '{}' {}>".format(self.recordthresher_id, self.doi, self.oa_status)
