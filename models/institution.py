@@ -309,6 +309,10 @@ class Institution(db.Model):
         my_dict = self.to_dict()
 
         if self.stored and (self.stored.merge_into_id == self.merge_into_id):
+            if self.merge_into_id is not None and self.stored.json_save is None:
+                #  don't keep saving merged entities and bumping their updated and changed dates
+                logger.info(f"already merged into {self.merge_into_id}, not saving again")
+                return
             if self.stored.json_save:
                 # check merged here for everything but concept
                 diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])

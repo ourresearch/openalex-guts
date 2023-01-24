@@ -909,6 +909,10 @@ class Work(db.Model):
         my_full_dict = self.to_dict("full")
 
         if self.stored and (self.stored.merge_into_id == self.merge_into_id):
+            if self.merge_into_id is not None and self.stored.json_save is None:
+                #  don't keep saving merged entities and bumping their updated and changed dates
+                logger.info(f"already merged into {self.merge_into_id}, not saving again")
+                return
             if self.stored.json_save:
                 stored_full_dict = json.loads(self.stored.json_save_with_abstract)
 
