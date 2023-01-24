@@ -75,7 +75,9 @@ class Author(db.Model):
 
         match_with_orcid = f"""
             select author_id from mid.author_orcid
-            where orcid = '{original_orcid}'
+            join mid.author using (author_id)
+            where author_orcid.orcid = '{original_orcid}'
+            and author.merge_into_id is null
             """
 
         match_name = Author.matching_author_string(raw_author_string)
@@ -89,6 +91,7 @@ class Author(db.Model):
             from mid.author author
             join mid.affiliation affil on affil.author_id=author.author_id
             where author.author_id is not null
+            and author.merge_into_id is null
             and affil.paper_id in {citation_paper_ids_tuple}
             and author.match_name = '{match_name}'
             """
