@@ -14,6 +14,7 @@ from app import get_db_cursor
 # insert into mid.affiliation (select * from legacy.mag_main_paper_author_affiliations)
 # update mid.affiliation set original_author=replace(original_author, '\t', '') where original_author ~ '\t';
 
+
 class Affiliation(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "affiliation"
@@ -23,6 +24,7 @@ class Affiliation(db.Model):
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     author_sequence_number = db.Column(db.Numeric, primary_key=True)
     affiliation_sequence_number = db.Column(db.Numeric, primary_key=True)
+    is_corresponding_author = db.Column(db.Boolean)
     original_author = db.Column(db.Text)
     original_affiliation = db.Column(db.Text)
     original_orcid = db.Column(db.Text)
