@@ -591,7 +591,9 @@ class Work(db.Model):
                         original_orcid=original_orcid,
                         match_author=author_match_name,
                         match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
-                        updated_date=datetime.datetime.utcnow().isoformat())
+                        is_corresponding_author=author_dict.get('is_corresponding'),
+                        updated_date=datetime.datetime.utcnow().isoformat()
+                    )
                     my_affiliation.author = my_author
                     my_affiliation.institution = my_institution
                     self.affiliations += [my_affiliation]
