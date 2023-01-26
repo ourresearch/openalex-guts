@@ -235,6 +235,7 @@ class Affiliation(db.Model):
 
         response["author_sequence_number"] = self.author_sequence_number
         response["raw_affiliation_string"] = self.original_affiliation
+        response["is_corresponding_author"] = self.is_corresponding_author
 
         return response
 

@@ -757,6 +757,7 @@ class Work(db.Model):
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
+                             "is_corresponding": affil_list[0].get('is_corresponding_author'),
                              "raw_affiliation_string": '; '.join([
                                  a.get("raw_affiliation_string") for a in affil_list
                                  if a.get("raw_affiliation_string")
