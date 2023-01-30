@@ -1,6 +1,3 @@
-import json
-from cached_property import cached_property
-
 from app import db
 
 
@@ -18,6 +15,7 @@ class JsonWorks(db.Model):
     concepts_count = db.Column(db.Integer)
     merge_into_id = db.Column(db.BigInteger)
 
+
 class JsonAuthors(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_authors"
@@ -27,6 +25,7 @@ class JsonAuthors(db.Model):
     json_save = db.Column(db.Text)
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
+
 
 class JsonInstitutions(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -38,6 +37,7 @@ class JsonInstitutions(db.Model):
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
 
+
 class JsonVenues(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_venues"
@@ -48,10 +48,22 @@ class JsonVenues(db.Model):
     version = db.Column(db.Text)
     merge_into_id = db.Column(db.BigInteger)
 
+
 class JsonConcepts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_concepts"
     id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
+
+
+class JsonPublishers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_publishers"
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
     updated = db.Column(db.DateTime)
     changed = db.Column(db.DateTime)
     json_save = db.Column(db.Text)

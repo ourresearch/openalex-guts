@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 import models
 from app import db
 from app import logger
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
+from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues, JsonPublishers
 from util import elapsed
 
 
@@ -206,6 +206,10 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Institution).filter(models.Institution.affiliation_id.in_(object_ids)).all()
     elif entity_type == "concept":
         objects = db.session.query(models.Concept).filter(models.Concept.field_of_study_id.in_(object_ids)).all()
+    elif entity_type == "publisher":
+        objects = db.session.query(models.Publisher).options(
+            selectinload(models.Publisher.parent).raiseload('*'),
+        ).filter(models.Publisher.publisher_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
