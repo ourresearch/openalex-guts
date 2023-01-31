@@ -23,7 +23,7 @@ class Publisher(db.Model):
     created_date = db.Column(db.DateTime)
     display_name = db.Column(db.Text)
     alternate_titles = db.Column(JSONB)
-    country_code = db.Column(db.Text)
+    country_codes = db.Column(JSONB)
     parent_publisher = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
     hierarchy_level = db.Column(db.Integer)
     ror_id = db.Column(db.Text)
@@ -64,7 +64,7 @@ class Publisher(db.Model):
             "alternate_titles": self.alternate_titles or [],
             "parent_publisher": self.parent and self.parent.openalex_id,
             "hierarchy_level": self.hierarchy_level,
-            "country_codes": (self.country_code and [self.country_code]) or [],
+            "country_codes": self.country_codes or [],
             "ids": {
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
