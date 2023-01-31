@@ -68,6 +68,7 @@ class Publisher(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
+                "ror": self.ror_id,
             },
             "works_count": int(self.counts.paper_count) if self.counts else 0,
             "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
