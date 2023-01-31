@@ -198,7 +198,7 @@ def get_objects(entity_type, object_ids):
              selectinload(models.Venue.counts),
              selectinload(models.Venue.counts_by_year_papers),
              selectinload(models.Venue.counts_by_year_citations),
-             selectinload(models.Venue.publisher_entity),
+             selectinload(models.Venue.publisher_entity).raiseload('*'),
              selectinload(models.Venue.institution).raiseload('*'),
              orm.Load(models.Venue).raiseload('*')
         ).filter(models.Venue.journal_id.in_(object_ids)).all()
