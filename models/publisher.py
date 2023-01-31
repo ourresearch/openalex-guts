@@ -25,6 +25,7 @@ class Publisher(db.Model):
     alternate_titles = db.Column(JSONB)
     country_code = db.Column(db.Text)
     parent_publisher = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
+    hierarchy_level = db.Column(db.Integer)
     ror_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     country_name = db.Column(db.Text)
@@ -62,6 +63,7 @@ class Publisher(db.Model):
             "display_name": self.display_name,
             "alternate_titles": self.alternate_titles or [],
             "parent_publisher": self.parent and self.parent.openalex_id,
+            "hierarchy_level": self.hierarchy_level,
             "country_codes": (self.country_code and [self.country_code]) or [],
             "ids": {
                 "openalex": self.openalex_id,
