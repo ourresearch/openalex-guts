@@ -104,9 +104,6 @@ class Venue(db.Model):
         json_save = None
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
-        if json_save and len(json_save) > 65000:
-            logger.info("Error: json_save too long for journal_id {}, skipping".format(self.openalex_id))
-            json_save = None
 
         sources_json_save = json_save
         if sources_json_save:
