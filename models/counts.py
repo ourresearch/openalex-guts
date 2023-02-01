@@ -39,7 +39,7 @@ class AuthorCountsByYearCitations(db.Model):
         return "<AuthorCountsByYearCitations ( {} ) {} {} >".format(self.author_id, self.year, self.n)
 
 
-class VenueCounts(db.Model):
+class SourceCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_mv"
 
@@ -48,10 +48,10 @@ class VenueCounts(db.Model):
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<VenueCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+        return "<SourceCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
-class VenueCountsByYearPapers(db.Model):
+class SourceCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_by_year_paper_count_view"
 
@@ -61,10 +61,10 @@ class VenueCountsByYearPapers(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<VenueCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
+        return "<SourceCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 
-class VenueCountsByYearCitations(db.Model):
+class SourceCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_by_year_citation_count_view"
 
@@ -74,7 +74,7 @@ class VenueCountsByYearCitations(db.Model):
     n = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<VenueCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
+        return "<SourceCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 
 class PublisherCounts(db.Model):

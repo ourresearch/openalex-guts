@@ -15,7 +15,7 @@ from models.concept_ancestor import ConceptAncestor
 from models.counts import AuthorCountsByYearPapers, AuthorCountsByYearCitations
 from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
-from models.counts import VenueCountsByYearPapers, VenueCountsByYearCitations
+from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
 from models.institution import Institution
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
@@ -63,7 +63,7 @@ WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Concept.counts = db.relationship("ConceptCounts", lazy='selectin', viewonly=True, uselist=False)
 Institution.counts = db.relationship("InstitutionCounts", lazy='selectin', viewonly=True, uselist=False)
-Venue.counts = db.relationship("VenueCounts", lazy='selectin', viewonly=True, uselist=False)
+Venue.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
 Work.counts = db.relationship("WorkCounts", lazy='selectin', viewonly=True, uselist=False)
 Publisher.counts = db.relationship("PublisherCounts", lazy='selectin', viewonly=True, uselist=False)
 
@@ -72,8 +72,8 @@ Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations",
 Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', viewonly=True)
 Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', viewonly=True)
 Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', viewonly=True)
-Venue.counts_by_year_papers = db.relationship("VenueCountsByYearPapers", lazy='selectin', viewonly=True)
-Venue.counts_by_year_citations = db.relationship("VenueCountsByYearCitations", lazy='selectin', viewonly=True)
+Venue.counts_by_year_papers = db.relationship("SourceCountsByYearPapers", lazy='selectin', viewonly=True)
+Venue.counts_by_year_citations = db.relationship("SourceCountsByYearCitations", lazy='selectin', viewonly=True)
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_papers = db.relationship("PublisherCountsByYearPapers", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_citations = db.relationship("PublisherCountsByYearCitations", lazy='selectin', viewonly=True)

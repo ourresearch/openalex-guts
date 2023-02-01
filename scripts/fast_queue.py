@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 import models
 from app import db
 from app import logger
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues, JsonPublishers
+from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues, JsonSources, JsonPublishers
 from util import elapsed
 
 
@@ -192,7 +192,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).raiseload('*'),
             orm.Load(models.Author).raiseload('*')
         ).filter(models.Author.author_id.in_(object_ids)).all()
-    elif entity_type == "venue":
+    elif entity_type == "source":
         objects = db.session.query(models.Venue).options(
              selectinload(models.Venue.stored),
              selectinload(models.Venue.counts),
