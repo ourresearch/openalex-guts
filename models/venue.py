@@ -107,13 +107,33 @@ class Venue(db.Model):
         if json_save and len(json_save) > 65000:
             logger.info("Error: json_save too long for journal_id {}, skipping".format(self.openalex_id))
             json_save = None
-        self.insert_dicts = [{"JsonVenues": {"id": self.journal_id,
-                                             "updated": now,
-                                             "changed": now,
-                                             "json_save": json_save,
-                                             "version": VERSION_STRING,
-                                             "merge_into_id": self.merge_into_id
-                                             }}]
+
+        sources_json_save = json_save
+        if sources_json_save:
+            sources_json_save = sources_json_save.replace('https://openalex.org/V', 'https://openalex.org/S')
+
+        self.insert_dicts = [
+            {
+                "JsonVenues": {
+                    "id": self.journal_id,
+                    "updated": now,
+                    "changed": now,
+                    "json_save": json_save,
+                    "version": VERSION_STRING,
+                    "merge_into_id": self.merge_into_id
+                }
+            },
+            {
+                "JsonSources": {
+                    "id": self.journal_id,
+                    "updated": now,
+                    "changed": now,
+                    "json_save": sources_json_save,
+                    "version": VERSION_STRING,
+                    "merge_into_id": self.merge_into_id
+                }
+            }
+        ]
 
 
 
