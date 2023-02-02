@@ -163,7 +163,7 @@ class Location(db.Model):
 
     def to_locations_dict(self):
         return {
-            'venue': self.journal and self.journal.to_dict(return_level='minimum'),
+            'source': self.journal and self.journal.to_dict(return_level='minimum'),
             'pdf_url': self.url_for_pdf,
             'landing_page_url': self.url_for_landing_page or self.source_url,
             'is_oa': self.is_oa,

@@ -1,33 +1,27 @@
-from flask import make_response
-from flask import request
-from flask import redirect
-from flask import abort
-from flask import render_template
-from flask import jsonify
-from flask import send_from_directory
-from flask import send_file
-from flask import safe_join
-from flask import url_for
-from sqlalchemy.sql import func
-from sqlalchemy.orm import load_only
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import or_
-import re
-
 import json
 import os
+import re
 import sys
-import yaml
 
+import yaml
+from flask import abort
+from flask import make_response
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import safe_join
+from flask import send_file
+from flask import url_for
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import func
+
+import models
+from app import MAX_MAG_ID
 from app import app
 from app import db
 from app import logger
-from app import MAX_MAG_ID
-import models
-
-from util import jsonify_fast_no_sort
-from util import TimingMessages
 from util import is_openalex_id
+from util import jsonify_fast_no_sort
 from util import normalize_openalex_id
 
 
@@ -110,11 +104,11 @@ def is_author_openalex_id(id):
     clean_id = normalize_openalex_id(id)
     return clean_id.startswith("A")
 
-def is_venue_openalex_id(id):
+def is_source_openalex_id(id):
     if isinstance(id, int):
         return False
     clean_id = normalize_openalex_id(id)
-    return clean_id.startswith("V")
+    return clean_id.startswith("S")
 
 def is_institution_openalex_id(id):
     if isinstance(id, int):
@@ -288,39 +282,39 @@ def institutions_id_get(id):
     return jsonify_fast_no_sort(response)
 
 
-#### Venue
+# Source
 
-@app.route("/venues/RANDOM")
-@app.route("/venues/random")
-def venues_random_get():
-    query = models.Venue.query.order_by(func.random())
+@app.route("/sources/RANDOM")
+@app.route("/sources/random")
+def sources_random_get():
+    query = models.Source.query.order_by(func.random())
     if ("new" in request.args):
-        query = query.filter(models.Venue.journal_id >= MAX_MAG_ID)
+        query = query.filter(models.Source.journal_id >= MAX_MAG_ID)
     obj = query.first()
     if not obj:
         raise NoResultFound
     response = obj.to_dict()
     return jsonify_fast_no_sort(response)
 
-@app.route("/venues/<path:id>")
-def venues_id_get(id):
+@app.route("/sources/<path:id>")
+def sources_id_get(id):
     from util import normalize_issn
     obj = None
     if is_openalex_id(id):
         clean_id = normalize_openalex_id(id)
         if clean_id != id:
-            return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+            return redirect(url_for("sources_id_get", id=clean_id, **request.args))
         clean_id = int(clean_id[1:])
         obj = models.journal_from_id(clean_id)
     elif id.startswith("mag:"):
         clean_id = id.replace("mag:", "")
-        clean_id = f"V{clean_id}"
-        return redirect(url_for("venues_id_get", id=clean_id, **request.args))
+        clean_id = f"S{clean_id}"
+        return redirect(url_for("sources_id_get", id=clean_id, **request.args))
     elif id.startswith("issn:"):
         clean_issn = normalize_issn(id)
         openalex_id = models.openalex_id_from_issn(clean_issn)
         if openalex_id:
-            return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
+            return redirect(url_for("sources_id_get", id=openalex_id, **request.args))
     if not obj:
         abort(404)
     response = obj.to_dict()
@@ -387,8 +381,8 @@ def universal_get(openalex_id):
         return redirect(url_for("works_id_get", id=openalex_id, **request.args))
     elif is_author_openalex_id(openalex_id):
         return redirect(url_for("authors_id_get", id=openalex_id, **request.args))
-    elif is_venue_openalex_id(openalex_id):
-        return redirect(url_for("venues_id_get", id=openalex_id, **request.args))
+    elif is_source_openalex_id(openalex_id):
+        return redirect(url_for("sources_id_get", id=openalex_id, **request.args))
     elif is_institution_openalex_id(openalex_id):
         return redirect(url_for("institutions_id_get", id=openalex_id, **request.args))
     elif is_concept_openalex_id(openalex_id):

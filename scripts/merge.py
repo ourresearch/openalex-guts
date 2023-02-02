@@ -12,7 +12,7 @@ from app import db
 
 from util import elapsed
 
-# python -m scripts.merge venue --away=2764397475 --into=190099528
+# python -m scripts.merge source --away=2764397475 --into=190099528
 # python -m scripts.merge institution --away=19744281 --into=74796645
 
 # bulk_merge_data = [
@@ -44,7 +44,7 @@ def run(entity, merge_away_id, merge_into_id):
     merge_away_obj.citation_count = 0
     merge_away_obj.full_updated_date = now
 
-    if entity == "venue":
+    if entity == "source":
         work_objects = models.Work.query.options(orm.Load(models.Work).raiseload('*')
                                                  ).filter(models.Work.journal_id==merge_away_id).all()
         print(f"updating journal_id for {len(work_objects)} works")
@@ -150,7 +150,7 @@ def run(entity, merge_away_id, merge_into_id):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('entity', help='one of:  work, author, venue, institution (concepts not merged)')
+    ap.add_argument('entity', help='one of:  work, author, source, institution (concepts not merged)')
     ap.add_argument('--away', '-a', nargs='?', type=int, help='ID of entity to merge away')
     ap.add_argument('--into', '-i', nargs='?', type=int, help='ID of entity to merge into')
 

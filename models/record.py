@@ -56,7 +56,7 @@ class Record(db.Model):
     authors = db.Column(db.Text)
     mesh = db.Column(db.Text)
 
-    # venue links
+    # source links
     repository_id = db.Column(db.Text)
     # the journal_id in record is not the openalex journal ID
     journal_issn_l = db.Column(db.Text)

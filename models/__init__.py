@@ -18,7 +18,7 @@ from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYear
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
 from models.institution import Institution
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
+from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.location import Location
 from models.mesh import Mesh
 from models.orcid import Orcid
@@ -26,7 +26,7 @@ from models.publisher import Publisher
 from models.record import Record
 from models.ror import Ror
 from models.unpaywall import Unpaywall
-from models.venue import Venue
+from models.source import Source
 from models.work import Work
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
@@ -38,7 +38,7 @@ Work.references = db.relationship("Citation", lazy='selectin', backref="work", c
 Work.references_unmatched = db.relationship("CitationUnmatched", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.locations = db.relationship("Location", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.abstract = db.relationship("Abstract", lazy='selectin', backref="work", uselist=False, cascade="all, delete-orphan")
-Work.journal = db.relationship("Venue", lazy='selectin', backref="work", uselist=False) #don't delete orphan
+Work.journal = db.relationship("Source", lazy='selectin', backref="work", uselist=False) #don't delete orphan
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
@@ -63,7 +63,7 @@ WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Concept.counts = db.relationship("ConceptCounts", lazy='selectin', viewonly=True, uselist=False)
 Institution.counts = db.relationship("InstitutionCounts", lazy='selectin', viewonly=True, uselist=False)
-Venue.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
+Source.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
 Work.counts = db.relationship("WorkCounts", lazy='selectin', viewonly=True, uselist=False)
 Publisher.counts = db.relationship("PublisherCounts", lazy='selectin', viewonly=True, uselist=False)
 
@@ -72,37 +72,37 @@ Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations",
 Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', viewonly=True)
 Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', viewonly=True)
 Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', viewonly=True)
-Venue.counts_by_year_papers = db.relationship("SourceCountsByYearPapers", lazy='selectin', viewonly=True)
-Venue.counts_by_year_citations = db.relationship("SourceCountsByYearCitations", lazy='selectin', viewonly=True)
+Source.counts_by_year_papers = db.relationship("SourceCountsByYearPapers", lazy='selectin', viewonly=True)
+Source.counts_by_year_citations = db.relationship("SourceCountsByYearCitations", lazy='selectin', viewonly=True)
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_papers = db.relationship("PublisherCountsByYearPapers", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_citations = db.relationship("PublisherCountsByYearCitations", lazy='selectin', viewonly=True)
 
 Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher_id], lazy='selectin', viewonly=True, uselist=False)
 
-# TODO: rename Venue.publisher to Venue.publisher_name to free up Venue.publisher for this relationship
-Venue.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
-Venue.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
+# TODO: rename Source.publisher to Source.publisher_name to free up Source.publisher for this relationship
+Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
+Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
 Record.journals = db.relationship(
-    "Venue",
+    "Source",
     lazy='selectin',
     uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
     viewonly=True,
     primaryjoin="""
 and_(
-    remote(Venue.merge_into_id) == None,
+    remote(Source.merge_into_id) == None,
     or_(
-        remote(Venue.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
+        remote(Source.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
         and_(
             foreign(Record.journal_issn_l) == None,
-            foreign(Record.repository_id) == remote(Venue.repository_id)
+            foreign(Record.repository_id) == remote(Source.repository_id)
         ),
         and_(
             foreign(Record.record_type) == 'crossref_doi',
             foreign(Record.genre).like('%book%'),
-            foreign(Record.normalized_book_publisher) == remote(Venue.normalized_book_publisher)
+            foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
         )
     )
 )
@@ -140,10 +140,10 @@ Record.work_matches_by_pmid = db.relationship(
     secondaryjoin="Work.paper_id == WorkExtraIds.paper_id"
 )
 
-Location.journal = db.relationship('Venue', lazy='subquery', viewonly=True, uselist=False)
+Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
-Venue.stored = db.relationship("JsonVenues", lazy='selectin', uselist=False, viewonly=True)
+Source.stored = db.relationship("JsonSources", lazy='selectin', uselist=False, viewonly=True)
 Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
 Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
 Work.stored = db.relationship("JsonWorks", lazy='selectin', uselist=False, viewonly=True)
@@ -172,11 +172,11 @@ def openalex_id_from_ror(ror_id):
     return f"I{affiliation_id}" if affiliation_id else None
 
 def journal_from_id(journal_id):
-    return Venue.query.filter(Venue.journal_id == journal_id).first()
+    return Source.query.filter(Source.journal_id == journal_id).first()
 
 def openalex_id_from_issn(issn):
-    journal_id = db.session.query(Venue.journal_id).filter(Venue.issns.ilike(f'%{issn}%')).order_by(Venue.citation_count.desc()).limit(1).scalar()
-    return f"V{journal_id}" if journal_id else None
+    journal_id = db.session.query(Source.journal_id).filter(Source.issns.ilike(f'%{issn}%')).order_by(Source.citation_count.desc()).limit(1).scalar()
+    return f"S{journal_id}" if journal_id else None
 
 def openalex_id_from_wikidata(wikidata):
     concept_id = db.session.query(Concept.field_of_study_id).filter(Concept.wikidata_id.ilike(f'%{wikidata}')).limit(1).scalar()
