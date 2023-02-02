@@ -988,7 +988,7 @@ class Work(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
-    def host_venue_matching_location(self):
+    def host_source_matching_location(self):
         journal_id_match = None
         publisher_host_type_match = None
         legacy_mag_match = None
@@ -1006,7 +1006,7 @@ class Work(db.Model):
     @property
     def host_venue_details_dict(self):
         # should match the extra stuff put out in locations.to_dict()
-        matching_location = self.host_venue_matching_location()
+        matching_location = self.host_source_matching_location()
 
         url = None
         version = None
@@ -1029,11 +1029,11 @@ class Work(db.Model):
         return response
 
     def dict_locations(self):
-        work_venue = self.journal
-        work_venue_location = self.host_venue_matching_location()
+        work_source = self.journal
+        work_source_location = self.host_source_matching_location()
 
-        work_venue_location_dict = {
-            'venue': work_venue and work_venue.to_dict(return_level='minimum'),
+        work_source_location_dict = {
+            'source': work_source and work_source.to_dict(return_level='minimum'),
             'pdf_url': None,
             'landing_page_url': None,
             'is_oa': None,
@@ -1041,46 +1041,44 @@ class Work(db.Model):
             'license': None
         }
 
-        if work_venue_location:
-            work_venue_location_details_dict = work_venue_location.to_locations_dict()
-            del work_venue_location_details_dict['venue']
-            work_venue_location_dict.update(work_venue_location_details_dict)
+        if work_source_location:
+            work_source_location_details_dict = work_source_location.to_locations_dict()
+            del work_source_location_details_dict['source']
+            work_source_location_dict.update(work_source_location_details_dict)
 
-        if work_venue and self.doi and not work_venue_location_dict.get('landing_page_url'):
-            work_venue_location_dict['landing_page_url'] = self.doi_url
+        if work_source and self.doi and not work_source_location_dict.get('landing_page_url'):
+            work_source_location_dict['landing_page_url'] = self.doi_url
 
-        if not work_venue and not work_venue_location:
-            work_venue_location_dict['landing_page_url'] = self.best_url
-
+        if not work_source and not work_source_location:
+            work_source_location_dict['landing_page_url'] = self.best_url
 
         other_locations = [loc for loc in self.locations_sorted if loc.include_in_alternative]
 
-        all_locations = [work_venue_location_dict] + [loc.to_locations_dict() for loc in other_locations if loc]
+        all_locations = [work_source_location_dict] + [loc.to_locations_dict() for loc in other_locations if loc]
 
         deduped_locations = []
         seen_ids = set()
         seen_urls = set()
 
         for loc in all_locations:
-            loc_venue_id = (loc.get('venue') or {}).get('id')
+            loc_source_id = (loc.get('source') or {}).get('id')
             loc_url = loc.get('pdf_url') or loc.get('landing_page_url')
 
-            if loc_venue_id:
-                if loc_venue_id not in seen_ids:
+            if loc_source_id:
+                if loc_source_id not in seen_ids:
                     deduped_locations.append(loc)
             elif loc_url not in seen_urls:
                 deduped_locations.append(loc)
 
-            if loc_venue_id:
-                seen_ids.add(loc_venue_id)
+            if loc_source_id:
+                seen_ids.add(loc_source_id)
             if loc_url:
                 seen_urls.add(loc_url)
 
         return deduped_locations
 
-
     def to_dict(self, return_level="full"):
-        from models import Venue
+        from models import Source
 
         dict_locations = self.dict_locations()
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
@@ -1098,7 +1096,7 @@ class Work(db.Model):
                 "pmid": None, #filled in below
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
-            "host_venue": self.journal.to_dict("minimum") if self.journal else Venue().to_dict_null_minimum(),
+            "host_venue": self.journal.to_dict("minimum") if self.journal else Source().to_dict_null_minimum(),
             "primary_location": dict_locations[0] if dict_locations else None,
             "best_oa_location": oa_locations[0] if oa_locations else None,
             "type": self.display_genre,

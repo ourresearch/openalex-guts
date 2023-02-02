@@ -18,12 +18,12 @@ from util import jsonify_fast_no_sort_raw
 # update mid.journal set display_title=replace(display_title, '\\\\/', '/');
 # update mid.journal set publisher=replace(publisher, '\t', '') where publisher ~ '\t';
 
-def as_venue_openalex_id(id):
+def as_source_openalex_id(id):
     from app import API_HOST
-    return f"{API_HOST}/V{id}"
+    return f"{API_HOST}/S{id}"
 
 
-class Venue(db.Model):
+class Source(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "journal"
 
@@ -59,7 +59,7 @@ class Venue(db.Model):
 
     @property
     def openalex_id(self):
-        return as_venue_openalex_id(self.journal_id)
+        return as_source_openalex_id(self.journal_id)
 
     @property
     def id(self):
@@ -95,7 +95,7 @@ class Venue(db.Model):
                     logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                logger.debug(f"Venue JSON Diff: {diff}")
+                logger.debug(f"Source JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = now
@@ -105,9 +105,9 @@ class Venue(db.Model):
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
 
-        sources_json_save = json_save
-        if sources_json_save:
-            sources_json_save = sources_json_save.replace('https://openalex.org/V', 'https://openalex.org/S')
+        venues_json_save = json_save
+        if venues_json_save:
+            venues_json_save = venues_json_save.replace('https://openalex.org/S', 'https://openalex.org/V')
 
         self.insert_dicts = [
             {
@@ -115,7 +115,7 @@ class Venue(db.Model):
                     "id": self.journal_id,
                     "updated": now,
                     "changed": now,
-                    "json_save": json_save,
+                    "json_save": venues_json_save,
                     "version": VERSION_STRING,
                     "merge_into_id": self.merge_into_id
                 }
@@ -125,7 +125,7 @@ class Venue(db.Model):
                     "id": self.journal_id,
                     "updated": now,
                     "changed": now,
-                    "json_save": sources_json_save,
+                    "json_save": json_save,
                     "version": VERSION_STRING,
                     "merge_into_id": self.merge_into_id
                 }
@@ -159,12 +159,12 @@ class Venue(db.Model):
                 select ancestor_id as id, concept.wikidata_id as wikidata, ancestor_name as display_name,
                 ancestor_level as level,
                 round(100 * (0.0+count(distinct wc.paper_id))/counts.paper_count, 1)::float as score
-                from mid.journal journal 
-                join mid.citation_journals_mv counts on counts.journal_id=journal.journal_id                            
+                from mid.journal journal
+                join mid.citation_journals_mv counts on counts.journal_id=journal.journal_id
                 join mid.work work on work.journal_id=journal.journal_id
                 join mid.work_concept wc on wc.paper_id=work.paper_id
                 join mid.concept_self_and_ancestors_mv ancestors on ancestors.id=wc.field_of_study
-                join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id                                    
+                join mid.concept_for_api_mv concept on concept.field_of_study_id=ancestor_id
                 where journal.journal_id=:journal_id
                 group by ancestor_id, concept.wikidata_id, ancestor_name, ancestor_level, counts.paper_count
                 order by score desc
@@ -251,7 +251,7 @@ class Venue(db.Model):
 
 
     def __repr__(self):
-        return "<Venue ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
+        return "<Source ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
 # select count(distinct work.paper_id)
