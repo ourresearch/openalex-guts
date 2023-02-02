@@ -73,7 +73,7 @@ class Publisher(db.Model):
             "works_count": int(self.counts.paper_count) if self.counts else 0,
             "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
             "counts_by_year": self.display_counts_by_year,
-            "venues_api_url": f"https://api.openalex.org/venues?filter=host_organization.id:{self.openalex_id_short}",
+            "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
             "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
             "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
         }
@@ -102,7 +102,7 @@ class Publisher(db.Model):
                     logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
                     return
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                logger.debug(f"Venue JSON Diff: {diff}")
+                logger.debug(f"Publisher JSON Diff: {diff}")
 
         now = datetime.datetime.utcnow().isoformat()
         my_dict["updated_date"] = now
