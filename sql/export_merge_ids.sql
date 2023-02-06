@@ -32,7 +32,7 @@ language 'plpgsql';
 
 call pg_temp.dump_merged_ids('mid.work', 'W', 'works', 'paper_id');
 call pg_temp.dump_merged_ids('mid.author', 'A', 'authors', 'author_id');
-call pg_temp.dump_merged_ids('mid.journal', 'V', 'venues', 'journal_id');
+call pg_temp.dump_merged_ids('mid.journal', 'S', 'sources', 'journal_id');
 call pg_temp.dump_merged_ids('mid.institution', 'I', 'institutions', 'affiliation_id');
 call pg_temp.dump_merged_ids('mid.concept', 'C', 'concepts', 'field_of_study_id');
 
