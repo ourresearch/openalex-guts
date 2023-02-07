@@ -211,6 +211,7 @@ class Source(db.Model):
             "display_name": self.display_name,
             "publisher": self.publisher_display_name,
             "host_organization": self.host_organization,
+            "host_organization_name": self.publisher_display_name,
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
