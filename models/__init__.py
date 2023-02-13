@@ -31,6 +31,7 @@ from models.work import Work
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
+from models.funder import Funder
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
@@ -66,6 +67,7 @@ Institution.counts = db.relationship("InstitutionCounts", lazy='selectin', viewo
 Source.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
 Work.counts = db.relationship("WorkCounts", lazy='selectin', viewonly=True, uselist=False)
 Publisher.counts = db.relationship("PublisherCounts", lazy='selectin', viewonly=True, uselist=False)
+Funder.counts = db.relationship("FunderCounts", lazy='selectin', viewonly=True, uselist=False)
 
 Author.counts_by_year_papers = db.relationship("AuthorCountsByYearPapers", lazy='selectin', viewonly=True)
 Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations", lazy='selectin', viewonly=True)
@@ -148,6 +150,7 @@ Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselis
 Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
 Work.stored = db.relationship("JsonWorks", lazy='selectin', uselist=False, viewonly=True)
 Publisher.stored = db.relationship("JsonPublishers", lazy='selectin', uselist=False, viewonly=True)
+Funder.stored = db.relationship("JsonFunders", lazy='selectin', uselist=False, viewonly=True)
 
 
 def author_from_id(author_id):

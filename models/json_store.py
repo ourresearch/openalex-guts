@@ -49,6 +49,17 @@ class JsonVenues(db.Model):
     merge_into_id = db.Column(db.BigInteger)
 
 
+class JsonFunders(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "json_funders"
+    id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    updated = db.Column(db.DateTime)
+    changed = db.Column(db.DateTime)
+    json_save = db.Column(db.Text)
+    version = db.Column(db.Text)
+    merge_into_id = db.Column(db.BigInteger)
+
+
 class JsonSources(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "json_sources"
