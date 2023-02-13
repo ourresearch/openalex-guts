@@ -77,6 +77,18 @@ class SourceCountsByYearCitations(db.Model):
         return "<SourceCountsByYearCitations ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 
+class FunderCounts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_funders_mv"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+
+
 class PublisherCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_publishers_mv"
