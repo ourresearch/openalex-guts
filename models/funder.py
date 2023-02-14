@@ -25,6 +25,7 @@ class Funder(db.Model):
     display_name = db.Column(db.Text)
     alternate_titles = db.Column(JSONB)
     uri = db.Column(db.Text)
+    doi = db.Column(db.Text)
     replaces = db.Column(JSONB)
     replaced_by = db.Column(JSONB)
     tokens = db.Column(JSONB)
@@ -59,23 +60,29 @@ class Funder(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
-    def to_dict(self):
+    def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "display_name": self.display_name,
-            "alternate_titles": self.alternate_titles or [],
             "ids": {
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
             },
-            "works_count": int(self.counts.paper_count) if self.counts else 0,
-            "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
-            #"counts_by_year": self.display_counts_by_year,
-            #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
-            "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
-            "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
         }
+
+        if return_level == "full":
+            response.update(
+                {
+                    "alternate_titles": self.alternate_titles or [],
+                    "works_count": int(self.counts.paper_count) if self.counts else 0,
+                    "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
+                    #"counts_by_year": self.display_counts_by_year,
+                    #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
+                    "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
+                    "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
+                }
+            )
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
@@ -125,3 +132,12 @@ class Funder(db.Model):
                 }
             }
         ]
+
+
+class WorkFunder(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "work_funder"
+
+    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    award = db.Column(JSONB)
