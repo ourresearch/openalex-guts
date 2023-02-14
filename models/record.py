@@ -1,5 +1,4 @@
 from cached_property import cached_property
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
@@ -78,7 +77,7 @@ class Record(db.Model):
     open_version = db.Column(db.Text)
 
     normalized_title = db.Column(db.Text)
-    funders = db.Column(JSONB)
+    funders = db.Column(db.Text)
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))

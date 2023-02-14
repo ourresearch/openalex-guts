@@ -308,9 +308,9 @@ class Work(db.Model):
         self.add_references()  # must be before affiliations
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
 
-        start_time = time()
-        self.add_funders()
-        logger.info(f'add_funders took {elapsed(start_time, 2)} seconds')
+        #start_time = time()
+        #self.add_funders()
+        #logger.info(f'add_funders took {elapsed(start_time, 2)} seconds')
 
         # for now, only add/update affiliations if they aren't there
         start_time = time()
