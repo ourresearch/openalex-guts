@@ -166,6 +166,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.references).raiseload('*'),
             selectinload(models.Work.references_unmatched).raiseload('*'),
             selectinload(models.Work.mesh),
+            selectinload(models.Work.funders).selectinload(models.WorkFunder.funder).raiseload('*'),
             selectinload(models.Work.counts),
             selectinload(models.Work.counts_by_year).raiseload('*'),
             selectinload(models.Work.abstract),

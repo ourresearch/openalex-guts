@@ -1,4 +1,5 @@
 from cached_property import cached_property
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text
 from sqlalchemy import orm
 from sqlalchemy.orm import selectinload
@@ -18,7 +19,6 @@ from util import normalize_title_like_sql
 # alter table recordthresher_record add column started datetime;
 # alter table recordthresher_record add column finished datetime;
 # alter table recordthresher_record add column work_id bigint
-
 
 
 class Record(db.Model):
@@ -78,6 +78,7 @@ class Record(db.Model):
     open_version = db.Column(db.Text)
 
     normalized_title = db.Column(db.Text)
+    funders = db.Column(JSONB)
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))

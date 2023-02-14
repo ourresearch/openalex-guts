@@ -308,6 +308,10 @@ class Work(db.Model):
         self.add_references()  # must be before affiliations
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
 
+        start_time = time()
+        self.add_funders()
+        logger.info(f'add_funders took {elapsed(start_time, 2)} seconds')
+
         # for now, only add/update affiliations if they aren't there
         start_time = time()
         if not self.affiliations:
@@ -318,6 +322,35 @@ class Work(db.Model):
             logger.info("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+
+    def add_funders(self):
+        self.funders = []
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+        for record in self.records:
+            if record.record_type != "crossref_doi":
+                continue
+
+            record_funders = record.funders or []
+            json_funders_by_doi = {}
+            for f in record_funders:
+                if "DOI" in f:
+                    f["DOI"] = f["DOI"].strip().lower()
+                    if f["DOI"]:
+                        json_funders_by_doi[f["DOI"]] = f
+
+            funders = db.session.query(models.Funder).filter(
+                models.Funder.doi.in_(list(json_funders_by_doi.keys()))
+            ).all()
+
+            seen_funders = set()
+            for f in funders:
+                if f.funder_id not in seen_funders:
+                    seen_funders.add(f.funder_id)
+                    self.funders.append(models.WorkFunder(
+                        paper_id=self.paper_id,
+                        funder_id=f.funder_id,
+                        award=json_funders_by_doi.get(f.doi).get("award", [])
+                    ))
 
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
@@ -1124,6 +1157,12 @@ class Work(db.Model):
             else:
                 updated_date = self.full_updated_date[0:10]
         if return_level in ("full", "store"):
+            funder_dicts = []
+            for f in self.funders:
+                fd = f.funder.to_dict(return_level="minimum")
+                fd.update({"awards": f.award})
+                funder_dicts.append(fd)
+
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
@@ -1140,6 +1179,7 @@ class Work(db.Model):
                 "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
                 "locations": dict_locations,
                 "referenced_works": self.references_list,
+                "funders": funder_dicts,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
                 })
 

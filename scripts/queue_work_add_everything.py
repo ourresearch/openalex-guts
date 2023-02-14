@@ -130,6 +130,7 @@ class QueueWorkAddEverything:
             selectinload(models.Work.references).raiseload('*'),
             selectinload(models.Work.references_unmatched).raiseload('*'),
             selectinload(models.Work.mesh),
+            selectinload(models.Work.funders).raiseload('*'),
             selectinload(models.Work.counts_by_year).raiseload('*'),
             selectinload(models.Work.abstract),
             selectinload(models.Work.extra_ids).raiseload('*'),

@@ -31,7 +31,7 @@ from models.work import Work
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
-from models.funder import Funder
+from models.funder import Funder, WorkFunder
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
@@ -43,10 +43,12 @@ Work.journal = db.relationship("Source", lazy='selectin', backref="work", uselis
 Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
+WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.funders = db.relationship("WorkFunder", lazy='selectin', backref="work", cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan
