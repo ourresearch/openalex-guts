@@ -324,12 +324,12 @@ class Work(db.Model):
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
 
     def add_funders(self):
-        self.funders = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.record_type != "crossref_doi":
                 continue
 
+            self.funders = []
             record_funders = json.loads(record.funders) if record.funders else []
             if not record_funders:
                 return
