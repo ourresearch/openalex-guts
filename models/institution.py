@@ -513,7 +513,7 @@ class Institution(db.Model):
                 "associated_institutions": self.relationship_dicts,
                 # "ids": self.external_ids,
                 "counts_by_year": self.display_counts_by_year,
-                "x_concepts": self.concepts,
+                "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=institutions.id:{self.openalex_id_short}",
                 # "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
                 "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
