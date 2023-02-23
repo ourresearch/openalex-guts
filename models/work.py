@@ -795,7 +795,7 @@ class Work(db.Model):
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
                              "is_corresponding": affil_list[0].get('is_corresponding_author'),
-                             "raw_affilliation_strings": list(set([
+                             "raw_affiliation_strings": list(set([
                                 a.get("raw_affiliation_string") for a in affil_list
                                 if a.get("raw_affiliation_string")
                              ])),
