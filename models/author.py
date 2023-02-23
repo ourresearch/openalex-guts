@@ -13,6 +13,7 @@ from app import get_db_cursor
 from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
+from util import truncate_on_word_break
 
 # from app import get_next_openalex_id
 
@@ -299,11 +300,11 @@ class Author(db.Model):
         response = {
                 "id": self.openalex_id,
                 "orcid": self.orcid_url,
-                "display_name": self.display_name,
+                "display_name": truncate_on_word_break(self.display_name, 100),
               }
         if return_level == "full":
             response.update({
-                "display_name_alternatives": self.all_alternative_names,
+                "display_name_alternatives": [truncate_on_word_break(n, 100) for n in self.all_alternative_names],
                 "works_count": self.counts.paper_count if self.counts else 0,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "most_cited_work": self.most_cited_work_string,
