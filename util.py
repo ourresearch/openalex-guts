@@ -531,6 +531,26 @@ def truncate(str, max=100):
         return str
 
 
+def truncate_on_word_break(string, max_length):
+    if not string:
+        return string
+
+    if len(string) <= max_length:
+        return string
+
+    break_index = 0
+    for word_break in re.finditer(r'\b', string):
+        if word_break.start() < max_length:
+            break_index = word_break.start()
+        else:
+            break
+
+    if break_index:
+        return string[0:break_index] + '…'
+    else:
+        return string[0:max_length-1] + '…'
+
+
 def str_to_bool(x):
     if x.lower() in ["true", "1", "yes"]:
         return True

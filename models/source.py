@@ -11,6 +11,7 @@ from app import get_apiurl_from_openalex_url
 from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
+from util import truncate_on_word_break
 
 
 # truncate mid.journal
@@ -208,7 +209,7 @@ class Source(db.Model):
             "id": self.openalex_id,
             "issn_l": self.issn,
             "issn": json.loads(self.issns) if self.issns else None,
-            "display_name": self.display_name,
+            "display_name": truncate_on_word_break(self.display_name, 350),
             "publisher": self.publisher_display_name,
             "host_organization": self.host_organization,
             "host_organization_name": self.publisher_display_name,

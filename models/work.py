@@ -25,6 +25,7 @@ from util import f_generate_inverted_index
 from util import jsonify_fast_no_sort_raw
 from util import normalize_orcid
 from util import normalize_simple
+from util import truncate_on_word_break
 
 
 # truncate mid.work
@@ -1123,11 +1124,13 @@ class Work(db.Model):
         dict_locations = self.dict_locations()
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
+        truncated_title = truncate_on_word_break(self.work_title, 350)
+
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
-            "display_name": self.work_title,
-            "title": self.work_title,
+            "display_name": truncated_title,
+            "title": truncated_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
             "ids": {
