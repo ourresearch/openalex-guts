@@ -1,7 +1,7 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
 RELEASE 2023-02-21
-- merged ~140 million authors into deleted author record as part of disambigation project
+- merged ~170 million authors into deleted author record as part of disambigation project
 - renamed venues to sources
 - add publishers entity
 - added new works
