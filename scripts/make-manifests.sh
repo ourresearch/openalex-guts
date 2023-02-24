@@ -12,7 +12,7 @@
 LOCAL_DATA_DIR='/home/ubuntu/misc/openalex-json-qa-2022-07-09/data'
 REMOTE_DATA_DIR='s3://openalex/data'
 
-for entity_type in concepts institutions venues authors works
+for entity_type in concepts institutions sources authors works publishers
 do
     let total_content_length=0
     let total_record_count=0

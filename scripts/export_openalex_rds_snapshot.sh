@@ -95,6 +95,7 @@ export_table 'mid.json_institutions' 'institutions' 'json_save'
 export_table 'mid.json_sources' 'sources' 'json_save'
 export_table 'mid.json_authors' 'authors' 'json_save'
 export_table 'mid.json_works' 'works' 'json_save_with_abstract'
+export_table 'mid.json_publishers' 'publishers' 'json_save'
 
 # make manifests
 #for entity in venues institutions concepts
