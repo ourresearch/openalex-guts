@@ -1,5 +1,11 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-02-21
+- merged ~140 million authors into deleted author record as part of disambigation project
+- renamed venues to sources
+- add publishers entity
+- added new works
+
 RELEASE 2022-12-21
 - the values in host_venue have been added to alternate_host_venues in works, which paves way for the new locations
 list that will contain all possible venues for a work
