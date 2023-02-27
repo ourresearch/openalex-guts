@@ -97,7 +97,8 @@ class Record(db.Model):
         if not self.journals:
             return None
         sorted_journals = sorted(self.journals, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
-        return sorted_journals[0]
+        best_journal = sorted_journals[0]
+        return best_journal.merged_into_source or best_journal
 
 
     def get_or_mint_work(self):

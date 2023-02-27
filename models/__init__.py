@@ -95,24 +95,28 @@ Record.journals = db.relationship(
     uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
     viewonly=True,
     primaryjoin="""
-and_(
-    remote(Source.merge_into_id) == None,
-    or_(
-        remote(Source.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
-        and_(
-            foreign(Record.journal_issn_l) == None,
-            foreign(Record.repository_id) == remote(Source.repository_id)
-        ),
-        and_(
-            foreign(Record.record_type) == 'crossref_doi',
-            foreign(Record.genre).like('%book%'),
-            foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
-        )
+or_(
+    remote(Source.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
+    and_(
+        foreign(Record.journal_issn_l) == None,
+        foreign(Record.repository_id) == remote(Source.repository_id)
+    ),
+    and_(
+        foreign(Record.record_type) == 'crossref_doi',
+        foreign(Record.genre).like('%book%'),
+        foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
     )
 )
 """
 )
 
+Source.merged_into_source = db.relationship(
+    "Source",
+    lazy='selectin',
+    uselist=False,
+    viewonly=True,
+    primaryjoin='foreign(Source.merge_into_id) == remote(Source.journal_id)'
+)
 
 Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
