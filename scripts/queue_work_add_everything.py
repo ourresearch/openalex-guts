@@ -114,16 +114,9 @@ class QueueWorkAddEverything:
     @staticmethod
     def base_works_query():
         return db.session.query(models.Work).options(
-            selectinload(
-                models.Work.records
-            ).selectinload(
-                models.Record.journals
-            ).raiseload('*'),
-            selectinload(
-                models.Work.records
-            ).selectinload(
-                models.Record.unpaywall
-            ).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.unpaywall).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),

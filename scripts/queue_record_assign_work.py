@@ -123,6 +123,7 @@ def get_records(record_ids):
         joinedload(models.Record.work_matches_by_doi).raiseload('*'),
         joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
         joinedload(models.Record.journals).raiseload('*'),
+        joinedload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
     ).filter(models.Record.id.in_(record_ids)).all()
 
