@@ -209,7 +209,7 @@ class Source(db.Model):
             "id": self.openalex_id,
             "issn_l": self.issn,
             "issn": json.loads(self.issns) if self.issns else None,
-            "display_name": truncate_on_word_break(self.display_name, 350),
+            "display_name": truncate_on_word_break(self.display_name, 500),
             "publisher": self.publisher_display_name,
             "host_organization": self.host_organization,
             "host_organization_name": self.publisher_display_name,

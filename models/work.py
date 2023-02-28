@@ -1124,7 +1124,7 @@ class Work(db.Model):
         dict_locations = self.dict_locations()
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
-        truncated_title = truncate_on_word_break(self.work_title, 350)
+        truncated_title = truncate_on_word_break(self.work_title, 500)
 
         response = {
             "id": self.openalex_id,
