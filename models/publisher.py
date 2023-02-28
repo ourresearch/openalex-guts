@@ -29,6 +29,7 @@ class Publisher(db.Model):
     ror_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     country_name = db.Column(db.Text)
+    is_approved = db.Column(db.Boolean)
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
 
@@ -88,6 +89,11 @@ class Publisher(db.Model):
     def store(self):
         VERSION_STRING = "new: updated if changed"
         self.insert_dicts = []
+
+        if not self.is_approved:
+            logger.info(f"unapproved publisher, not saving {self.openalex_id}")
+            return
+
         my_dict = self.to_dict()
 
         if self.stored and (self.stored.merge_into_id == self.merge_into_id):
