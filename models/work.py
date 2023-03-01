@@ -923,8 +923,11 @@ class Work(db.Model):
                 "BookChapter": "book-chapter",
                 "Dataset": "dataset",
             }
-            return lookup_mag_to_crossref_type[self.doc_type]
-        return None
+            if mag_type := lookup_mag_to_crossref_type.get(self.doc_type):
+                return mag_type
+        if self.journal and self.journal.type and 'book' in self.journal.type:
+            return 'book-chapter'
+        return 'journal-article'
 
     @cached_property
     def references_list(self):
