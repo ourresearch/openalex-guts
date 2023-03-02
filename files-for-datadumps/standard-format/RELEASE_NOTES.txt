@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+NEXT RELEASE
+- truncate Work display_names to 500 characters
+- truncate Author display_names to 100 characters
+
 RELEASE 2023-02-21
 - merged ~170 million authors into deleted author record as part of disambigation project
 - renamed venues to sources
