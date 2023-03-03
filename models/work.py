@@ -1073,53 +1073,101 @@ class Work(db.Model):
         return response
 
     def dict_locations(self):
-        work_source = self.journal
-        work_source_location = self.host_source_matching_location()
-
-        work_source_location_dict = {
-            'source': work_source and work_source.to_dict(return_level='minimum'),
-            'pdf_url': None,
-            'landing_page_url': None,
-            'is_oa': None,
-            'version': None,
-            'license': None
-        }
-
-        if work_source_location:
-            work_source_location_details_dict = work_source_location.to_locations_dict()
-            del work_source_location_details_dict['source']
-            work_source_location_dict.update(work_source_location_details_dict)
-
-        if work_source and self.doi and not work_source_location_dict.get('landing_page_url'):
-            work_source_location_dict['landing_page_url'] = self.doi_url
-
-        if not work_source and not work_source_location:
-            work_source_location_dict['landing_page_url'] = self.best_url
-
-        other_locations = [loc for loc in self.locations_sorted if loc.include_in_alternative]
-
-        all_locations = [work_source_location_dict] + [loc.to_locations_dict() for loc in other_locations if loc]
-
-        deduped_locations = []
-        seen_ids = set()
+        locations = []
         seen_urls = set()
 
-        for loc in all_locations:
-            loc_source_id = (loc.get('source') or {}).get('id')
-            loc_url = loc.get('pdf_url') or loc.get('landing_page_url')
+        # make sure to add doi location first
+        for r in self.records_sorted:
+            if r.record_type == 'crossref_doi':
+                doi_url = f'https://doi.org/{r.doi}'
 
-            if loc_source_id:
-                if loc_source_id not in seen_ids:
-                    deduped_locations.append(loc)
-            elif loc_url not in seen_urls:
-                deduped_locations.append(loc)
+                doi_location = {
+                    'source': r.journal and r.journal.to_dict(return_level='minimum'),
+                    'pdf_url': r.work_pdf_url,
+                    'landing_page_url': r.record_webpage_url,
+                    # OA / version / license not carried on Recordthresher record
+                    'is_oa': False,
+                    'version': None,
+                    'license': None
+                }
 
-            if loc_source_id:
-                seen_ids.add(loc_source_id)
-            if loc_url:
-                seen_urls.add(loc_url)
+                doi_matching_locations = [loc for loc in self.locations if loc.url_for_landing_page == doi_url]
 
-        return deduped_locations
+                if doi_matching_locations:
+                    doi_location['is_oa'] = doi_matching_locations[0].is_oa
+                    doi_location['version'] = doi_matching_locations[0].version
+                    doi_location['license'] = doi_matching_locations[0].license
+
+                # bare minimum: include the DOI as the landing page URL
+                if not doi_location['landing_page_url']:
+                    doi_location['landing_page_url'] = doi_url
+
+                locations.append(doi_location)
+
+                if doi_location['pdf_url']:
+                    seen_urls.add(doi_location['pdf_url'])
+
+                if doi_location['landing_page_url']:
+                    seen_urls.add(doi_location['landing_page_url'])
+
+                break
+
+        # then primary-source repositories
+        for r in self.records_sorted:
+            if r.record_type == 'pmh_record':
+                pmh_location = {
+                    'source': r.journal and r.journal.to_dict(return_level='minimum'),
+                    'pdf_url': r.work_pdf_url,
+                    'landing_page_url': r.record_webpage_url,
+                    # OA / version / license not carried on Recordthresher record
+                    'is_oa': False,
+                    'version': None,
+                    'license': None
+                }
+
+                repo_matching_locations = [loc for loc in self.locations if loc.endpoint_id == r.repository_id]
+                if repo_matching_locations:
+                    pmh_location['is_oa'] = repo_matching_locations[0].is_oa
+                    pmh_location['version'] = repo_matching_locations[0].version
+                    pmh_location['license'] = repo_matching_locations[0].license
+
+                # only add if this is the first location, or it's a new OA location
+                if not locations or (
+                    pmh_location['is_oa']
+                    and pmh_location['pdf_url'] not in seen_urls
+                    and pmh_location['landing_page_url'] not in seen_urls
+                ):
+                    if pmh_location['pdf_url']:
+                        seen_urls.add(pmh_location['pdf_url'])
+
+                    if pmh_location['landing_page_url']:
+                        seen_urls.add(pmh_location['landing_page_url'])
+
+                    locations.append(pmh_location)
+
+        # then other locations
+        for other_location in self.locations_sorted:
+            if (
+                    (
+                        not locations  # haven't made a DOI or PMH location yet, we'll take any old location
+                        and  # ... if it has a URL
+                        (
+                            other_location.url_for_landing_page
+                            or other_location.url_for_pdf
+                            or other_location.source_url
+                        )
+                    )
+                or
+                    (
+                        other_location.is_oa  # include any OA location
+                        #  ... if we didn't already get it from the Recordthresher records
+                        and other_location.url_for_landing_page not in seen_urls
+                        and other_location.url_for_pdf not in seen_urls
+                    )
+            ):
+                locations.append(other_location.to_locations_dict())
+
+        return locations
 
     def to_dict(self, return_level="full"):
         from models import Source
