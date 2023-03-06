@@ -104,6 +104,7 @@ def fetch_queue_chunk_ids(queue_table, chunk_size):
               select id
               from {queue_table}
               where started is null
+              and (finished is null or finished < now() - '1 hour'::interval)
               order by
                   finished asc nulls first,
                   rand
