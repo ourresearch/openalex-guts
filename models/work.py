@@ -1085,7 +1085,6 @@ class Work(db.Model):
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
-                    # OA / version / license not carried on Recordthresher record
                     'is_oa': False,
                     'version': None,
                     'license': None

@@ -308,6 +308,11 @@ class Author(db.Model):
                 "works_count": self.counts.paper_count if self.counts else 0,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "most_cited_work": self.most_cited_work_string,
+                "summary_stats": {
+                    "2yr_mean_citedness": self.impact_factor and self.impact_factor.impact_factor,
+                    "h_index": self.h_index and self.h_index.h_index,
+                    "i10_index": self.i10_index and self.i10_index.i10_index
+                },
                 "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,
