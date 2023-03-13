@@ -17,6 +17,7 @@ from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
+from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.location import Location
@@ -25,13 +26,18 @@ from models.orcid import Orcid
 from models.publisher import Publisher
 from models.record import Record
 from models.ror import Ror
-from models.unpaywall import Unpaywall
 from models.source import Source
+from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index
+from models.summary_stats import ConceptImpactFactor, ConceptHIndex, ConceptI10Index
+from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Index
+from models.summary_stats import InstitutionImpactFactor, InstitutionHIndex, InstitutionI10Index
+from models.summary_stats import PublisherImpactFactor, PublisherHIndex, PublisherI10Index
+from models.summary_stats import SourceImpactFactor, SourceHIndex, SourceI10Index
+from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
-from models.funder import Funder, WorkFunder
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
@@ -157,6 +163,27 @@ Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, v
 Work.stored = db.relationship("JsonWorks", lazy='selectin', uselist=False, viewonly=True)
 Publisher.stored = db.relationship("JsonPublishers", lazy='selectin', uselist=False, viewonly=True)
 Funder.stored = db.relationship("JsonFunders", lazy='selectin', uselist=False, viewonly=True)
+
+Author.impact_factor = db.relationship("AuthorImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+Source.impact_factor = db.relationship("SourceImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+Publisher.impact_factor = db.relationship("PublisherImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+Funder.impact_factor = db.relationship("FunderImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+Institution.impact_factor = db.relationship("InstitutionImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+Concept.impact_factor = db.relationship("ConceptImpactFactor", uselist=False, lazy='selectin', viewonly=True)
+
+Author.h_index = db.relationship("AuthorHIndex", uselist=False, lazy='selectin', viewonly=True)
+Source.h_index = db.relationship("SourceHIndex", uselist=False, lazy='selectin', viewonly=True)
+Publisher.h_index = db.relationship("PublisherHIndex", uselist=False, lazy='selectin', viewonly=True)
+Funder.h_index = db.relationship("FunderHIndex", uselist=False, lazy='selectin', viewonly=True)
+Institution.h_index = db.relationship("InstitutionHIndex", uselist=False, lazy='selectin', viewonly=True)
+Concept.h_index = db.relationship("ConceptHIndex", uselist=False, lazy='selectin', viewonly=True)
+
+Author.i10_index = db.relationship("AuthorI10Index", uselist=False, lazy='selectin', viewonly=True)
+Source.i10_index = db.relationship("SourceI10Index", uselist=False, lazy='selectin', viewonly=True)
+Publisher.i10_index = db.relationship("PublisherI10Index", uselist=False, lazy='selectin', viewonly=True)
+Funder.i10_index = db.relationship("FunderI10Index", uselist=False, lazy='selectin', viewonly=True)
+Institution.i10_index = db.relationship("InstitutionI10Index", uselist=False, lazy='selectin', viewonly=True)
+Concept.i10_index = db.relationship("ConceptI10Index", uselist=False, lazy='selectin', viewonly=True)
 
 
 def author_from_id(author_id):
