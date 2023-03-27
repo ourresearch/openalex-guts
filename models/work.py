@@ -1172,6 +1172,9 @@ class Work(db.Model):
         from models import Source
 
         dict_locations = self.dict_locations()
+        for dict_location in dict_locations:
+            dict_location['is_oa'] = dict_location['is_oa'] or False
+
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
         truncated_title = truncate_on_word_break(self.work_title, 500)
