@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 from collections import defaultdict
 from functools import cache
 from time import time
@@ -714,6 +715,45 @@ class Work(db.Model):
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
+    @cached_property
+    def looks_like_paratext(self):
+        if self.is_paratext:
+            return True
+
+        paratext_exprs = [
+            r'^Author Guidelines$',
+            r'^Author Index$'
+            r'^Back Cover',
+            r'^Back Matter',
+            r'^Contents$',
+            r'^Contents:',
+            r'^Cover Image',
+            r'^Cover Picture',
+            r'^Editorial Board',
+            r'Editor Report$',
+            r'^Front Cover',
+            r'^Frontispiece',
+            r'^Graphical Contents List$',
+            r'^Index$',
+            r'^Inside Back Cover',
+            r'^Inside Cover',
+            r'^Inside Front Cover',
+            r'^Issue Information',
+            r'^List of contents',
+            r'^List of Tables$',
+            r'^List of Figures$',
+            r'^List of Plates$',
+            r'^Masthead',
+            r'^Pages de début$',
+            r'^Title page',
+            r"^Editor's Preface",
+        ]
+
+        for expr in paratext_exprs:
+            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+                return True
+
+        return False
 
     @cached_property
     def records_sorted(self):
@@ -911,6 +951,8 @@ class Work(db.Model):
 
     @cached_property
     def display_genre(self):
+        if self.looks_like_paratext:
+            return "other"
         if self.genre:
             return self.genre
         if self.doc_type:
@@ -1236,7 +1278,7 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
-                "is_paratext": self.is_paratext,
+                "is_paratext": self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
