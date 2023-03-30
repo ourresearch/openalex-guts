@@ -55,9 +55,7 @@ class Location(db.Model):
 
     @property
     def is_oa(self):
-        if self.version is not None:
-            return True
-        return None
+        return self.version is not None
 
     @property
     def source_description(self):
