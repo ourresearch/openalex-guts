@@ -225,7 +225,7 @@ class Source(db.Model):
                     "h_index": self.h_index and self.h_index.h_index,
                     "i10_index": self.i10_index and self.i10_index.i10_index
                 },
-                "is_oa": self.is_oa,
+                "is_oa": self.is_oa or False,
                 "is_in_doaj": self.is_in_doaj,
                 "alternate_titles": self.alternate_titles,
                 "abbreviated_title": self.abbreviated_title,
