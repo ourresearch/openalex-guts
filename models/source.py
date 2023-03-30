@@ -226,7 +226,7 @@ class Source(db.Model):
                     "i10_index": self.i10_index and self.i10_index.i10_index
                 },
                 "is_oa": self.is_oa or False,
-                "is_in_doaj": self.is_in_doaj,
+                "is_in_doaj": self.is_in_doaj or False,
                 "alternate_titles": self.alternate_titles,
                 "abbreviated_title": self.abbreviated_title,
                 "homepage_url": self.webpage,
