@@ -1198,7 +1198,7 @@ class Work(db.Model):
             "type": self.display_genre,
             "open_access": {
                 "is_oa": self.is_oa,
-                "oa_status": self.oa_status,
+                "oa_status": self.oa_status or "closed",
                 "oa_url": self.best_free_url,
             },
             "authorships": self.affiliations_list,
