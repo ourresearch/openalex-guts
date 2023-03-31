@@ -22,17 +22,23 @@
 #   aws s3 cp ${data_dir}/merged_ids s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging/data/merged_ids/ --recursive
 
 # 4. make manifests
-#   $ bash ./scripts/make-manifests.sh
+#   included in script, test on next run of snapshot
 
 # 5. add txt files and browse page
 #   date the current release notes
 #   in files-for-datadumps/standard-format/RELEASE_NOTES.txt, change "Next Release" to "RELEASE YYYY-MM-DD"
 #   $ git add files-for-datadumps/RELEASE_NOTES.txt
 #   $ git commit -m "added YYYY-MM-DD release notes"
-#   cp files-for-datadumps/standard-format/*.txt ${data_dir}/..
 #
 # 5. upload to S3 for QA
 #   aws s3 sync ${data_dir}/..  s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging
+#
+# 6. upload approved copy to s3
+#   set credentials for s3://openalex (separate from s3://openalex-sandbox)
+#   delete existing files: aws s3 rm --recursive s3://openalex/data/
+#   browse to data folder (ex /tmp/tmp.AsqlHWZ3U0/), and run: aws s3 sync . s3://openalex
+#   browse to files-for-datadumps/standard-format and run: aws s3 cp RELEASE_NOTES.txt s3://openalex/RELEASE_NOTES.txt
+#   check result at: https://openalex.s3.amazonaws.com/browse.html
 
 data_dir=$(mktemp -d)/data
 today_yyyy_mm_dd=$(date +%Y_%m_%d)
@@ -90,19 +96,49 @@ export_table() {
     done
 }
 
+make_manifests() {
+    remote_data_dir='s3://openalex/data'
+    for entity_type in concepts institutions sources publishers authors works
+    do
+        let total_content_length=0
+        let total_record_count=0
+
+        entity_dir="${data_dir}/${entity_type}"
+        manifest="${entity_dir}/manifest"
+        echo $manifest
+        echo -e "{\n  \"entries\": [" > $manifest
+
+        for f in ${entity_dir}/updated_date=*/*.gz
+        do
+            echo $f
+            s3_url=$(echo $f | sed "s|${LOCAL_DATA_DIR}|${remote_data_dir}|")
+            content_length=$(wc -c $f | cut -d ' ' -f 1)
+            record_count=$(unpigz -c $f | wc -l)
+
+            let total_content_length+=$content_length
+            let total_record_count+=$record_count
+
+            echo "    {\"url\": \"${s3_url}\", \"meta\": { \"content_length\": ${content_length}, \"record_count\": ${record_count} }}," >> $manifest
+        done
+
+        # remove trailing comma
+        truncate -s -2 $manifest
+        echo -n -e "\n" >> $manifest
+
+        echo "  ]," >> $manifest
+        echo "  \"meta\": {" >> $manifest
+        echo "    \"content_length\": $total_content_length," >> $manifest
+        echo "    \"record_count\": $total_record_count" >> $manifest
+        echo "  }" >> $manifest
+        echo "}" >> $manifest
+    done
+}
+
 export_table 'mid.json_concepts' 'concepts' 'json_save'
 export_table 'mid.json_institutions' 'institutions' 'json_save'
 export_table 'mid.json_sources' 'sources' 'json_save'
+export_table 'mid.json_publishers' 'publishers' 'json_save'
 export_table 'mid.json_authors' 'authors' 'json_save'
 export_table 'mid.json_works' 'works' 'json_save_with_abstract'
-export_table 'mid.json_publishers' 'publishers' 'json_save'
 
-# make manifests
-#for entity in venues institutions concepts
-#do
-#    ls $data_dir/$entity/*/* |
-#    sed "s|$data_dir|s3://openalex/data|" |
-#    jq -s -R 'split("\n") | map(select(length > 0))  | sort | map({url: .}) | {entries: .}' |
-#    sed -z 's/\n\s*"url"/"url"/g' |
-#    sed -z 's/\.gz"\s*\n\s*/.gz"/g' > $data_dir/$entity/manifest
-#done
+make_manifests
