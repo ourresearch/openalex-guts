@@ -1,8 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
 RELEASE 2023-03-28
-- truncate Work display_names to 500 characters
-- truncate Author display_names to 100 characters
+- truncate work display_names to 500 characters
+- truncate author display_names to 100 characters
 - added summary stats for every entity type except works
 - added new publishers and works
 
