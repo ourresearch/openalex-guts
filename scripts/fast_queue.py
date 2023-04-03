@@ -13,6 +13,12 @@ from models.json_store import JsonSources, JsonPublishers, JsonFunders
 from util import elapsed
 
 
+# test this script locally
+# 1. Save environment variables to .env file with: heroku config -s > .env
+# 2. Run the script: heroku local:run python -m scripts.fast_queue --entity=publisher --method=store --chunk=1
+# 3. Check to see that your ids are saving properly in json_entity table (e.g. json_publishers)
+
+
 def run(**kwargs):
     entity_type = kwargs.get("entity")
     method_name = kwargs.get("method")
