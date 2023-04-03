@@ -114,6 +114,12 @@ class Location(db.Model):
                 return True  # else is probably a component or stub record
         return False
 
+    def has_any_url(self):
+        return bool(self.url_for_pdf or self.url_for_landing_page or self.source_url)
+
+    def is_from_unpaywall(self):
+        return self.host_type is not None
+
     def to_dict(self, return_level="full"):
         id = None
         display_name = self.repository_institution
@@ -147,15 +153,6 @@ class Location(db.Model):
             "license": self.display_license,
             # "repository_institution": self.repository_institution,
         }
-
-        # if return_level == "full":
-        #     response.update({
-        #         "url_for_landing_page": self.url_for_landing_page,
-        #         "url_for_pdf": self.url_for_pdf,
-        #         "url_type": self.source_description,
-        #         "host_type": self.display_host_type,
-        #         "oai_pmh_id": self.pmh_id
-        #     })
 
         return response
 

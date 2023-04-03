@@ -148,7 +148,6 @@ class Work(db.Model):
 
         if institution_ids:
             lookup = dict(zip(institution_names, institution_ids))
-            # print(lookup)
             for affil in self.affiliations:
                 if affil.original_affiliation:
                     new_affiliation = lookup.get(affil.original_affiliation, None)
@@ -1191,14 +1190,9 @@ class Work(db.Model):
             if (
                     (
                         not locations  # haven't made a DOI or PMH location yet, we'll take any old location
-                        and  # ... if it has a URL
-                        (
-                            other_location.url_for_landing_page
-                            or other_location.url_for_pdf
-                            or other_location.source_url
-                        )
+                        and other_location.has_any_url()
                     )
-                or
+                    or
                     (
                         other_location.is_oa  # include any OA location
                         #  ... if we didn't already get it from the Recordthresher records
@@ -1206,7 +1200,13 @@ class Work(db.Model):
                         and other_location.url_for_pdf not in seen_urls
                     )
             ):
-                locations.append(other_location.to_locations_dict())
+                other_location_dict = other_location.to_locations_dict()
+
+                if not other_location.is_from_unpaywall() and not self.records and self.journal:
+                    # mag location, assume it came from the work's mag journal
+                    other_location_dict['source'] = self.journal.to_dict(return_level='minimum')
+
+                locations.append(other_location_dict)
 
         return locations
 
