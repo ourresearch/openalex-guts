@@ -28,6 +28,8 @@ class Publisher(db.Model):
     hierarchy_level = db.Column(db.Integer)
     ror_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    image_thumbnail_url = db.Column(db.Text)
     country_name = db.Column(db.Text)
     is_approved = db.Column(db.Boolean)
     merge_into_id = db.Column(db.BigInteger)
@@ -66,6 +68,8 @@ class Publisher(db.Model):
             "parent_publisher": self.parent and self.parent.openalex_id,
             "hierarchy_level": self.hierarchy_level,
             "country_codes": self.country_codes or [],
+            "image_url": self.image_url,
+            "image_thumbnail_url": self.image_thumbnail_url,
             "ids": {
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
