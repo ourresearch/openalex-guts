@@ -1154,6 +1154,12 @@ class Work(db.Model):
 
         # then primary-source repositories
         for r in self.records_sorted:
+            if not (r.work_pdf_url or r.record_webpage_url):
+                continue
+
+            if r.work_pdf_url in seen_urls or r.record_webpage_url in seen_urls:
+                continue
+
             if r.record_type == 'pmh_record':
                 pmh_location = {
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
@@ -1171,38 +1177,45 @@ class Work(db.Model):
                     pmh_location['version'] = repo_matching_locations[0].version
                     pmh_location['license'] = repo_matching_locations[0].license
 
-                # only add if this is the first location, or it's a new OA location
-                if not locations or (
-                    pmh_location['is_oa']
-                    and pmh_location['pdf_url'] not in seen_urls
-                    and pmh_location['landing_page_url'] not in seen_urls
-                ):
-                    if pmh_location['pdf_url']:
-                        seen_urls.add(pmh_location['pdf_url'])
+                if pmh_location['pdf_url']:
+                    seen_urls.add(pmh_location['pdf_url'])
 
-                    if pmh_location['landing_page_url']:
-                        seen_urls.add(pmh_location['landing_page_url'])
+                if pmh_location['landing_page_url']:
+                    seen_urls.add(pmh_location['landing_page_url'])
 
-                    locations.append(pmh_location)
+                locations.append(pmh_location)
 
-        # then other locations
+        # then OA unpaywall locations
         for other_location in self.locations_sorted:
             if (
-                    (
-                        not locations  # haven't made a DOI or PMH location yet, we'll take any old location
-                        and other_location.has_any_url()
-                    )
-                    or
-                    (
-                        other_location.is_oa  # include any OA location
-                        #  ... if we didn't already get it from the Recordthresher records
-                        and other_location.url_for_landing_page not in seen_urls
-                        and other_location.url_for_pdf not in seen_urls
-                    )
+                other_location.is_from_unpaywall()  # take anything from unpaywall
+                #  if we didn't already get it from the Recordthresher records
+                and other_location.url_for_landing_page not in seen_urls
+                and other_location.url_for_pdf not in seen_urls
             ):
                 other_location_dict = other_location.to_locations_dict()
 
-                if not other_location.is_from_unpaywall() and not self.records and self.journal:
+                if other_location_dict['pdf_url']:
+                    seen_urls.add(other_location_dict['pdf_url'])
+
+                if other_location_dict['landing_page_url']:
+                    seen_urls.add(other_location_dict['landing_page_url'])
+
+                locations.append(other_location_dict)
+
+        # then mag locations
+        for other_location in self.locations_sorted:
+            if not locations and not other_location.is_from_unpaywall() and other_location.has_any_url():
+                # take anything with a URL at this point
+                other_location_dict = other_location.to_locations_dict()
+
+                if other_location_dict['pdf_url']:
+                    seen_urls.add(other_location_dict['pdf_url'])
+
+                if other_location_dict['landing_page_url']:
+                    seen_urls.add(other_location_dict['landing_page_url'])
+
+                if not self.records and self.journal:
                     # mag location, assume it came from the work's mag journal
                     other_location_dict['source'] = self.journal.to_dict(return_level='minimum')
 
