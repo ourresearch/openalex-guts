@@ -7,6 +7,7 @@ import requests
 from cached_property import cached_property
 from sqlalchemy import orm
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 
@@ -404,21 +405,21 @@ class Institution(db.Model):
         # return None
 
     @classmethod
-    def get_institution_ids_from_strings(self, institution_names):
+    def get_institution_ids_from_strings(cls, institution_names):
         if not institution_names:
             return []
 
-        name_to_id_dict = dict([(n, None) for n in institution_names])
+        name_to_ids_dict = dict([(n, [None]) for n in institution_names])
         known_names = AffiliationString.query.filter(
             AffiliationString.original_affiliation.in_(institution_names)
         ).all()
 
         for known_name in known_names:
-            known_id = known_name.affiliation_id_override or known_name.affiliation_id
-            name_to_id_dict[known_name.original_affiliation] = follow_merged_into_id(known_id)
+            known_ids = known_name.affiliation_ids_override or known_name.affiliation_ids
+            name_to_ids_dict[known_name.original_affiliation] = [follow_merged_into_id(k) for k in known_ids]
 
         unknown_names = [
-            name for name in name_to_id_dict.keys()
+            name for name in name_to_ids_dict.keys()
             if name not in
             [k.original_affiliation for k in known_names]
         ]
@@ -427,7 +428,7 @@ class Institution(db.Model):
             api_key = os.getenv("SAGEMAKER_API_KEY")
             data = [{"affiliation_string": unknown_name} for unknown_name in unknown_names]
             headers = {"X-API-Key": api_key}
-            api_url = "https://phqjyj20n2.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
+            api_url = "https://ybb43coxn4.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
             number_tries = 0
             while True:
@@ -436,28 +437,36 @@ class Institution(db.Model):
                 if r.status_code == 200:
                     try:
                         response_json = r.json()
-                        institution_ids = [my_dict["affiliation_id"] for my_dict in response_json]
+                        institution_id_lists = [my_dict["affiliation_id"] for my_dict in response_json]
                         # now replace any that have been merged with what they have been merged into
-                        institution_ids = [follow_merged_into_id(inst_id) for inst_id in institution_ids]
+                        institution_id_lists = [
+                            [follow_merged_into_id(inst_id) for inst_id in id_list]
+                            for id_list in institution_id_lists
+                        ]
 
-                        for i, institution_id in enumerate(institution_ids):
+                        for i, institution_ids in enumerate(institution_id_lists):
+                            unknown_name = unknown_names[i]
+
+                            if institution_ids == [-1] or institution_ids == []:
+                                institution_ids = [None]
+
+                            name_to_ids_dict[unknown_name] = institution_ids
+
                             if len(unknown_names[i].encode('utf-8')) > 2700:
                                 # postgres limit for b-tree indices
                                 continue
 
-                            unknown_name = unknown_names[i]
-                            name_to_id_dict[unknown_name] = institution_id
                             db.session.execute(
                                 insert(AffiliationString).values(
                                     original_affiliation=unknown_name,
-                                    affiliation_id=institution_id
+                                    affiliation_ids=institution_ids
                                 ).on_conflict_do_nothing(index_elements=['original_affiliation'])
                             )
 
                         break
 
                     except Exception as e:
-                        logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                        logger.error(f"Error, not retrying: {e} in get_institution_ids_from_strings with {cls.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                         break
 
                 elif r.status_code == 500:
@@ -467,7 +476,15 @@ class Institution(db.Model):
                 else:
                     logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
 
-        return [name_to_id_dict[n] for n in institution_names]
+        final_name_to_ids_dict = dict()
+
+        for k, v in name_to_ids_dict.items():
+            if v == [-1] or v == []:
+                final_name_to_ids_dict[k] = [None]
+            else:
+                final_name_to_ids_dict[k] = v
+
+        return [final_name_to_ids_dict[n] for n in institution_names]
 
     def to_dict(self, return_level="full"):
         response = {
@@ -542,8 +559,8 @@ merged_into_institutions_dict = dict((inst.affiliation_id, inst.merge_into_id) f
 
 class AffiliationString(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "affiliation_string"
+    __tablename__ = "affiliation_string_v2"
 
     original_affiliation = db.Column(db.Text, primary_key=True)
-    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
-    affiliation_id_override = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
+    affiliation_ids = db.Column(JSONB)
+    affiliation_ids_override = db.Column(JSONB)
