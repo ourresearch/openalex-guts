@@ -310,9 +310,9 @@ class Author(db.Model):
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "most_cited_work": self.most_cited_work_string,
                 "summary_stats": {
-                    "2yr_mean_citedness": self.impact_factor and self.impact_factor.impact_factor,
-                    "h_index": self.h_index and self.h_index.h_index,
-                    "i10_index": self.i10_index and self.i10_index.i10_index
+                    "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
+                    "h_index": (self.h_index and self.h_index.h_index) or 0,
+                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
                 },
                 "ids": {
                     "openalex": self.openalex_id,
