@@ -1,19 +1,20 @@
-from cached_property import cached_property
-from sqlalchemy import text
-from sqlalchemy import orm
-from sqlalchemy.orm import selectinload
-import json
 import datetime
+import json
 import re
 
-from app import db
+from cached_property import cached_property
+from sqlalchemy import orm
+
 from app import MAX_MAG_ID
+from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
 from util import truncate_on_word_break
+
+DELETED_AUTHOR_ID = 4317838346
 
 # from app import get_next_openalex_id
 

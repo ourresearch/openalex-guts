@@ -28,7 +28,7 @@ from util import jsonify_fast_no_sort_raw
 # insert into mid.institution (select * from legacy.mag_main_affiliations)
 # update mid.institution set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
-
+DELETED_INSTITUTION_ID = 4362561690
 
 def as_institution_openalex_id(id):
     from app import API_HOST
