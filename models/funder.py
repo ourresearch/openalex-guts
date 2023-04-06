@@ -78,9 +78,9 @@ class Funder(db.Model):
                     "works_count": int(self.counts.paper_count) if self.counts else 0,
                     "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
                     "summary_stats": {
-                        "2yr_mean_citedness": self.impact_factor and self.impact_factor.impact_factor,
-                        "h_index": self.h_index and self.h_index.h_index,
-                        "i10_index": self.i10_index and self.i10_index.i10_index
+                        "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
+                        "h_index": (self.h_index and self.h_index.h_index) or 0,
+                        "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
                     },
                     #"counts_by_year": self.display_counts_by_year,
                     #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
