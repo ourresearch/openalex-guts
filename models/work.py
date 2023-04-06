@@ -28,6 +28,7 @@ from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
 
+DELETED_WORK_ID = 4285719527
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)

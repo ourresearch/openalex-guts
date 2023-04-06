@@ -1,5 +1,5 @@
 from app import db
-from app import get_db_cursor
+from models.institution import DELETED_INSTITUTION_ID
 
 # alter table affiliation add column match_name varchar(65000)
 # update affiliation set normalized_institution_name=f_matching_string(original_affiliation) where original_affiliation is not null
@@ -225,12 +225,12 @@ class Affiliation(db.Model):
         if self.original_author:
             response["author"] = {"id": None, "display_name": self.original_author, "orcid": None}
         if self.original_affiliation:
-            response["institution"] = {"id": self.affiliation_id, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
+            response["institution"] = {"id": None, "display_name": self.original_affiliation, "ror": None, "country_code": None, "type": None}
 
         # overwrite display name with better ones from these dicts if we have them
         if self.author:
             response["author"].update(self.author.to_dict(return_level="minimum"))
-        if self.institution:
+        if self.institution and self.institution.affiliation_id != DELETED_INSTITUTION_ID:
             response["institution"].update(self.institution.to_dict(return_level="minimum"))
 
         response["author_sequence_number"] = self.author_sequence_number
