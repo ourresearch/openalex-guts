@@ -1303,6 +1303,9 @@ class Work(db.Model):
                 "is_oa": self.is_oa,
                 "oa_status": self.oa_status or "closed",
                 "oa_url": self.best_free_url,
+                "any_repository_has_fulltext": any(
+                    [(loc.get("source") or {}).get("type") == "repository" for loc in oa_locations]
+                )
             },
             "authorships": self.affiliations_list,
         }
