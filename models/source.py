@@ -239,6 +239,7 @@ class Source(db.Model):
                     "fatcat": self.fatcat_id,
                     "wikidata": self.wikidata_id
                 },
+                "apc_prices": self.apc_prices if self.apc_prices else None,
                 "apc_usd": self.apc_usd,
                 "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
