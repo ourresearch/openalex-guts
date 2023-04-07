@@ -269,6 +269,8 @@ class Source(db.Model):
         return "<Source ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
+pubmed = Source.query.get(4306525036)
+
 # select count(distinct work.paper_id)
 # from mid.journal journal
 # join mid.work work on work.journal_id=journal.journal_id
