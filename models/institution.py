@@ -60,6 +60,8 @@ class Institution(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     wikidata_id = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    image_thumbnail_url = db.Column(db.Text)
     wikipedia_json = db.Column(db.Text)
     wikidata_json = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
@@ -193,29 +195,35 @@ class Institution(db.Model):
             response = [obj.to_dict("minimum") for obj in objs]
         return response
 
-    @cached_property
-    def image_url(self):
-        if not self.wikipedia_data:
-            return None
-        data = self.wikipedia_data
-        image_url = None
-        try:
-            image_url = data["query"]["pages"][0]["original"]["source"]
-        except KeyError:
-            pass
-        return image_url
+    # FOR image_url AND image_thumbnail_url:
+    # We used to get these live from the wikipedia data
+    # but instead we are now just using bulk data loaded in from a Wikidata pull
+    # and these fields are just normal properties, defined above
+    # todo: document the wikidata pull better, or include code for api calls in this repo
 
-    @cached_property
-    def image_thumbnail_url(self):
-        if not self.wikipedia_data:
-            return None
-        data = self.wikipedia_data
-        try:
-            page_id = data["query"]["pages"][0]["thumbnail"]["source"]
-        except KeyError:
-            return None
+    # @cached_property
+    # def image_url(self):
+    #     if not self.wikipedia_data:
+    #         return None
+    #     data = self.wikipedia_data
+    #     image_url = None
+    #     try:
+    #         image_url = data["query"]["pages"][0]["original"]["source"]
+    #     except KeyError:
+    #         pass
+    #     return image_url
 
-        return page_id
+    # @cached_property
+    # def image_thumbnail_url(self):
+    #     if not self.wikipedia_data:
+    #         return None
+    #     data = self.wikipedia_data
+    #     try:
+    #         page_id = data["query"]["pages"][0]["thumbnail"]["source"]
+    #     except KeyError:
+    #         return None
+
+    #     return page_id
 
     @cached_property
     def wikipedia_title(self):
