@@ -18,6 +18,7 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
+from models.source import pubmed
 from util import clean_doi
 from util import clean_html
 from util import dictionary_nested_diff
@@ -1268,6 +1269,23 @@ class Work(db.Model):
                     other_location_dict['source'] = self.journal.to_dict(return_level='minimum')
 
                 locations.append(other_location_dict)
+
+        # pubmed if we can't find anything else
+        # satisfies the rules that we have everything in pubmed and every work has at least one location
+        # even if pubmed is the only reference to the work
+        if not locations:
+            for r in self.records_sorted:
+                if r.record_type == 'pubmed_record' and r.pmid:
+                    pubmed_location = {
+                        'source': pubmed.to_dict(return_level='minimum'),
+                        'pdf_url': None,
+                        'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
+                        'is_oa': False,
+                        'version': None,
+                        'license': None
+                    }
+                    locations.append(pubmed_location)
+                    break
 
         return locations
 
