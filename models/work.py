@@ -18,7 +18,6 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
-from models.source import pubmed
 from util import clean_doi
 from util import clean_html
 from util import dictionary_nested_diff
@@ -79,6 +78,11 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     response.insert_dicts = insert_dicts
     response.delete_dict = {"WorkConcept": [row["paper_id"] for row in rows]}
     return [response]
+
+
+@cache
+def pubmed_json():
+    return models.source.Source.query.get(4306525036).to_dict(return_level='minimum')
 
 
 class Work(db.Model):
@@ -1277,7 +1281,7 @@ class Work(db.Model):
             for r in self.records_sorted:
                 if r.record_type == 'pubmed_record' and r.pmid:
                     pubmed_location = {
-                        'source': pubmed.to_dict(return_level='minimum'),
+                        'source': pubmed_json(),
                         'pdf_url': None,
                         'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
                         'is_oa': False,
