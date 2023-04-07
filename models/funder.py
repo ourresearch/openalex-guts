@@ -47,12 +47,19 @@ class Funder(db.Model):
     @cached_property
     def display_counts_by_year(self):
         response_dict = {}
-        all_rows = self.counts_by_year_papers + self.counts_by_year_citations
+        all_rows = self.counts_by_year_papers + self.counts_by_year_oa_papers + self.counts_by_year_citations
         for count_row in all_rows:
-            response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
+            response_dict[count_row.year] = {
+                "year": count_row.year,
+                "works_count": 0,
+                "oa_works_count": 0,
+                "cited_by_count": 0
+            }
         for count_row in all_rows:
             if count_row.type == "citation_count":
                 response_dict[count_row.year]["cited_by_count"] = int(count_row.n)
+            elif count_row.type == "oa_paper_count":
+                response_dict[count_row.year]["oa_works_count"] = int(count_row.n)
             else:
                 response_dict[count_row.year]["works_count"] = int(count_row.n)
 
@@ -82,7 +89,7 @@ class Funder(db.Model):
                         "h_index": (self.h_index and self.h_index.h_index) or 0,
                         "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
                     },
-                    #"counts_by_year": self.display_counts_by_year,
+                    "counts_by_year": self.display_counts_by_year,
                     #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
                     "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
                     "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]

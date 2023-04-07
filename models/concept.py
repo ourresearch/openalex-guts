@@ -452,13 +452,19 @@ class Concept(db.Model):
     @cached_property
     def display_counts_by_year(self):
         response_dict = {}
-        # all_rows = self.counts_by_year_papers + self.counts_by_year_citations
         all_rows = self.counts_by_year
         for count_row in all_rows:
-            response_dict[count_row.year] = {"year": count_row.year, "works_count": 0, "cited_by_count": 0}
+            response_dict[count_row.year] = {
+                "year": count_row.year,
+                "works_count": 0,
+                "oa_works_count": 0,
+                "cited_by_count": 0
+            }
         for count_row in all_rows:
             if count_row.type == "citation_count":
                 response_dict[count_row.year]["cited_by_count"] = int(count_row.n)
+            elif count_row.type == "oa_paper_count":
+                response_dict[count_row.year]["oa_works_count"] = int(count_row.n)
             else:
                 response_dict[count_row.year]["works_count"] = int(count_row.n)
 

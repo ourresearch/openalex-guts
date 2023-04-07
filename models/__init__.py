@@ -78,15 +78,22 @@ Publisher.counts = db.relationship("PublisherCounts", lazy='selectin', viewonly=
 Funder.counts = db.relationship("FunderCounts", lazy='selectin', viewonly=True, uselist=False)
 
 Author.counts_by_year_papers = db.relationship("AuthorCountsByYearPapers", lazy='selectin', viewonly=True)
+Author.counts_by_year_oa_papers = db.relationship("AuthorCountsByYearOAPapers", lazy='selectin', viewonly=True)
 Author.counts_by_year_citations = db.relationship("AuthorCountsByYearCitations", lazy='selectin', viewonly=True)
 Concept.counts_by_year = db.relationship("ConceptCountsByYear", lazy='selectin', viewonly=True)
 Institution.counts_by_year_papers = db.relationship("InstitutionCountsByYearPapers", lazy='selectin', viewonly=True)
+Institution.counts_by_year_oa_papers = db.relationship("InstitutionCountsByYearOAPapers", lazy='selectin', viewonly=True)
 Institution.counts_by_year_citations = db.relationship("InstitutionCountsByYearCitations", lazy='selectin', viewonly=True)
 Source.counts_by_year_papers = db.relationship("SourceCountsByYearPapers", lazy='selectin', viewonly=True)
+Source.counts_by_year_oa_papers = db.relationship("SourceCountsByYearOAPapers", lazy='selectin', viewonly=True)
 Source.counts_by_year_citations = db.relationship("SourceCountsByYearCitations", lazy='selectin', viewonly=True)
 Work.counts_by_year = db.relationship("WorkCountsByYear", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_papers = db.relationship("PublisherCountsByYearPapers", lazy='selectin', viewonly=True)
+Publisher.counts_by_year_oa_papers = db.relationship("PublisherCountsByYearOAPapers", lazy='selectin', viewonly=True)
 Publisher.counts_by_year_citations = db.relationship("PublisherCountsByYearCitations", lazy='selectin', viewonly=True)
+Funder.counts_by_year_papers = db.relationship("FunderCountsByYearPapers", lazy='selectin', viewonly=True)
+Funder.counts_by_year_oa_papers = db.relationship("FunderCountsByYearOAPapers", lazy='selectin', viewonly=True)
+Funder.counts_by_year_citations = db.relationship("FunderCountsByYearCitations", lazy='selectin', viewonly=True)
 
 Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher_id], lazy='selectin', viewonly=True, uselist=False)
 
