@@ -26,6 +26,19 @@ class AuthorCountsByYearPapers(db.Model):
         return "<AuthorCountsByYearPapers ( {} ) {} {} >".format(self.author_id, self.year, self.n)
 
 
+class AuthorCountsByYearOAPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "authors_by_year_oa_works_count_view"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<AuthorCountsByYearOAPapers ( {} ) {} {} >".format(self.author_id, self.year, self.n)
+
+
 class AuthorCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_authors_by_year_citation_count_view"
@@ -64,6 +77,19 @@ class SourceCountsByYearPapers(db.Model):
         return "<SourceCountsByYearPapers ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
 
 
+class SourceCountsByYearOAPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "journals_by_year_oa_works_count_view"
+
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<SourceCountsByYearOAPapers ( {} ) {} {} >".format(self.journal_id, self.year, self.n)
+
+
 class SourceCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_by_year_citation_count_view"
@@ -89,6 +115,45 @@ class FunderCounts(db.Model):
         return "<FunderCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
+class FunderCountsByYearPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_funders_by_year_paper_count_view"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCountsByYearPapers ( {} ) {} {} >".format(self.funder_id, self.year, self.n)
+
+
+class FunderCountsByYearOAPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "funders_by_year_oa_works_count_view"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCountsByYearOAPapers ( {} ) {} {} >".format(self.funder_id, self.year, self.n)
+
+
+class FunderCountsByYearCitations(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_funders_by_year_citation_count_view"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCountsByYearCitations ( {} ) {} {} >".format(self.funder_id, self.year, self.n)
+
+
 class PublisherCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_publishers_mv"
@@ -112,6 +177,19 @@ class PublisherCountsByYearPapers(db.Model):
 
     def __repr__(self):
         return "<PublisherCountsByYearPapers ( {} ) {} {} >".format(self.publisher_id, self.year, self.n)
+
+
+class PublisherCountsByYearOAPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publishers_by_year_oa_works_count_view"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<PublisherCountsByYearOAPapers ( {} ) {} {} >".format(self.publisher_id, self.year, self.n)
 
 
 class PublisherCountsByYearCitations(db.Model):
@@ -150,6 +228,19 @@ class InstitutionCountsByYearPapers(db.Model):
 
     def __repr__(self):
         return "<InstitutionCountsByYearPapers ( {} ) {} {} >".format(self.affiliation_id, self.year, self.n)
+
+
+class InstitutionCountsByYearOAPapers(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institutions_by_year_oa_works_count_view"
+
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    type = db.Column(db.Text, primary_key=True)
+    year = db.Column(db.Numeric, primary_key=True)
+    n = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<InstitutionCountsByYearOAPapers ( {} ) {} {} >".format(self.affiliation_id, self.year, self.n)
 
 
 class InstitutionCountsByYearCitations(db.Model):
