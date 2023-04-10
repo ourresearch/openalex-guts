@@ -389,7 +389,7 @@ class Work(db.Model):
 
             funders = db.session.query(models.Funder).filter(
                 models.Funder.doi.in_(list(json_funders_by_doi.keys()))
-            ).all()
+            ).options(orm.Load(models.Funder).raiseload('*')).all()
 
             seen_funders = set()
             for f in funders:
