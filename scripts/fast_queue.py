@@ -160,19 +160,24 @@ def get_objects(entity_type, object_ids):
     if entity_type == "work":
         objects = db.session.query(models.Work).options(
             selectinload(models.Work.stored),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
+            selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).raiseload('*'),
+            selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).raiseload('*'),
+            selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
@@ -213,17 +218,18 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Author.author_id.in_(object_ids)).all()
     elif entity_type == "source":
         objects = db.session.query(models.Source).options(
-             selectinload(models.Source.stored),
-             selectinload(models.Source.counts),
-             selectinload(models.Source.counts_by_year_papers),
-             selectinload(models.Source.counts_by_year_oa_papers),
-             selectinload(models.Source.counts_by_year_citations),
-             selectinload(models.Source.impact_factor),
-             selectinload(models.Source.h_index),
-             selectinload(models.Source.i10_index),
-             selectinload(models.Source.publisher_entity).raiseload('*'),
-             selectinload(models.Source.institution).raiseload('*'),
-             orm.Load(models.Source).raiseload('*')
+            selectinload(models.Source.stored),
+            selectinload(models.Source.counts),
+            selectinload(models.Source.counts_by_year_papers),
+            selectinload(models.Source.counts_by_year_oa_papers),
+            selectinload(models.Source.counts_by_year_citations),
+            selectinload(models.Source.impact_factor),
+            selectinload(models.Source.h_index),
+            selectinload(models.Source.i10_index),
+            selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+            selectinload(models.Source.publisher_entity).raiseload('*'),
+            selectinload(models.Source.institution).raiseload('*'),
+            orm.Load(models.Source).raiseload('*')
         ).filter(models.Source.journal_id.in_(object_ids)).all()
     elif entity_type == "institution":
         objects = db.session.query(models.Institution).filter(models.Institution.affiliation_id.in_(object_ids)).all()
