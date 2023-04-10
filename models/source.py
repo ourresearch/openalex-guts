@@ -215,7 +215,7 @@ class Source(db.Model):
         if self.type == "journal" and self.publisher_entity:
             return self.publisher_entity.lineage()
         elif self.type == "repository" and self.institution:
-            return [{"id": self.institution.openalex_id, "display_name": self.institution.display_name}]
+            return [self.institution.openalex_id]
         else:
             return []
 
