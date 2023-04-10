@@ -54,7 +54,7 @@ WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.funders = db.relationship("WorkFunder", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan
