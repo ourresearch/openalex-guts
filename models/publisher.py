@@ -73,6 +73,10 @@ class Publisher(db.Model):
             "display_name": self.display_name,
             "alternate_titles": self.alternate_titles or [],
             "parent_publisher": self.parent and self.parent.openalex_id,
+            "lineage": [
+                {"id": f"https://openalex.org/P{p.ancestor_id}", "display_name": p.ancestor_display_name}
+                for p in self.self_and_ancestors
+            ],
             "hierarchy_level": self.hierarchy_level,
             "country_codes": self.country_codes or [],
             "image_url": self.image_url,
@@ -148,3 +152,14 @@ class Publisher(db.Model):
                 }
             }
         ]
+
+
+class PublisherSelfAndAncestors(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publisher_self_and_ancestors_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    display_name = db.Column(db.Text)
+    ancestor_id = db.Column(db.BigInteger, primary_key=True)
+    ancestor_display_name = db.Column(db.Text)
+    ancestor_hierarchy_level = db.Column(db.Integer)
