@@ -68,10 +68,7 @@ class Publisher(db.Model):
         return response
 
     def lineage(self):
-        return [
-            {"id": f"https://openalex.org/P{p.ancestor_id}", "display_name": p.ancestor_display_name}
-            for p in self.self_and_ancestors
-        ]
+        return [f"https://openalex.org/P{p.ancestor_id}" for p in self.self_and_ancestors]
 
     def to_dict(self):
         response = {
