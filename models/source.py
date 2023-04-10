@@ -211,6 +211,14 @@ class Source(db.Model):
         else:
             return None
 
+    def host_organization_lineage(self):
+        if self.type == "journal" and self.publisher_entity:
+            return self.publisher_entity.lineage()
+        elif self.type == "repository" and self.institution:
+            return [{"id": self.institution.openalex_id, "display_name": self.institution.display_name}]
+        else:
+            return []
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -220,6 +228,7 @@ class Source(db.Model):
             "publisher": self.publisher_display_name,
             "host_organization": self.host_organization,
             "host_organization_name": self.publisher_display_name,
+            "host_organization_lineage": self.host_organization_lineage(),
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }

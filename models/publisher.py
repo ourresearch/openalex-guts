@@ -67,16 +67,19 @@ class Publisher(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    def lineage(self):
+        return [
+            {"id": f"https://openalex.org/P{p.ancestor_id}", "display_name": p.ancestor_display_name}
+            for p in self.self_and_ancestors
+        ]
+
     def to_dict(self):
         response = {
             "id": self.openalex_id,
             "display_name": self.display_name,
             "alternate_titles": self.alternate_titles or [],
             "parent_publisher": self.parent and self.parent.openalex_id,
-            "lineage": [
-                {"id": f"https://openalex.org/P{p.ancestor_id}", "display_name": p.ancestor_display_name}
-                for p in self.self_and_ancestors
-            ],
+            "lineage": self.lineage(),
             "hierarchy_level": self.hierarchy_level,
             "country_codes": self.country_codes or [],
             "image_url": self.image_url,
