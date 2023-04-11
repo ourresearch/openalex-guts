@@ -1291,6 +1291,10 @@ class Work(db.Model):
                     locations.append(pubmed_location)
                     break
 
+        # Sources created manually using only the original_venue property from works that otherwise don't have Sources
+        if locations and locations[0]['source'] is None and self.safety_journal:
+            locations[0]['source'] = self.safety_journal.to_dict(return_level='minimum')
+
         return locations
 
     def to_dict(self, return_level="full"):

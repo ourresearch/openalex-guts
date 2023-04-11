@@ -103,6 +103,11 @@ Publisher.self_and_ancestors = db.relationship("PublisherSelfAndAncestors", usel
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
+Work.safety_journal = db.relationship(
+    "Source", lazy="selectin", uselist=False, viewonly=True,
+    primaryjoin="remote(Source.display_name) == foreign(Work.original_venue)"
+)
+
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
 Record.journals = db.relationship(
     "Source",
