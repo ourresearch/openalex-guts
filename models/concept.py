@@ -472,6 +472,11 @@ class Concept(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    def oa_percent(self):
+        if not self.counts and self.counts.paper_count and self.counts.oa_paper_count:
+            return 0
+
+        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
     def to_dict(self, return_level="full"):
         response = {
@@ -483,12 +488,13 @@ class Concept(db.Model):
         if return_level == "full":
             response.update({
                 "description": self.description,
-                "works_count": self.counts.paper_count if self.counts else 0,
-                "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
-                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
+                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                    "oa_percent": self.oa_percent()
                 },
                 "ids": {
                     "openalex": self.openalex_id,
