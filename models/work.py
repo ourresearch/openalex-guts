@@ -5,6 +5,7 @@ import os
 import re
 from collections import defaultdict
 from functools import cache
+from time import sleep
 from time import time
 
 import requests
@@ -274,7 +275,10 @@ class Work(db.Model):
 
             elif r.status_code == 500:
                 logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                sleep(1)
                 number_tries += 1
+                if number_tries > 60:
+                    keep_calling = False
 
             else:
                 logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
