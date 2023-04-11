@@ -218,7 +218,7 @@ class Source(db.Model):
             return []
 
     def oa_percent(self):
-        if not self.counts and self.counts.paper_count and self.counts.oa_paper_count:
+        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
             return 0
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
