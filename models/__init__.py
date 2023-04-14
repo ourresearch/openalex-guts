@@ -54,7 +54,7 @@ WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.funders = db.relationship("WorkFunder", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan
@@ -96,10 +96,17 @@ Funder.counts_by_year_oa_papers = db.relationship("FunderCountsByYearOAPapers", 
 Funder.counts_by_year_citations = db.relationship("FunderCountsByYearCitations", lazy='selectin', viewonly=True)
 
 Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher_id], lazy='selectin', viewonly=True, uselist=False)
+Publisher.self_and_ancestors = db.relationship("PublisherSelfAndAncestors", uselist=True, lazy='selectin', viewonly=True)
+
 
 # TODO: rename Source.publisher to Source.publisher_name to free up Source.publisher for this relationship
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
+
+Work.safety_journal = db.relationship(
+    "Source", lazy="selectin", uselist=False, viewonly=True,
+    primaryjoin="remote(Source.display_name) == foreign(Work.original_venue)"
+)
 
 # join based on any issn so that we can merge journals and change issn_l without needing to be in sync with recordthresher
 Record.journals = db.relationship(

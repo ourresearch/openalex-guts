@@ -133,8 +133,6 @@ class Source(db.Model):
             }
         ]
 
-
-
     @cached_property
     def display_counts_by_year(self):
         response_dict = {}
@@ -211,6 +209,20 @@ class Source(db.Model):
         else:
             return None
 
+    def host_organization_lineage(self):
+        if self.type == "journal" and self.publisher_entity:
+            return self.publisher_entity.lineage()
+        elif self.type == "repository" and self.institution:
+            return [self.institution.openalex_id]
+        else:
+            return []
+
+    def oa_percent(self):
+        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
+            return 0
+
+        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -220,17 +232,19 @@ class Source(db.Model):
             "publisher": self.publisher_display_name,
             "host_organization": self.host_organization,
             "host_organization_name": self.publisher_display_name,
+            "host_organization_lineage": self.host_organization_lineage(),
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
         if return_level == "full":
             response.update({
-                "works_count": self.counts.paper_count if self.counts else 0,
-                "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
-                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
+                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                    "oa_percent": self.oa_percent()
                 },
                 "is_oa": self.is_oa or False,
                 "is_in_doaj": self.is_in_doaj or False,
@@ -267,9 +281,6 @@ class Source(db.Model):
 
     def __repr__(self):
         return "<Source ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
-
-
-pubmed = Source.query.get(4306525036)
 
 # select count(distinct work.paper_id)
 # from mid.journal journal
