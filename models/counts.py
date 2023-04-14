@@ -7,6 +7,7 @@ class AuthorCounts(db.Model):
 
     author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
@@ -58,6 +59,7 @@ class SourceCounts(db.Model):
 
     journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
@@ -109,6 +111,7 @@ class FunderCounts(db.Model):
 
     funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
@@ -160,6 +163,7 @@ class PublisherCounts(db.Model):
 
     publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
@@ -211,6 +215,7 @@ class InstitutionCounts(db.Model):
 
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
@@ -262,6 +267,7 @@ class ConceptCounts(db.Model):
 
     field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):

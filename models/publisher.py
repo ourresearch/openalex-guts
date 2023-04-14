@@ -67,12 +67,22 @@ class Publisher(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    def lineage(self):
+        return [f"https://openalex.org/P{p.ancestor_id}" for p in self.self_and_ancestors]
+
+    def oa_percent(self):
+        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
+            return 0
+
+        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
+
     def to_dict(self):
         response = {
             "id": self.openalex_id,
             "display_name": self.display_name,
             "alternate_titles": self.alternate_titles or [],
             "parent_publisher": self.parent and self.parent.openalex_id,
+            "lineage": self.lineage(),
             "hierarchy_level": self.hierarchy_level,
             "country_codes": self.country_codes or [],
             "image_url": self.image_url,
@@ -82,12 +92,13 @@ class Publisher(db.Model):
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
             },
-            "works_count": int(self.counts.paper_count) if self.counts else 0,
-            "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
+            "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+            "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
             "summary_stats": {
                 "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                 "h_index": (self.h_index and self.h_index.h_index) or 0,
-                "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
+                "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                "oa_percent": self.oa_percent()
             },
             "counts_by_year": self.display_counts_by_year,
             "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
@@ -148,3 +159,14 @@ class Publisher(db.Model):
                 }
             }
         ]
+
+
+class PublisherSelfAndAncestors(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publisher_self_and_ancestors_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    display_name = db.Column(db.Text)
+    ancestor_id = db.Column(db.BigInteger, primary_key=True)
+    ancestor_display_name = db.Column(db.Text)
+    ancestor_hierarchy_level = db.Column(db.Integer)

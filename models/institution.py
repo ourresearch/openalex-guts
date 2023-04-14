@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import urllib.parse
+from time import sleep
 
 import requests
 from cached_property import cached_property
@@ -18,7 +19,6 @@ from app import get_apiurl_from_openalex_url
 from app import logger
 from util import dictionary_nested_diff
 from util import jsonify_fast_no_sort_raw
-
 
 # alter table institution rename column normalized_name to mag_normalized_name
 # alter table institution add column normalized_name varchar(65000)
@@ -446,7 +446,8 @@ class Institution(db.Model):
             api_url = "https://ybb43coxn4.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
             number_tries = 0
-            while True:
+            keep_calling = True
+            while keep_calling:
                 r = requests.post(api_url, json=json.dumps(data), headers=headers)
 
                 if r.status_code == 200:
@@ -486,10 +487,14 @@ class Institution(db.Model):
 
                 elif r.status_code == 500:
                     logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                    sleep(1)
                     number_tries += 1
+                    if number_tries > 60:
+                        keep_calling = False
 
                 else:
                     logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                    keep_calling = False
 
         final_name_to_ids_dict = dict()
 
@@ -500,6 +505,12 @@ class Institution(db.Model):
                 final_name_to_ids_dict[k] = v
 
         return [final_name_to_ids_dict[n] for n in institution_names]
+
+    def oa_percent(self):
+        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
+            return 0
+
+        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
     def to_dict(self, return_level="full"):
         response = {
@@ -520,12 +531,13 @@ class Institution(db.Model):
                 "image_thumbnail_url": self.image_thumbnail_url,
                 "display_name_acronyms": self.acronyms,
                 "display_name_alternatives": self.aliases,
-                "works_count": self.counts.paper_count if self.counts else 0,
-                "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
-                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
+                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                    "oa_percent": self.oa_percent()
                 },
                 "ids": {
                     "openalex": self.openalex_id,

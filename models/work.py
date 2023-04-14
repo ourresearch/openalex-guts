@@ -5,6 +5,7 @@ import os
 import re
 from collections import defaultdict
 from functools import cache
+from time import sleep
 from time import time
 
 import requests
@@ -18,7 +19,6 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
-from models.source import pubmed
 from util import clean_doi
 from util import clean_html
 from util import dictionary_nested_diff
@@ -79,6 +79,11 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     response.insert_dicts = insert_dicts
     response.delete_dict = {"WorkConcept": [row["paper_id"] for row in rows]}
     return [response]
+
+
+@cache
+def pubmed_json():
+    return models.source.Source.query.get(4306525036).to_dict(return_level='minimum')
 
 
 class Work(db.Model):
@@ -270,7 +275,10 @@ class Work(db.Model):
 
             elif r.status_code == 500:
                 logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                sleep(1)
                 number_tries += 1
+                if number_tries > 60:
+                    keep_calling = False
 
             else:
                 logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
@@ -385,7 +393,7 @@ class Work(db.Model):
 
             funders = db.session.query(models.Funder).filter(
                 models.Funder.doi.in_(list(json_funders_by_doi.keys()))
-            ).all()
+            ).options(orm.Load(models.Funder).raiseload('*')).all()
 
             seen_funders = set()
             for f in funders:
@@ -1277,7 +1285,7 @@ class Work(db.Model):
             for r in self.records_sorted:
                 if r.record_type == 'pubmed_record' and r.pmid:
                     pubmed_location = {
-                        'source': pubmed.to_dict(return_level='minimum'),
+                        'source': pubmed_json(),
                         'pdf_url': None,
                         'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
                         'is_oa': False,
@@ -1286,6 +1294,10 @@ class Work(db.Model):
                     }
                     locations.append(pubmed_location)
                     break
+
+        # Sources created manually using only the original_venue property from works that otherwise don't have Sources
+        if locations and locations[0]['source'] is None and self.safety_journal:
+            locations[0]['source'] = self.safety_journal.to_dict(return_level='minimum')
 
         return locations
 

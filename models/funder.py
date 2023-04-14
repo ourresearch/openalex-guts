@@ -67,6 +67,12 @@ class Funder(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    def oa_percent(self):
+        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
+            return 0
+
+        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -82,12 +88,13 @@ class Funder(db.Model):
             response.update(
                 {
                     "alternate_titles": self.alternate_titles or [],
-                    "works_count": int(self.counts.paper_count) if self.counts else 0,
-                    "cited_by_count": int(self.counts.citation_count) if self.counts else 0,
+                    "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                     "summary_stats": {
                         "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                         "h_index": (self.h_index and self.h_index.h_index) or 0,
-                        "i10_index": (self.i10_index and self.i10_index.i10_index) or 0
+                        "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                        "oa_percent": self.oa_percent()
                     },
                     "counts_by_year": self.display_counts_by_year,
                     #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
