@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import cache
 from time import sleep
 from time import time
+from typing import List
 
 import requests
 from cached_property import cached_property
@@ -59,7 +60,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_key = os.getenv("SAGEMAKER_API_KEY")
     headers = {"X-API-Key": api_key}
     # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/" #for version without abstracts
-    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for version with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
         logger.error(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
@@ -1311,6 +1312,18 @@ class Work(db.Model):
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
         truncated_title = truncate_on_word_break(self.work_title, 500)
+        
+        corresponding_author_ids: List[str] = []
+        corresponding_institution_ids: List[str] = []
+        for affil in self.affiliations_list:
+            if affil.get('is_corresponding', False) is True:
+                author = affil.get('author', None)
+                if author:
+                    corresponding_author_ids.append(author["id"])
+                institutions = affil.get('institutions', None)
+                if institutions:
+                    for institution in institutions:
+                        corresponding_institution_ids.append(institution["id"])
 
         response = {
             "id": self.openalex_id,
@@ -1338,6 +1351,8 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "corresponding_author_ids": corresponding_author_ids,
+            "corresponding_institution_ids": corresponding_institution_ids,
         }
         response["host_venue"].update(self.host_venue_details_dict)
 
