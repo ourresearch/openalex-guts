@@ -24,6 +24,7 @@ class Funder(db.Model):
     location = db.Column(db.Text)
     display_name = db.Column(db.Text)
     alternate_titles = db.Column(JSONB)
+    country_code = db.Column(db.Text)
     uri = db.Column(db.Text)
     doi = db.Column(db.Text)
     replaces = db.Column(JSONB)
@@ -88,6 +89,7 @@ class Funder(db.Model):
             response.update(
                 {
                     "alternate_titles": self.alternate_titles or [],
+                    "country_code": self.country_code,
                     "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                     "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                     "summary_stats": {
