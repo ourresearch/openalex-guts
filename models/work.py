@@ -1184,17 +1184,10 @@ class Work(db.Model):
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
-                    'is_oa': False,
-                    'version': None,
-                    'license': None
+                    'is_oa': r.is_oa,
+                    'version': r.open_version,
+                    'license': r.open_license
                 }
-
-                doi_matching_locations = [loc for loc in self.locations if loc.url_for_landing_page == doi_url]
-
-                if doi_matching_locations:
-                    doi_location['is_oa'] = doi_matching_locations[0].is_oa
-                    doi_location['version'] = doi_matching_locations[0].version
-                    doi_location['license'] = doi_matching_locations[0].license
 
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
@@ -1223,17 +1216,10 @@ class Work(db.Model):
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
-                    # OA / version / license not carried on Recordthresher record
-                    'is_oa': False,
-                    'version': None,
-                    'license': None
+                    'is_oa': r.is_oa,
+                    'version': r.open_version,
+                    'license': r.open_license
                 }
-
-                repo_matching_locations = [loc for loc in self.locations if loc.endpoint_id == r.repository_id]
-                if repo_matching_locations:
-                    pmh_location['is_oa'] = repo_matching_locations[0].is_oa
-                    pmh_location['version'] = repo_matching_locations[0].version
-                    pmh_location['license'] = repo_matching_locations[0].license
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1297,8 +1283,8 @@ class Work(db.Model):
                     break
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
-        if locations and locations[0]['source'] is None and self.safety_journal:
-            locations[0]['source'] = self.safety_journal.to_dict(return_level='minimum')
+        if locations and locations[0]['source'] is None and self.safety_journals:
+            locations[0]['source'] = self.safety_journals[0].to_dict(return_level='minimum')
 
         return locations
 
