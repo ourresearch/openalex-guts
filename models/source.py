@@ -223,7 +223,10 @@ class Source(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
-    def to_dict(self, return_level="full"):
+    def to_dict(self, return_level="full", check_merge=True):
+        if check_merge and self.merged_into_source:
+            return self.merged_into_source.to_dict(return_level=return_level, check_merge=False)
+
         response = {
             "id": self.openalex_id,
             "issn_l": self.issn,
@@ -266,7 +269,6 @@ class Source(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
-                # "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
                 "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })

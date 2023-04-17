@@ -103,8 +103,8 @@ Publisher.self_and_ancestors = db.relationship("PublisherSelfAndAncestors", usel
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
-Work.safety_journal = db.relationship(
-    "Source", lazy="selectin", uselist=False, viewonly=True,
+Work.safety_journals = db.relationship(
+    "Source", lazy="selectin", uselist=True, viewonly=True,
     primaryjoin="remote(Source.display_name) == foreign(Work.original_venue)"
 )
 
