@@ -334,6 +334,18 @@ class ConceptCounts(db.Model):
         return "<ConceptCounts ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
 
+class ConceptCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_concepts_2yr_mv"
+
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<ConceptCounts2Year ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
+
+
 class ConceptCountsByYear(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_concepts_by_year_mv"
