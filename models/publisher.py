@@ -100,7 +100,11 @@ class Publisher(db.Model):
                 "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
                 "oa_percent": self.oa_percent(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0
+                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
+                "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
+                "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
+                "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
             },
             "counts_by_year": self.display_counts_by_year,
             "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
