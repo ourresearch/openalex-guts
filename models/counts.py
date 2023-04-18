@@ -14,6 +14,18 @@ class AuthorCounts(db.Model):
         return "<AuthorCounts ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
 
 
+class AuthorCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_authors_2yr_mv"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<AuthorCounts2Year ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+
+
 class AuthorCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_authors_by_year_paper_count_view"

@@ -78,6 +78,17 @@ class AuthorHIndex(db.Model):
         return "<AuthorHIndex ( {} ) {} >".format(self.author_id, self.h_index)
 
 
+class AuthorHIndex2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "author_h_index_2yr_mv"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    h_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<AuthorHIndex2Year ( {} ) {} >".format(self.author_id, self.h_index)
+
+
 class SourceHIndex(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "source_h_index_mv"
@@ -142,6 +153,17 @@ class AuthorI10Index(db.Model):
 
     def __repr__(self):
         return "<AuthorI10Index ( {} ) {} >".format(self.author_id, self.h_index)
+
+
+class AuthorI10Index2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "author_i10_index_2yr_mv"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    i10_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<AuthorI10Index2Year ( {} ) {} >".format(self.author_id, self.h_index)
 
 
 class SourceI10Index(db.Model):
