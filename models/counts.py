@@ -194,6 +194,18 @@ class PublisherCounts(db.Model):
         return "<PublisherCounts ( {} ) {} {} >".format(self.publisher_id)
 
 
+class PublisherCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_publishers_2yr_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<PublisherCounts2Year ( {} ) {} {} >".format(self.publisher_id)
+
+
 class PublisherCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_publishers_by_year_paper_count_view"

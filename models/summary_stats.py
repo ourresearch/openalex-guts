@@ -122,6 +122,17 @@ class PublisherHIndex(db.Model):
         return "<PublisherHIndex ( {} ) {} >".format(self.publisher_id, self.h_index)
 
 
+class PublisherHIndex2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publisher_h_index_2yr_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    h_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<PublisherHIndex2Year ( {} ) {} >".format(self.publisher_id, self.h_index)
+
+
 class FunderHIndex(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "funder_h_index_mv"
@@ -208,6 +219,17 @@ class PublisherI10Index(db.Model):
 
     def __repr__(self):
         return "<PublisherI10Index ( {} ) {} >".format(self.publisher_id, self.h_index)
+
+
+class PublisherI10Index2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publisher_i10_index_2yr_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    i10_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<PublisherI10Index2Year ( {} ) {} >".format(self.publisher_id, self.h_index)
 
 
 class FunderI10Index(db.Model):
