@@ -1366,6 +1366,9 @@ class Work(db.Model):
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "summary_stats": {
+                    "cited_by_count": self.counts.citation_count if self.counts else 0
+                },
                 "biblio": {
                     "volume": self.volume,
                     "issue": self.issue,
