@@ -166,6 +166,17 @@ class InstitutionHIndex(db.Model):
         return "<InstitutionHIndex ( {} ) {} >".format(self.funder_id, self.h_index)
 
 
+class InstitutionHIndex2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institution_h_index_2yr_mv"
+
+    institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    h_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<InstitutionHIndex ( {} ) {} >".format(self.institution_id, self.h_index)
+
+
 class ConceptHIndex(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_h_index_mv"
@@ -273,7 +284,18 @@ class InstitutionI10Index(db.Model):
     i10_index = db.Column(db.Integer)
 
     def __repr__(self):
-        return "<InstitutionI10Index ( {} ) {} >".format(self.funder_id, self.h_index)
+        return "<InstitutionI10Index ( {} ) {} >".format(self.institution_id, self.i10_index)
+
+
+class InstitutionI10Index2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institution_i10_index_2yr_mv"
+
+    institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    i10_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<InstitutionI10Index2Year ( {} ) {} >".format(self.institution_id, self.i10_index)
 
 
 class ConceptI10Index(db.Model):

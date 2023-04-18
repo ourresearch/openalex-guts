@@ -270,6 +270,18 @@ class InstitutionCounts(db.Model):
         return "<InstitutionCounts ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
 
 
+class InstitutionCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_institutions_2yr_mv"
+
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<InstitutionCounts2Year ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+
+
 class InstitutionCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_institutions_by_year_paper_count_view"
