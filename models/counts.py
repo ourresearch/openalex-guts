@@ -139,7 +139,19 @@ class FunderCounts(db.Model):
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<FunderCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+        return "<FunderCounts ( {} ) {} {} >".format(self.funder_id, self.paper_count, self.citation_count)
+
+
+class FunderCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_funders_2yr_mv"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCounts2Year ( {} ) {} {} >".format(self.funder_id, self.paper_count, self.citation_count)
 
 
 class FunderCountsByYearPapers(db.Model):
