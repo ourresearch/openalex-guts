@@ -141,7 +141,18 @@ class FunderHIndex(db.Model):
     h_index = db.Column(db.Integer)
 
     def __repr__(self):
-        return "<FunderHIndex ( {} ) {} >".format(self.author_id, self.h_index)
+        return "<FunderHIndex ( {} ) {} >".format(self.funder_id, self.h_index)
+
+
+class FunderHIndex2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "funder_h_index_2yr_mv"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    h_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<FunderHIndex2Year ( {} ) {} >".format(self.funder_id, self.h_index)
 
 
 class InstitutionHIndex(db.Model):
@@ -240,7 +251,18 @@ class FunderI10Index(db.Model):
     i10_index = db.Column(db.Integer)
 
     def __repr__(self):
-        return "<FunderI10Index ( {} ) {} >".format(self.author_id, self.h_index)
+        return "<FunderI10Index ( {} ) {} >".format(self.funder_id, self.i10_index)
+
+
+class FunderI10Index2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "funder_i10_index_2yr_mv"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    i10_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<FunderI10Index2Year ( {} ) {} >".format(self.funder_id, self.i10_index)
 
 
 class InstitutionI10Index(db.Model):
