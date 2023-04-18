@@ -1367,7 +1367,8 @@ class Work(db.Model):
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "summary_stats": {
-                    "cited_by_count": self.counts.citation_count if self.counts else 0
+                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "2yr_cited_by_count": int(self.citation_count_2year.count or 0) if self.citation_count_2year else 0
                 },
                 "biblio": {
                     "volume": self.volume,
