@@ -27,7 +27,7 @@ from models.publisher import Publisher
 from models.record import Record
 from models.ror import Ror
 from models.source import Source
-from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index
+from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index, AuthorI10Index2Year, AuthorHIndex2Year
 from models.summary_stats import ConceptImpactFactor, ConceptHIndex, ConceptI10Index
 from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Index
 from models.summary_stats import InstitutionImpactFactor, InstitutionHIndex, InstitutionI10Index
@@ -70,6 +70,7 @@ Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-o
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
+Author.counts_2year = db.relationship("AuthorCounts2Year", lazy='selectin', viewonly=True, uselist=False)
 Concept.counts = db.relationship("ConceptCounts", lazy='selectin', viewonly=True, uselist=False)
 Institution.counts = db.relationship("InstitutionCounts", lazy='selectin', viewonly=True, uselist=False)
 Source.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
@@ -186,6 +187,7 @@ Institution.impact_factor = db.relationship("InstitutionImpactFactor", uselist=F
 Concept.impact_factor = db.relationship("ConceptImpactFactor", uselist=False, lazy='selectin', viewonly=True)
 
 Author.h_index = db.relationship("AuthorHIndex", uselist=False, lazy='selectin', viewonly=True)
+Author.h_index_2year = db.relationship("AuthorHIndex2Year", uselist=False, lazy='selectin', viewonly=True)
 Source.h_index = db.relationship("SourceHIndex", uselist=False, lazy='selectin', viewonly=True)
 Publisher.h_index = db.relationship("PublisherHIndex", uselist=False, lazy='selectin', viewonly=True)
 Funder.h_index = db.relationship("FunderHIndex", uselist=False, lazy='selectin', viewonly=True)
@@ -193,6 +195,7 @@ Institution.h_index = db.relationship("InstitutionHIndex", uselist=False, lazy='
 Concept.h_index = db.relationship("ConceptHIndex", uselist=False, lazy='selectin', viewonly=True)
 
 Author.i10_index = db.relationship("AuthorI10Index", uselist=False, lazy='selectin', viewonly=True)
+Author.i10_index_2year = db.relationship("AuthorI10Index2Year", uselist=False, lazy='selectin', viewonly=True)
 Source.i10_index = db.relationship("SourceI10Index", uselist=False, lazy='selectin', viewonly=True)
 Publisher.i10_index = db.relationship("PublisherI10Index", uselist=False, lazy='selectin', viewonly=True)
 Funder.i10_index = db.relationship("FunderI10Index", uselist=False, lazy='selectin', viewonly=True)
