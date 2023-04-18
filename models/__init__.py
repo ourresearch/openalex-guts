@@ -78,6 +78,7 @@ Institution.counts_2year = db.relationship("InstitutionCounts2Year", lazy='selec
 Source.counts = db.relationship("SourceCounts", lazy='selectin', viewonly=True, uselist=False)
 Source.counts_2year = db.relationship("SourceCounts2Year", lazy='selectin', viewonly=True, uselist=False)
 Work.counts = db.relationship("WorkCounts", lazy='selectin', viewonly=True, uselist=False)
+Work.citation_count_2year = db.relationship("Work2YearCitationCount", lazy='selectin', viewonly=True, uselist=False)
 Publisher.counts = db.relationship("PublisherCounts", lazy='selectin', viewonly=True, uselist=False)
 Publisher.counts_2year = db.relationship("PublisherCounts2Year", lazy='selectin', viewonly=True, uselist=False)
 Funder.counts = db.relationship("FunderCounts", lazy='selectin', viewonly=True, uselist=False)

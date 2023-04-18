@@ -203,6 +203,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.funders).selectinload(models.WorkFunder.funder).raiseload('*'),
             selectinload(models.Work.funders).raiseload('*'),
             selectinload(models.Work.counts),
+            selectinload(models.Work.citation_count_2year),
             selectinload(models.Work.counts_by_year).raiseload('*'),
             selectinload(models.Work.abstract),
             selectinload(models.Work.extra_ids).raiseload('*'),

@@ -382,3 +382,13 @@ class WorkCountsByYear(db.Model):
     def __repr__(self):
         return "<WorkCountsByYear ( {} ) {} >".format(self.paper_id, self.year, self.n)
 
+
+class Work2YearCitationCount(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "paper_citations_2yr_mv"
+
+    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<Work2YearCitationCount ( {} ) {} >".format(self.paper_id, self.count)
