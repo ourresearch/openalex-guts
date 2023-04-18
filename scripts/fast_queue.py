@@ -235,6 +235,7 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Author.author_id.in_(object_ids)).all()
     elif entity_type == "source":
         objects = db.session.query(models.Source).options(
+            selectinload(models.Source.merged_into_source).raiseload('*'),
             selectinload(models.Source.stored),
             selectinload(models.Source.counts),
             selectinload(models.Source.counts_by_year_papers),
