@@ -28,6 +28,7 @@ class Funder(db.Model):
     description = db.Column(db.Text)
     homepage_url = db.Column(db.Text)
     image_url = db.Column(db.Text)
+    image_thumbnail_url = db.Column(db.Text)
     uri = db.Column(db.Text)
     doi = db.Column(db.Text)
     replaces = db.Column(JSONB)
@@ -96,6 +97,7 @@ class Funder(db.Model):
                     "description": self.description,
                     "homepage_url": self.homepage_url,
                     "image_url": self.image_url,
+                    "image_thumbnail_url": self.image_thumbnail_url,
                     "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                     "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                     "summary_stats": {
