@@ -78,6 +78,18 @@ class SourceCounts(db.Model):
         return "<SourceCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
+class SourceCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_journals_2yr_mv"
+
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<SourceCounts2Year ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+
+
 class SourceCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_by_year_paper_count_view"

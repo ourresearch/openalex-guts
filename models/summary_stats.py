@@ -100,6 +100,17 @@ class SourceHIndex(db.Model):
         return "<SourceHIndex ( {} ) {} >".format(self.source_id, self.h_index)
 
 
+class SourceHIndex2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "source_h_index_2yr_mv"
+
+    source_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    h_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<SourceHIndex2Year ( {} ) {} >".format(self.source_id, self.h_index)
+
+
 class PublisherHIndex(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "publisher_h_index_mv"
@@ -175,6 +186,17 @@ class SourceI10Index(db.Model):
 
     def __repr__(self):
         return "<SourceI10Index ( {} ) {} >".format(self.source_id, self.h_index)
+
+
+class SourceI10Index2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "source_i10_index_2yr_mv"
+
+    source_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    i10_index = db.Column(db.Integer)
+
+    def __repr__(self):
+        return "<SourceI10Index2Year ( {} ) {} >".format(self.source_id, self.h_index)
 
 
 class PublisherI10Index(db.Model):
