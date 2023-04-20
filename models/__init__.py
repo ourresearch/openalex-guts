@@ -129,9 +129,14 @@ or_(
         foreign(Record.repository_id) == remote(Source.repository_id)
     ),
     and_(
-        foreign(Record.record_type) == 'crossref_doi',
-        foreign(Record.genre).like('%book%'),
+        foreign(Record.journal_issn_l) == None,
+        foreign(Record.genre).ilike('%book%'),
         foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
+    ),
+    and_(
+        foreign(Record.journal_issn_l) == None,
+        or_(foreign(Record.genre).ilike('%conference%'), foreign(Record.genre).ilike('%proceeding%')),
+        foreign(Record.normalized_conference) == remote(Source.normalized_conference)
     )
 )
 """

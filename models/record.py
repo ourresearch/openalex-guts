@@ -43,6 +43,7 @@ class Record(db.Model):
     mesh = db.Column(db.Text)
     publisher = db.Column(db.Text)
     normalized_book_publisher = db.Column(db.Text)
+    normalized_conference = db.Column(db.Text)
     institution_host = db.Column(db.Text)
     is_retracted = db.Column(db.Boolean)
     volume = db.Column(db.Text)
