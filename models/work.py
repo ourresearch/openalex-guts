@@ -1354,11 +1354,23 @@ class Work(db.Model):
             else:
                 updated_date = self.full_updated_date[0:10]
         if return_level in ("full", "store"):
-            funder_dicts = []
+            grant_dicts = []
             for f in self.funders:
                 fd = f.funder.to_dict(return_level="minimum")
-                fd.update({"awards": f.award})
-                funder_dicts.append(fd)
+                if f.award:
+                    awards = set(f.award)
+                    for award in awards:
+                        grant_dicts.append({
+                            "funder": fd.get("id"),
+                            "funder_display_name": fd.get("display_name"),
+                            "award_id": award
+                        })
+                else:
+                    grant_dicts.append({
+                        "funder": fd.get("id"),
+                        "funder_display_name": fd.get("display_name"),
+                        "award_id": None
+                    })
 
             response.update({
                 # "doc_type": self.doc_type,
@@ -1380,7 +1392,7 @@ class Work(db.Model):
                 "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
                 "locations": dict_locations,
                 "referenced_works": self.references_list,
-                "funders": funder_dicts,
+                "grants": grant_dicts,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
                 })
 
