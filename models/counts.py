@@ -220,7 +220,7 @@ class PublisherCounts2Year(db.Model):
 
 class PublisherCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_publishers_by_year_paper_count_view"
+    __tablename__ = "citation_publishers_by_year_paper_count_mv"
 
     publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -233,7 +233,7 @@ class PublisherCountsByYearPapers(db.Model):
 
 class PublisherCountsByYearOAPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "publishers_by_year_oa_works_count_view"
+    __tablename__ = "publishers_by_year_oa_works_count_mv"
 
     publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
@@ -246,7 +246,7 @@ class PublisherCountsByYearOAPapers(db.Model):
 
 class PublisherCountsByYearCitations(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "citation_publishers_by_year_citation_count_view"
+    __tablename__ = "citation_publishers_by_year_citation_count_mv"
 
     publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
     type = db.Column(db.Text, primary_key=True)
