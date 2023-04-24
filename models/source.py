@@ -40,6 +40,7 @@ class Source(db.Model):
     publisher_id = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
     institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
     normalized_book_publisher = db.Column(db.Text)
+    normalized_conference = db.Column(db.Text)
     webpage = db.Column(db.Text)
     repository_id = db.Column(db.Text)
     type = db.Column(db.Text)
@@ -223,7 +224,10 @@ class Source(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
-    def to_dict(self, return_level="full"):
+    def to_dict(self, return_level="full", check_merge=True):
+        if check_merge and self.merged_into_source:
+            return self.merged_into_source.to_dict(return_level=return_level, check_merge=False)
+
         response = {
             "id": self.openalex_id,
             "issn_l": self.issn,
@@ -244,7 +248,13 @@ class Source(db.Model):
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
                     "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
-                    "oa_percent": self.oa_percent()
+                    "oa_percent": self.oa_percent(),
+                    "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
+                    "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
+                    "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
+                    "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
                 },
                 "is_oa": self.is_oa or False,
                 "is_in_doaj": self.is_in_doaj or False,
@@ -265,8 +275,7 @@ class Source(db.Model):
                 "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
-                "works_api_url": f"https://api.openalex.org/works?filter=host_venue.id:{self.openalex_id_short}",
-                # "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
+                "works_api_url": f"https://api.openalex.org/works?filter=primary_location.source.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
