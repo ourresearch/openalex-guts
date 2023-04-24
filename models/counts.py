@@ -14,6 +14,18 @@ class AuthorCounts(db.Model):
         return "<AuthorCounts ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
 
 
+class AuthorCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_authors_2yr_mv"
+
+    author_id = db.Column(db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<AuthorCounts2Year ( {} ) {} {} >".format(self.author_id, self.paper_count, self.citation_count)
+
+
 class AuthorCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_authors_by_year_paper_count_view"
@@ -66,6 +78,18 @@ class SourceCounts(db.Model):
         return "<SourceCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
 
 
+class SourceCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_journals_2yr_mv"
+
+    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<SourceCounts2Year ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+
+
 class SourceCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_journals_by_year_paper_count_view"
@@ -115,7 +139,19 @@ class FunderCounts(db.Model):
     citation_count = db.Column(db.Numeric)
 
     def __repr__(self):
-        return "<FunderCounts ( {} ) {} {} >".format(self.journal_id, self.paper_count, self.citation_count)
+        return "<FunderCounts ( {} ) {} {} >".format(self.funder_id, self.paper_count, self.citation_count)
+
+
+class FunderCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_funders_2yr_mv"
+
+    funder_id = db.Column(db.BigInteger, db.ForeignKey("mid.funder.funder_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FunderCounts2Year ( {} ) {} {} >".format(self.funder_id, self.paper_count, self.citation_count)
 
 
 class FunderCountsByYearPapers(db.Model):
@@ -170,6 +206,18 @@ class PublisherCounts(db.Model):
         return "<PublisherCounts ( {} ) {} {} >".format(self.publisher_id)
 
 
+class PublisherCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_publishers_2yr_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<PublisherCounts2Year ( {} ) {} {} >".format(self.publisher_id)
+
+
 class PublisherCountsByYearPapers(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_publishers_by_year_paper_count_view"
@@ -220,6 +268,18 @@ class InstitutionCounts(db.Model):
 
     def __repr__(self):
         return "<InstitutionCounts ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
+
+
+class InstitutionCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_institutions_2yr_mv"
+
+    affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<InstitutionCounts2Year ( {} ) {} {} >".format(self.affiliation_id, self.paper_count, self.citation_count)
 
 
 class InstitutionCountsByYearPapers(db.Model):
@@ -274,6 +334,18 @@ class ConceptCounts(db.Model):
         return "<ConceptCounts ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
 
 
+class ConceptCounts2Year(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_concepts_2yr_mv"
+
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<ConceptCounts2Year ( {} ) {} {} >".format(self.field_of_study_id, self.paper_count, self.citation_count)
+
+
 class ConceptCountsByYear(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_concepts_by_year_mv"
@@ -310,3 +382,13 @@ class WorkCountsByYear(db.Model):
     def __repr__(self):
         return "<WorkCountsByYear ( {} ) {} >".format(self.paper_id, self.year, self.n)
 
+
+class Work2YearCitationCount(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "paper_citations_2yr_mv"
+
+    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<Work2YearCitationCount ( {} ) {} >".format(self.paper_id, self.count)

@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import cache
 from time import sleep
 from time import time
+from typing import List
 
 import requests
 from cached_property import cached_property
@@ -59,7 +60,7 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_key = os.getenv("SAGEMAKER_API_KEY")
     headers = {"X-API-Key": api_key}
     # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/" #for version without abstracts
-    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for version with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
         logger.error(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
@@ -1183,17 +1184,10 @@ class Work(db.Model):
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
-                    'is_oa': False,
-                    'version': None,
-                    'license': None
+                    'is_oa': r.is_oa,
+                    'version': r.open_version,
+                    'license': r.open_license
                 }
-
-                doi_matching_locations = [loc for loc in self.locations if loc.url_for_landing_page == doi_url]
-
-                if doi_matching_locations:
-                    doi_location['is_oa'] = doi_matching_locations[0].is_oa
-                    doi_location['version'] = doi_matching_locations[0].version
-                    doi_location['license'] = doi_matching_locations[0].license
 
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
@@ -1222,17 +1216,10 @@ class Work(db.Model):
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
-                    # OA / version / license not carried on Recordthresher record
-                    'is_oa': False,
-                    'version': None,
-                    'license': None
+                    'is_oa': r.is_oa,
+                    'version': r.open_version,
+                    'license': r.open_license
                 }
-
-                repo_matching_locations = [loc for loc in self.locations if loc.endpoint_id == r.repository_id]
-                if repo_matching_locations:
-                    pmh_location['is_oa'] = repo_matching_locations[0].is_oa
-                    pmh_location['version'] = repo_matching_locations[0].version
-                    pmh_location['license'] = repo_matching_locations[0].license
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1278,26 +1265,23 @@ class Work(db.Model):
 
                 locations.append(other_location_dict)
 
-        # pubmed if we can't find anything else
-        # satisfies the rules that we have everything in pubmed and every work has at least one location
-        # even if pubmed is the only reference to the work
-        if not locations:
-            for r in self.records_sorted:
-                if r.record_type == 'pubmed_record' and r.pmid:
-                    pubmed_location = {
-                        'source': pubmed_json(),
-                        'pdf_url': None,
-                        'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
-                        'is_oa': False,
-                        'version': None,
-                        'license': None
-                    }
-                    locations.append(pubmed_location)
-                    break
+        # pubmed
+        for r in self.records_sorted:
+            if r.record_type == 'pubmed_record' and r.pmid:
+                pubmed_location = {
+                    'source': pubmed_json(),
+                    'pdf_url': None,
+                    'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
+                    'is_oa': False,
+                    'version': None,
+                    'license': None
+                }
+                locations.append(pubmed_location)
+                break
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
-        if locations and locations[0]['source'] is None and self.safety_journal:
-            locations[0]['source'] = self.safety_journal.to_dict(return_level='minimum')
+        if locations and locations[0]['source'] is None and self.safety_journals:
+            locations[0]['source'] = self.safety_journals[0].to_dict(return_level='minimum')
 
         return locations
 
@@ -1311,6 +1295,18 @@ class Work(db.Model):
         oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
 
         truncated_title = truncate_on_word_break(self.work_title, 500)
+        
+        corresponding_author_ids: List[str] = []
+        corresponding_institution_ids: List[str] = []
+        for affil in self.affiliations_list:
+            if affil.get('is_corresponding', False) is True:
+                author = affil.get('author', None)
+                if author:
+                    corresponding_author_ids.append(author["id"])
+                institutions = affil.get('institutions', None)
+                if institutions:
+                    for institution in institutions:
+                        corresponding_institution_ids.append(institution["id"])
 
         response = {
             "id": self.openalex_id,
@@ -1338,6 +1334,8 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "corresponding_author_ids": corresponding_author_ids,
+            "corresponding_institution_ids": corresponding_institution_ids,
         }
         response["host_venue"].update(self.host_venue_details_dict)
 
@@ -1365,6 +1363,10 @@ class Work(db.Model):
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
+                "summary_stats": {
+                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "2yr_cited_by_count": int(self.citation_count_2year.count or 0) if self.citation_count_2year else 0
+                },
                 "biblio": {
                     "volume": self.volume,
                     "issue": self.issue,
