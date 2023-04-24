@@ -12,6 +12,7 @@ from typing import List
 import requests
 from cached_property import cached_property
 from sqlalchemy import orm, text
+from sqlalchemy.orm import selectinload
 
 import models
 from app import MAX_MAG_ID
@@ -84,7 +85,12 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
 
 @cache
 def pubmed_json():
-    return models.source.Source.query.get(4306525036).to_dict(return_level='minimum')
+    return models.source.Source.query.options(
+        selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+        selectinload(models.Source.publisher_entity).raiseload('*'),
+        selectinload(models.Source.institution).raiseload('*'),
+        orm.Load(models.Source).raiseload('*')
+    ).get(4306525036).to_dict(return_level='minimum')
 
 
 class Work(db.Model):
