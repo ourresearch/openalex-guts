@@ -83,7 +83,7 @@ class Source(db.Model):
     def store(self):
         VERSION_STRING = "new: updated if changed"
         self.insert_dicts = []
-        my_dict = self.to_dict()
+        my_dict = {} if self.merge_into_id else self.to_dict()
 
         if self.stored and (self.stored.merge_into_id == self.merge_into_id):
             if self.merge_into_id is not None and self.stored.json_save is None:
