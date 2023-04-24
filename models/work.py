@@ -1301,12 +1301,12 @@ class Work(db.Model):
         for affil in self.affiliations_list:
             if affil.get('is_corresponding', False) is True:
                 author = affil.get('author', None)
-                if author:
-                    corresponding_author_ids.append(author["id"])
-                institutions = affil.get('institutions', None)
-                if institutions:
-                    for institution in institutions:
-                        corresponding_institution_ids.append(institution["id"])
+                if author and author.get('id'):
+                    corresponding_author_ids.append(author.get("id"))
+                institutions = affil.get('institutions', []) or []
+                for institution in institutions:
+                    if institution.get("id"):
+                        corresponding_institution_ids.append(institution.get("id"))
 
         response = {
             "id": self.openalex_id,
