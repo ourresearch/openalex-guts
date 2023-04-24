@@ -225,7 +225,7 @@ class Source(db.Model):
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
     def to_dict(self, return_level="full", check_merge=True):
-        if check_merge and self.merged_into_source:
+        if check_merge and self.merge_into_id and self.merged_into_source:
             return self.merged_into_source.to_dict(return_level=return_level, check_merge=False)
 
         response = {
