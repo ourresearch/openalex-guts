@@ -201,29 +201,29 @@ class Institution(db.Model):
     # and these fields are just normal properties, defined above
     # todo: document the wikidata pull better, or include code for api calls in this repo
 
-    # @cached_property
-    # def image_url(self):
-    #     if not self.wikipedia_data:
-    #         return None
-    #     data = self.wikipedia_data
-    #     image_url = None
-    #     try:
-    #         image_url = data["query"]["pages"][0]["original"]["source"]
-    #     except KeyError:
-    #         pass
-    #     return image_url
+    def get_image_url(self):
+        # fallback in case the field isn't populated in the db (see to_dict)
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        image_url = None
+        try:
+            image_url = data["query"]["pages"][0]["original"]["source"]
+        except KeyError:
+            pass
+        return image_url
 
-    # @cached_property
-    # def image_thumbnail_url(self):
-    #     if not self.wikipedia_data:
-    #         return None
-    #     data = self.wikipedia_data
-    #     try:
-    #         page_id = data["query"]["pages"][0]["thumbnail"]["source"]
-    #     except KeyError:
-    #         return None
+    def get_image_thumbnail_url(self):
+        # fallback in case the field isn't populated in the db (see to_dict)
+        if not self.wikipedia_data:
+            return None
+        data = self.wikipedia_data
+        try:
+            page_id = data["query"]["pages"][0]["thumbnail"]["source"]
+        except KeyError:
+            return None
 
-    #     return page_id
+        return page_id
 
     @cached_property
     def wikipedia_title(self):
@@ -527,8 +527,8 @@ class Institution(db.Model):
         if return_level == "full":
             response.update({
                 "homepage_url": self.official_page,
-                "image_url": self.image_url,
-                "image_thumbnail_url": self.image_thumbnail_url,
+                "image_url": self.image_url or self.get_image_url(),
+                "image_thumbnail_url": self.image_thumbnail_url or self.get_image_thumbnail_url(),
                 "display_name_acronyms": self.acronyms,
                 "display_name_alternatives": self.aliases,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
