@@ -160,10 +160,10 @@ def get_objects(entity_type, object_ids):
     if entity_type == "work":
         objects = db.session.query(models.Work).options(
             selectinload(models.Work.stored),
-            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.merged_into_source).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).lazyload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).lazyload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).lazyload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).lazyload(models.Source.merged_into_source).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
