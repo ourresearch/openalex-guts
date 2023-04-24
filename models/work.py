@@ -1265,22 +1265,19 @@ class Work(db.Model):
 
                 locations.append(other_location_dict)
 
-        # pubmed if we can't find anything else
-        # satisfies the rules that we have everything in pubmed and every work has at least one location
-        # even if pubmed is the only reference to the work
-        if not locations:
-            for r in self.records_sorted:
-                if r.record_type == 'pubmed_record' and r.pmid:
-                    pubmed_location = {
-                        'source': pubmed_json(),
-                        'pdf_url': None,
-                        'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
-                        'is_oa': False,
-                        'version': None,
-                        'license': None
-                    }
-                    locations.append(pubmed_location)
-                    break
+        # pubmed
+        for r in self.records_sorted:
+            if r.record_type == 'pubmed_record' and r.pmid:
+                pubmed_location = {
+                    'source': pubmed_json(),
+                    'pdf_url': None,
+                    'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
+                    'is_oa': False,
+                    'version': None,
+                    'license': None
+                }
+                locations.append(pubmed_location)
+                break
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
         if locations and locations[0]['source'] is None and self.safety_journals:
