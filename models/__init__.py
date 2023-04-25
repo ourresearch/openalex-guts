@@ -123,7 +123,7 @@ Record.journals = db.relationship(
     viewonly=True,
     primaryjoin="""
 or_(
-    remote(Source.issns).like('%' + foreign(Record.journal_issn_l) + '%'),
+    func.string_to_array(foreign(Record.journal_issn_l), '').bool_op("<@")(remote(Source.issns_text_array)),
     and_(
         foreign(Record.journal_issn_l) == None,
         foreign(Record.repository_id) == remote(Source.repository_id)
