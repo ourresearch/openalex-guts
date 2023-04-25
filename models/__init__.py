@@ -110,6 +110,11 @@ Publisher.self_and_ancestors = db.relationship("PublisherSelfAndAncestors", usel
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
+Institution.repositories = db.relationship(
+    "Source", lazy='selectin', viewonly=True, uselist=True,
+    primaryjoin="foreign(Institution.affiliation_id) == remote(Source.institution_id)"
+)
+
 Work.safety_journals = db.relationship(
     "Source", lazy="selectin", uselist=True, viewonly=True,
     primaryjoin="remote(Source.display_name) == foreign(Work.original_venue)"
