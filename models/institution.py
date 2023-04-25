@@ -553,6 +553,7 @@ class Institution(db.Model):
                     "wikidata": self.wikidata_id,
                     "mag": self.affiliation_id if self.affiliation_id < MAX_MAG_ID else None
                 },
+                "repositories": [s.to_dict(return_level="minimum") for s in self.repositories],
                 "geo": {
                     "city": self.city,
                     "geonames_city_id": self.geonames_city_id,
