@@ -205,10 +205,21 @@ class Source(db.Model):
 
     @property
     def host_organization(self):
-        if self.type == "journal" and self.publisher_entity and self.publisher_entity.openalex_id:
-            return self.publisher_entity.openalex_id
-        elif self.type == "repository" and self.institution and self.institution.openalex_id:
-            return self.institution.openalex_id
+        if self.type == "journal" and self.publisher_entity:
+            return self.publisher_entity
+        elif self.type == "repository" and self.institution:
+            return self.institution
+        else:
+            return None
+
+    @property
+    def host_organization_name(self):
+        return self.host_organization.display_name if self.host_organization else None
+
+    @property
+    def host_organization_id(self):
+        if self.host_organization and self.host_organization.openalex_id:
+            return self.host_organization.openalex_id
         else:
             return None
 
@@ -236,8 +247,8 @@ class Source(db.Model):
             "issn": json.loads(self.issns) if self.issns else None,
             "display_name": truncate_on_word_break(self.display_name, 500),
             "publisher": self.publisher_display_name,
-            "host_organization": self.host_organization,
-            "host_organization_name": self.publisher_display_name,
+            "host_organization": self.host_organization_id,
+            "host_organization_name": self.host_organization_name,
             "host_organization_lineage": self.host_organization_lineage(),
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
