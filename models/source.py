@@ -4,6 +4,7 @@ import json
 from cached_property import cached_property
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import ARRAY
 
 from app import MAX_MAG_ID
 from app import db
@@ -34,6 +35,7 @@ class Source(db.Model):
     display_name = db.Column(db.Text)
     issn = db.Column(db.Text)
     issns = db.Column(db.Text)
+    issns_text_array = db.Column(ARRAY(db.Text))
     is_oa = db.Column(db.Boolean)
     is_in_doaj = db.Column(db.Boolean)
     publisher = db.Column(db.Text)
