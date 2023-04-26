@@ -338,7 +338,7 @@ class Institution(db.Model):
         json_save = None
         if not self.merge_into_id:
             json_save = jsonify_fast_no_sort_raw(my_dict)
-        if json_save and len(json_save) > 65000:
+        if json_save and len(json_save) > 131027:
             logger.error("Error: json_save too long for affiliation_id {}, skipping".format(self.openalex_id))
             json_save = None
         self.insert_dicts = [{"JsonInstitutions": {"id": self.affiliation_id,
