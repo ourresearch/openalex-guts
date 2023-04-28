@@ -23,7 +23,7 @@ def get_existing_dois():
 
 def fetch_openapc_csv_data():
     url = "https://raw.githubusercontent.com/OpenAPC/openapc-de/master/data/apc_de.csv"
-    response = requests.get(url, stream=True)
+    response = requests.get(url)
     lines = codecs.iterdecode(response.iter_lines(), 'utf-8')
     return csv.DictReader(lines, delimiter=',', quotechar='"')
 
