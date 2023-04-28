@@ -195,6 +195,21 @@ class Institution(db.Model):
             response = [obj.to_dict("minimum") for obj in objs]
         return response
 
+    @cached_property
+    def roles(self):
+        q = """
+        select id_1, id_2
+        from mid.entity_link
+        where id_1 = :short_id
+        or id_2 = :short_id
+        """
+        rows = db.session.execute(text(q), {"short_id": self.openalex_id_short}).fetchall()
+        response = set()
+        for row in rows:
+            response.add(row[0])
+            response.add(row[1])
+        return [f"https://openalex.org/{item}" for item in response]
+
     # FOR image_url AND image_thumbnail_url:
     # We used to get these live from the wikipedia data
     # but instead we are now just using bulk data loaded in from a Wikidata pull
@@ -553,6 +568,7 @@ class Institution(db.Model):
                     "wikidata": self.wikidata_id,
                     "mag": self.affiliation_id if self.affiliation_id < MAX_MAG_ID else None
                 },
+                "roles": self.roles,
                 "repositories": [s.to_dict(return_level="minimum") for s in self.repositories if s.merge_into_id is None],
                 "geo": {
                     "city": self.city,
