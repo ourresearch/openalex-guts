@@ -2,6 +2,7 @@ import datetime
 import json
 
 from cached_property import cached_property
+from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app import db
@@ -67,6 +68,21 @@ class Publisher(db.Model):
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
+    @cached_property
+    def roles(self):
+        q = """
+        select id_1, id_2
+        from mid.entity_link
+        where id_1 = :short_id
+        or id_2 = :short_id
+        """
+        rows = db.session.execute(text(q), {"short_id": self.openalex_id_short}).fetchall()
+        response = set()
+        for row in rows:
+            response.add(row[0])
+            response.add(row[1])
+        return [f"https://openalex.org/{item}" for item in response]
+
     def lineage(self):
         return [f"https://openalex.org/P{p.ancestor_id}" for p in self.self_and_ancestors]
 
@@ -92,6 +108,7 @@ class Publisher(db.Model):
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
             },
+            "roles": self.roles,
             "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
             "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
             "summary_stats": {
