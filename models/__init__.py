@@ -22,6 +22,7 @@ from models.institution import Institution
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.location import Location
 from models.mesh import Mesh
+from models.work_openapc import WorkOpenAPC
 from models.orcid import Orcid
 from models.publisher import Publisher
 from models.record import Record
@@ -50,6 +51,7 @@ Work.extra_ids = db.relationship("WorkExtraIds", lazy='selectin', backref="work"
 Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
 WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
+Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
