@@ -83,6 +83,7 @@ class Funder(db.Model):
         """
         rows = db.session.execute(text(q), {"short_id": self.openalex_id_short}).fetchall()
         response = set()
+        response.add(self.openalex_id_short)
         for row in rows:
             response.add(row[0])
             response.add(row[1])
