@@ -1049,6 +1049,37 @@ class Work(db.Model):
         # response = [obj.to_dict("minimum") for obj in objs]
         # return response
 
+    @property
+    def apc_paid(self):
+        doaj_apcs = self.journal.apc_prices if self.journal and self.journal.apc_prices else []
+        work_apc_paid = []
+
+        if self.openapc:
+            # prefer openapc if it exists
+            work_apc_paid.append(
+                {
+                    "price": self.openapc.apc_in_euro,
+                    "currency": "EUR",
+                    "provenance": "openapc",
+                }
+            )
+        elif doaj_apcs:
+            # fall back to doaj
+            for apc in doaj_apcs:
+                work_apc_paid.append(
+                    {
+                        "price": apc.get("price", None),
+                        "currency": apc.get("currency", None),
+                        "provenance": "doaj",
+                    }
+                )
+        return work_apc_paid
+
+    @property
+    def apc_paid_usd(self):
+        openapc_paid_in_usd = self.openapc.apc_in_usd if self.openapc else None
+        doaj_apc_in_usd = self.journal.apc_usd if self.journal else None
+        return openapc_paid_in_usd or doaj_apc_in_usd
 
     def store(self):
         self.insert_dicts = []
@@ -1399,6 +1430,8 @@ class Work(db.Model):
                 "locations": dict_locations,
                 "referenced_works": self.references_list,
                 "grants": grant_dicts,
+                "apc_paid": self.apc_paid,
+                "apc_paid_usd": self.apc_paid_usd,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
                 })
 

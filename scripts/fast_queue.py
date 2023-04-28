@@ -15,8 +15,8 @@ from util import elapsed
 
 # test this script locally
 # 1. Save environment variables to .env file with: heroku config -s > .env
-# 2. Run the script: heroku local:run python -m scripts.fast_queue --entity=publisher --method=store --chunk=1
-# 3. Check to see that your ids are saving properly in json_entity table (e.g. json_publishers)
+# 2. Run the script to save an example ID: heroku local:run python -m scripts.fast_queue --entity=work --method=store --id=2008120268
+# 3. Check to see that your id saved properly in the json_entity table (e.g. json_works)
 
 
 def run(**kwargs):
@@ -189,6 +189,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
+            selectinload(models.Work.openapc),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
