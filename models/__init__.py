@@ -316,7 +316,7 @@ def hydrate_role(openalex_id_short):
     works_count = int(entity.counts.paper_count or 0) if entity.counts else 0,
     return {
         'role': role,
-        'id': entity,
+        'id': entity.openalex_id,
         'works_count': works_count,
     }
 
