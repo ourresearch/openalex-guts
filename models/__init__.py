@@ -311,7 +311,8 @@ def hydrate_role(openalex_id_short):
         cls = Funder
         role = 'funder'
     entity_id = int(openalex_id_short[1:])
-    entity = cls.query.get(entity_id)
+    entity = cls.query.options(selectinload(cls.counts).raiseload('*'), 
+                               orm.Load(cls).raiseload('*')).get(entity_id)
     works_count = int(entity.counts.paper_count or 0) if entity.counts else 0,
     return {
         'role': role,
