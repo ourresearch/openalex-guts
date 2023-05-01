@@ -93,6 +93,13 @@ class Publisher(db.Model):
             else:
                 from models import hydrate_role
                 response.append(hydrate_role(entity_id))
+
+        # there can be duplicate funders
+        # quick fix for now: only keep the funder with the highest works_count
+        funders = [e for e in response if e['role'] == 'funder']
+        if funders and len(funders) > 1:
+            id_to_keep = max(funders, key=lambda x: x['works_count'])['id']
+            response = [e for e in response if e['id'] == id_to_keep or e['role'] != 'funder']
         return response
 
     def lineage(self):

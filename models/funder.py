@@ -97,6 +97,11 @@ class Funder(db.Model):
                 })
             else:
                 from models import hydrate_role
+                # since there can be multiple funders linked in the link table, we'll throw away any other funders
+                # to keep the constraint that there only be one funder in the roles list.
+                # there may be a better long-term solution for this
+                if entity_id.startswith('F'):
+                    continue
                 response.append(hydrate_role(entity_id))
         return response
 
