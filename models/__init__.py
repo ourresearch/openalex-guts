@@ -297,4 +297,26 @@ def openalex_id_from_pmid(pmid):
     paper_id = db.session.query(WorkExtraIds.paper_id).filter(WorkExtraIds.attribute_type==pmid_attribute_type, WorkExtraIds.attribute_value==pmid).limit(1).scalar()
     return f"W{paper_id}" if paper_id else None
 
+def hydrate_role(openalex_id_short):
+    # for entities that are organizations that can have multiple roles
+    # this takes a short ID of one of the roles (e.g., https://openalex.org/I32971472)
+    # and adds some known info about the entity
+    if openalex_id_short.startswith('I'):
+        cls = Institution
+        role = 'institution'
+    elif openalex_id_short.startswith('P'):
+        cls = Publisher
+        role = 'publisher'
+    elif openalex_id_short.startswith('F'):
+        cls = Funder
+        role = 'funder'
+    entity_id = int(openalex_id_short[1:])
+    entity = cls.query.options(selectinload(cls.counts).raiseload('*'), 
+                               orm.Load(cls).raiseload('*')).get(entity_id)
+    works_count = int(entity.counts.paper_count or 0) if entity.counts else 0,
+    return {
+        'role': role,
+        'id': entity,
+        'works_count': works_count,
+    }
 
