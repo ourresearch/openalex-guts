@@ -1316,6 +1316,19 @@ class Work(db.Model):
                 locations.append(pubmed_location)
                 break
 
+        # last chance, make a location if there is a DOI but no locations yet
+        if self.doi_url and not locations:
+            locations.append(
+                {
+                    'source': None,
+                    'pdf_url': None,
+                    'landing_page_url': self.doi_url,
+                    'is_oa': False,
+                    'version': None,
+                    'license': None
+                }
+            )
+
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
         if locations and locations[0]['source'] is None and self.safety_journals:
             locations[0]['source'] = self.safety_journals[0].to_dict(return_level='minimum')
