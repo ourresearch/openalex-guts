@@ -220,7 +220,7 @@ class Institution(db.Model):
                 })
             else:
                 from models import hydrate_role
-                response.append(hydrate_role)
+                response.append(hydrate_role(entity_id))
         return response
 
     # FOR image_url AND image_thumbnail_url:

@@ -86,13 +86,13 @@ class Publisher(db.Model):
         for entity_id in entity_ids:
             if entity_id == self.openalex_id_short:
                 response.append({
-                    'role': 'institution',
+                    'role': 'publisher',
                     'id': self.openalex_id,
                     'works_count': int(self.counts.paper_count or 0) if self.counts else 0,
                 })
             else:
                 from models import hydrate_role
-                response.append(hydrate_role)
+                response.append(hydrate_role(entity_id))
         return response
 
     def lineage(self):
