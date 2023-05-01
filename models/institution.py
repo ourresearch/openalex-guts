@@ -41,6 +41,7 @@ def follow_merged_into_id(lookup_institution_id):
     merged_id = merged_into_institutions_dict.get(lookup_institution_id, lookup_institution_id)
     return merged_id
 
+
 class Institution(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "institution"
@@ -204,12 +205,23 @@ class Institution(db.Model):
         or id_2 = :short_id
         """
         rows = db.session.execute(text(q), {"short_id": self.openalex_id_short}).fetchall()
-        response = set()
-        response.add(self.openalex_id_short)
+        entity_ids = set()
+        entity_ids.add(self.openalex_id_short)
         for row in rows:
-            response.add(row[0])
-            response.add(row[1])
-        return [f"https://openalex.org/{item}" for item in response]
+            entity_ids.add(row[0])
+            entity_ids.add(row[1])
+        response = []
+        for entity_id in entity_ids:
+            if entity_id == self.openalex_id_short:
+                response.append({
+                    'role': 'institution',
+                    'id': self.openalex_id,
+                    'works_count': int(self.counts.paper_count or 0) if self.counts else 0,
+                })
+            else:
+                from models import hydrate_role
+                response.append(hydrate_role)
+        return response
 
     # FOR image_url AND image_thumbnail_url:
     # We used to get these live from the wikipedia data
