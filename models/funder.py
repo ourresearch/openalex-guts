@@ -102,7 +102,9 @@ class Funder(db.Model):
                 # there may be a better long-term solution for this
                 if entity_id.startswith('F'):
                     continue
-                response.append(hydrate_role(entity_id))
+                e = hydrate_role(entity_id)
+                if e is not None:
+                    response.append(hydrate_role(entity_id))
         return response
 
     def oa_percent(self):
