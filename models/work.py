@@ -30,7 +30,7 @@ from util import jsonify_fast_no_sort_raw
 from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
-from langdetect import detect, DetectorFactory
+from langdetect import detect, DetectorFactory, LangDetectException
 
 DELETED_WORK_ID = 4285719527
 
@@ -1076,18 +1076,22 @@ class Work(db.Model):
     @cached_property
     def language(self):
         DetectorFactory.seed = 0
-        if self.abstract and self.abstract.indexed_abstract:
-            json_abstract = json.loads(self.abstract.indexed_abstract)
-            abstract_words = ' '.join(json_abstract.get('InvertedIndex', {}).keys())
-            if abstract_words:
-                abstract_language = detect(abstract_words)
-                if abstract_language:
-                    return abstract_language
 
-        if self.original_title:
-            title_language = detect(self.original_title)
-            if title_language:
-                return title_language
+        try:
+            if self.abstract and self.abstract.indexed_abstract:
+                json_abstract = json.loads(self.abstract.indexed_abstract)
+                abstract_words = ' '.join(json_abstract.get('InvertedIndex', {}).keys())
+                if abstract_words:
+                    abstract_language = detect(abstract_words)
+                    if abstract_language:
+                        return abstract_language
+
+            if self.original_title:
+                title_language = detect(self.original_title)
+                if title_language:
+                    return title_language
+        except LangDetectException:
+            pass
 
         return None
 
