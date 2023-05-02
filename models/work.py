@@ -93,6 +93,44 @@ def pubmed_json():
     ).get(4306525036).to_dict(return_level='minimum')
 
 
+@cache
+def arxiv_json():
+    return models.source.Source.query.options(
+        selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+        selectinload(models.Source.publisher_entity).raiseload('*'),
+        selectinload(models.Source.institution).raiseload('*'),
+        orm.Load(models.Source).raiseload('*')
+    ).get(4306400194).to_dict(return_level='minimum')
+
+
+@cache
+def location_url_overrides():
+    return {
+        r'^http(s)?://arxiv\.org/': arxiv_json()
+    }
+
+
+def override_location_sources(locations):
+    if not locations:
+        return []
+
+    for loc in locations:
+        for url_pattern, source_json in location_url_overrides().items():
+            pdf_url = loc.get('pdf_url') or ''
+            landing_page_url = loc.get('landing_page_url') or ''
+
+            if re.search(url_pattern, pdf_url) or re.search(url_pattern, landing_page_url):
+                loc['source'] = source_json
+
+                if not re.search(url_pattern, pdf_url):
+                    loc['pdf_url'] = None
+
+                if not re.search(url_pattern, landing_page_url):
+                    loc['landing_page_url'] = None
+
+    return locations
+
+
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
@@ -1338,7 +1376,7 @@ class Work(db.Model):
     def to_dict(self, return_level="full"):
         from models import Source
 
-        dict_locations = self.dict_locations()
+        dict_locations = override_location_sources(self.dict_locations())
         for dict_location in dict_locations:
             dict_location['is_oa'] = dict_location['is_oa'] or False
 
