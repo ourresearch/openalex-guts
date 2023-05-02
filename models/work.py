@@ -30,6 +30,7 @@ from util import jsonify_fast_no_sort_raw
 from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
+from langdetect import detect, DetectorFactory
 
 DELETED_WORK_ID = 4285719527
 
@@ -1073,6 +1074,23 @@ class Work(db.Model):
         return 'journal-article'
 
     @cached_property
+    def language(self):
+        DetectorFactory.seed = 0
+        if self.abstract and self.abstract.indexed_abstract:
+            json_abstract = json.loads(self.abstract.indexed_abstract)
+            abstract_words = ' '.join(json_abstract.get('InvertedIndex', {}).keys())
+            abstract_language = detect(abstract_words)
+            if abstract_language:
+                return abstract_language
+
+        if self.original_title:
+            title_language = detect(self.original_title)
+            if title_language:
+                return title_language
+
+        return None
+
+    @cached_property
     def references_list(self):
 
         reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
@@ -1403,6 +1421,7 @@ class Work(db.Model):
             "title": truncated_title,
             "publication_year": self.year,
             "publication_date": self.publication_date,
+            "language": self.language,
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,

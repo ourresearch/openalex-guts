@@ -22,6 +22,7 @@ humanfriendly==9.1
 idna==2.7
 itsdangerous==2.0.1
 Jinja2==3.0.1
+langdetect==1.0.9
 MarkupSafe==2.0.1
 MonthDelta==0.9.1
 mock==4.0.3
