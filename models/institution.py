@@ -220,7 +220,9 @@ class Institution(db.Model):
                 })
             else:
                 from models import hydrate_role
-                response.append(hydrate_role(entity_id))
+                e = hydrate_role(entity_id)
+                if e is not None:
+                    response.append(hydrate_role(entity_id))
 
         # there can be duplicate funders
         # quick fix for now: only keep the funder with the highest works_count
