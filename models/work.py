@@ -1079,9 +1079,10 @@ class Work(db.Model):
         if self.abstract and self.abstract.indexed_abstract:
             json_abstract = json.loads(self.abstract.indexed_abstract)
             abstract_words = ' '.join(json_abstract.get('InvertedIndex', {}).keys())
-            abstract_language = detect(abstract_words)
-            if abstract_language:
-                return abstract_language
+            if abstract_words:
+                abstract_language = detect(abstract_words)
+                if abstract_language:
+                    return abstract_language
 
         if self.original_title:
             title_language = detect(self.original_title)
