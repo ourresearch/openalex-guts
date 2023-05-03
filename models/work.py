@@ -11,6 +11,7 @@ from typing import List
 
 import requests
 from cached_property import cached_property
+from langdetect import detect, DetectorFactory, LangDetectException
 from sqlalchemy import orm, text
 from sqlalchemy.orm import selectinload
 
@@ -30,7 +31,6 @@ from util import jsonify_fast_no_sort_raw
 from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
-from langdetect import detect, DetectorFactory, LangDetectException
 
 DELETED_WORK_ID = 4285719527
 
