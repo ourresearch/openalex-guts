@@ -113,42 +113,45 @@ class Publisher(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
-    def to_dict(self):
+    def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "display_name": self.display_name,
-            "alternate_titles": self.alternate_titles or [],
-            "parent_publisher": self.parent and self.parent.openalex_id,
-            "lineage": self.lineage(),
-            "hierarchy_level": self.hierarchy_level,
-            "country_codes": self.country_codes or [],
-            "image_url": self.image_url,
-            "image_thumbnail_url": self.image_thumbnail_url,
             "ids": {
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
-            },
-            "roles": self.roles,
-            "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-            "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-            "summary_stats": {
-                "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
-                "h_index": (self.h_index and self.h_index.h_index) or 0,
-                "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
-                "oa_percent": self.oa_percent(),
+            }
+        }
+        if return_level == "full":
+            response.update({
+                "alternate_titles": self.alternate_titles or [],
+                "parent_publisher": self.parent and self.parent.to_dict(return_level="minimal"),
+                "lineage": self.lineage(),
+                "hierarchy_level": self.hierarchy_level,
+                "country_codes": self.country_codes or [],
+                "image_url": self.image_url,
+                "image_thumbnail_url": self.image_thumbnail_url,
+                "roles": self.roles,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
-                "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
-                "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
-                "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
-            },
-            "counts_by_year": self.display_counts_by_year,
-            "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
-            "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
-            "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
-        }
+                "summary_stats": {
+                    "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
+                    "h_index": (self.h_index and self.h_index.h_index) or 0,
+                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                    "oa_percent": self.oa_percent(),
+                    "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
+                    "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
+                    "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
+                    "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
+                },
+                "counts_by_year": self.display_counts_by_year,
+                "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
+                "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
+                "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
+            })
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
