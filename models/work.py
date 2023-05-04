@@ -242,7 +242,10 @@ class Work(db.Model):
             for new_institution_id_list in new_institution_id_lists:
                 new_institution_ids.update([i for i in new_institution_id_list if i])
 
-            if old_institution_ids == new_institution_ids:
+            if (
+                old_institution_ids == new_institution_ids
+                and is_corresponding_author == author_affiliations[0].is_corresponding_author
+            ):
                 self.affiliations.extend(author_affiliations)
                 continue
 
