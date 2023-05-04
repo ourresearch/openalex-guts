@@ -526,7 +526,7 @@ class Institution(db.Model):
                     logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                     sleep(1)
                     number_tries += 1
-                    if number_tries > 30:
+                    if number_tries > 15:
                         keep_calling = False
 
                 else:
