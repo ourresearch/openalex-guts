@@ -199,6 +199,12 @@ class Work(db.Model):
         if not self.affiliations:
             return
 
+        record_author_dict_list = []
+        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+
+        if records_with_affiliations:
+            record_author_dict_list = json.loads(records_with_affiliations[0].authors)
+
         all_affiliations = sorted(
             self.affiliations,
             key=lambda a: (a.author_sequence_number, a.affiliation_sequence_number)
@@ -208,16 +214,26 @@ class Work(db.Model):
 
         author_sequence_nos = sorted(set([a.author_sequence_number for a in all_affiliations]))
 
-        for author_sequence_no in author_sequence_nos:
+        update_original_affiliations = False
+        if len(record_author_dict_list) == len(author_sequence_nos):
+            update_original_affiliations = True
+
+        for author_idx, author_sequence_no in enumerate(author_sequence_nos):
             author_affiliations = sorted(
                 [a for a in all_affiliations if a.author_sequence_number == author_sequence_no],
                 key=lambda a: a.affiliation_sequence_number
             )
-            original_affiliations = [a.original_affiliation for a in author_affiliations if a.original_affiliation]
 
-            if not original_affiliations:
-                self.affiliations.extend(author_affiliations)
-                continue
+            if update_original_affiliations:
+                original_affiliations = [
+                    aff.get('name')
+                    for aff in record_author_dict_list[author_idx].get('affiliation', [])
+                    if aff.get('name')
+                ]
+                is_corresponding_author = record_author_dict_list[author_idx].get('is_corresponding', False)
+            else:
+                original_affiliations = [a.original_affiliation for a in author_affiliations if a.original_affiliation]
+                is_corresponding_author = author_affiliations[0].is_corresponding_author
 
             old_institution_ids = set([a.affiliation_id for a in author_affiliations if a.affiliation_id])
 
@@ -235,30 +251,32 @@ class Work(db.Model):
             affiliation_sequence_no = 1
             seen_ids = set()
 
-            for author_affiliation in author_affiliations:
-                affiliation_ids = id_lookup.get(author_affiliation.original_affiliation, [None])
+            for original_affiliation in original_affiliations or [None]:
+                affiliation_ids = id_lookup.get(original_affiliation, [None])
                 for affiliation_id in affiliation_ids:
                     if affiliation_id and affiliation_id in seen_ids:
+                        logger.info(f'seen id {affiliation_id}, continue')
                         continue
 
                     self.affiliations.append(
                         models.Affiliation(
-                            author_id=author_affiliation.author_id,
+                            author_id=author_affiliations[0].author_id,
                             affiliation_id=affiliation_id,
-                            author_sequence_number=author_affiliation.author_sequence_number,
+                            author_sequence_number=author_affiliations[0].author_sequence_number,
                             affiliation_sequence_number=affiliation_sequence_no,
-                            original_author=author_affiliation.original_author,
-                            original_affiliation=author_affiliation.original_affiliation,
-                            original_orcid=author_affiliation.original_orcid,
-                            match_author=author_affiliation.match_author,
-                            match_institution_name=author_affiliation.match_institution_name,
-                            is_corresponding_author=author_affiliation.is_corresponding_author,
+                            original_author=author_affiliations[0].original_author,
+                            original_affiliation=original_affiliation,
+                            original_orcid=author_affiliations[0].original_orcid,
+                            match_author=author_affiliations[0].match_author,
+                            match_institution_name=models.Institution.matching_institution_name(original_affiliation),
+                            is_corresponding_author=is_corresponding_author,
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
                     )
 
                     if affiliation_id:
                         seen_ids.add(affiliation_id)
+
                     affiliation_sequence_no += 1
 
     def concept_api_input_data(self):
@@ -871,7 +889,7 @@ class Work(db.Model):
         # go through them with oldest first, and least reliable record type to most reliable, overwriting
         if not self.records_sorted:
             return
-        records = self.records_sorted
+        records = [r for r in self.records_sorted]
         records.reverse()
 
         logger.info(f"my records: {records}")
