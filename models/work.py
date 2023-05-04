@@ -736,7 +736,7 @@ class Work(db.Model):
                     if (
                         not my_author.last_known_affiliation_id
                         or not author_last_known_affiliation_date
-                        or self.publication_date >= author_last_known_affiliation_date
+                        or (self.publication_date and self.publication_date >= author_last_known_affiliation_date)
                     ):
                         my_author.last_known_affiliation_id = [m for m in my_institutions if m][0].affiliation_id
                         my_author.last_known_affiliation_id_date = self.publication_date
