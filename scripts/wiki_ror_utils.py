@@ -95,9 +95,12 @@ def fetch_crossref_response(uri):
 def get_homepage_url_from_wikidata(wikidata_response, wikidata_shortcode):
     wikidata_homepage_url = None
     if wikidata_response:
-        claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
-        if "P856" in claims:
-            wikidata_homepage_url = claims["P856"][0]["mainsnak"]["datavalue"]["value"]
+        try:
+            claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
+            if "P856" in claims:
+                wikidata_homepage_url = claims["P856"][0]["mainsnak"]["datavalue"]["value"]
+        except KeyError:
+            pass
     return wikidata_homepage_url
 
 
@@ -203,15 +206,21 @@ def get_image_url(wikidata_id):
             # try to get the logo first
             claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
             if "P154" in claims:
-                wikidata_image_file = claims["P154"][0]["mainsnak"]["datavalue"][
-                    "value"
-                ]
-                wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
+                try:
+                    wikidata_image_file = claims["P154"][0]["mainsnak"]["datavalue"][
+                        "value"
+                    ]
+                    wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
+                except KeyError:
+                    pass
 
             # if no logo, try to get an image
             elif "P18" in claims:
-                wikidata_image_file = claims["P18"][0]["mainsnak"]["datavalue"]["value"]
-                wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
+                try:
+                    wikidata_image_file = claims["P18"][0]["mainsnak"]["datavalue"]["value"]
+                    wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
+                except KeyError:
+                    pass
     return wikidata_image_url
 
 
