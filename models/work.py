@@ -195,7 +195,7 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
-    def update_institutions(self):
+    def update_institutions(self, affiliation_retry_attempts=30):
         if not self.affiliations:
             return
 
@@ -237,7 +237,9 @@ class Work(db.Model):
 
             old_institution_ids = set([a.affiliation_id for a in author_affiliations if a.affiliation_id])
 
-            new_institution_id_lists = models.Institution.get_institution_ids_from_strings(original_affiliations)
+            new_institution_id_lists = models.Institution.get_institution_ids_from_strings(
+                original_affiliations, retry_attempts=affiliation_retry_attempts
+            )
             new_institution_ids = set()
             for new_institution_id_list in new_institution_id_lists:
                 new_institution_ids.update([i for i in new_institution_id_list if i])
@@ -656,7 +658,7 @@ class Work(db.Model):
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
-    def add_affiliations(self):
+    def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -706,7 +708,9 @@ class Work(db.Model):
                 my_institutions = []
 
                 if raw_affiliation_string:
-                    institution_id_matches = models.Institution.get_institution_ids_from_strings([raw_affiliation_string])
+                    institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                        [raw_affiliation_string], retry_attempts=affiliation_retry_attempts
+                    )
                     for institution_id_match in [m for m in institution_id_matches[0] if m]:
                         my_institution = models.Institution.query.options(
                             orm.Load(models.Institution).raiseload('*')

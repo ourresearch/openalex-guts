@@ -457,7 +457,7 @@ class Institution(db.Model):
         # return None
 
     @classmethod
-    def get_institution_ids_from_strings(cls, institution_names):
+    def get_institution_ids_from_strings(cls, institution_names, retry_attempts=30):
         if not institution_names:
             return []
 
@@ -524,10 +524,11 @@ class Institution(db.Model):
 
                 elif r.status_code == 500:
                     logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
-                    sleep(1)
                     number_tries += 1
-                    if number_tries > 15:
+                    if number_tries > retry_attempts:
                         keep_calling = False
+                    else:
+                        sleep(1)
 
                 else:
                     logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
