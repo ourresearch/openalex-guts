@@ -26,9 +26,11 @@ def find_wikidata_id(display_name):
         response = r.json()
         if len(response["search"]) == 1:
             # check to ensure description is not scientific article
-            description = response["search"][0]["description"]
-            if description and "scientific article" in description.lower():
-                return None
+            search = response.get("search", None)
+            if search and len(search) > 0:
+                description = search[0].get("description", None)
+                if description and "scientific article" in description.lower():
+                    return None
             wikidata_shortcode = response["search"][0]["id"]
             wikidata_id = f"https://www.wikidata.org/entity/{wikidata_shortcode}"
             return wikidata_id
