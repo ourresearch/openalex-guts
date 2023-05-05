@@ -1,7 +1,6 @@
 import re
 import random
 
-import country_converter as coco
 from requests_cache import CachedSession, RedisCache
 from redis import Redis
 
@@ -155,42 +154,42 @@ def get_description(wikidata_id):
     return wikidata_description
 
 
-def get_country_code(wikidata_id, ror_id, crossref_uri=None):
-    wikidata_country_code = None
-    ror_country_code = None
-    crossref_country_code = None
-
-    if wikidata_id:
-        wikidata_shortcode = normalize_wikidata_id(wikidata_id)
-        wikidata_response = fetch_wikidata_response(wikidata_shortcode)
-        if wikidata_response:
-            claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
-            if "P17" in claims:
-                wikidata_country_code = claims["P17"][0]["mainsnak"]["datavalue"][
-                    "value"
-                ]["id"]
-    if ror_id:
-        ror_shortcode = normalize_ror(ror_id)
-        ror_response = fetch_ror_response(ror_shortcode)
-        if ror_response:
-            ror_country_code = ror_response.get("country", {}).get("country_code", None)
-
-    if crossref_uri:
-        crossref_response = fetch_crossref_response(crossref_uri)
-        if crossref_response:
-            three_letter_country_code = (
-                crossref_response.get("address", {})
-                .get("postalAddress", None)
-                .get("addressCountry", {})
-            )
-            if three_letter_country_code:
-                two_letter_country_code = coco.convert(
-                    names=three_letter_country_code, to="ISO2"
-                )
-                if two_letter_country_code:
-                    crossref_country_code = two_letter_country_code
-
-    return crossref_country_code or wikidata_country_code or ror_country_code
+# def get_country_code(wikidata_id, ror_id, crossref_uri=None):
+#     wikidata_country_code = None
+#     ror_country_code = None
+#     crossref_country_code = None
+#
+#     if wikidata_id:
+#         wikidata_shortcode = normalize_wikidata_id(wikidata_id)
+#         wikidata_response = fetch_wikidata_response(wikidata_shortcode)
+#         if wikidata_response:
+#             claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
+#             if "P17" in claims:
+#                 wikidata_country_code = claims["P17"][0]["mainsnak"]["datavalue"][
+#                     "value"
+#                 ]["id"]
+#     if ror_id:
+#         ror_shortcode = normalize_ror(ror_id)
+#         ror_response = fetch_ror_response(ror_shortcode)
+#         if ror_response:
+#             ror_country_code = ror_response.get("country", {}).get("country_code", None)
+#
+#     if crossref_uri:
+#         crossref_response = fetch_crossref_response(crossref_uri)
+#         if crossref_response:
+#             three_letter_country_code = (
+#                 crossref_response.get("address", {})
+#                 .get("postalAddress", None)
+#                 .get("addressCountry", {})
+#             )
+#             if three_letter_country_code:
+#                 two_letter_country_code = coco.convert(
+#                     names=three_letter_country_code, to="ISO2"
+#                 )
+#                 if two_letter_country_code:
+#                     crossref_country_code = two_letter_country_code
+#
+#     return crossref_country_code or wikidata_country_code or ror_country_code
 
 
 def get_image_url(wikidata_id):

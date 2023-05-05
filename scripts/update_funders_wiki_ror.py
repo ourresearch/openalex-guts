@@ -3,7 +3,6 @@ from models.funder import Funder
 from scripts.wiki_ror_utils import (
     get_homepage_url,
     get_description,
-    get_country_code,
     get_image_url,
     get_image_thumbnail_url,
     find_wikidata_id,
@@ -52,17 +51,6 @@ def update_funders():
             Funder.query.filter(Funder.funder_id == funder.funder_id).update(
                 {Funder.description: description}, synchronize_session=False
             )
-
-        if not funder.country_code:
-            # only add country_code if it doesn't already exist
-            country_code = get_country_code(
-                funder.wikidata_id, funder.ror_id, funder.uri
-            )
-            if country_code:
-                print(f"Adding country_code for {funder.funder_id} with {country_code}")
-                Funder.query.filter(Funder.funder_id == funder.funder_id).update(
-                    {Funder.country_code: country_code}, synchronize_session=False
-                )
 
         if not funder.image_url:
             # only add image_url if it doesn't already exist
