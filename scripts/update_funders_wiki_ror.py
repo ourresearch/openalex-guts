@@ -25,7 +25,8 @@ def update_funders():
     for funder in funders:
         if not funder.wikidata_id:
             # try to find new wikidata_id
-            wikidata_id = find_wikidata_id(funder.display_name)
+            words_to_ignore = "scientific article"
+            wikidata_id = find_wikidata_id(funder.display_name, words_to_ignore=words_to_ignore)
             if wikidata_id:
                 print(
                     f"Updating wikidata_id for {funder.display_name} from {funder.wikidata_id} to {wikidata_id}"

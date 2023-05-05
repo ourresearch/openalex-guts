@@ -16,7 +16,7 @@ def cached_session():
     return session
 
 
-def find_wikidata_id(display_name):
+def find_wikidata_id(display_name, words_to_ignore=None, words_to_include=None):
     # search the wikidata API for the display_name
     session = cached_session()
     r = session.get(
@@ -29,7 +29,9 @@ def find_wikidata_id(display_name):
             search = response.get("search", None)
             if search and len(search) > 0:
                 description = search[0].get("description", None)
-                if description and "scientific article" in description.lower():
+                if description and words_to_ignore and words_to_ignore in description.lower():
+                    return None
+                elif description and words_to_include and words_to_include not in description.lower():
                     return None
             wikidata_shortcode = response["search"][0]["id"]
             wikidata_id = f"https://www.wikidata.org/entity/{wikidata_shortcode}"
@@ -100,7 +102,7 @@ def get_homepage_url_from_wikidata(wikidata_response, wikidata_shortcode):
             if "P856" in claims:
                 wikidata_homepage_url = claims["P856"][0]["mainsnak"]["datavalue"]["value"]
         except KeyError:
-            pass
+            print(f"Error getting homepage url from wikidata for {wikidata_shortcode}")
     return wikidata_homepage_url
 
 
@@ -159,42 +161,41 @@ def get_description(wikidata_id):
     return wikidata_description
 
 
-# def get_country_code(wikidata_id, ror_id, crossref_uri=None):
-#     wikidata_country_code = None
-#     ror_country_code = None
-#     crossref_country_code = None
-#
-#     if wikidata_id:
-#         wikidata_shortcode = normalize_wikidata_id(wikidata_id)
-#         wikidata_response = fetch_wikidata_response(wikidata_shortcode)
-#         if wikidata_response:
-#             claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
-#             if "P17" in claims:
-#                 wikidata_country_code = claims["P17"][0]["mainsnak"]["datavalue"][
-#                     "value"
-#                 ]["id"]
-#     if ror_id:
-#         ror_shortcode = normalize_ror(ror_id)
-#         ror_response = fetch_ror_response(ror_shortcode)
-#         if ror_response:
-#             ror_country_code = ror_response.get("country", {}).get("country_code", None)
-#
-#     if crossref_uri:
-#         crossref_response = fetch_crossref_response(crossref_uri)
-#         if crossref_response:
-#             three_letter_country_code = (
-#                 crossref_response.get("address", {})
-#                 .get("postalAddress", None)
-#                 .get("addressCountry", {})
-#             )
-#             if three_letter_country_code:
-#                 two_letter_country_code = coco.convert(
-#                     names=three_letter_country_code, to="ISO2"
-#                 )
-#                 if two_letter_country_code:
-#                     crossref_country_code = two_letter_country_code
-#
-#     return crossref_country_code or wikidata_country_code or ror_country_code
+def get_country_code(wikidata_id, ror_id):
+    wikidata_country_code = None
+    ror_country_code = None
+
+    if wikidata_id:
+        wikidata_shortcode = normalize_wikidata_id(wikidata_id)
+        wikidata_response = fetch_wikidata_response(wikidata_shortcode)
+        if wikidata_response:
+            try:
+                claims = wikidata_response["entities"][wikidata_shortcode]["claims"]
+                if "P17" in claims:
+                    wikidata_country_shortcode = claims["P17"][0]["mainsnak"]["datavalue"][
+                        "value"
+                    ]["id"]
+                    wikidata_country_response = fetch_wikidata_response(
+                        wikidata_country_shortcode
+                    )
+                    if wikidata_country_response:
+                        wikidata_country_code = (
+                            wikidata_country_response["entities"][wikidata_country_shortcode]
+                            .get("claims", {})
+                            .get("P297", [{}])[0]
+                            .get("mainsnak", {})
+                            .get("datavalue", {})
+                            .get("value", None)
+                        )
+            except KeyError:
+                print(f"Error getting country code for {wikidata_shortcode}")
+    if ror_id:
+        ror_shortcode = normalize_ror(ror_id)
+        ror_response = fetch_ror_response(ror_shortcode)
+        if ror_response:
+            ror_country_code = ror_response.get("country", {}).get("country_code", None)
+
+    return wikidata_country_code or ror_country_code
 
 
 def get_image_url(wikidata_id):
@@ -212,7 +213,7 @@ def get_image_url(wikidata_id):
                     ]
                     wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
                 except KeyError:
-                    pass
+                    print(f"Error getting image for {wikidata_shortcode}")
 
             # if no logo, try to get an image
             elif "P18" in claims:
@@ -220,7 +221,7 @@ def get_image_url(wikidata_id):
                     wikidata_image_file = claims["P18"][0]["mainsnak"]["datavalue"]["value"]
                     wikidata_image_url = f"https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/{wikidata_image_file}"
                 except KeyError:
-                    pass
+                    print(f"Error getting image for {wikidata_shortcode}")
     return wikidata_image_url
 
 
