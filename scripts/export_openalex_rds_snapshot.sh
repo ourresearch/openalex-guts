@@ -98,7 +98,7 @@ export_table() {
 
 make_manifests() {
     remote_data_dir='s3://openalex/data'
-    for entity_type in concepts institutions sources publishers authors works
+    for entity_type in concepts institutions sources publishers funders authors works
     do
         let total_content_length=0
         let total_record_count=0
@@ -111,7 +111,7 @@ make_manifests() {
         for f in ${entity_dir}/updated_date=*/*.gz
         do
             echo $f
-            s3_url=$(echo $f | sed "s|${LOCAL_DATA_DIR}|${remote_data_dir}|")
+            s3_url=$(echo $f | sed "s|${data_dir}|${remote_data_dir}|")
             content_length=$(wc -c $f | cut -d ' ' -f 1)
             record_count=$(unpigz -c $f | wc -l)
 
@@ -141,5 +141,7 @@ export_table 'mid.json_publishers' 'publishers' 'json_save'
 export_table 'mid.json_sources' 'sources' 'json_save'
 export_table 'mid.json_authors' 'authors' 'json_save'
 export_table 'mid.json_works' 'works' 'json_save_with_abstract'
+
+echo "creating manifests"
 
 make_manifests
