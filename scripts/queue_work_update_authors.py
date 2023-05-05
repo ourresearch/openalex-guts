@@ -22,11 +22,11 @@ def update_authors(work):
 
         if len(record_author_dict_list) == len(num_authors):
             logger.info('running update_institutions')
-            work.update_institutions()
+            work.update_institutions(affiliation_retry_attempts=1)
         else:
             logger.info('running add_affiliations')
             work.add_references()
-            work.add_affiliations()
+            work.add_affiliations(affiliation_retry_attempts=1)
 
 
 class QueueWorkUpdateAuthors:
