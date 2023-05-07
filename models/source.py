@@ -53,6 +53,8 @@ class Source(db.Model):
     alternate_titles = db.Column(JSONB)
     abbreviated_title = db.Column(db.Text)
     country_code = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    image_thumbnail_url = db.Column(db.Text)
     fatcat_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     created_date = db.Column(db.DateTime)

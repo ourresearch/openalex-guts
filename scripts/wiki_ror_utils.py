@@ -176,7 +176,7 @@ def get_homeage_url_from_ror(ror_response):
     return ror_homepage_url
 
 
-def get_homepage_url(wikidata_id, ror_id):
+def get_homepage_url(wikidata_id, ror_id=None):
     wikidata_homepage_url = None
     ror_homepage_url = None
 
@@ -223,7 +223,7 @@ def get_description(wikidata_id):
     return wikidata_description
 
 
-def get_country_code(wikidata_id, ror_id):
+def get_country_code(wikidata_id, ror_id=None):
     wikidata_country_code = None
     ror_country_code = None
 

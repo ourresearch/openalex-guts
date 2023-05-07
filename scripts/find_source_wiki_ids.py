@@ -1,6 +1,6 @@
 from app import db
 from models.source import Source
-from scripts.wiki_ror_utils import find_wikidata_id_for_source
+from scripts.wiki_ror_utils import find_wikidata_id_for_source, get_homepage_url, get_country_code, get_image_url, get_image_thumbnail_url
 
 
 def update_sources():
@@ -24,9 +24,4 @@ def update_sources():
                 Source.query.filter(Source.journal_id == source.journal_id).update(
                     {Source.wikidata_id: wikidata_id}, synchronize_session=False
                 )
-        # commit every time, for now
         db.session.commit()
-
-
-if __name__ == "__main__":
-    update_sources()
