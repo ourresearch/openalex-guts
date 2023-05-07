@@ -131,6 +131,7 @@ class Publisher(db.Model):
                 "lineage": self.lineage(),
                 "hierarchy_level": self.hierarchy_level,
                 "country_codes": self.country_codes or [],
+                "homepage_url": self.homepage_url,
                 "image_url": self.image_url,
                 "image_thumbnail_url": self.image_thumbnail_url,
                 "roles": self.roles,
