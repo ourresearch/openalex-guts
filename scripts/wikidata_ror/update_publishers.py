@@ -1,12 +1,14 @@
 from app import db
 from models.publisher import Publisher
-from scripts.wiki_ror_utils import (
-    get_country_code,
-    get_homepage_url,
-    get_image_url,
-    get_image_thumbnail_url,
-    find_wikidata_id,
-)
+from scripts.wikidata_ror.country_code import get_country_code
+from scripts.wikidata_ror.homepage import get_homepage_url
+from scripts.wikidata_ror.image_url import get_image_url, get_image_thumbnail_url
+
+
+"""
+Update publishers with data from Wikidata and ROR.
+Run with `python -m scripts.wikidata_ror.update_publishers`.
+"""
 
 
 def update_publishers():
@@ -19,29 +21,8 @@ def update_publishers():
         Publisher.image_url,
         Publisher.ror_id,
         Publisher.wikidata_id,
-    ).all()
+    ).filter((Publisher.ror_id != None) | (Publisher.wikidata_id != None)).all()
     for publisher in publishers:
-        if not publisher.wikidata_id:
-            # try to find new wikidata_id
-            words_to_include = "publish"
-            wikidata_id = find_wikidata_id(publisher.display_name, words_to_include=words_to_include)
-            if wikidata_id:
-                print(
-                    f"Updating wikidata_id for {publisher.display_name} from {publisher.wikidata_id} to {wikidata_id}"
-                )
-                Publisher.query.filter(Publisher.publisher_id == publisher.publisher_id).update(
-                    {Publisher.wikidata_id: wikidata_id}, synchronize_session=False
-                )
-
-        homepage_url = get_homepage_url(publisher.wikidata_id, publisher.ror_id)
-        if homepage_url and publisher.homepage_url != homepage_url:
-            print(
-                f"Updating homepage_url for {publisher.publisher_id} from {publisher.homepage_url} to {homepage_url}"
-            )
-            Publisher.query.filter(Publisher.publisher_id == publisher.publisher_id).update(
-                {Publisher.homepage_url: homepage_url}, synchronize_session=False
-            )
-
         if not publisher.country_codes:
             # only add country_codes if it doesn't already exist
             country_code = get_country_code(publisher.wikidata_id, publisher.ror_id)
@@ -54,7 +35,16 @@ def update_publishers():
                     {Publisher.country_codes: country_codes}, synchronize_session=False
                 )
 
-        if not publisher.image_url:
+        homepage_url = get_homepage_url(publisher.wikidata_id, publisher.ror_id)
+        if homepage_url and publisher.homepage_url != homepage_url:
+            print(
+                f"Updating homepage_url for {publisher.publisher_id} from {publisher.homepage_url} to {homepage_url}"
+            )
+            Publisher.query.filter(Publisher.publisher_id == publisher.publisher_id).update(
+                {Publisher.homepage_url: homepage_url}, synchronize_session=False
+            )
+
+        if not publisher.image_url or publisher.image_thumbnail_url:
             # only add image_url if it doesn't already exist
             image_url = get_image_url(publisher.wikidata_id)
             image_thumbnail_url = get_image_thumbnail_url(image_url)
