@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-05-03
+- add funders entity
+- add grants to works
+- add APC payments to sources
+
 RELEASE 2023-03-28
 - truncate work display_names to 500 characters
 - truncate author display_names to 100 characters
