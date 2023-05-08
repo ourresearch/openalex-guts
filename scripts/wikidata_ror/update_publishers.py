@@ -22,7 +22,10 @@ def update_publishers():
         Publisher.ror_id,
         Publisher.wikidata_id,
     ).filter((Publisher.ror_id != None) | (Publisher.wikidata_id != None)).all()
+    count = 0
     for publisher in publishers:
+        count += 1
+        print(f"Processing publisher {count} of {len(publishers)}")
         if not publisher.country_codes:
             # only add country_codes if it doesn't already exist
             country_code = get_country_code(publisher.wikidata_id, publisher.ror_id)
