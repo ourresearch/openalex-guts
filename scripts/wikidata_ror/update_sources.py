@@ -2,6 +2,11 @@ from app import db
 from models.source import Source
 from scripts.wiki_ror_utils import get_homepage_url, get_country_code
 
+"""
+Update sources with data from Wikidata.
+Run with `python -m scripts.wikidata_ror.update_sources`.
+"""
+
 
 def update_sources():
     sources = Source.query.with_entities(

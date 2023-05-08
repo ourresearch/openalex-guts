@@ -1,6 +1,12 @@
 from app import db
 from models.source import Source
-from scripts.wiki_ror_utils import find_wikidata_id_for_source
+from scripts.wikidata_ror.find_wikidata_ids import find_wikidata_id_for_source
+
+
+"""
+Find missing source wikidata IDs.
+Run with `python -m scripts.wikidata_ror.find_source_wikidata_ids`.
+"""
 
 
 def find_source_wiki_ids():
