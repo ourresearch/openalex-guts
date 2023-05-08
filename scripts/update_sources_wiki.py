@@ -1,6 +1,6 @@
 from app import db
 from models.source import Source
-from scripts.wiki_ror_utils import find_wikidata_id_for_source, get_homepage_url, get_country_code, get_image_url, get_image_thumbnail_url
+from scripts.wiki_ror_utils import get_homepage_url, get_country_code
 
 
 def update_sources():
@@ -34,23 +34,6 @@ def update_sources():
                 )
                 Source.query.filter(Source.journal_id == source.journal_id).update(
                     {Source.webpage: homepage_url}, synchronize_session=False
-                )
-        if not source.image_url:
-            image_url = get_image_url(source.wikidata_id)
-            if image_url:
-                image_thumbnail_url = get_image_thumbnail_url(image_url)
-                print(
-                    f"Updating image_url for {source.display_name} from {source.image_url} to {image_url}"
-                )
-                print(
-                    f"Updating image_thumbnail_url for {source.display_name} from {source.image_thumbnail_url} to {image_thumbnail_url}"
-                )
-                Source.query.filter(Source.journal_id == source.journal_id).update(
-                    {
-                        Source.image_url: image_url,
-                        Source.image_thumbnail_url: image_thumbnail_url,
-                    },
-                    synchronize_session=False,
                 )
         # commit every time, for now
         db.session.commit()

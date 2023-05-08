@@ -1,16 +1,14 @@
 from app import db
 from models.source import Source
-from scripts.wiki_ror_utils import find_wikidata_id_for_source, get_homepage_url, get_country_code, get_image_url, get_image_thumbnail_url
+from scripts.wiki_ror_utils import find_wikidata_id_for_source
 
 
-def update_sources():
+def find_source_wiki_ids():
     sources = Source.query.with_entities(
-        Source.country_code,
         Source.display_name,
         Source.journal_id,
-        Source.webpage,
         Source.wikidata_id,
-    ).all()
+    ).filter(Source.wikidata_id == None).all()
     count = 0
     for source in sources:
         count += 1
@@ -25,3 +23,7 @@ def update_sources():
                     {Source.wikidata_id: wikidata_id}, synchronize_session=False
                 )
         db.session.commit()
+
+
+if __name__ == "__main__":
+    find_source_wiki_ids()
