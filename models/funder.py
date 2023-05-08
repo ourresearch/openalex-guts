@@ -113,6 +113,17 @@ class Funder(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
+    @cached_property
+    def grants(self):
+        query_result = db.session.query(WorkFunder.award).filter(WorkFunder.funder_id == self.funder_id).all()
+        extracted_grants = [grant for record in query_result for grant in list(record[0])]
+        unique_grants = set(extracted_grants)
+        sorted_grants = sorted(unique_grants, key=lambda x: x.lower())
+        return sorted_grants
+
+    def grants_count(self):
+        return len(self.grants)
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -134,6 +145,7 @@ class Funder(db.Model):
                     "image_url": self.image_url,
                     "image_thumbnail_url": self.image_thumbnail_url,
                     "roles": self.roles,
+                    "grants_count": self.grants_count(),
                     "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                     "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                     "summary_stats": {
