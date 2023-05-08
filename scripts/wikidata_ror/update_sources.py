@@ -1,6 +1,7 @@
 from app import db
 from models.source import Source
-from scripts.wiki_ror_utils import get_homepage_url, get_country_code
+from scripts.wikidata_ror.country_code import get_country_code
+from scripts.wikidata_ror.homepage import get_homepage_url
 
 """
 Update sources with data from Wikidata.
