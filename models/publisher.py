@@ -117,15 +117,15 @@ class Publisher(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "display_name": self.display_name,
-            "ids": {
-                "openalex": self.openalex_id,
-                "wikidata": self.wikidata_id,
-                "ror": self.ror_id,
-            }
+            "display_name": self.display_name
         }
         if return_level == "full":
             response.update({
+                "ids": {
+                    "openalex": self.openalex_id,
+                    "wikidata": self.wikidata_id,
+                    "ror": self.ror_id,
+                },
                 "alternate_titles": self.alternate_titles or [],
                 "parent_publisher": self.parent and self.parent.to_dict(return_level="minimal"),
                 "lineage": self.lineage(),
@@ -155,10 +155,10 @@ class Publisher(db.Model):
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 
-        # only include non-null IDs
-        for id_type in list(response["ids"].keys()):
-            if response["ids"][id_type] is None:
-                del response["ids"][id_type]
+            # only include non-null IDs
+            for id_type in list(response["ids"].keys()):
+                if response["ids"][id_type] is None:
+                    del response["ids"][id_type]
 
         return response
 
