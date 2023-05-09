@@ -1439,6 +1439,7 @@ class Work(db.Model):
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
+            "doi_registration_agency": self.doi_ra.agency if self.doi_ra else None,
             "display_name": truncated_title,
             "title": truncated_title,
             "publication_year": self.year,
