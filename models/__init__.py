@@ -17,6 +17,7 @@ from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
+from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
@@ -52,6 +53,7 @@ Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
 WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
+Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
