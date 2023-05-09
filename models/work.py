@@ -1261,31 +1261,6 @@ class Work(db.Model):
 
         return journal_id_match or publisher_host_type_match or legacy_mag_match
 
-    @property
-    def host_venue_details_dict(self):
-        # should match the extra stuff put out in locations.to_dict()
-        matching_location = self.host_source_matching_location()
-
-        url = None
-        version = None
-        license = None
-        is_oa = False
-
-        if matching_location:
-            url = matching_location.source_url
-            version = matching_location.version
-            license = matching_location.display_license
-            is_oa = matching_location.is_oa or False
-
-        response = {
-            "url": url,
-            "is_oa": is_oa,
-            "version": version,
-            "license": license
-        }
-
-        return response
-
     def dict_locations(self):
         locations = []
         seen_urls = set()
@@ -1451,7 +1426,6 @@ class Work(db.Model):
                 "pmid": None, #filled in below
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
-            "host_venue": self.journal.to_dict("minimum") if self.journal else Source().to_dict_null_minimum(),
             "primary_location": dict_locations[0] if dict_locations else None,
             "best_oa_location": oa_locations[0] if oa_locations else None,
             "type": self.display_genre,
@@ -1467,11 +1441,6 @@ class Work(db.Model):
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
         }
-        response["host_venue"].update(self.host_venue_details_dict)
-
-        if not self.journal:
-            response["host_venue"]["display_name"] = self.original_venue
-            response["host_venue"]["url"] = self.best_url
 
         if self.extra_ids:
             for extra_id in self.extra_ids:
@@ -1519,32 +1488,12 @@ class Work(db.Model):
                 "is_paratext": self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
-                "alternate_host_venues": [location.to_dict("minimum") for location in self.locations_sorted if location.include_in_alternative],
                 "locations": dict_locations,
                 "referenced_works": self.references_list,
                 "grants": grant_dicts,
                 "apc_payment": self.apc_payment,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
-                })
-
-            response["alternate_host_venues"] = [response["host_venue"]] + response["alternate_host_venues"]
-            deduped_ahvs = []
-            seen_ids = set()
-            seen_urls = set()
-
-            for ahv in response["alternate_host_venues"]:
-                ahv_id = ahv["id"]
-                ahv_url = ahv["url"]
-
-                if ahv_id:
-                    if ahv_id not in seen_ids:
-                        deduped_ahvs.append(ahv)
-                        seen_ids.add(ahv_id)
-                elif ahv_url not in seen_urls:
-                    deduped_ahvs.append(ahv)
-                    seen_urls.add(ahv_url)
-
-            response["alternate_host_venues"] = deduped_ahvs
+            })
 
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
