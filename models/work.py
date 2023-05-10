@@ -1388,6 +1388,9 @@ class Work(db.Model):
 
         return locations
 
+    def locations_count(self):
+        return len(self.dict_locations())
+
     def to_dict(self, return_level="full"):
         from models import Source
 
@@ -1488,6 +1491,7 @@ class Work(db.Model):
                 "is_paratext": self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
+                "locations_count": self.locations_count(),
                 "locations": dict_locations,
                 "referenced_works": self.references_list,
                 "grants": grant_dicts,
