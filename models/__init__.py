@@ -108,6 +108,7 @@ Funder.counts_by_year_citations = db.relationship("FunderCountsByYearCitations",
 
 Publisher.parent = db.relationship("Publisher", remote_side=[Publisher.publisher_id], lazy='selectin', viewonly=True, uselist=False)
 Publisher.self_and_ancestors = db.relationship("PublisherSelfAndAncestors", uselist=True, lazy='selectin', viewonly=True)
+Publisher.sources_count = db.relationship("PublisherSources", uselist=False, lazy='selectin', viewonly=True)
 
 
 # TODO: rename Source.publisher to Source.publisher_name to free up Source.publisher for this relationship
