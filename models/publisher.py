@@ -137,6 +137,7 @@ class Publisher(db.Model):
                 "roles": self.roles,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                "sources_count": int(self.sources_count.num_sources or 0) if self.sources_count else 0,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
@@ -144,6 +145,7 @@ class Publisher(db.Model):
                     "oa_percent": self.oa_percent(),
                     "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                     "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "sources_count": int(self.sources_count.num_sources or 0) if self.sources_count else 0,
                     "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
                     "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
                     "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
@@ -219,3 +221,11 @@ class PublisherSelfAndAncestors(db.Model):
     ancestor_id = db.Column(db.BigInteger, primary_key=True)
     ancestor_display_name = db.Column(db.Text)
     ancestor_hierarchy_level = db.Column(db.Integer)
+
+
+class PublisherSources(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "publisher_sources_mv"
+
+    publisher_id = db.Column(db.BigInteger, db.ForeignKey("mid.publisher.publisher_id"), primary_key=True)
+    num_sources = db.Column(db.Integer)
