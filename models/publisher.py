@@ -114,6 +114,26 @@ class Publisher(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
+    @cached_property
+    def concepts(self):
+        from models.concept import as_concept_openalex_id
+
+        if not self.counts or not self.counts.paper_count:
+            return []
+
+        q = """
+               select concept_id as id, wikidata, display_name, level, score
+               from mid.publisher_concepts_mv
+               where publisher_id=:publisher_id
+               order by score desc
+            """
+
+        rows = db.session.execute(text(q), {"publisher_id": self.publisher_id}).fetchall()
+        response = [dict(row) for row in rows if row["score"] and row["score"] > 20]
+        for row in response:
+            row["id"] = as_concept_openalex_id(row["id"])
+        return response
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -152,6 +172,7 @@ class Publisher(db.Model):
                     "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
                 },
                 "counts_by_year": self.display_counts_by_year,
+                "x_concepts": self.concepts[0:25],
                 "sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
