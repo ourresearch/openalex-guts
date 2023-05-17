@@ -1070,11 +1070,7 @@ class Work(db.Model):
 
     @cached_property
     def is_oa(self):
-        if self.best_free_url:
-            return True
-        if self.oa_status and self.oa_status != "closed":
-            return True
-        return False
+        return True if self.oa_locations else False
 
     @cached_property
     def display_genre(self):
@@ -1261,6 +1257,7 @@ class Work(db.Model):
 
         return journal_id_match or publisher_host_type_match or legacy_mag_match
 
+    @cached_property
     def dict_locations(self):
         locations = []
         seen_urls = set()
@@ -1386,20 +1383,20 @@ class Work(db.Model):
         if locations and locations[0]['source'] is None and self.safety_journals:
             locations[0]['source'] = self.safety_journals[0].to_dict(return_level='minimum')
 
+        locations = override_location_sources(locations)
+        for loc in locations:
+            loc['is_oa'] = loc['is_oa'] or False
+
         return locations
 
+    @cached_property
+    def oa_locations(self):
+        return [loc for loc in self.dict_locations if loc.get("is_oa")]
+
     def locations_count(self):
-        return len(self.dict_locations())
+        return len(self.dict_locations)
 
     def to_dict(self, return_level="full"):
-        from models import Source
-
-        dict_locations = override_location_sources(self.dict_locations())
-        for dict_location in dict_locations:
-            dict_location['is_oa'] = dict_location['is_oa'] or False
-
-        oa_locations = [loc for loc in dict_locations if loc.get("is_oa")]
-
         truncated_title = truncate_on_word_break(self.work_title, 500)
         
         corresponding_author_ids: List[str] = []
@@ -1429,15 +1426,15 @@ class Work(db.Model):
                 "pmid": None, #filled in below
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
             },
-            "primary_location": dict_locations[0] if dict_locations else None,
-            "best_oa_location": oa_locations[0] if oa_locations else None,
+            "primary_location": self.dict_locations[0] if self.dict_locations else None,
+            "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
             "type": self.display_genre,
             "open_access": {
                 "is_oa": self.is_oa,
                 "oa_status": self.oa_status or "closed",
                 "oa_url": self.best_free_url,
                 "any_repository_has_fulltext": any(
-                    [(loc.get("source") or {}).get("type") == "repository" for loc in oa_locations]
+                    [(loc.get("source") or {}).get("type") == "repository" for loc in self.oa_locations]
                 )
             },
             "authorships": self.affiliations_list,
@@ -1492,7 +1489,7 @@ class Work(db.Model):
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
-                "locations": dict_locations,
+                "locations": self.dict_locations,
                 "referenced_works": self.references_list,
                 "grants": grant_dicts,
                 "apc_payment": self.apc_payment,
