@@ -239,6 +239,26 @@ class Source(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
+    @property
+    def apc_prices_with_0(self):
+        if self.apc_prices:
+            return self.apc_prices
+        elif self.is_in_doaj:
+            # in DOAJ but no APC, which means APC is 0
+            return [{"price": 0, "currency": "USD"}]
+        else:
+            return None
+
+    @property
+    def apc_usd_with_0(self):
+        if self.apc_usd:
+            return self.apc_usd
+        elif self.is_in_doaj and not self.apc_prices:
+            # in DOAJ but no APC, which means APC is 0
+            return 0
+        else:
+            return None
+
     def to_dict(self, return_level="full", check_merge=True):
         if check_merge and self.merge_into_id and self.merged_into_source:
             return self.merged_into_source.to_dict(return_level=return_level, check_merge=False)
@@ -285,8 +305,8 @@ class Source(db.Model):
                     "fatcat": self.fatcat_id,
                     "wikidata": self.wikidata_id
                 },
-                "apc_prices": self.apc_prices if self.apc_prices else None,
-                "apc_usd": self.apc_usd,
+                "apc_prices": self.apc_prices_with_0,
+                "apc_usd": self.apc_usd_with_0,
                 "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
