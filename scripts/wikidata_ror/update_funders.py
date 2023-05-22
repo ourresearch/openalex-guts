@@ -1,5 +1,6 @@
 from app import db
 from models.funder import Funder
+from scripts.wikidata_ror.alternate_titles import get_alternate_titles
 from scripts.wikidata_ror.description import get_description
 from scripts.wikidata_ror.homepage import get_homepage_url
 from scripts.wikidata_ror.image_url import get_image_url, get_image_thumbnail_url
@@ -13,6 +14,7 @@ Run with `python -m scripts.wikidata_ror.update_funders`.
 
 def update_funders():
     funders = Funder.query.with_entities(
+        Funder.alternate_titles,
         Funder.country_code,
         Funder.description,
         Funder.display_name,
@@ -27,6 +29,16 @@ def update_funders():
     for funder in funders:
         count += 1
         print(f"Processing {count} of {len(funders)}")
+        if not funder.alternate_titles:
+            alternate_titles = get_alternate_titles(funder.wikidata_id, funder.ror_id)
+            if alternate_titles:
+                print(
+                    f"Adding alternate_titles for {funder.funder_id} with {alternate_titles}"
+                )
+                Funder.query.filter(Funder.funder_id == funder.funder_id).update(
+                    {Funder.alternate_titles: alternate_titles},
+                    synchronize_session=False,
+                )
         description = get_description(funder.wikidata_id)
         if description and funder.description != description:
             print(
