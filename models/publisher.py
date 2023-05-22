@@ -108,6 +108,9 @@ class Publisher(db.Model):
     def lineage(self):
         return [f"https://openalex.org/P{p.ancestor_id}" for p in self.self_and_ancestors]
 
+    def lineage_names(self):
+        return [p.ancestor_display_name for p in self.self_and_ancestors]
+
     def oa_percent(self):
         if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
             return 0

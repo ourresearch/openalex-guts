@@ -233,6 +233,14 @@ class Source(db.Model):
         else:
             return []
 
+    def host_organization_lineage_names(self):
+        if self.type == "journal" and self.publisher_entity:
+            return self.publisher_entity.lineage_names()
+        elif self.type == "repository" and self.institution:
+            return [self.institution.display_name]
+        else:
+            return []
+
     def oa_percent(self):
         if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
             return 0
@@ -272,6 +280,7 @@ class Source(db.Model):
             "host_organization": self.host_organization_id,
             "host_organization_name": self.host_organization_name,
             "host_organization_lineage": self.host_organization_lineage(),
+            "host_organization_lineage_names": self.host_organization_lineage_names(),
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
