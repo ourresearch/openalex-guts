@@ -1440,7 +1440,10 @@ class Work(db.Model):
                 "oa_status": self.oa_status or "closed",
                 "oa_url": self.oa_url,
                 "any_repository_has_fulltext": any(
-                    [(loc.get("source") or {}).get("type") == "repository" for loc in self.oa_locations]
+                    [
+                        loc.get("source") is None or (loc.get("source") or {}).get("type") == "repository"
+                        for loc in self.oa_locations
+                    ]
                 )
             },
             "authorships": self.affiliations_list,
