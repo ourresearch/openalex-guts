@@ -1396,6 +1396,12 @@ class Work(db.Model):
     def locations_count(self):
         return len(self.dict_locations)
 
+    @cached_property
+    def oa_url(self):
+        if self.oa_locations:
+            return self.oa_locations[0].get('pdf_url') or self.oa_locations[0].get('landing_page_url')
+        return None
+
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
         
@@ -1432,7 +1438,7 @@ class Work(db.Model):
             "open_access": {
                 "is_oa": self.is_oa,
                 "oa_status": self.oa_status or "closed",
-                "oa_url": self.best_free_url,
+                "oa_url": self.oa_url,
                 "any_repository_has_fulltext": any(
                     [(loc.get("source") or {}).get("type") == "repository" for loc in self.oa_locations]
                 )
