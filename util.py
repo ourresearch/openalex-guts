@@ -13,12 +13,14 @@ import requests
 import heroku3
 import json
 import copy
+import string
 from unidecode import unidecode
 from sqlalchemy import sql
 from sqlalchemy import exc
 from subprocess import call
 from requests.adapters import HTTPAdapter
 import csv
+from langdetect import detect_langs, DetectorFactory, LangDetectException
 
 def dictionary_nested_diff(old_dict, new_dict, top_level_keys_to_ignore):
     from deepdiff import DeepDiff
@@ -1025,3 +1027,46 @@ def matching_author_string(origName):
 
     return response
 
+
+def majority_ascii(s, threshold=0.5):
+    return sum([char.isascii() for char in s]) / len(s) > threshold
+
+
+def punctuation_density(words):
+    return sum([word[-1] in string.punctuation for word in words if word]) / len(words)
+
+
+def detect_language_from_abstract_and_title(
+    abstract_words, title, probability_threshold=0.7, punctuation_density_threshold=0.5
+):
+    # use some heuristics to catch some edge cases:
+    # - detect language from abstract if probability is high and abstract isn't too short (for abstracts with ascii/latin characters)
+    #   - (also check for punctuation density in abstract, to catch cases where the abstract is a punctuation-separated list of author names)
+    # - otherwise try title, with similar rules
+    # - give up and return None if neither of those work
+    DetectorFactory.seed = 0
+
+    try:
+        if abstract_words:
+            abstract = " ".join(abstract_words)
+            abstract_language = detect_langs(abstract)
+            if abstract_language and abstract_language[0]:
+                if (
+                    (len(abstract) > 20 or not majority_ascii(abstract))
+                    and abstract_language[0].prob >= probability_threshold
+                    and punctuation_density(abstract_words)
+                    < punctuation_density_threshold
+                ):
+                    return abstract_language[0].lang
+
+        if title:
+            title_language = detect_langs(title)
+            if title_language and title_language[0]:
+                if (len(title) > 15 or not majority_ascii(title)) and title_language[
+                    0
+                ].prob >= probability_threshold:
+                    return title_language[0].lang
+    except LangDetectException:
+        pass
+
+    return None
