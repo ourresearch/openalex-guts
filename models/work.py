@@ -959,10 +959,15 @@ class Work(db.Model):
             # institution_list = [a["institution"] for a in affil_list if a["institution"]["id"] != None]
             if institution_list == [{}]:
                 institution_list = []
+            if len(affiliation_dict) == 1:
+                # override - single author is always corresponding
+                is_corresponding = True
+            else:
+                is_corresponding = affil_list[0].get('is_corresponding_author', False)
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
-                             "is_corresponding": affil_list[0].get('is_corresponding_author', False),
+                             "is_corresponding": is_corresponding,
                              "raw_affiliation_strings": list(set([
                                 a.get("raw_affiliation_string") for a in affil_list
                                 if a.get("raw_affiliation_string")
