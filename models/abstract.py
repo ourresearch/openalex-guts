@@ -12,6 +12,7 @@ class Abstract(db.Model):
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     indexed_abstract = db.Column(db.Text)
+    abstract = db.Column(db.Text)
 
     @cached_property
     def inverted_index(self):

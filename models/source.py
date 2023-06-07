@@ -10,8 +10,7 @@ from app import MAX_MAG_ID
 from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
-from util import dictionary_nested_diff
-from util import jsonify_fast_no_sort_raw
+from util import entity_md5
 from util import truncate_on_word_break
 
 
@@ -62,6 +61,7 @@ class Source(db.Model):
     full_updated_date = db.Column(db.DateTime)
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
+    json_entity_hash = db.Column(db.Text)
 
     @property
     def openalex_id(self):
@@ -85,58 +85,43 @@ class Source(db.Model):
         return self.issn
 
     def store(self):
-        VERSION_STRING = "new: updated if changed"
-        self.insert_dicts = []
-        my_dict = {} if self.merge_into_id else self.to_dict()
+        index_record = None
+        entity_hash = None
 
-        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
-            if self.merge_into_id is not None and self.stored.json_save is None:
-                #  don't keep saving merged entities and bumping their updated and changed dates
+        if self.merge_into_id is not None:
+            entity_hash = entity_md5(self.merge_into_id)
+
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+                index_record = {
+                    "_index": "merge-sources",
+                    "_id": self.openalex_id,
+                    "_source": {
+                        "id": self.openalex_id,
+                        "merge_into_id": as_source_openalex_id(self.merge_into_id),
+                    }
+                }
+            else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
-                return
-            if self.stored.json_save:
-                # check merged here for everything but concept
-                diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
-                if not diff:
-                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
-                    return
+        else:
+            my_dict = self.to_dict()
+            my_dict['updated'] = my_dict.get('updated_date')
+            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+            my_dict['@version'] = 1
+            entity_hash = entity_md5(my_dict)
+
+            if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                logger.debug(f"Source JSON Diff: {diff}")
-
-        now = datetime.datetime.utcnow().isoformat()
-        self.full_updated_date = now
-        my_dict["updated_date"] = now
-
-        json_save = None
-        if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(my_dict)
-
-        venues_json_save = json_save
-        if venues_json_save:
-            venues_json_save = venues_json_save.replace('https://openalex.org/S', 'https://openalex.org/V')
-
-        self.insert_dicts = [
-            {
-                "JsonVenues": {
-                    "id": self.journal_id,
-                    "updated": now,
-                    "changed": now,
-                    "json_save": venues_json_save,
-                    "version": VERSION_STRING,
-                    "merge_into_id": self.merge_into_id
+                index_record = {
+                    "_index": "sources-v2",
+                    "_id": self.openalex_id,
+                    "_source": my_dict
                 }
-            },
-            {
-                "JsonSources": {
-                    "id": self.journal_id,
-                    "updated": now,
-                    "changed": now,
-                    "json_save": json_save,
-                    "version": VERSION_STRING,
-                    "merge_into_id": self.merge_into_id
-                }
-            }
-        ]
+            else:
+                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+
+        self.json_entity_hash = entity_hash
+        return index_record
 
     @cached_property
     def display_counts_by_year(self):

@@ -8,6 +8,9 @@ from sqlalchemy.orm import selectinload
 import models
 from app import db
 from app import logger
+from app import ELASTIC_URL
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
 from models.json_store import JsonSources, JsonPublishers, JsonFunders
 from util import elapsed
@@ -30,9 +33,9 @@ def run(**kwargs):
 
     if single_id := kwargs.get('id'):
         if objects := get_objects(entity_type, [single_id]):
-            [o.store() for o in objects]
             logger.info(f'found object {objects[0]}')
-            store_json_objects(objects)
+            records_to_index = [r for r in [o.store() for o in objects] if r]
+            index_and_merge_object_records(records_to_index)
             db.session.commit()
         else:
             logger.warn(f'found no object with id {single_id}')
@@ -46,6 +49,7 @@ def run(**kwargs):
             loop_start = time()
             if object_ids := fetch_queue_chunk_ids(queue_table, chunk):
                 objects = get_objects(entity_type, object_ids)
+                records_to_index = []
 
                 for obj in objects:
                     method_start_time = time()
@@ -55,18 +59,22 @@ def run(**kwargs):
 
                     method_name = method_name.replace("update_once_", "")
                     method_to_run = getattr(obj, method_name)
-                    method_to_run()
+                    r = method_to_run()
+                    if method_name == "store" and r:
+                        records_to_index.append(r)
 
-                    print(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
+                    logger.info(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
 
-                # print(1/0)
                 logger.info('committing')
                 start_time = time()
-
-                db.session.commit() # fail loudly for now
-                if method_name == "store":
-                    store_json_objects(objects)
+                db.session.commit()  # fail loudly for now
                 logger.info(f'commit took {elapsed(start_time, 4)}s')
+
+                if method_name == "store" and records_to_index:
+                    logger.info('indexing')
+                    start_time = time()
+                    index_and_merge_object_records(records_to_index)
+                    logger.info(f'indexing took {elapsed(start_time, 4)}s')
 
                 finish_object_ids(queue_table, object_ids)
                 objects_updated += len(objects)
@@ -75,6 +83,11 @@ def run(**kwargs):
             else:
                 logger.info('nothing ready in the queue, waiting 5 seconds...')
                 sleep(5)
+
+
+def index_and_merge_object_records(records_to_index):
+    es = Elasticsearch([ELASTIC_URL], timeout=30)
+    bulk(es, records_to_index)
 
 
 def store_json_objects(objects):
@@ -215,6 +228,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+            selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()
     elif entity_type == "author":

@@ -10,6 +10,7 @@ import re
 import os
 import collections
 import requests
+import hashlib
 import heroku3
 import json
 import copy
@@ -21,6 +22,23 @@ from subprocess import call
 from requests.adapters import HTTPAdapter
 import csv
 from langdetect import detect_langs, DetectorFactory, LangDetectException
+
+
+def entity_md5(entity_repr):
+    if isinstance(entity_repr, int):
+        return text_md5(str(entity_repr))
+    if isinstance(entity_repr, dict):
+        entity_copy = entity_repr.copy()
+        entity_copy.pop('updated_date', None)
+        entity_copy.pop('updated', None)
+        entity_copy.pop('@timestamp', None)
+        entity_str = json.dumps(entity_copy, sort_keys=True)
+        return text_md5(entity_str)
+
+
+def text_md5(text):
+    return hashlib.md5(text.encode('utf-8')).hexdigest()
+
 
 def dictionary_nested_diff(old_dict, new_dict, top_level_keys_to_ignore):
     from deepdiff import DeepDiff

@@ -10,8 +10,7 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
-from util import dictionary_nested_diff
-from util import jsonify_fast_no_sort_raw
+from util import entity_md5
 from util import truncate_on_word_break
 
 DELETED_AUTHOR_ID = 4317838346
@@ -22,9 +21,11 @@ DELETED_AUTHOR_ID = 4317838346
 # insert into mid.author (select * from legacy.mag_main_authors)
 # update mid.author set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
 
+
 def as_author_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/A{id}"
+
 
 class Author(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -40,6 +41,7 @@ class Author(db.Model):
     full_updated_date = db.Column(db.DateTime)
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
+    json_entity_hash = db.Column(db.Text)
 
     # def __init__(self, **kwargs):
     #     self.author_id = get_next_openalex_id("author")
@@ -215,41 +217,43 @@ class Author(db.Model):
 
 
     def store(self):
-        VERSION_STRING = "new: updated if changed"
-        self.insert_dicts = []
-        my_dict = self.to_dict()
+        index_record = None
+        entity_hash = None
 
-        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
-            if self.merge_into_id is not None and self.stored.json_save is None:
-                #  don't keep saving merged entities and bumping their updated and changed dates
+        if self.merge_into_id is not None:
+            entity_hash = entity_md5(self.merge_into_id)
+
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+                index_record = {
+                    "_index": "merge-authors",
+                    "_id": self.openalex_id,
+                    "_source": {
+                        "id": self.openalex_id,
+                        "merge_into_id": as_author_openalex_id(self.merge_into_id),
+                    }
+                }
+            else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
-                return
-            if self.stored.json_save:
-                # check merged here for everything but concept
-                diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
-                if not diff:
-                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
-                    return
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
-                logger.debug(f"Author JSON Diff: {diff}")
+        else:
+            my_dict = self.to_dict()
+            my_dict['updated'] = my_dict.get('updated_date')
+            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+            my_dict['@version'] = 1
+            entity_hash = entity_md5(my_dict)
 
-        now = datetime.datetime.utcnow().isoformat()
-        self.full_updated_date = now
-        my_dict["updated_date"] = now
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+                index_record = {
+                    "_index": "authors-v10",
+                    "_id": self.openalex_id,
+                    "_source": my_dict
+                }
+            else:
+                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
-        json_save = None
-        if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(my_dict)
-        if json_save and len(json_save) > 65000:
-            logger.error("Error: json_save too long for author_id {}, skipping".format(self.openalex_id))
-            json_save = None
-        self.insert_dicts = [{"JsonAuthors": {"id": self.author_id,
-                                             "updated": now,
-                                             "changed": now,
-                                             "json_save": json_save,
-                                             "version": VERSION_STRING,
-                                             "merge_into_id": self.merge_into_id
-                                             }}]
+        self.json_entity_hash = entity_hash
+        return index_record
 
     @cached_property
     def concepts(self):
