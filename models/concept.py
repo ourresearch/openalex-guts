@@ -12,8 +12,7 @@ from app import USER_AGENT
 from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
-from util import dictionary_nested_diff
-from util import jsonify_fast_no_sort_raw
+from util import entity_md5
 
 
 # truncate mid.concept
@@ -360,35 +359,33 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        VERSION_STRING = "new: updated if changed"
-        self.insert_dicts = []
+        index_record = None
+        entity_hash = None
+
         my_dict = self.to_dict()
+        my_dict['updated'] = my_dict.get('updated_date')
+        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+        my_dict['@version'] = 1
+        entity_hash = entity_md5(my_dict)
+        old_entity_hash = self.json_entity_hash and self.json_entity_hash.json_entity_hash
 
-        if self.stored and self.stored.json_save:
-            # check merged here for everything but concept
-            diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
-            if not diff:
-                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
-                return
-            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
-            logger.info(f"Concept JSON Diff: {diff}")
+        if entity_hash != old_entity_hash:
+            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+            index_record = {
+                "_index": "concepts-v8",
+                "_id": self.openalex_id,
+                "_source": my_dict
+            }
+        else:
+            logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
-        now = datetime.datetime.utcnow().isoformat()
-        # self.full_updated_date = now  # can't do this for now because for concepts it is a view
-        my_dict["updated_date"] = now
-
-        json_save = jsonify_fast_no_sort_raw(my_dict)
-        if json_save and len(json_save) > 65000:
-            logger.error("Error: json_save too long for field_of_study_id {}, skipping".format(self.openalex_id))
-            json_save = None
-        self.insert_dicts = [{"JsonConcepts": {"id": self.field_of_study_id,
-                                             "updated": now,
-                                             "changed": now,
-                                             "json_save": json_save,
-                                             "version": VERSION_STRING,
-                                             "merge_into_id": None
-                                             }}]
-
+        db.session.merge(
+            ConceptJsonEntityHash(
+                field_of_study_id=self.field_of_study_id,
+                json_entity_hash=entity_hash
+            )
+        )
+        return index_record
 
     def clean_metadata(self):
         if not self.metadata:
@@ -542,3 +539,18 @@ _valid_concept_ids = set([c.field_of_study_id for c in _valid_concepts])
 
 def is_valid_concept_id(concept_id):
     return concept_id and concept_id in _valid_concept_ids
+
+
+class ConceptJsonEntityHash(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "concept_json_entity_hash"
+
+    field_of_study_id = db.Column(
+        db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True
+    )
+    json_entity_hash = db.Column(db.Text)
+
+
+Concept.json_entity_hash = db.relationship(
+    ConceptJsonEntityHash, lazy='selectin', uselist=False
+)

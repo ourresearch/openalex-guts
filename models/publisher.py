@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from app import db
 from app import logger
-from util import dictionary_nested_diff
+from util import dictionary_nested_diff, entity_md5
 from util import jsonify_fast_no_sort_raw
 
 
@@ -36,6 +36,7 @@ class Publisher(db.Model):
     is_approved = db.Column(db.Boolean)
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
+    json_entity_hash = db.Column(db.Text)
 
     @property
     def openalex_id(self):
@@ -189,51 +190,43 @@ class Publisher(db.Model):
         return response
 
     def store(self):
-        VERSION_STRING = "new: updated if changed"
-        self.insert_dicts = []
+        index_record = None
+        entity_hash = None
 
-        if not self.is_approved:
-            logger.info(f"unapproved publisher, not saving {self.openalex_id}")
-            return
+        if self.merge_into_id is not None:
+            entity_hash = entity_md5(self.merge_into_id)
 
-        my_dict = self.to_dict()
-
-        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
-            if self.merge_into_id is not None and self.stored.json_save is None:
-                #  don't keep saving merged entities and bumping their updated and changed dates
-                logger.info(f"already merged into {self.merge_into_id}, not saving again")
-                return
-            if self.stored.json_save:
-                # check merged here for everything but concept
-                diff = dictionary_nested_diff(json.loads(self.stored.json_save), my_dict, ["updated_date"])
-                if not diff:
-                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
-                    return
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                logger.debug(f"Publisher JSON Diff: {diff}")
-
-        now = datetime.datetime.utcnow().isoformat()
-        my_dict["updated_date"] = now
-
-        json_save = None
-        if not self.merge_into_id:
-            json_save = jsonify_fast_no_sort_raw(my_dict)
-        if json_save and len(json_save) > 65000:
-            logger.info("Error: json_save too long for publisher_id {}, skipping".format(self.openalex_id))
-            json_save = None
-
-        self.insert_dicts = [
-            {
-                "JsonPublishers": {
-                    "id": self.publisher_id,
-                    "updated": now,
-                    "changed": now,
-                    "json_save": json_save,
-                    "version": VERSION_STRING,
-                    "merge_into_id": self.merge_into_id
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+                index_record = {
+                    "_index": "merge-publishers",
+                    "_id": self.openalex_id,
+                    "_source": {
+                        "id": self.openalex_id,
+                        "merge_into_id": as_publisher_openalex_id(self.merge_into_id),
+                    }
                 }
-            }
-        ]
+            else:
+                logger.info(f"already merged into {self.merge_into_id}, not saving again")
+        else:
+            my_dict = self.to_dict()
+            my_dict['updated'] = my_dict.get('updated_date')
+            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+            my_dict['@version'] = 1
+            entity_hash = entity_md5(my_dict)
+
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+                index_record = {
+                    "_index": "publishers-v4",
+                    "_id": self.openalex_id,
+                    "_source": my_dict
+                }
+            else:
+                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+
+        self.json_entity_hash = entity_hash
+        return index_record
 
 
 class PublisherSelfAndAncestors(db.Model):

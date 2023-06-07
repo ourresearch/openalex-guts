@@ -22,18 +22,39 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
-from util import clean_doi
+from util import clean_doi, entity_md5
 from util import clean_html
-from util import dictionary_nested_diff
 from util import elapsed
 from util import f_generate_inverted_index
-from util import jsonify_fast_no_sort_raw
 from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
 from util import detect_language_from_abstract_and_title
 
 DELETED_WORK_ID = 4285719527
+
+
+def elastic_index_suffix(publication_year):
+    if not publication_year or not isinstance(publication_year, int):
+        return "invalid-data"
+
+    if publication_year < 1960:
+        return "1959-or-less"
+    elif publication_year > 1959 and publication_year < 1970:
+        return "1960s"
+    elif publication_year > 1969 and publication_year < 1980:
+        return "1970s"
+    elif publication_year > 1979 and publication_year < 1990:
+        return "1980s"
+    elif publication_year > 1989 and publication_year < 1995:
+        return "1990-to-1994"
+    elif publication_year > 1994 and publication_year < 2000:
+        return "1995-to-1999"
+    elif publication_year > 2025:
+        return "invalid-data"
+    else:
+        return str(publication_year)
+
 
 # truncate mid.work
 # insert into mid.work (select * from legacy.mag_main_papers)
@@ -171,6 +192,7 @@ class Work(db.Model):
 
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
+    json_entity_hash = db.Column(db.Text)
 
     def __init__(self, **kwargs):
         super(Work, self).__init__(**kwargs)
@@ -540,8 +562,10 @@ class Work(db.Model):
                 if len(indexed_abstract) >= 60000:
                     # truncate the abstract if too long
                     indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
-                insert_dict = {"paper_id": self.paper_id, "indexed_abstract": indexed_abstract}
-                # self.insert_dicts += [{"Abstract": insert_dict}]
+                insert_dict = {
+                    "paper_id": self.paper_id,
+                    "indexed_abstract": indexed_abstract
+                }
                 self.abstract = models.Abstract(**insert_dict)
                 self.abstract_indexed_abstract = indexed_abstract
                 return
@@ -1148,78 +1172,64 @@ class Work(db.Model):
             }
 
     def store(self):
-        self.insert_dicts = []
+        if not self.full_updated_date:
+            return None
 
-        if not self.merge_into_id and not self.full_updated_date:
-            logger.info(f"Not storing anything for {self.openalex_id} yet because no full_updated_date or merge_into_id, so is a stub waiting for add_everything")
-            return
+        index_record = None
+        entity_hash = None
 
-        VERSION_STRING = "new: updated if changed"
-        my_full_dict = self.to_dict("full")
+        if self.merge_into_id is not None:
+            entity_hash = entity_md5(self.merge_into_id)
 
-        if self.stored and (self.stored.merge_into_id == self.merge_into_id):
-            if self.merge_into_id is not None and self.stored.json_save is None:
-                #  don't keep saving merged entities and bumping their updated and changed dates
+            if entity_hash != self.json_entity_hash:
+                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+                index_record = {
+                    "_index": "merge-works",
+                    "_id": self.openalex_id,
+                    "_source": {
+                        "id": self.openalex_id,
+                        "merge_into_id": as_work_openalex_id(self.merge_into_id),
+                    }
+                }
+            else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
-                return
-            if self.stored.json_save:
-                stored_full_dict = json.loads(self.stored.json_save_with_abstract)
+        else:
+            my_dict = self.to_dict("full")
+            my_dict['updated'] = my_dict.get('updated_date')
+            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+            my_dict['@version'] = 1
+            my_dict['authors_count'] = len(self.affiliations_list)
+            my_dict['concepts_count'] = len(self.concepts_sorted)
+            my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
 
-                # freeze publication date/year until elastic partitioning is fixed
-                if stored_pub_year := stored_full_dict.get('publication_year'):
-                    my_full_dict['publication_year'] = stored_pub_year
-                if stored_pub_date := stored_full_dict.get('publication_date'):
-                    my_full_dict['publication_date'] = stored_pub_date
+            if self.abstract and self.abstract.abstract:
+                my_dict['abstract'] = self.abstract.abstract
 
-                # check merged here for everything but concept
-                diff = dictionary_nested_diff(stored_full_dict, my_full_dict, ["updated_date"])
-                if not diff:
-                    logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
-                    return
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again.")
-                logger.debug(f"Work JSON Diff: {diff}")
+            if self.fulltext and self.fulltext.fulltext:
+                my_dict['fulltext'] = self.fulltext.fulltext
 
-        now = datetime.datetime.utcnow().isoformat()
-        self.full_updated_date = now
-        my_full_dict["updated_date"] = now
+            if len(my_dict.get('authorships', [])) > 100:
+                my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
 
-        json_save = None
-        json_save_with_abstract = None
-        self.abstract_inverted_index = None
-        if not self.merge_into_id:
-            my_store_dict = self.to_dict("store")
-            my_store_dict['publication_year'] = my_full_dict.get('publication_year')
-            my_store_dict['publication_date'] = my_full_dict.get('publication_date')
-            my_store_dict['updated_date'] = my_full_dict.get('updated_date')
-            json_save = jsonify_fast_no_sort_raw(my_store_dict)
-            self.abstract_inverted_index = self.abstract.indexed_abstract if self.abstract else None
-            json_save_with_abstract = jsonify_fast_no_sort_raw(my_full_dict)
+            if self.is_closed_springer:
+                my_dict.pop('abstract', None)
+                my_dict["abstract_inverted_index"] = None
 
-        if self.is_closed_springer:
-            self.abstract_inverted_index = None
+            entity_hash = entity_md5(my_dict)
 
-        #if json_save and len(json_save) > 65000:
-        #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-        #    json_save = None
-        #if json_save_with_abstract and len(json_save_with_abstract) > 65000:
-        #    print("Error: json_save_escaped too long for paper_id {}, skipping".format(self.openalex_id))
-        #    json_save_with_abstract = json_save
+            if entity_hash != self.json_entity_hash:
+                index_suffix = elastic_index_suffix(self.year)
+                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+                index_record = {
+                    "_index": f"works-v18-{index_suffix}",
+                    "_id": self.openalex_id,
+                    "_source": my_dict
+                }
+            else:
+                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
-        self.insert_dicts = [{"JsonWorks": {"id": self.paper_id,
-                                            "updated": now,
-                                            "changed": now,
-                                            "json_save": json_save,
-                                            "version": VERSION_STRING,
-                                            "abstract_inverted_index": self.abstract_inverted_index, # comment out if going fast
-                                            "json_save_with_abstract": json_save_with_abstract, # comment out if going fast
-                                            "authors_count": len(self.affiliations_list),
-                                            "concepts_count": len(self.concepts_sorted),
-                                            "merge_into_id": self.merge_into_id
-                                            }}]
-
-        # print("processing work! {}".format(self.id))
-
-
+        self.json_entity_hash = entity_hash
+        return index_record
 
     @cached_property
     def display_counts_by_year(self):
@@ -1450,9 +1460,9 @@ class Work(db.Model):
         updated_date = self.updated_date # backup in case full_updated_date is null waiting for update
         if self.full_updated_date:
             if isinstance(self.full_updated_date, datetime.datetime):
-                updated_date = self.full_updated_date.isoformat()[0:10]
+                updated_date = self.full_updated_date.isoformat()
             else:
-                updated_date = self.full_updated_date[0:10]
+                updated_date = self.full_updated_date
         if return_level in ("full", "store"):
             grant_dicts = []
             for f in self.funders:
@@ -1519,5 +1529,13 @@ class Work(db.Model):
         return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
 
 
+class WorkFulltext(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "work_fulltext"
+
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    doi = db.Column(db.Text)
+    fulltext = db.Column(db.Text)
 
 
+Work.fulltext = db.relationship(WorkFulltext, lazy='selectin', viewonly=True, uselist=False)
