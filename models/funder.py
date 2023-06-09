@@ -49,6 +49,12 @@ class Funder(db.Model):
         from models import short_openalex_id
         return short_openalex_id(self.openalex_id)
 
+    @property
+    def doi_url(self):
+        if not self.doi:
+            return None
+        return "https://doi.org/{}".format(self.doi.lower())
+
     @cached_property
     def display_counts_by_year(self):
         response_dict = {}
@@ -152,7 +158,7 @@ class Funder(db.Model):
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
                 "crossref": self.crossref_id,
-                "doi": self.doi,
+                "doi": self.doi_url,
             },
         }
 
