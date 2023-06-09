@@ -151,6 +151,8 @@ class Funder(db.Model):
                 "openalex": self.openalex_id,
                 "wikidata": self.wikidata_id,
                 "ror": self.ror_id,
+                "crossref": self.crossref_id,
+                "doi": self.doi,
             },
         }
 
