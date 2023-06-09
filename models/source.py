@@ -266,6 +266,7 @@ class Source(db.Model):
             "host_organization_name": self.host_organization_name,
             "host_organization_lineage": self.host_organization_lineage(),
             "host_organization_lineage_names": self.host_organization_lineage_names(),
+            "is_in_doaj": self.is_in_doaj or False,
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
@@ -286,7 +287,6 @@ class Source(db.Model):
                     "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
                 },
                 "is_oa": self.is_oa or False,
-                "is_in_doaj": self.is_in_doaj or False,
                 "alternate_titles": self.alternate_titles,
                 "abbreviated_title": self.abbreviated_title,
                 "homepage_url": self.webpage,
