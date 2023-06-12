@@ -218,6 +218,34 @@ class Source(db.Model):
         else:
             return []
 
+    @property
+    def host_institution_lineage(self):
+        if self.type == "repository" and self.institution:
+            return [self.institution.openalex_id]
+        else:
+            return []
+
+    @property
+    def host_institution_lineage_names(self):
+        if self.type == "repository" and self.institution:
+            return [self.institution.display_name]
+        else:
+            return []
+
+    @property
+    def publisher_lineage(self):
+        if self.publisher_entity and self.type != "repository":
+            return self.publisher_entity.lineage()
+        else:
+            return []
+
+    @property
+    def publisher_lineage_names(self):
+        if self.publisher_entity and self.type != "repository":
+            return self.publisher_entity.lineage_names()
+        else:
+            return []
+
     def host_organization_lineage_names(self):
         if self.type == "journal" and self.publisher_entity:
             return self.publisher_entity.lineage_names()
@@ -267,6 +295,10 @@ class Source(db.Model):
             "host_organization_lineage": self.host_organization_lineage(),
             "host_organization_lineage_names": self.host_organization_lineage_names(),
             "is_in_doaj": self.is_in_doaj or False,
+            "host_institution_lineage": self.host_institution_lineage,
+            "host_institution_lineage_names": self.host_institution_lineage_names,
+            "publisher_lineage": self.publisher_lineage,
+            "publisher_lineage_names": self.publisher_lineage_names,
             "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
