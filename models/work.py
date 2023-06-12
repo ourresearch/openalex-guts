@@ -1148,27 +1148,41 @@ class Work(db.Model):
         # return response
 
     @property
-    def apc_payment(self):
+    def apc_paid(self):
+        """Display OpenAPC if it exists, then fall back to DOAJ."""
         first_doaj_apc = (
-            self.journal.apc_prices[0] if self.journal and self.journal.apc_prices else None
+            self.journal.apc_prices_with_0[0] if self.journal and self.journal.apc_prices_with_0 else None
         )
-        doaj_apc_in_usd = self.journal.apc_usd if self.journal else None
+        doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
 
         if self.openapc:
-            # prefer openapc if it exists
             return {
-                "price": self.openapc.apc_in_euro,
+                "value": self.openapc.apc_in_euro,
                 "currency": "EUR",
+                "value_usd": self.openapc.apc_in_usd,
                 "provenance": "openapc",
-                "price_usd": self.openapc.apc_in_usd,
             }
         elif first_doaj_apc:
-            # fall back to doaj
             return {
-                "price": first_doaj_apc.get("price", None),
+                "value": first_doaj_apc.get("price", None),
                 "currency": first_doaj_apc.get("currency", None),
+                "value_usd": doaj_apc_in_usd,
                 "provenance": "doaj",
-                "price_usd": doaj_apc_in_usd,
+            }
+
+    @property
+    def apc_list(self):
+        """Display first DOAJ APC."""
+        first_doaj_apc = (
+            self.journal.apc_prices_with_0[0] if self.journal and self.journal.apc_prices_with_0 else None
+        )
+        doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
+        if first_doaj_apc:
+            return {
+                "value": first_doaj_apc.get("price", None),
+                "currency": first_doaj_apc.get("currency", None),
+                "value_usd": doaj_apc_in_usd,
+                "provenance": "doaj",
             }
 
     def store(self):
@@ -1503,7 +1517,8 @@ class Work(db.Model):
                 "locations": self.dict_locations,
                 "referenced_works": self.references_list,
                 "grants": grant_dicts,
-                "apc_payment": self.apc_payment,
+                "apc_list": self.apc_list,
+                "apc_paid": self.apc_paid,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
             })
 
