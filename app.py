@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from flask_compress import Compress
 from flask_debugtoolbar import DebugToolbarExtension
 import datetime
@@ -31,6 +32,7 @@ from util import HTTPMethodOverrideMiddleware
 
 HEROKU_APP_NAME = "openalex-guts"
 USER_AGENT = "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"
+GUTS_API_KEY = os.getenv("GUTS_API_KEY")
 
 # set up logging
 # see http://wiki.pylonshq.com/display/pylonscookbook/Alternative+logging+configuration
@@ -120,6 +122,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_pre_ping": True,
 
 app.config["SQLALCHEMY_POOL_SIZE"] = 10
 db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": False})
+
+# CORS
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # do compression.  has to be above flask debug toolbar so it can override this.
 compress_json = os.getenv("COMPRESS_DEBUG", "True")=="True"
