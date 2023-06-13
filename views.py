@@ -27,9 +27,9 @@ def require_api_key(view_function):
     return decorated_function
 
 
-@app.route('/claim', methods=['POST'])
+@app.route('/claim-author', methods=['POST'])
 @require_api_key
-def claim():
+def claim_author():
     """
     Associates a user id from the frontend with an openalex author ID.
     """
@@ -50,9 +50,9 @@ def claim():
     return jsonify({'message': message}), 200
 
 
-@app.route('/merge', methods=['POST'])
+@app.route('/merge-authors', methods=['POST'])
 @require_api_key
-def merge():
+def merge_authors():
     """
     Merge openalex author IDs into a claimed profile.
     """
