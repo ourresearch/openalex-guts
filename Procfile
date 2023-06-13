@@ -1,4 +1,4 @@
-web: DATABASE_TO_USE=api gunicorn views:app -w 1 --timeout 36000 --reload
+web: gunicorn views:app
 
 #run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=$RT_RECORD_CHUNK_SIZE --name=queue_record$DYNO
 run_queue_record: python -m scripts.queue_record_assign_work --chunk=$RT_RECORD_CHUNK_SIZE
