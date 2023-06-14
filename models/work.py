@@ -1516,6 +1516,7 @@ class Work(db.Model):
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
                 "referenced_works": self.references_list,
+                "referenced_works_count": len(self.references_list),
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
