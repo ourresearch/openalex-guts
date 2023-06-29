@@ -52,6 +52,7 @@ class Location(db.Model):
     endpoint_id = db.Column(db.Text, db.ForeignKey("mid.journal.repository_id"))
     evidence = db.Column(db.Text)
     updated = db.Column(db.Text)
+    doi = db.Column(db.Text)  # it is possible for any location to have its own doi
 
     @property
     def is_oa(self):
@@ -114,6 +115,12 @@ class Location(db.Model):
                 return True  # else is probably a component or stub record
         return False
 
+    @property
+    def doi_url(self):
+        if not self.doi:
+            return None
+        return "https://doi.org/{}".format(self.doi.lower())
+
     def has_any_url(self):
         return bool(self.url_for_pdf or self.url_for_landing_page or self.source_url)
 
@@ -152,6 +159,7 @@ class Location(db.Model):
             "version": self.version,
             "license": self.display_license,
             # "repository_institution": self.repository_institution,
+            "doi": self.doi_url,
         }
 
         return response
@@ -164,6 +172,7 @@ class Location(db.Model):
             'is_oa': self.is_oa,
             'version': self.version,
             'license': self.display_license,
+            'doi': self.doi_url,
         }
 
     def __repr__(self):

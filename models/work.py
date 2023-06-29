@@ -193,6 +193,7 @@ class Work(db.Model):
     merge_into_id = db.Column(db.BigInteger)
     merge_into_date = db.Column(db.DateTime)
     json_entity_hash = db.Column(db.Text)
+    arxiv_id = db.Column(db.Text)
 
     def __init__(self, **kwargs):
         super(Work, self).__init__(**kwargs)
@@ -587,14 +588,20 @@ class Work(db.Model):
                 return
 
     def add_ids(self):
+        arxiv_repository_id = "ca8f8d56758a80a4f86"
+        already_found_pmid = False
         for record in self.records:
-            # just pmid for now
-            if record.pmid:
+            # pmid
+            if record.pmid and (already_found_pmid is False):
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
                 if record.pmid not in [extra.attribute_value for extra in self.extra_ids if extra.attribute_type==2]:
                     self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
-                return
+                already_found_pmid = True
+            # arxiv_id
+            if (record.arxiv_id) and (record.repository_id is arxiv_repository_id or (not self.arxiv_id)):
+                self.full_updated_date = datetime.datetime.utcnow().isoformat()
+                self.arxiv_id = record.arxiv_id
 
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
@@ -622,12 +629,19 @@ class Work(db.Model):
                 "url_for_landing_page": unpaywall_oa_location["url_for_landing_page"],
                 "url_for_pdf": unpaywall_oa_location["url_for_pdf"],
                 "version": unpaywall_oa_location["version"],
-                "license": unpaywall_oa_location["license"]}
+                "license": unpaywall_oa_location["license"],
+            }
             if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
                 insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
             # self.insert_dicts += [{"Location": insert_dict}]
             if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
                 insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
+            if insert_dict["endpoint_id"] == "ca8f8d56758a80a4f86":
+                # special case for arXiv
+                insert_dict["doi"] = insert_dict["pmh_id"].replace(
+                    'oai:arXiv.org:',
+                    '10.48550/arxiv.'
+                )
             self.locations += [models.Location(**insert_dict)]
 
     def add_references(self):
@@ -1289,7 +1303,8 @@ class Work(db.Model):
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
                     'version': r.open_version,
-                    'license': r.open_license
+                    'license': r.open_license,
+                    'doi': doi_url,
                 }
 
                 # bare minimum: include the DOI as the landing page URL
@@ -1315,14 +1330,24 @@ class Work(db.Model):
                 continue
 
             if r.record_type == 'pmh_record':
+                if r.doi:
+                    doi_url = f'https://doi.org/{r.doi}'
+                else:
+                    doi_url = None
+
                 pmh_location = {
                     'source': r.journal and r.journal.to_dict(return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
                     'version': r.open_version,
-                    'license': r.open_license
+                    'license': r.open_license,
+                    'doi': doi_url,
                 }
+
+                # special case for arXiv
+                if r.repository_id == "ca8f8d56758a80a4f86":
+                    pmh_location['doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1371,13 +1396,18 @@ class Work(db.Model):
         # pubmed
         for r in self.records_sorted:
             if r.record_type == 'pubmed_record' and r.pmid:
+                if r.doi:
+                    doi_url = f'https://doi.org/{r.doi}'
+                else:
+                    doi_url = None
                 pubmed_location = {
                     'source': pubmed_json(),
                     'pdf_url': None,
                     'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
                     'is_oa': False,
                     'version': None,
-                    'license': None
+                    'license': None,
+                    'doi': doi_url,
                 }
                 locations.append(pubmed_location)
                 break
@@ -1391,7 +1421,8 @@ class Work(db.Model):
                     'landing_page_url': self.doi_url,
                     'is_oa': False,
                     'version': None,
-                    'license': None
+                    'license': None,
+                    'doi': self.doi_url,
                 }
             )
 
@@ -1445,8 +1476,9 @@ class Work(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
-                "pmid": None, #filled in below
-                "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None
+                "pmid": None, #filled in below (extra_ids)
+                "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None,
+                "arxiv_id": self.arxiv_id,
             },
             "primary_location": self.dict_locations[0] if self.dict_locations else None,
             "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
