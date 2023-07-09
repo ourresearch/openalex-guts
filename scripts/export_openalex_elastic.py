@@ -8,6 +8,7 @@ import time
 import boto3
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
+import redis
 
 from app import ELASTIC_URL
 
@@ -19,6 +20,7 @@ s3 = boto3.client('s3')
 
 # Configure Elasticsearch client
 es = Elasticsearch([ELASTIC_URL])
+r = redis.Redis(host='localhost', port=6379, db=2)
 
 
 def get_distinct_updated_dates(index_name):
@@ -51,8 +53,8 @@ def get_distinct_updated_dates(index_name):
 
 def export_date(args):
     index_name, entity_type, d = args
-    MAX_FILE_SIZE = 5 * 1024 ** 3  # 5GB
-    PAGE_SIZE = 500  # Set a page size for the search after queries
+    MAX_FILE_SIZE = 5 * 1024 ** 3  # 5GB uncompressed
+    PAGE_SIZE = 1000  # Set a page size for the search after queries
     count = 0
     date_dir = os.path.join(data_dir, entity_type, f"updated_date={d}")
 
@@ -62,7 +64,7 @@ def export_date(args):
 
     s = Search(using=es, index=index_name).query("term", updated_date=d)
     s = s.sort(*["-cited_by_count", "id"])
-    s = s.source(excludes=['_source', 'fulltext', 'abstract'])
+    s = s.source(excludes=['_source', 'fulltext', 'abstract', 'version', '@version', '@timestamp'])
     s = s.extra(size=PAGE_SIZE)
     response = s.execute()
 
@@ -72,20 +74,26 @@ def export_date(args):
             part_file = gzip.open(f'{date_dir}/part_{str(part_file_number).zfill(3)}.gz', 'wt')
 
         for hit in response:
-            count += 1
-            line = json.dumps(hit.to_dict()) + '\n'
-            line_size = len(line.encode('utf-8'))
+            record_id = hit.id
+            if r.sadd('record_ids', record_id):
+                count += 1
+                line = json.dumps(hit.to_dict()) + '\n'
+                line_size = len(line.encode('utf-8'))
 
-            # If this line will make the file exceed the max size, close the current file and open a new one
-            if total_size + line_size > MAX_FILE_SIZE:
-                part_file.close()
-                part_file_number += 1
-                part_file = gzip.open(f'{date_dir}/part_{str(part_file_number).zfill(3)}.gz', 'wt')
-                total_size = 0
+                # If this line will make the file exceed the max size, close the current file and open a new one
+                if total_size + line_size > MAX_FILE_SIZE:
+                    part_file.close()
+                    part_file_number += 1
+                    part_file = gzip.open(f'{date_dir}/part_{str(part_file_number).zfill(3)}.gz', 'wt')
+                    total_size = 0
 
-            print(f"writing {line_size} bytes to {part_file.name} with count {count}")
-            part_file.write(line)
-            total_size += line_size
+                if count % 10000 == 0:
+                    print(f"{entity_type} {d} {count}")
+
+                part_file.write(line)
+                total_size += line_size
+            else:
+                print(f"Skipping record {record_id}. Already in dataset.")
 
         # Get the last document's sort value and use it for the search_after parameter
         last_hit_sort = response.hits.hits[-1]['sort']
@@ -146,10 +154,10 @@ def make_manifests():
 
 if __name__ == "__main__":
     start_time = time.time()
-    export_entity('sources-v2', 'sources')
+    export_entity('works-v18-*,-*invalid-data', 'works')
     end_time = time.time()
     print(f"Total time: {end_time - start_time} seconds")
-    make_manifests()
+    # make_manifests()
 
 # Replace the arguments with the appropriate index names and json field names
 # export_entity('index_name_for_concepts', 'concepts', 'json_save')
