@@ -20,6 +20,8 @@ s3 = boto3.client('s3')
 
 # Configure Elasticsearch client
 es = Elasticsearch([ELASTIC_URL])
+
+# Configure redis client
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 
@@ -48,6 +50,9 @@ def get_distinct_updated_dates(index_name):
     # Convert the dates to yyyy-mm-dd format
     dates = [date.split("T")[0] for date in dates]
 
+    # Sort the dates newest to oldest
+    dates.sort(reverse=True)
+
     return dates
 
 
@@ -75,6 +80,12 @@ def export_date(args):
 
         for hit in response:
             record_id = hit.id
+            # convert to integer
+            try:
+                record_id = int(record_id.replace("https://openalex.org/W", ""))
+            except ValueError:
+                print(f"Skipping record {record_id}. Not an integer.")
+                continue
             if r.sadd('record_ids', record_id):
                 count += 1
                 line = json.dumps(hit.to_dict()) + '\n'
@@ -154,6 +165,7 @@ def make_manifests():
 
 if __name__ == "__main__":
     start_time = time.time()
+    r.flushdb()
     export_entity('works-v18-*,-*invalid-data', 'works')
     end_time = time.time()
     print(f"Total time: {end_time - start_time} seconds")
