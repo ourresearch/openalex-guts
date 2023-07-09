@@ -71,6 +71,7 @@ def export_date(args):
     s = s.sort(*["-cited_by_count", "id"])
     s = s.source(excludes=['_source', 'fulltext', 'abstract', 'version', '@version', '@timestamp'])
     s = s.extra(size=PAGE_SIZE)
+    s = s.params(preference=d)
     response = s.execute()
 
     while len(response.hits) > 0:
@@ -112,6 +113,7 @@ def export_date(args):
         s = s.sort(*["-cited_by_count", "id"])
         s = s.source(excludes=['_source', 'fulltext', 'abstract'])
         s = s.extra(size=PAGE_SIZE, search_after=last_hit_sort)
+        s = s.params(preference=d)
         response = s.execute()
 
     if part_file is not None:  # If file was created, close it
