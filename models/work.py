@@ -993,8 +993,7 @@ class Work(db.Model):
             affiliation_dict[affil.author_sequence_number] += [affil.to_dict("minimum")]
         response = []
         for seq, affil_list in affiliation_dict.items():
-            institution_list = [a["institution"] for a in affil_list]
-            # institution_list = [a["institution"] for a in affil_list if a["institution"]["id"] != None]
+            institution_list = [a["institution"] for a in affil_list if a["institution"].get("id") is not None]
             if institution_list == [{}]:
                 institution_list = []
             if len(affiliation_dict) == 1:
