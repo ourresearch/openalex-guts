@@ -179,8 +179,8 @@ def make_manifests():
 if __name__ == "__main__":
     for entity, index in entities_to_indices.items():
         start_time = time.time()
-        export_entity(index, entity)
         r.flushdb()
+        export_entity(index, entity)
         end_time = time.time()
         print(f"Total time: {end_time - start_time} seconds")
     # make_manifests()
