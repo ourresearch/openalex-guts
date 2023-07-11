@@ -24,6 +24,16 @@ es = Elasticsearch([ELASTIC_URL])
 # Configure redis client
 r = redis.Redis(host='localhost', port=6379, db=2)
 
+entities_to_indices = {
+    # "authors": "authors-v10",
+    "concepts": "concepts-v8",
+    "funders": "funders-v3",
+    "institutions": "institutions-v5",
+    "publishers": "publishers-v4",
+    "sources": "sources-v2",
+    # "works": "works-v18-*,-*invalid-data",
+}
+
 
 def get_distinct_updated_dates(index_name):
     print(f"get distinct changed dates for {index_name}")
@@ -61,6 +71,7 @@ def export_date(args):
     MAX_FILE_SIZE = 5 * 1024 ** 3  # 5GB uncompressed
     PAGE_SIZE = 1000  # Set a page size for the search after queries
     count = 0
+    index_id_prefix = f"https://openalex.org/{entity_type[0].upper()}"
     date_dir = os.path.join(data_dir, entity_type, f"updated_date={d}")
 
     part_file_number = 0
@@ -83,7 +94,7 @@ def export_date(args):
             record_id = hit.id
             # convert to integer
             try:
-                record_id = int(record_id.replace("https://openalex.org/W", ""))
+                record_id = int(record_id.replace(index_id_prefix, ""))
             except ValueError:
                 print(f"Skipping record {record_id}. Not an integer.")
                 continue
@@ -166,20 +177,10 @@ def make_manifests():
 
 
 if __name__ == "__main__":
-    start_time = time.time()
-    r.flushdb()
-    export_entity('works-v18-*,-*invalid-data', 'works')
-    end_time = time.time()
-    print(f"Total time: {end_time - start_time} seconds")
+    for entity, index in entities_to_indices.items():
+        start_time = time.time()
+        export_entity(index, entity)
+        r.flushdb()
+        end_time = time.time()
+        print(f"Total time: {end_time - start_time} seconds")
     # make_manifests()
-
-# Replace the arguments with the appropriate index names and json field names
-# export_entity('index_name_for_concepts', 'concepts', 'json_save')
-# export_table('index_name_for_funders', 'funders', 'json_save')
-# export_table('index_name_for_institutions', 'institutions', 'json_save')
-# export_table('index_name_for_publishers', 'publishers', 'json_save')
-# export_table('index_name_for_sources', 'sources', 'json_save')
-# export_table('index_name_for_authors', 'authors', 'json_save')
-# export_table('index_name_for_works', 'works', 'json_save_with_abstract')
-
-# make_manifests()
