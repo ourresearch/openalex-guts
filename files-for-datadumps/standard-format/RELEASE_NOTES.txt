@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-07-11
+- add references_count to works
+- add records across all entities
+- updated and improved records across all entities
+
 RELEASE 2023-06-02
 - add new works
 - add apc_payment to works
