@@ -248,6 +248,7 @@ class Work(db.Model):
                 key=lambda a: a.affiliation_sequence_number
             )
 
+            original_affiliations = []
             if update_original_affiliations:
                 original_affiliations = [
                     aff.get('name')
@@ -255,7 +256,7 @@ class Work(db.Model):
                     if aff.get('name')
                 ]
                 is_corresponding_author = record_author_dict_list[author_idx].get('is_corresponding', False)
-            else:
+            if not original_affiliations:
                 original_affiliations = [a.original_affiliation for a in author_affiliations if a.original_affiliation]
                 is_corresponding_author = author_affiliations[0].is_corresponding_author
 
@@ -409,13 +410,6 @@ class Work(db.Model):
         if self.merge_into_id:
             # don't add relation table entries for merged works
             logger.info(f"not updating W{self.paper_id} because it was perged into W{self.merge_into_id}")
-            return
-
-        if not self.records_sorted:
-            # not associated with a record, so leave it for now
-            # merged-away works have their records' work ids updated,
-            # so also do nothing for merged-away works
-            logger.info(f"No associated records for {self.paper_id}, so skipping")
             return
 
         start_time = time()
