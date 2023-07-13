@@ -412,6 +412,13 @@ class Work(db.Model):
             logger.info(f"not updating W{self.paper_id} because it was perged into W{self.merge_into_id}")
             return
 
+        if not self.records_sorted:
+            # not associated with a record, so leave it for now
+            # merged-away works have their records' work ids updated,
+            # so also do nothing for merged-away works
+            logger.info(f"No associated records for {self.paper_id}, so skipping")
+            return
+
         start_time = time()
         self.set_fields_from_all_records()
         logger.info(f'set_fields_from_all_records took {elapsed(start_time, 2)} seconds')
