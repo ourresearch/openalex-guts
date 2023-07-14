@@ -30,10 +30,11 @@ def run(entity, merge_away_id, merge_into_id):
     merge_into_obj = my_class.query.options(orm.Load(my_class).raiseload('*')).get(merge_into_id)
     print(f"merging {merge_away_obj} \n away into {merge_into_obj}")
 
-    merge_into_obj.paper_count += merge_away_obj.paper_count
-    paper_family_count = merge_away_obj.paper_family_count if merge_away_obj.paper_family_count else 0
-    merge_into_obj.paper_family_count += paper_family_count # column can go away after MAG format done
-    merge_into_obj.citation_count += merge_away_obj.citation_count
+    # TODO: many of these fields are deprecated. Document this better and/or clean up the code and database tables
+    # merge_into_obj.paper_count += merge_away_obj.paper_count
+    # paper_family_count = merge_away_obj.paper_family_count if merge_away_obj.paper_family_count else 0
+    # merge_into_obj.paper_family_count += paper_family_count # column can go away after MAG format done
+    # merge_into_obj.citation_count += merge_away_obj.citation_count
     merge_into_obj.full_updated_date = now
 
     merge_away_obj.merge_into_id = merge_into_id
