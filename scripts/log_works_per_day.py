@@ -12,11 +12,11 @@ yesterday = (
 ).isoformat()
 
 num_created = requests.get(
-    f'http://api.openalex.org/works?filter=from_created_date:{yesterday}&api_key={api_key}'
+    f'https://api.openalex.org/works?filter=from_created_date:{yesterday}&api_key={api_key}'
 ).json().get('meta').get('count')
 
 num_updated = requests.get(
-    f'http://api.openalex.org/works?filter=from_updated_date:{yesterday}&api_key={api_key}'
+    f'https://api.openalex.org/works?filter=from_updated_date:{yesterday}&api_key={api_key}'
 ).json().get('meta').get('count')
 
 logger.info({'day': yesterday, 'created': num_created, 'updated': num_updated})
