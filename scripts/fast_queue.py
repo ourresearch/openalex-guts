@@ -19,7 +19,7 @@ from util import elapsed
 # test this script locally
 # 1. Save environment variables to .env file with: heroku config -s > .env
 # 2. Run the script to save an example ID: heroku local:run python -m scripts.fast_queue --entity=work --method=store --id=2008120268
-# 3. Check to see that your id saved properly in the json_entity table (e.g. json_works)
+# 3. Changes should be reflected in elasticsearch and the api.
 
 
 def run(**kwargs):
