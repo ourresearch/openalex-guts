@@ -1366,7 +1366,7 @@ class Work(db.Model):
                 }
 
                 # special case for arXiv
-                if r.repository_id == "ca8f8d56758a80a4f86":
+                if r.repository_id == "ca8f8d56758a80a4f86" and r.arxiv_id:
                     pmh_location['doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
 
                 if pmh_location['pdf_url']:
