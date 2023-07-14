@@ -83,7 +83,11 @@ class QueueWorkProcessSdgs:
 
                 for work in works:
                     logger.info(f'running process_sdgs on {work}')
-                    process_sdg(work)
+                    try:
+                        process_sdg(work)
+                    except Exception as e:
+                        logger.error(f'error processing {work}')
+                        continue
 
                 db.session.execute('''
                     UPDATE queue.run_once_work_process_sdgs 
