@@ -16,10 +16,20 @@ from util import elapsed
 
 def process_sdg(work):
     print(f"Processing {work.id}")
-    url = "https://sdg-classifier.openalex.org/classify/"
-    data = {"text": work.work_title + " " + work.abstract.abstract}
+    text_to_process = work.work_title + " " + work.abstract.abstract
+    if len(text_to_process) > 1500:
+        print("using aurora classifier")
+        url = "https://aurora-sdg.labs.vu.nl/classifier/classify/elsevier-sdg-multi"
+    else:
+        url = "https://sdg-classifier.openalex.org/classify/"
+    data = {"text": text_to_process}
     r = requests.post(url, json=data)
     if r.status_code == 200:
+        if len(text_to_process) > 1500:
+            result = r.json().get("predictions")
+        else:
+            result = r.json()
+        result_sorted = sorted(result, key=lambda x: x["prediction"], reverse=True)
         db.session.execute(
             text(
                 """
@@ -28,7 +38,7 @@ def process_sdg(work):
             ON CONFLICT (paper_id) DO UPDATE SET predictions = :predictions
             """
             ),
-            {"paper_id": work.id, "predictions": json.dumps(r.json())},
+            {"paper_id": work.id, "predictions": json.dumps(result_sorted)},
         )
         db.session.execute('''
                         UPDATE queue.run_once_work_process_sdgs 
