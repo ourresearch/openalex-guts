@@ -29,7 +29,12 @@ def process_sdg(work):
             result = r.json().get("predictions")
         else:
             result = r.json()
-        result_sorted = sorted(result, key=lambda x: x["prediction"], reverse=True)
+        # replace http in id field to https
+        modified = []
+        for item in result:
+            item["sdg"]["id"] = item["sdg"]["id"].replace("http://", "https://")
+            modified.append(item)
+        result_sorted = sorted(modified, key=lambda x: x["prediction"], reverse=True)
         db.session.execute(
             text(
                 """
