@@ -2,14 +2,19 @@ import argparse
 from time import sleep
 from time import time
 
+from redis import Redis
 from sqlalchemy import orm
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
 
 import models
+from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
 from util import elapsed
+from scripts.fast_queue import REDIS_WORK_QUEUE
+
+_redis = Redis.from_url(REDIS_QUEUE_URL)
 
 
 class QueueWorkAddEverything:
@@ -34,6 +39,7 @@ class QueueWorkAddEverything:
                 ''').bindparams(work_id=single_id)
             )
             db.session.commit()
+            _redis.zadd(REDIS_WORK_QUEUE, {single_id: time()})
         else:
             num_updated = 0
 
@@ -70,6 +76,9 @@ class QueueWorkAddEverything:
                         do update set finished = null
                     ''').bindparams(work_ids=work_ids)
                 )
+
+                redis_queue_mapping = {work_id: time() for work_id in work_ids}
+                _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
 
                 commit_start_time = time()
                 db.session.commit()

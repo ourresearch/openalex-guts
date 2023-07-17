@@ -1,25 +1,27 @@
 import argparse
-from time import sleep, time
 from collections import defaultdict
+from time import sleep, time
 
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+from redis import Redis
 from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
 
 import models
+from app import ELASTIC_URL
+from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
-from app import ELASTIC_URL
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonVenues
-from models.json_store import JsonSources, JsonPublishers, JsonFunders
 from util import elapsed
-
 
 # test this script locally
 # 1. Save environment variables to .env file with: heroku config -s > .env
 # 2. Run the script to save an example ID: heroku local:run python -m scripts.fast_queue --entity=work --method=store --id=2008120268
 # 3. Check to see that your id saved properly in the json_entity table (e.g. json_works)
+
+_redis = Redis.from_url(REDIS_QUEUE_URL)
+REDIS_WORK_QUEUE = 'queue:work_store'
 
 
 def run(**kwargs):

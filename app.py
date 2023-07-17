@@ -47,6 +47,7 @@ logging.basicConfig(
 logger = logging.getLogger("oadoi")
 
 REDIS_URL = os.getenv("REDISCLOUD_URL")
+REDIS_QUEUE_URL = os.getenv("REDISCLOUD_CRIMSON_URL")
 API_HOST = os.getenv("API_HOST")
 ELASTIC_URL = os.getenv("ELASTIC_URL")
 MAX_MAG_ID = 4200000000
