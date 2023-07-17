@@ -81,10 +81,26 @@ def run(**kwargs):
                 finish_object_ids(queue_table, object_ids)
                 objects_updated += len(objects)
 
+                if entity_type == 'work' and method_name == 'store':
+                    log_work_store_time(loop_start, time(), chunk)
+
                 logger.info(f'processed chunk of {chunk} objects in {elapsed(loop_start, 2)} seconds')
             else:
                 logger.info('nothing ready in the queue, waiting 5 seconds...')
                 sleep(5)
+
+
+def log_work_store_time(started, finished, chunk_size):
+    text_query = f"""
+        insert into log.work_store_batch (started, finished, batch_size)
+        values (to_timestamp(:started), to_timestamp(:finished), :batch_size)
+    """
+
+    db.engine.execute(text(text_query).bindparams(
+        started=started,
+        finished=finished,
+        batch_size=chunk_size
+    ).execution_options(autocommit=True))
 
 
 def index_and_merge_object_records(records_to_index):
@@ -120,24 +136,50 @@ def store_json_objects(objects):
 
 
 def fetch_queue_chunk_ids(queue_table, chunk_size):
+    if 'work_store' in queue_table:
+        return fetch_queue_chunk_ids_from_redis(queue_table, chunk_size)
+    else:
+        return fetch_queue_chunk_ids_from_pg(queue_table, chunk_size)
+
+
+def fetch_queue_chunk_ids_from_redis(queue_table, chunk_size):
+    if queue_table != 'queue.work_store':
+        return []
+
+    logger.info(f'getting {chunk_size} ids from the queue')
+    overall_start_time = time()
+    zpop_result = _redis.zpopmin(REDIS_WORK_QUEUE, chunk_size)
+    logger.info(f'popped ids from the queue in {elapsed(overall_start_time, 4)}s')
+
+    chunk = [int(t[0]) for t in zpop_result] if zpop_result else []
+    if chunk:
+        zadd_start_time = time()
+        _redis.zadd(REDIS_WORK_QUEUE, {work_id: time() for work_id in chunk})
+        logger.info(f'pushed ids to back of the queue in {elapsed(zadd_start_time, 4)}s')
+
+    logger.info(f'got {len(chunk)} ids from the queue in {elapsed(overall_start_time, 4)}s')
+    return chunk
+
+
+def fetch_queue_chunk_ids_from_pg(queue_table, chunk_size):
     text_query = f"""
-          with chunk as (
-              select id
-              from {queue_table}
-              where started is null
-              and (finished is null or finished < now() - '1 hour'::interval)
-              order by
-                  finished asc nulls first,
-                  rand
-              limit :chunk
-              for update skip locked
-          )
-          update {queue_table}
-          set started = now()
-          from chunk
-          where {queue_table}.id = chunk.id
-          returning chunk.id;
-    """
+              with chunk as (
+                  select id
+                  from {queue_table}
+                  where started is null
+                  and (finished is null or finished < now() - '1 hour'::interval)
+                  order by
+                      finished asc nulls first,
+                      rand
+                  limit :chunk
+                  for update skip locked
+              )
+              update {queue_table}
+              set started = now()
+              from chunk
+              where {queue_table}.id = chunk.id
+              returning chunk.id;
+        """
 
     logger.info(f'getting {chunk_size} ids from the queue')
     start_time = time()
@@ -151,7 +193,6 @@ def fetch_queue_chunk_ids(queue_table, chunk_size):
     logger.info(f'got these ids: {ids}')
 
     return ids
-
 
 def finish_object_ids(queue_table, object_ids):
     # logger.info(f'finishing queue chunk')
