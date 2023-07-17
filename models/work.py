@@ -1199,6 +1199,26 @@ class Work(db.Model):
                 "provenance": "doaj",
             }
 
+    @property
+    def sustainable_development_goals(self):
+        formatted_sdgs = []
+        threshold = 0.1
+        if self.sdg and self.sdg.predictions:
+            for sdg_prediction in self.sdg.predictions:
+                score = sdg_prediction.get("prediction")
+                sdg = sdg_prediction.get("sdg")
+                if score and sdg and score > threshold:
+                    # validate sdg fields exist
+                    if sdg.get("id") and sdg.get("name"):
+                        formatted_sdgs.append(
+                            {
+                                "id": sdg.get("id"),
+                                "display_name": sdg.get("name"),
+                                "score": round(score, 2),
+                            }
+                        )
+        return formatted_sdgs
+
     def store(self):
         if not self.full_updated_date:
             return None
@@ -1346,7 +1366,7 @@ class Work(db.Model):
                 }
 
                 # special case for arXiv
-                if r.repository_id == "ca8f8d56758a80a4f86":
+                if r.repository_id == "ca8f8d56758a80a4f86" and r.arxiv_id:
                     pmh_location['doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
 
                 if pmh_location['pdf_url']:
@@ -1549,6 +1569,7 @@ class Work(db.Model):
                 "locations": self.dict_locations,
                 "referenced_works": self.references_list,
                 "referenced_works_count": len(self.references_list),
+                "sustainable_development_goals": self.sustainable_development_goals,
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
