@@ -78,11 +78,12 @@ def run(**kwargs):
                     index_and_merge_object_records(records_to_index)
                     logger.info(f'indexing took {elapsed(start_time, 4)}s')
 
-                finish_object_ids(queue_table, object_ids)
-                objects_updated += len(objects)
-
                 if entity_type == 'work' and method_name == 'store':
                     log_work_store_time(loop_start, time(), chunk)
+                else:
+                    finish_object_ids(queue_table, object_ids)
+
+                objects_updated += len(objects)
 
                 logger.info(f'processed chunk of {chunk} objects in {elapsed(loop_start, 2)} seconds')
             else:
