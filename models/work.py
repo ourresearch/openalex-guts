@@ -1117,7 +1117,9 @@ class Work(db.Model):
         return True if self.oa_locations else False
 
     @cached_property
-    def display_genre(self):
+    def type_crossref(self):
+        # legacy type used < 2023-08
+        # (but don't get rid of it, it's used to derive the new type (display_genre))
         if self.looks_like_paratext:
             return "other"
         if self.genre:
@@ -1137,6 +1139,32 @@ class Work(db.Model):
         if self.journal and self.journal.type and 'book' in self.journal.type:
             return 'book-chapter'
         return 'journal-article'
+
+    @cached_property
+    def display_genre(self):
+        # this is what goes into the `Work.type` attribute
+        # todo: implement letter, editorial, erratum/correction
+        try:
+            if self.work_title.lower().startswith('erratum'):
+                return "erratum"
+        except AttributeError:
+            pass
+        if self.looks_like_paratext:
+            return "paratext"
+        lookup_crossref_to_openalex_type = {
+            "journal-article": "article",
+            "proceedings-article": "article",
+            "posted-content": "article",
+            "journal-issue": "paratext",
+            "proceedings": "paratext",
+            "journal": "paratext",
+            "report-series": "paratext",
+            "component": "paratext",
+            "monograph": "book",
+            "reference-book": "book",
+        }
+        # return mapping from lookup if it's in there, otherwise pass-through
+        return lookup_crossref_to_openalex_type.get(self.type_crossref, self.type_crossref)
 
     @cached_property
     def language(self):
@@ -1503,6 +1531,7 @@ class Work(db.Model):
             "primary_location": self.dict_locations[0] if self.dict_locations else None,
             "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
             "type": self.display_genre,
+            "type_crossref": self.type_crossref,
             "open_access": {
                 "is_oa": self.is_oa,
                 "oa_status": self.oa_status or "closed",
