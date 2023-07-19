@@ -327,4 +327,3 @@ def hydrate_role(openalex_id_short):
         'id': entity.openalex_id,
         'works_count': works_count,
     }
-
