@@ -1293,7 +1293,11 @@ class Work(db.Model):
 
             entity_hash = entity_md5(my_dict)
 
-            if entity_hash != self.json_entity_hash:
+            author_ids = list({a.get('author', {}).get('id') for a in my_dict.get('authorships', [])})
+            if any(not author_id for author_id in author_ids):
+                logger.info('not saving work because some authors have null IDs')
+                index_record = None
+            elif entity_hash != self.json_entity_hash:
                 index_suffix = elastic_index_suffix(self.year)
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
