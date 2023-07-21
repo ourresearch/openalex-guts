@@ -245,7 +245,7 @@ class Author(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
-                    "_index": "authors-v10",
+                    "_index": "authors-v11",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
