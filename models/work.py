@@ -711,7 +711,7 @@ class Work(db.Model):
         author_dict_list = json.loads(record.authors)
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
-            my_author = None
+            # my_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
@@ -720,24 +720,24 @@ class Work(db.Model):
 
             raw_author_string = original_name if original_name else None
             original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
-            if raw_author_string:
-                my_author = models.Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
+            #if raw_author_string:
+            #    my_author = models.Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
 
             author_match_name = models.Author.matching_author_string(raw_author_string)
             # print(f"author_match_name: {author_match_name}")
 
-            if raw_author_string and not my_author:
-                my_author = models.Author(display_name=raw_author_string,
-                    match_name=author_match_name,
-                    created_date=datetime.datetime.utcnow().isoformat(),
-                    full_updated_date=datetime.datetime.utcnow().isoformat(),
-                    updated_date=datetime.datetime.utcnow().isoformat())
-                if original_orcid:
-                    my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
-                    my_author.orcids = [my_author_orcid]
+            # if raw_author_string and not my_author:
+            #    my_author = models.Author(display_name=raw_author_string,
+            #        match_name=author_match_name,
+            #        created_date=datetime.datetime.utcnow().isoformat(),
+            #        full_updated_date=datetime.datetime.utcnow().isoformat(),
+            #        updated_date=datetime.datetime.utcnow().isoformat())
+            #    if original_orcid:
+            #        my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
+            #        my_author.orcids = [my_author_orcid]
 
-            if my_author:
-                my_author.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
+            # if my_author:
+            #     my_author.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
             seen_institution_ids = set()
 
@@ -770,20 +770,21 @@ class Work(db.Model):
 
                 my_institutions = my_institutions or [None]
 
-                if any(my_institutions) and my_author:
-                    author_last_known_affiliation_date = None
-
-                    if my_author.last_known_affiliation_id_date:
-                        author_last_known_affiliation_date = my_author.last_known_affiliation_id_date
-                        if isinstance(author_last_known_affiliation_date, datetime.datetime):
-                            author_last_known_affiliation_date = author_last_known_affiliation_date.isoformat()[0:10]
-                    if (
-                        not my_author.last_known_affiliation_id
-                        or not author_last_known_affiliation_date
-                        or (self.publication_date and self.publication_date >= author_last_known_affiliation_date)
-                    ):
-                        my_author.last_known_affiliation_id = [m for m in my_institutions if m][0].affiliation_id
-                        my_author.last_known_affiliation_id_date = self.publication_date
+                # TODO: set last known affiliation from AND v3
+                # if any(my_institutions) and my_author:
+                #     author_last_known_affiliation_date = None
+                #
+                #     if my_author.last_known_affiliation_id_date:
+                #         author_last_known_affiliation_date = my_author.last_known_affiliation_id_date
+                #         if isinstance(author_last_known_affiliation_date, datetime.datetime):
+                #             author_last_known_affiliation_date = author_last_known_affiliation_date.isoformat()[0:10]
+                #     if (
+                #         not my_author.last_known_affiliation_id
+                #         or not author_last_known_affiliation_date
+                #         or (self.publication_date and self.publication_date >= author_last_known_affiliation_date)
+                #     ):
+                #         my_author.last_known_affiliation_id = [m for m in my_institutions if m][0].affiliation_id
+                #         my_author.last_known_affiliation_id_date = self.publication_date
 
                 if raw_author_string or raw_affiliation_string:
                     for my_institution in my_institutions:
@@ -798,12 +799,12 @@ class Work(db.Model):
                             is_corresponding_author=author_dict.get('is_corresponding'),
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
-                        my_affiliation.author = my_author
+                        # my_affiliation.author = my_author
                         my_affiliation.institution = my_institution
                         self.affiliations += [my_affiliation]
                         affiliation_sequence_order += 1
 
-            self.set_known_authors_from_institutions()
+            # self.set_known_authors_from_institutions()
 
         return
 
