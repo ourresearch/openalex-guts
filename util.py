@@ -786,6 +786,7 @@ def jsonify_fast(*args, **kwargs):
     )
 
 def find_normalized_license(text):
+    # TODO: delete this? I don't think it's used anywhere (it is similar to code in oadoi)
     if not text:
         return None
 
