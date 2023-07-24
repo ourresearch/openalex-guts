@@ -924,6 +924,39 @@ class Work(db.Model):
         return False
 
     @cached_property
+    def guess_type_from_title(self):
+        erratum_exprs = [
+            r'^Erratum',
+        ]
+        for expr in erratum_exprs:
+            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+                return "erratum"
+
+        letter_exprs = [
+            r'^Letter:',
+            r'^Letter to',
+            r'^Letter$',
+            r'^\[Letter to',
+        ]
+        for expr in letter_exprs:
+            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+                return "letter"
+
+        editorial_exprs = [
+            r'^Editorial:',
+            r'^Editorial$',
+            r'^editorial comment',
+            r'^guest editorial',
+            r'^editorial note',
+            r'^editorial -'
+        ]
+        for expr in editorial_exprs:
+            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+                return "editorial"
+
+        return None
+
+    @cached_property
     def records_sorted(self):
         if not self.records:
             return []
@@ -1144,14 +1177,15 @@ class Work(db.Model):
     @cached_property
     def display_genre(self):
         # this is what goes into the `Work.type` attribute
-        # todo: implement letter, editorial, erratum/correction
-        try:
-            if self.work_title.lower().startswith('erratum'):
-                return "erratum"
-        except AttributeError:
-            pass
         if self.looks_like_paratext:
             return "paratext"
+        # infer "erratum", "editorial", "letter" types:
+        try:
+            if self.guess_type_from_title:
+                # todo: do another pass at this. improve precision and recall.
+                return self.guess_type_from_title
+        except AttributeError:
+            pass
         lookup_crossref_to_openalex_type = {
             "journal-article": "article",
             "proceedings-article": "article",
