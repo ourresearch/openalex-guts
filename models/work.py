@@ -1651,7 +1651,7 @@ class Work(db.Model):
 
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
-            response["updated_date"] = updated_date
+            response["updated_date"] = datetime.datetime.utcnow().isoformat()  # updated date needs to be at the time to_dict is called, because otherwise it would be stale after waiting in the queue
             response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
 
         # only include non-null IDs
