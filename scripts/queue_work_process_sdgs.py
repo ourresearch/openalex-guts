@@ -17,18 +17,11 @@ from util import elapsed
 def process_sdg(work):
     print(f"Processing {work.id}")
     text_to_process = work.work_title + " " + work.abstract.abstract
-    if len(text_to_process) > 1500:
-        print("using aurora classifier")
-        url = "https://aurora-sdg.labs.vu.nl/classifier/classify/elsevier-sdg-multi"
-    else:
-        url = "https://sdg-classifier.openalex.org/classify/"
+    url = "https://sdg-classifier.openalex.org/classify/"
     data = {"text": text_to_process}
     r = requests.post(url, json=data)
     if r.status_code == 200:
-        if len(text_to_process) > 1500:
-            result = r.json().get("predictions")
-        else:
-            result = r.json()
+        result = r.json()
         # replace http in id field to https
         modified = []
         for item in result:
@@ -83,7 +76,7 @@ class QueueWorkProcessSdgs:
                 work_ids = self.fetch_queue_chunk(chunk_size)
 
                 if not work_ids:
-                    logger.info('no queued Works ready to add authors. waiting...')
+                    logger.info('no queued Works ready to process... waiting.')
                     sleep(60)
                     continue
 
@@ -120,7 +113,7 @@ class QueueWorkProcessSdgs:
 
     @staticmethod
     def fetch_queue_chunk(chunk_size):
-        logger.info("looking for works to update authors on")
+        logger.info("looking for works to update sdgs on")
 
         queue_query = text(f"""
             SELECT work_id
@@ -169,7 +162,7 @@ class QueueWorkProcessSdgs:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--id', nargs="?", type=str, help="id of the Work authors you want to update")
+    parser.add_argument('--id', nargs="?", type=str, help="id of the Work sdgs you want to update")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many Works to update")
     parser.add_argument('--chunk', "-ch", nargs="?", default=10, type=int, help="how many Works to update at once")
     parsed_args = parser.parse_args()
