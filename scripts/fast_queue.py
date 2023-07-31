@@ -37,7 +37,6 @@ def run(**kwargs):
         if objects := get_objects(entity_type, [single_id]):
             logger.info(f'found object {objects[0]}')
             records_to_index = [r for r in [o.store() for o in objects] if r]
-            print(records_to_index)
             index_and_merge_object_records(records_to_index)
             db.session.commit()
         else:
