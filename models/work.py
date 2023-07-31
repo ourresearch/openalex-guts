@@ -409,7 +409,7 @@ class Work(db.Model):
 
         if self.merge_into_id:
             # don't add relation table entries for merged works
-            logger.info(f"not updating W{self.paper_id} because it was perged into W{self.merge_into_id}")
+            logger.info(f"not updating W{self.paper_id} because it was merged into W{self.merge_into_id}")
             return
 
         if not self.records_sorted:
@@ -604,6 +604,12 @@ class Work(db.Model):
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 self.arxiv_id = record.arxiv_id
 
+    def guess_version(self):
+        # some last-minute rules to try to guess the location's version
+        if self.type_crossref == 'posted-content':
+            return 'submittedVersion'
+        return None
+
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
         self.locations = []
@@ -643,6 +649,9 @@ class Work(db.Model):
                     'oai:arXiv.org:',
                     '10.48550/arxiv.'
                 )
+            
+            if not insert_dict["version"]:
+                insert_dict["version"] = self.guess_version()
             self.locations += [models.Location(**insert_dict)]
 
     def add_references(self):
@@ -1398,6 +1407,9 @@ class Work(db.Model):
                 if not doi_location['landing_page_url']:
                     doi_location['landing_page_url'] = doi_url
 
+                if not doi_location['version']:
+                    doi_location['version'] = self.guess_version()
+
                 locations.append(doi_location)
 
                 if doi_location['pdf_url']:
@@ -1435,6 +1447,9 @@ class Work(db.Model):
                 # special case for arXiv
                 if r.repository_id == "ca8f8d56758a80a4f86" and r.arxiv_id:
                     pmh_location['doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
+
+                if not pmh_location['version']:
+                    pmh_location['version'] = self.guess_version()
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1492,7 +1507,7 @@ class Work(db.Model):
                     'pdf_url': None,
                     'landing_page_url': f'https://pubmed.ncbi.nlm.nih.gov/{r.pmid}',
                     'is_oa': False,
-                    'version': None,
+                    'version': self.guess_version(),
                     'license': None,
                     'doi': doi_url,
                 }
@@ -1507,7 +1522,7 @@ class Work(db.Model):
                     'pdf_url': None,
                     'landing_page_url': self.doi_url,
                     'is_oa': False,
-                    'version': None,
+                    'version': self.guess_version(),
                     'license': None,
                     'doi': self.doi_url,
                 }
@@ -1520,6 +1535,9 @@ class Work(db.Model):
         locations = override_location_sources(locations)
         for loc in locations:
             loc['is_oa'] = loc['is_oa'] or False
+
+        if locations and (not locations[0]["version"]):
+            locations[0]["version"] = self.guess_version()
 
         return locations
 
