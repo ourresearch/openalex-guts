@@ -1536,6 +1536,9 @@ class Work(db.Model):
         for loc in locations:
             loc['is_oa'] = loc['is_oa'] or False
 
+        if locations and (not locations[0]["version"]):
+            locations[0]["version"] = self.guess_version()
+
         return locations
 
     @cached_property
