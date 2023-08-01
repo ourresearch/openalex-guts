@@ -25,13 +25,13 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    # "authors": "authors-v10",
+    "authors": "authors-v10",
     "concepts": "concepts-v8",
     "funders": "funders-v3",
     "institutions": "institutions-v5",
     "publishers": "publishers-v4",
     "sources": "sources-v2",
-    # "works": "works-v18-*,-*invalid-data",
+    "works": "works-v18-*,-*invalid-data",
 }
 
 
@@ -66,10 +66,22 @@ def get_distinct_updated_dates(index_name):
     return dates
 
 
+def create_search_query(index_name, d, search_after=None):
+    page_size = 1000
+    s = Search(using=es, index=index_name).query("term", updated_date=d)
+    s = s.sort(*["-cited_by_count", "id"])
+    s = s.source(excludes=['_source', 'fulltext', 'abstract', 'version', '@version', '@timestamp'])
+    if search_after:
+        s = s.extra(size=page_size, search_after=search_after)
+    else:
+        s = s.extra(size=page_size)
+    s = s.params(preference=d)
+    return s
+
+
 def export_date(args):
     index_name, entity_type, d = args
-    MAX_FILE_SIZE = 5 * 1024 ** 3  # 5GB uncompressed
-    PAGE_SIZE = 1000  # Set a page size for the search after queries
+    max_file_size = 5 * 1024 ** 3  # 5GB uncompressed
     count = 0
     index_id_prefix = f"https://openalex.org/{entity_type[0].upper()}"
     date_dir = os.path.join(data_dir, entity_type, f"updated_date={d}")
@@ -77,12 +89,7 @@ def export_date(args):
     part_file_number = 0
     part_file = None  # Initialize as None
     total_size = 0
-
-    s = Search(using=es, index=index_name).query("term", updated_date=d)
-    s = s.sort(*["-cited_by_count", "id"])
-    s = s.source(excludes=['_source', 'fulltext', 'abstract', 'version', '@version', '@timestamp'])
-    s = s.extra(size=PAGE_SIZE)
-    s = s.params(preference=d)
+    s = create_search_query(index_name, d)
     response = s.execute()
 
     while len(response.hits) > 0:
@@ -104,7 +111,7 @@ def export_date(args):
                 line_size = len(line.encode('utf-8'))
 
                 # If this line will make the file exceed the max size, close the current file and open a new one
-                if total_size + line_size > MAX_FILE_SIZE:
+                if total_size + line_size > max_file_size:
                     part_file.close()
                     part_file_number += 1
                     part_file = gzip.open(f'{date_dir}/part_{str(part_file_number).zfill(3)}.gz', 'wt')
@@ -120,11 +127,7 @@ def export_date(args):
 
         # Get the last document's sort value and use it for the search_after parameter
         last_hit_sort = response.hits.hits[-1]['sort']
-        s = Search(using=es, index=index_name).query("term", updated_date=d)
-        s = s.sort(*["-cited_by_count", "id"])
-        s = s.source(excludes=['_source', 'fulltext', 'abstract'])
-        s = s.extra(size=PAGE_SIZE, search_after=last_hit_sort)
-        s = s.params(preference=d)
+        s = create_search_query(index_name, d, search_after=last_hit_sort)
         response = s.execute()
 
     if part_file is not None:  # If file was created, close it
@@ -138,13 +141,13 @@ def export_entity(index_name, entity_type):
 
 
 def make_manifests():
-    remote_data_dir = 'openalex/data'  # replace with your s3 bucket path
-    for entity_type in ['concepts', 'institutions', 'sources']:
+    remote_data_dir = 's3://openalex/data'
+    for entity_type in entities_to_indices.keys():
         total_content_length = 0
         total_record_count = 0
 
         entity_dir = os.path.join(data_dir, entity_type)
-        manifest = os.path.join(entity_dir, "manifest.json")
+        manifest = os.path.join(entity_dir, "manifest")
 
         with open(manifest, 'w') as f:
             f.write("{\n  \"entries\": [\n")
@@ -161,7 +164,8 @@ def make_manifests():
                     total_record_count += record_count
 
                     with open(manifest, 'a') as f:
-                        f.write(f"    {{\"url\": \"{s3_url}\", \"meta\": {{ \"content_length\": {content_length}, \"record_count\": {record_count} }} }},\n")
+                        f.write(
+                            f"    {{\"url\": \"{s3_url}\", \"meta\": {{ \"content_length\": {content_length}, \"record_count\": {record_count} }} }},\n")
 
         with open(manifest, 'rb+') as f:
             f.seek(-2, os.SEEK_END)
@@ -183,4 +187,4 @@ if __name__ == "__main__":
         export_entity(index, entity)
         end_time = time.time()
         print(f"Total time: {end_time - start_time} seconds")
-    # make_manifests()
+    make_manifests()
