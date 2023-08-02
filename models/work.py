@@ -521,16 +521,16 @@ class Work(db.Model):
         select
             paper_id as related_paper_id,
             avg(score) as average_related_score,
-            count(distinct field_of_study) as n
+            sum(score) as total_score
         from
             fos
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept wc
-                where wc.field_of_study = fos.field_of_study_id order by score desc limit 25000
+                where wc.field_of_study = fos.field_of_study_id order by score desc limit 15000
             ) papers_by_fos
         group by paper_id
-        order by n desc, average_related_score desc
+        order by total_score desc
         limit 10;
         """
 
