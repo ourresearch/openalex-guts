@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 from time import sleep
 from time import time
 
@@ -14,10 +15,17 @@ from app import logger
 from util import elapsed
 
 
+def get_url():
+    url1 = "https://sdg-classifier.openalex.org/classify/"
+    url2 = "http://159.203.106.26/classify/"
+    return random.choice([url1, url2])
+
+
 def process_sdg(work):
     print(f"Processing {work.id}")
     text_to_process = work.work_title + " " + work.abstract.abstract
-    url = "https://sdg-classifier.openalex.org/classify/"
+    url = get_url()
+
     data = {"text": text_to_process}
     r = requests.post(url, json=data)
     if r.status_code == 200:
