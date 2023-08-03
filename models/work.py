@@ -611,48 +611,61 @@ class Work(db.Model):
         return None
 
     def add_locations(self):
-        from models.location import get_repository_institution_from_source_url
-        self.locations = []
-        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+        # from models.location import get_repository_institution_from_source_url
+        # self.locations = []
+        # self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        records_with_unpaywall = [record for record in self.records_sorted if hasattr(record, "unpaywall") and record.unpaywall]
-        if not records_with_unpaywall:
-            return
-        record_to_use = records_with_unpaywall[0]
+        # records_with_unpaywall = [record for record in self.records_sorted if hasattr(record, "unpaywall") and record.unpaywall]
+        # if not records_with_unpaywall:
+        #     return
+        # record_to_use = records_with_unpaywall[0]
 
-        for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
-            insert_dict = {
-                "paper_id": self.id,
-                "endpoint_id": unpaywall_oa_location["endpoint_id"],
-                "evidence": unpaywall_oa_location["evidence"],
-                "host_type": unpaywall_oa_location["host_type"],
-                "is_best": unpaywall_oa_location["is_best"],
-                "oa_date": unpaywall_oa_location["oa_date"],
-                "pmh_id": unpaywall_oa_location["pmh_id"],
-                "repository_institution": unpaywall_oa_location["repository_institution"],
-                "updated": unpaywall_oa_location["updated"],
-                "source_url": unpaywall_oa_location["url"],
-                "url": unpaywall_oa_location["url"],
-                "url_for_landing_page": unpaywall_oa_location["url_for_landing_page"],
-                "url_for_pdf": unpaywall_oa_location["url_for_pdf"],
-                "version": unpaywall_oa_location["version"],
-                "license": unpaywall_oa_location["license"],
-            }
-            if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
-                insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
-            # self.insert_dicts += [{"Location": insert_dict}]
-            if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
-                insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
-            if insert_dict["endpoint_id"] == "ca8f8d56758a80a4f86":
-                # special case for arXiv
-                insert_dict["doi"] = insert_dict["pmh_id"].replace(
-                    'oai:arXiv.org:',
-                    '10.48550/arxiv.'
-                )
+        # for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
+        #     insert_dict = {
+        #         "paper_id": self.id,
+        #         "endpoint_id": unpaywall_oa_location["endpoint_id"],
+        #         "evidence": unpaywall_oa_location["evidence"],
+        #         "host_type": unpaywall_oa_location["host_type"],
+        #         "is_best": unpaywall_oa_location["is_best"],
+        #         "oa_date": unpaywall_oa_location["oa_date"],
+        #         "pmh_id": unpaywall_oa_location["pmh_id"],
+        #         "repository_institution": unpaywall_oa_location["repository_institution"],
+        #         "updated": unpaywall_oa_location["updated"],
+        #         "source_url": unpaywall_oa_location["url"],
+        #         "url": unpaywall_oa_location["url"],
+        #         "url_for_landing_page": unpaywall_oa_location["url_for_landing_page"],
+        #         "url_for_pdf": unpaywall_oa_location["url_for_pdf"],
+        #         "version": unpaywall_oa_location["version"],
+        #         "license": unpaywall_oa_location["license"],
+        #     }
+        #     if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
+        #         insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
+        #     # self.insert_dicts += [{"Location": insert_dict}]
+        #     if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
+        #         insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
+        #     if insert_dict["endpoint_id"] == "ca8f8d56758a80a4f86":
+        #         # special case for arXiv
+        #         insert_dict["doi"] = insert_dict["pmh_id"].replace(
+        #             'oai:arXiv.org:',
+        #             '10.48550/arxiv.'
+        #         )
             
-            if not insert_dict["version"]:
-                insert_dict["version"] = self.guess_version()
-            self.locations += [models.Location(**insert_dict)]
+        #     if not insert_dict["version"]:
+        #         insert_dict["version"] = self.guess_version()
+        #     self.locations += [models.Location(**insert_dict)]
+
+        # now let's try to save *all* locations to database
+        self.locations_test = []
+        for i, dict_location in enumerate(self.dict_locations):
+            now = datetime.datetime.utcnow().isoformat()
+            dict_location['source_id'] = dict_location['source']['id'].replace('https://openalex.org/S', '') if dict_location['source'] else None
+            del dict_location['source']
+            dict_location['location_sequence_number'] = i + 1
+            dict_location['created_date'] = now
+            dict_location['updated_date'] = now
+            logger.info(dict_location)
+            self.locations_test += [models.LocationTest(**dict_location)]
+        logger.info(f"{len(self.locations_test)} locations_test added")
 
     def add_references(self):
         from models import WorkExtraIds

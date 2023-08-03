@@ -22,6 +22,7 @@ from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.location import Location
+from models.location_test import LocationTest
 from models.mesh import Mesh
 from models.work_openapc import WorkOpenAPC
 from models.work_sdg import WorkSDG
@@ -61,6 +62,7 @@ Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
+Work.locations_test = db.relationship("LocationTest", lazy='selectin', backref='work')
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution") #don't delete orphan
@@ -193,6 +195,8 @@ Record.work_matches_by_pmid = db.relationship(
 )
 
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
+
+LocationTest.source = db.relationship('Source', lazy='selectin', uselist=False, primaryjoin='LocationTest.source_id == Source.journal_id')
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
 Source.stored = db.relationship("JsonSources", lazy='selectin', uselist=False, viewonly=True)
