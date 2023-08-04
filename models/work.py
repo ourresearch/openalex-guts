@@ -527,7 +527,7 @@ class Work(db.Model):
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept wc
-                where wc.field_of_study = fos.field_of_study_id order by score desc limit 15000
+                where wc.field_of_study = fos.field_of_study_id and wc.score > .3 order by score desc limit 15000
             ) papers_by_fos
         group by paper_id
         order by total_score desc
