@@ -1,6 +1,5 @@
 import argparse
-from time import sleep
-from time import time
+from time import sleep, time, mktime, gmtime
 
 from redis import Redis
 from sqlalchemy import orm
@@ -39,7 +38,7 @@ class QueueWorkAddEverything:
                 ''').bindparams(work_id=single_id)
             )
             db.session.commit()
-            _redis.zadd(REDIS_WORK_QUEUE, {single_id: time()})
+            _redis.zadd(REDIS_WORK_QUEUE, {single_id: mktime(gmtime(0))})
         else:
             num_updated = 0
 
@@ -77,7 +76,7 @@ class QueueWorkAddEverything:
                     ''').bindparams(work_ids=work_ids)
                 )
 
-                redis_queue_mapping = {work_id: time() for work_id in work_ids}
+                redis_queue_mapping = {work_id: mktime(gmtime(0)) for work_id in work_ids}
                 _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
 
                 commit_start_time = time()
