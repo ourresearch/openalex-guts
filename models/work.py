@@ -527,7 +527,7 @@ class Work(db.Model):
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept wc
-                where wc.field_of_study = fos.field_of_study_id order by score desc limit 15000
+                where wc.field_of_study = fos.field_of_study_id and wc.score > .3 order by score desc limit 15000
             ) papers_by_fos
         group by paper_id
         order by total_score desc
@@ -1038,6 +1038,8 @@ class Work(db.Model):
         response = []
         for seq, affil_list in affiliation_dict.items():
             institution_list = [a["institution"] for a in affil_list if a["institution"].get("id") is not None]
+            countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
+            countries = list(set(countries_list))
             if institution_list == [{}]:
                 institution_list = []
             if len(affiliation_dict) == 1:
@@ -1048,6 +1050,7 @@ class Work(db.Model):
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
+                             "countries": countries,
                              "is_corresponding": is_corresponding,
                              "raw_affiliation_strings": list(set([
                                 a.get("raw_affiliation_string") for a in affil_list
