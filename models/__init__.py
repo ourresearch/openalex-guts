@@ -1,6 +1,7 @@
-from sqlalchemy import orm
-from sqlalchemy.orm import selectinload
+from sqlalchemy import orm, or_, and_, cast
+from sqlalchemy.orm import selectinload, foreign, remote
 from sqlalchemy.sql.expression import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app import db
 from models.abstract import Abstract
@@ -133,25 +134,28 @@ Record.journals = db.relationship(
     lazy='selectin',
     uselist=True,  # needs to be a list for now because some duplicate issn_ls in mid.journal still alas
     viewonly=True,
-    primaryjoin="""
-or_(
-    func.string_to_array(foreign(Record.journal_issn_l), '').bool_op("<@")(remote(Source.issns_text_array)),
-    and_(
-        foreign(Record.journal_issn_l) == None,
-        foreign(Record.repository_id) == remote(Source.repository_id)
-    ),
-    and_(
-        foreign(Record.journal_issn_l) == None,
-        foreign(Record.genre).ilike('%book%'),
-        foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
-    ),
-    and_(
-        foreign(Record.journal_issn_l) == None,
-        or_(foreign(Record.genre).ilike('%conference%'), foreign(Record.genre).ilike('%proceeding%')),
-        foreign(Record.normalized_conference) == remote(Source.normalized_conference)
+    primaryjoin=or_(
+        func.string_to_array(foreign(Record.journal_issn_l), '').bool_op("<@")(remote(Source.issns_text_array)),
+        and_(
+            foreign(Record.journal_issn_l).is_(None),
+            cast(foreign(Record.journal_issns), JSONB).op('?|')(remote(Source.issns_text_array)),
+            ~foreign(Record.genre).ilike('%book%')
+        ),
+        and_(
+            foreign(Record.journal_issn_l).is_(None),
+            foreign(Record.repository_id) == remote(Source.repository_id)
+        ),
+        and_(
+            foreign(Record.journal_issn_l).is_(None),
+            foreign(Record.genre).ilike('%book%'),
+            foreign(Record.normalized_book_publisher) == remote(Source.normalized_book_publisher)
+        ),
+        and_(
+            foreign(Record.journal_issn_l).is_(None),
+            or_(foreign(Record.genre).ilike('%conference%'), foreign(Record.genre).ilike('%proceeding%')),
+            foreign(Record.normalized_conference) == remote(Source.normalized_conference)
+        )
     )
-)
-"""
 )
 
 Source.merged_into_source = db.relationship(

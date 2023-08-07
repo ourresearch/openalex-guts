@@ -59,6 +59,7 @@ class Record(db.Model):
     # source links
     repository_id = db.Column(db.Text)
     # the journal_id in record is not the openalex journal ID
+    journal_issns = db.Column(db.Text)
     journal_issn_l = db.Column(db.Text)
     venue_name = db.Column(db.Text)
 
