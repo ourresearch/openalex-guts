@@ -1061,6 +1061,17 @@ class Work(db.Model):
             response.append(response_dict)
         return response
 
+    @cached_property
+    def institutions_distinct(self):
+        # return set of unique institutions for the authorships in this work
+        institution_ids = []
+        for affil in self.affiliations_list:
+            for inst in affil['institutions']:
+                if inst.get('id'):
+                    institution_ids.append(inst['id'])
+        return set(institution_ids)
+        
+
     @classmethod
     def author_match_names_from_record_json(cls, record_author_json):
         author_match_names = []
@@ -1601,6 +1612,7 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
         }
