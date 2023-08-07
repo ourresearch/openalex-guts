@@ -1,7 +1,7 @@
-from sqlalchemy import orm, or_, and_, cast
-from sqlalchemy.orm import selectinload, foreign, remote
-from sqlalchemy.sql.expression import func
+from sqlalchemy import and_, cast, or_, orm
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import foreign, remote, selectinload
+from sqlalchemy.sql.expression import func
 
 from app import db
 from models.abstract import Abstract
