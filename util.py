@@ -1043,8 +1043,16 @@ def matching_author_string(origName):
         print(f"Exception in matching_author_string {e} {e.message}")
         pass
 
-
     return response
+
+
+def work_has_null_author_ids(w):
+    if isinstance(w, dict):
+        author_ids = list({a.get('author', {}).get('id') for a in w.get('authorships', [])})
+        return any(not author_id for author_id in author_ids)
+    # work object, use relationships
+    author_ids = list({a.author_id for a in w.affiliations})
+    return any(not author_id for author_id in author_ids)
 
 
 def majority_ascii(s, threshold=0.5):

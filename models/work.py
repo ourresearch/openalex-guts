@@ -11,7 +11,6 @@ from typing import List
 
 import requests
 from cached_property import cached_property
-from langdetect import detect, DetectorFactory, LangDetectException
 from sqlalchemy import orm, text
 from sqlalchemy.orm import selectinload
 
@@ -24,12 +23,13 @@ from app import logger
 from models.concept import is_valid_concept_id
 from util import clean_doi, entity_md5
 from util import clean_html
+from util import detect_language_from_abstract_and_title
 from util import elapsed
 from util import f_generate_inverted_index
 from util import normalize_orcid
 from util import normalize_simple
 from util import truncate_on_word_break
-from util import detect_language_from_abstract_and_title
+from util import work_has_null_author_ids
 
 DELETED_WORK_ID = 4285719527
 
@@ -1351,8 +1351,7 @@ class Work(db.Model):
 
             entity_hash = entity_md5(my_dict)
 
-            author_ids = list({a.get('author', {}).get('id') for a in my_dict.get('authorships', [])})
-            if any(not author_id for author_id in author_ids):
+            if work_has_null_author_ids(my_dict):
                 logger.info('not saving work because some authors have null IDs')
                 index_record = None
             elif entity_hash != self.json_entity_hash:
