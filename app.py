@@ -51,6 +51,7 @@ REDIS_QUEUE_URL = os.getenv("REDISCLOUD_CRIMSON_URL")
 API_HOST = os.getenv("API_HOST")
 ELASTIC_URL = os.getenv("ELASTIC_URL")
 MAX_MAG_ID = 4200000000
+SDG_CLASSIFIER_URL = os.getenv("SDG_CLASSIFIER_URL")
 
 libraries_to_mum = [
     "requests",
