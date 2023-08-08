@@ -1,6 +1,5 @@
 import argparse
 import json
-import random
 from time import sleep
 from time import time
 
@@ -10,21 +9,18 @@ from sqlalchemy import text
 from sqlalchemy.orm import selectinload
 
 import models
-from app import db
-from app import logger
+from app import db, logger, SDG_CLASSIFIER_URL
 from util import elapsed
 
-
-def get_url():
-    url1 = "https://sdg-classifier.openalex.org/classify/"
-    url2 = "http://159.203.106.26/classify/"
-    return random.choice([url1, url2])
+"""
+Run with: heroku local:run python -m scripts.queue_work_process_sdgs --chunk=100
+"""
 
 
 def process_sdg(work):
     print(f"Processing {work.id}")
     text_to_process = work.work_title + " " + work.abstract.abstract
-    url = get_url()
+    url = SDG_CLASSIFIER_URL
 
     data = {"text": text_to_process}
     r = requests.post(url, json=data)
@@ -127,8 +123,8 @@ class QueueWorkProcessSdgs:
             SELECT work_id
             FROM queue.run_once_work_process_sdgs
             WHERE started IS NULL
-            ORDER BY work_id DESC
             LIMIT :chunk
+            FOR UPDATE SKIP LOCKED
         """).bindparams(chunk=chunk_size)
 
         job_time = time()
