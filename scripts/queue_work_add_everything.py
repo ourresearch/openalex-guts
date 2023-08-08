@@ -10,8 +10,8 @@ import models
 from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
-from util import elapsed
 from scripts.fast_queue import REDIS_WORK_QUEUE
+from util import elapsed, work_has_null_author_ids
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -65,19 +65,12 @@ class QueueWorkAddEverything:
                     ''').bindparams(work_ids=work_ids)
                 )
 
-                db.session.execute(
-                    text('''
-                        insert into queue.work_store (id) (
-                            select paper_id from mid.work
-                            where paper_id = any(:work_ids)
-                        )
-                        on conflict (id)
-                        do update set finished = null
-                    ''').bindparams(work_ids=work_ids)
-                )
-
-                redis_queue_mapping = {work_id: mktime(gmtime(0)) for work_id in work_ids}
-                _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
+                redis_queue_mapping = {
+                    work.paper_id: mktime(gmtime(0))
+                    for work in works if not work_has_null_author_ids(work)
+                }
+                if redis_queue_mapping:
+                    _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
 
                 commit_start_time = time()
                 db.session.commit()
