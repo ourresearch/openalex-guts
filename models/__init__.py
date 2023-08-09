@@ -138,7 +138,7 @@ Record.journals = db.relationship(
         func.string_to_array(foreign(Record.journal_issn_l), '').bool_op("<@")(remote(Source.issns_text_array)),
         and_(
             foreign(Record.journal_issn_l).is_(None),
-            cast(foreign(Record.journal_issns), JSONB).op('?|')(remote(Source.issns_text_array)),
+            func.json_to_text_array(foreign(Record.journal_issns)).bool_op('&&')(remote(Source.issns_text_array)),
             ~foreign(Record.genre).ilike('%book%')
         ),
         and_(
