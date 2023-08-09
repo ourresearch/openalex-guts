@@ -15,6 +15,7 @@ from sqlalchemy import orm, text
 from sqlalchemy.orm import selectinload
 
 import models
+from app import COUNTRIES
 from app import MAX_MAG_ID
 from app import db
 from app import get_apiurl_from_openalex_url
@@ -1038,8 +1039,6 @@ class Work(db.Model):
         response = []
         for seq, affil_list in affiliation_dict.items():
             institution_list = [a["institution"] for a in affil_list if a["institution"].get("id") is not None]
-            countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
-            countries = list(set(countries_list))
             if institution_list == [{}]:
                 institution_list = []
             if len(affiliation_dict) == 1:
@@ -1047,19 +1046,31 @@ class Work(db.Model):
                 is_corresponding = True
             else:
                 is_corresponding = affil_list[0].get('is_corresponding_author', False)
+
+            raw_affiliation_strings = list(set([
+                                a.get("raw_affiliation_string") for a in affil_list
+                                if a.get("raw_affiliation_string")
+                             ]))
+            raw_affiliation_string = '; '.join(list(set([
+                                 a.get("raw_affiliation_string") for a in affil_list
+                                 if a.get("raw_affiliation_string")
+                             ])))
+            # add countries
+            if institution_list:
+                countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
+                countries = list(set(countries_list))
+            elif not institution_list and raw_affiliation_string:
+                countries = self.get_countries_from_raw_affiliation(raw_affiliation_string)
+            else:
+                countries = []
+
             response_dict = {"author_position": affil_list[0]["author_position"],
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
                              "countries": countries,
                              "is_corresponding": is_corresponding,
-                             "raw_affiliation_strings": list(set([
-                                a.get("raw_affiliation_string") for a in affil_list
-                                if a.get("raw_affiliation_string")
-                             ])),
-                             "raw_affiliation_string": '; '.join(list(set([
-                                 a.get("raw_affiliation_string") for a in affil_list
-                                 if a.get("raw_affiliation_string")
-                             ])))
+                             "raw_affiliation_strings": raw_affiliation_strings,
+                             "raw_affiliation_string": raw_affiliation_string
                      }
             response.append(response_dict)
         return response
@@ -1566,6 +1577,33 @@ class Work(db.Model):
         if self.oa_locations:
             return self.oa_locations[0].get('pdf_url') or self.oa_locations[0].get('landing_page_url')
         return None
+
+    @staticmethod
+    def get_countries_from_raw_affiliation(raw_affiliation):
+        countries_in_string = []
+        # Hopeful first match
+        _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
+             max([1 if re.search(fr"\b{i}\b", raw_affiliation) else 0 for i in y]) > 0]
+        if not countries_in_string:
+            # Replace '.' to see if match can be found
+            _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
+                 max([1 if re.search(fr"\b{i}\b", raw_affiliation.replace(".", "")) else 0 for i in y]) > 0]
+            if not countries_in_string:
+                # Remove word boundary requirement
+                _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
+                     max([1 if re.search(fr"{i}", raw_affiliation) else 0 for i in y]) > 0]
+                if not countries_in_string:
+                    # Lowercase all text to catch weird capitalizations
+                    _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
+                         max([1 if re.search(fr"\b{i.lower()}\b", raw_affiliation.lower()) else 0 for i in y]) > 0]
+
+        final_countries = list(set(countries_in_string))
+
+        # If we match to Georgia countries GE or GS, remove US match that came from short state string
+        if "GE" in final_countries or "GS" in final_countries:
+            final_countries.remove("US")
+
+        return final_countries
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
