@@ -1,0 +1,4 @@
+data/
+logs/
+# leave out notebooks for now
+notebooks/
