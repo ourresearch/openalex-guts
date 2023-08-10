@@ -13,6 +13,7 @@ _redis = Redis.from_url(REDIS_QUEUE_URL)
 def front_of_fast_queue(file_name):
     """
     Takes a list of work IDs in a CSV and moves them to the front of the fast queue.
+    Run with `heroku local:run python -m scripts.front_of_fast_queue`, with the CSV file in the root directory.
     """
 
     with open(file_name, 'r') as f:
@@ -25,9 +26,6 @@ def front_of_fast_queue(file_name):
 
         # iterate through the CSV file in batches
         for i, row in enumerate(reader):
-            count += 1
-            if count < 3000000:
-                continue
             if i % batch_size == 0 and batch:
                 _redis.zadd(REDIS_WORK_QUEUE, batch)
                 print(batch)
@@ -37,6 +35,7 @@ def front_of_fast_queue(file_name):
 
             work_id = row[0]
             batch[work_id] = epoch_time_seconds
+            count += 1
 
         # add remaining items in the batch if any
         if batch:
