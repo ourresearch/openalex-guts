@@ -30,6 +30,22 @@ def get_repository_institution_from_source_url(source_url):
             return value
     return None
 
+def is_accepted(version):
+    if version:
+        if version == 'submittedVersion':
+            return False
+        elif version in ['acceptedVersion', 'publishedVersion']:
+            return True
+    return False
+
+def is_published(version):
+    if version:
+        if version in ['submittedVersion', 'acceptedVersion']:
+            return False
+        elif version == 'publishedVersion':
+            return True
+    return False
+
 
 class Location(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -171,6 +187,8 @@ class Location(db.Model):
             'landing_page_url': self.url_for_landing_page or self.source_url,
             'is_oa': self.is_oa,
             'version': self.version,
+            'is_accepted': is_accepted(self.version),
+            'is_published': is_published(self.version),
             'license': self.display_license,
             'doi': self.doi_url,
         }
