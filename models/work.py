@@ -936,25 +936,25 @@ class Work(db.Model):
     @cached_property
     def guess_type_from_title(self):
         erratum_exprs = [
-            r'^Erratum',
+            r'^erratum',
         ]
         for expr in erratum_exprs:
             if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
                 return "erratum"
 
         letter_exprs = [
-            r'^Letter:',
-            r'^Letter to',
-            r'^Letter$',
-            r'^\[Letter to',
+            r'^letter:',
+            r'^letter to',
+            r'^letter$',
+            r'^\[letter to',
         ]
         for expr in letter_exprs:
             if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
                 return "letter"
 
         editorial_exprs = [
-            r'^Editorial:',
-            r'^Editorial$',
+            r'^editorial:',
+            r'^editorial$',
             r'^editorial comment',
             r'^guest editorial',
             r'^editorial note',
@@ -1411,6 +1411,7 @@ class Work(db.Model):
 
     @cached_property
     def dict_locations(self):
+        from models.location import is_accepted, is_published
         locations = []
         seen_urls = set()
 
@@ -1435,6 +1436,9 @@ class Work(db.Model):
 
                 if not doi_location['version']:
                     doi_location['version'] = self.guess_version()
+                
+                doi_location['is_accepted'] = is_accepted(doi_location['version'])
+                doi_location['is_published'] = is_published(doi_location['version'])
 
                 locations.append(doi_location)
 
@@ -1476,6 +1480,9 @@ class Work(db.Model):
 
                 if not pmh_location['version']:
                     pmh_location['version'] = self.guess_version()
+
+                pmh_location['is_accepted'] = is_accepted(pmh_location['version'])
+                pmh_location['is_published'] = is_published(pmh_location['version'])
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1537,22 +1544,27 @@ class Work(db.Model):
                     'license': None,
                     'doi': doi_url,
                 }
+                pubmed_location['is_accepted'] = is_accepted(pubmed_location['version'])
+                pubmed_location['is_published'] = is_published(pubmed_location['version'])
+
                 locations.append(pubmed_location)
                 break
 
         # last chance, make a location if there is a DOI but no locations yet
         if self.doi_url and not locations:
-            locations.append(
-                {
-                    'source': None,
-                    'pdf_url': None,
-                    'landing_page_url': self.doi_url,
-                    'is_oa': False,
-                    'version': self.guess_version(),
-                    'license': None,
-                    'doi': self.doi_url,
-                }
-            )
+            lastchance_location = {
+                'source': None,
+                'pdf_url': None,
+                'landing_page_url': self.doi_url,
+                'is_oa': False,
+                'version': self.guess_version(),
+                'license': None,
+                'doi': self.doi_url,
+            }
+            lastchance_location['is_accepted'] = is_accepted(lastchance_location['version'])
+            lastchance_location['is_published'] = is_published(lastchance_location['version'])
+
+            locations.append(lastchance_location)
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
         if locations and locations[0]['source'] is None and self.safety_journals:
@@ -1564,6 +1576,8 @@ class Work(db.Model):
 
         if locations and (not locations[0]["version"]):
             locations[0]["version"] = self.guess_version()
+            locations[0]['is_accepted'] = is_accepted(locations[0]['version'])
+            locations[0]['is_published'] = is_published(locations[0]['version'])
 
         return locations
 
