@@ -20,9 +20,15 @@ class WorkToEnqueue(db.Model):
 if __name__ == "__main__":
     paper_ids = [r[0] for r in db.session.query(WorkToEnqueue.paper_id).all()]
     if paper_ids:
-        redis_queue_mapping = {paper_id: mktime(gmtime(0)) for paper_id in paper_ids}
-        logger.info(f'queueing {len(redis_queue_mapping)} works')
-        _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
+        num_paper_ids = len(paper_ids)
+        logger.info(f'got {num_paper_ids} works to queue')
+        queue_chunk_size = 100000
+
+        for i in range(0, num_paper_ids, queue_chunk_size):
+            redis_queue_mapping = {paper_id: mktime(gmtime(0)) for paper_id in paper_ids[i:i+queue_chunk_size]}
+            logger.info(f'queueing works {i} - {i+queue_chunk_size}')
+            _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
+
         WorkToEnqueue.query.delete()
         db.session.commit()
     else:
