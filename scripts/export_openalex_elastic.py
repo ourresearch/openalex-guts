@@ -25,7 +25,7 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "authors": "authors-v10",
+    "authors": "authors-v11",
     "concepts": "concepts-v8",
     "funders": "funders-v3",
     "institutions": "institutions-v5",
@@ -107,7 +107,16 @@ def export_date(args):
                 continue
             if r.sadd('record_ids', record_id):
                 count += 1
-                line = json.dumps(hit.to_dict()) + '\n'
+                record = hit.to_dict()
+
+                # handle truncated authors
+                if entity_type == "works" and record.get("authorships") and record.get('authorships_full'):
+                    record["authorships"] = record["authorships_full"]
+                    del record["authorships_full"]
+                    if record.get("is_authors_truncated"):
+                        del record["is_authors_truncated"]
+
+                line = json.dumps(record) + '\n'
                 line_size = len(line.encode('utf-8'))
 
                 # If this line will make the file exceed the max size, close the current file and open a new one
