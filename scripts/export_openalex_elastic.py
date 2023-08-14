@@ -116,6 +116,10 @@ def export_date(args):
                     if record.get("is_authors_truncated"):
                         del record["is_authors_truncated"]
 
+                # handle abstract inverted index
+                if entity_type == "works" and record.get("abstract_inverted_index"):
+                    record["abstract_inverted_index"] = json.loads(record["abstract_inverted_index"])
+
                 line = json.dumps(record) + '\n'
                 line_size = len(line.encode('utf-8'))
 
