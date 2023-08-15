@@ -1354,8 +1354,8 @@ class Work(db.Model):
                 my_dict['fulltext'] = self.fulltext.fulltext
 
             if len(my_dict.get('authorships', [])) > 100:
-                my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
                 my_dict['authorships_full'] = my_dict.get('authorships', [])
+                my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
                 my_dict['authorships_truncated'] = True
 
             if self.is_closed_springer:
