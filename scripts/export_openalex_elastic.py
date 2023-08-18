@@ -25,12 +25,12 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "authors": "authors-v11",
-    "concepts": "concepts-v8",
-    "funders": "funders-v3",
-    "institutions": "institutions-v5",
-    "publishers": "publishers-v4",
-    "sources": "sources-v2",
+    # "authors": "authors-v11",
+    # "concepts": "concepts-v8",
+    # "funders": "funders-v3",
+    # "institutions": "institutions-v5",
+    # "publishers": "publishers-v4",
+    # "sources": "sources-v2",
     "works": "works-v18-*,-*invalid-data",
 }
 
@@ -148,8 +148,9 @@ def export_date(args):
 
 
 def export_entity(index_name, entity_type):
-    distinct_updated_dates = get_distinct_updated_dates(index_name)
-    with mp.Pool(mp.cpu_count()) as p:
+    # distinct_updated_dates = get_distinct_updated_dates(index_name)
+    distinct_updated_dates = ['2023-08-18', '2023-08-17', '2023-08-16', '2023-08-15', '2023-08-14', '2023-08-13', '2023-08-12', '2023-08-11', '2023-08-10']
+    with mp.Pool(12) as p:
         p.map(export_date, [(index_name, entity_type, d) for d in distinct_updated_dates])
 
 
