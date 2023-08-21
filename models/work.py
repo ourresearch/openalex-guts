@@ -1069,6 +1069,7 @@ class Work(db.Model):
                              "institutions": institution_list,
                              "countries": countries,
                              "is_corresponding": is_corresponding,
+                             "raw_author_name": affil_list[0]["raw_author_name"],
                              "raw_affiliation_strings": raw_affiliation_strings,
                              "raw_affiliation_string": raw_affiliation_string
                      }
@@ -1106,7 +1107,6 @@ class Work(db.Model):
                 author_match_names += [author_match_name]
         logger.info(f"author_match_names: {author_match_names}")
         return author_match_names
-
 
     def matches_authors_in_record(self, record_author_json):
         # returns True if either of them are missing authors, or if the authors match
@@ -1746,7 +1746,6 @@ class Work(db.Model):
                 del response["ids"][id_type]
 
         return response
-
 
     def __repr__(self):
         return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
