@@ -11,8 +11,9 @@ from typing import List
 
 import requests
 from cached_property import cached_property
-from sqlalchemy import orm, text
+from sqlalchemy import event, orm, text
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.types import ARRAY
 
 import models
@@ -1750,6 +1751,25 @@ class Work(db.Model):
 
     def __repr__(self):
         return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
+
+
+def on_year_change(mapper, connection, target):
+    hist = get_history(target, 'year')
+    if hist.has_changes():
+        old_year = hist.deleted[0] if hist.deleted else None
+        new_year = hist.added[0] if hist.added else None
+
+        if old_year != new_year and old_year is not None:
+            if target.previous_years is None:
+                logger.info(f"setting previous years to {old_year}")
+                target.previous_years = [old_year]
+            else:
+                if old_year not in target.previous_years:
+                    logger.info(f"adding {old_year} to previous years")
+                    target.previous_years.append(old_year)
+
+
+event.listen(Work, 'before_update', on_year_change)
 
 
 class WorkFulltext(db.Model):
