@@ -13,6 +13,7 @@ import requests
 from cached_property import cached_property
 from sqlalchemy import orm, text
 from sqlalchemy.orm import selectinload
+from sqlalchemy.types import ARRAY
 
 import models
 from app import COUNTRIES
@@ -159,7 +160,6 @@ class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
 
-    # id = db.Column(db.BigInteger)
     paper_id = db.Column(db.BigInteger, primary_key=True)
     doi = db.Column(db.Text)
     doc_type = db.Column(db.Text)
@@ -178,6 +178,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
+    previous_years = db.Column(ARRAY(db.Numeric))
 
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
