@@ -1048,18 +1048,18 @@ class Work(db.Model):
             else:
                 is_corresponding = affil_list[0].get('is_corresponding_author', False)
 
-            raw_affiliation_strings = list(set([
+            raw_affiliation_strings = sorted(list(set([
                                 a.get("raw_affiliation_string") for a in affil_list
                                 if a.get("raw_affiliation_string")
-                             ]))
-            raw_affiliation_string = '; '.join(list(set([
+                             ])))
+            raw_affiliation_string = '; '.join(sorted(list(set([
                                  a.get("raw_affiliation_string") for a in affil_list
                                  if a.get("raw_affiliation_string")
-                             ])))
+                             ]))))
             # add countries
             if institution_list:
                 countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
-                countries = list(set(countries_list))
+                countries = sorted(list(set(countries_list)))
             elif not institution_list and raw_affiliation_string:
                 countries = self.get_countries_from_raw_affiliation(raw_affiliation_string)
             else:
@@ -1614,7 +1614,7 @@ class Work(db.Model):
                     _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
                          max([1 if re.search(fr"\b{i.lower()}\b", raw_affiliation.lower()) else 0 for i in y]) > 0]
 
-        final_countries = list(set(countries_in_string))
+        final_countries = sorted(list(set(countries_in_string)))
 
         # If we match to Georgia countries GE or GS, remove US match that came from short state string
         if "GE" in final_countries or "GS" in final_countries:
