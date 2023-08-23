@@ -1761,11 +1761,11 @@ def on_year_change(mapper, connection, target):
 
         if old_year != new_year and old_year is not None:
             if target.previous_years is None:
-                logger.info(f"setting previous years to {old_year}")
+                logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (setting previous_years)")
                 target.previous_years = [old_year]
             else:
                 if old_year not in target.previous_years:
-                    logger.info(f"adding {old_year} to previous years")
+                    logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (adding to previous_years)")
                     target.previous_years.append(old_year)
 
 
