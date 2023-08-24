@@ -359,8 +359,7 @@ class Concept(db.Model):
         return response
 
     def store(self):
-        index_record = None
-        entity_hash = None
+        bulk_actions = []
 
         my_dict = self.to_dict()
         my_dict['updated'] = my_dict.get('updated_date')
@@ -372,10 +371,12 @@ class Concept(db.Model):
         if entity_hash != old_entity_hash:
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
+                "_op_type": "index",
                 "_index": "concepts-v8",
                 "_id": self.openalex_id,
                 "_source": my_dict
             }
+            bulk_actions.append(index_record)
         else:
             logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
@@ -385,7 +386,7 @@ class Concept(db.Model):
                 json_entity_hash=entity_hash
             )
         )
-        return index_record
+        return bulk_actions
 
     def clean_metadata(self):
         if not self.metadata:
