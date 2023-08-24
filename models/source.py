@@ -85,8 +85,7 @@ class Source(db.Model):
         return self.issn
 
     def store(self):
-        index_record = None
-        entity_hash = None
+        bulk_actions = []
 
         if self.merge_into_id is not None:
             entity_hash = entity_md5(self.merge_into_id)
@@ -94,6 +93,7 @@ class Source(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "merge-sources",
                     "_id": self.openalex_id,
                     "_source": {
@@ -101,6 +101,13 @@ class Source(db.Model):
                         "merge_into_id": as_source_openalex_id(self.merge_into_id),
                     }
                 }
+                delete_record = {
+                    "_op_type": "delete",
+                    "_index": "sources-v2",
+                    "_id": self.openalex_id,
+                }
+                bulk_actions.append(index_record)
+                bulk_actions.append(delete_record)
             else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
         else:
@@ -113,15 +120,17 @@ class Source(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "sources-v2",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
+                bulk_actions.append(index_record)
             else:
                 logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
-        return index_record
+        return bulk_actions
 
     @cached_property
     def display_counts_by_year(self):

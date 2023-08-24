@@ -1320,68 +1320,109 @@ class Work(db.Model):
 
     def store(self):
         if not self.full_updated_date:
-            return None
+            return []
 
-        index_record = None
-        entity_hash = None
+        index_suffix = elastic_index_suffix(self.year)
 
         if self.merge_into_id is not None:
-            entity_hash = entity_md5(self.merge_into_id)
-
-            if entity_hash != self.json_entity_hash:
-                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
-                index_record = {
-                    "_index": "merge-works",
-                    "_id": self.openalex_id,
-                    "_source": {
-                        "id": self.openalex_id,
-                        "merge_into_id": as_work_openalex_id(self.merge_into_id),
-                    }
-                }
-            else:
-                logger.info(f"already merged into {self.merge_into_id}, not saving again")
+            bulk_actions = self.handle_merge(index_suffix)
         else:
-            my_dict = self.to_dict("full")
-            my_dict['updated'] = my_dict.get('updated_date')
-            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
-            my_dict['@version'] = 1
-            my_dict['authors_count'] = len(self.affiliations_list)
-            my_dict['concepts_count'] = len(self.concepts_sorted)
-            my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
+            bulk_actions = self.handle_indexing(index_suffix)
+        return bulk_actions
 
-            if self.abstract and self.abstract.abstract:
-                my_dict['abstract'] = self.abstract.abstract
+    def handle_merge(self, index_suffix):
+        bulk_actions = []
+        entity_hash = entity_md5(self.merge_into_id)
 
-            if self.fulltext and self.fulltext.fulltext:
-                my_dict['fulltext'] = self.fulltext.fulltext
-
-            if len(my_dict.get('authorships', [])) > 100:
-                my_dict['authorships_full'] = my_dict.get('authorships', [])
-                my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
-                my_dict['authorships_truncated'] = True
-
-            if self.is_closed_springer:
-                my_dict.pop('abstract', None)
-                my_dict["abstract_inverted_index"] = None
-
-            entity_hash = entity_md5(my_dict)
-
-            if work_has_null_author_ids(my_dict):
-                logger.info('not saving work because some authors have null IDs')
-                index_record = None
-            elif entity_hash != self.json_entity_hash:
-                index_suffix = elastic_index_suffix(self.year)
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                index_record = {
-                    "_index": f"works-v18-{index_suffix}",
-                    "_id": self.openalex_id,
-                    "_source": my_dict
+        if entity_hash != self.json_entity_hash:
+            logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+            index_record = {
+                "_op_type": "index",
+                "_index": "merge-works",
+                "_id": self.openalex_id,
+                "_source": {
+                    "id": self.openalex_id,
+                    "merge_into_id": as_work_openalex_id(self.merge_into_id),
                 }
-            else:
-                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+            }
+            delete_record = {
+                "_op_type": "delete",
+                "_index": f"works-v18-{index_suffix}",
+                "_id": self.openalex_id,
+            }
+            bulk_actions.append(index_record)
+            bulk_actions.append(delete_record)
+        else:
+            logger.info(f"already merged into {self.merge_into_id}, not saving again")
+        self.json_entity_hash = entity_hash
+        return bulk_actions
+
+    def handle_indexing(self, index_suffix):
+        bulk_actions = []
+
+        my_dict = self.to_dict("full")
+        my_dict['updated'] = my_dict.get('updated_date')
+        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+        my_dict['@version'] = 1
+        my_dict['authors_count'] = len(self.affiliations_list)
+        my_dict['concepts_count'] = len(self.concepts_sorted)
+        my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
+
+        if self.abstract and self.abstract.abstract:
+            my_dict['abstract'] = self.abstract.abstract
+
+        if self.fulltext and self.fulltext.fulltext:
+            my_dict['fulltext'] = self.fulltext.fulltext
+
+        if len(my_dict.get('authorships', [])) > 100:
+            my_dict['authorships_full'] = my_dict.get('authorships', [])
+            my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
+            my_dict['authorships_truncated'] = True
+
+        if self.is_closed_springer:
+            my_dict.pop('abstract', None)
+            my_dict["abstract_inverted_index"] = None
+
+        entity_hash = entity_md5(my_dict)
+
+        if work_has_null_author_ids(my_dict):
+            logger.info('not saving work because some authors have null IDs')
+        elif entity_hash != self.json_entity_hash:
+            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+            index_record = {
+                "_op_type": "index",
+                "_index": f"works-v18-{index_suffix}",
+                "_id": self.openalex_id,
+                "_source": my_dict
+            }
+            bulk_actions.append(index_record)
+
+            # check if year has changed, delete old records to prevent duplicate
+            if self.previous_years:
+                for old_year in self.previous_years:
+                    try:
+                        old_year = int(old_year)
+                    except ValueError:
+                        logger.warning(f"year for {self.openalex_id} changed but not a valid year {old_year}")
+                        continue
+                    logger.info(f"year for {self.openalex_id} changed from {old_year} to {self.year}")
+                    old_index_suffix = elastic_index_suffix(old_year)
+                    if old_index_suffix != index_suffix:
+                        logger.info(f"delete {self.openalex_id} from old index {old_index_suffix}")
+                        delete_record = {
+                            "_op_type": "delete",
+                            "_index": f"works-v18-{old_index_suffix}",
+                            "_id": self.openalex_id,
+                        }
+                        bulk_actions.append(delete_record)
+                    else:
+                        logger.info(f"year for {self.openalex_id} changed but still in same index {index_suffix}")
+                self.previous_years = None
+        else:
+            logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
-        return index_record
+        return bulk_actions
 
     @cached_property
     def display_counts_by_year(self):
