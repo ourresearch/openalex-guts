@@ -21,6 +21,7 @@ from models.counts import WorkCountsByYear
 from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
+from models.institution import InstitutionAncestors
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.location import Location
 from models.mesh import Mesh
@@ -118,6 +119,7 @@ Publisher.sources_count = db.relationship("PublisherSources", uselist=False, laz
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
 
+Institution.ancestors = db.relationship("InstitutionAncestors", uselist=True, lazy='selectin', viewonly=True)
 Institution.repositories = db.relationship(
     "Source", lazy='selectin', viewonly=True, uselist=True,
     primaryjoin="foreign(Institution.affiliation_id) == remote(Source.institution_id)"
