@@ -20,10 +20,15 @@ Run with: heroku local:run python -m scripts.queue_work_process_sdgs --chunk=100
 
 def process_sdg(work):
     print(f"Processing {work.id}")
-    if work.abstract is None:
-        text_to_process = work.work_title
-    else:
+    if work.abstract.abstract and work.work_title:
         text_to_process = work.work_title + " " + work.abstract.abstract
+    elif work.abstract.abstract is None and work.work_title:
+        text_to_process = work.work_title
+    elif work.abstract.abstract and work.work_title is None:
+        text_to_process = work.abstract.abstract
+    else:
+        print(f"Error processing {work.id} - no text to process")
+        return None
     url = SDG_CLASSIFIER_URL
 
     data = {"text": text_to_process}
@@ -54,7 +59,7 @@ def process_sdg(work):
         db.session.commit()
         print(f"Processed {work.id}")
     else:
-        print(f"Error processing {work.id}")
+        print(f"Error processing {work.id} - other than 200 response from classifier")
 
 
 class QueueWorkProcessSdgs:
