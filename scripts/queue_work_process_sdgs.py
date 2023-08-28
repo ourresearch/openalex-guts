@@ -20,11 +20,11 @@ Run with: heroku local:run python -m scripts.queue_work_process_sdgs --chunk=100
 
 def process_sdg(work):
     print(f"Processing {work.id}")
-    if work.abstract.abstract and work.work_title:
+    if work.abstract and work.abstract.abstract and work.work_title:
         text_to_process = work.work_title + " " + work.abstract.abstract
-    elif work.abstract.abstract is None and work.work_title:
+    elif not work.abstract and work.work_title:
         text_to_process = work.work_title
-    elif work.abstract.abstract and work.work_title is None:
+    elif work.abstract and work.abstract.abstract and work.work_title is None:
         text_to_process = work.abstract.abstract
     else:
         print(f"Error processing {work.id} - no text to process")
