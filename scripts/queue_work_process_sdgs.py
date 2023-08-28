@@ -2,6 +2,7 @@ import argparse
 import json
 from time import sleep
 from time import time
+import random
 
 import requests
 from sqlalchemy import orm
@@ -19,7 +20,10 @@ Run with: heroku local:run python -m scripts.queue_work_process_sdgs --chunk=100
 
 def process_sdg(work):
     print(f"Processing {work.id}")
-    text_to_process = work.work_title + " " + work.abstract.abstract
+    if work.abstract is None:
+        text_to_process = work.work_title
+    else:
+        text_to_process = work.work_title + " " + work.abstract.abstract
     url = SDG_CLASSIFIER_URL
 
     data = {"text": text_to_process}
@@ -98,7 +102,7 @@ class QueueWorkProcessSdgs:
                     try:
                         process_sdg(work)
                     except Exception as e:
-                        logger.error(f'error processing {work}')
+                        logger.error(f'error processing {work} - {e}')
                         continue
 
                 db.session.execute('''
@@ -165,6 +169,7 @@ class QueueWorkProcessSdgs:
 
 
 if __name__ == "__main__":
+    sleep(random.randint(0, 180))
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', nargs="?", type=str, help="id of the Work sdgs you want to update")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many Works to update")
