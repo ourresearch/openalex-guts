@@ -346,7 +346,7 @@ class Source(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=primary_location.source.id:{self.openalex_id_short}",
-                "updated_date": datetime.datetime.utcnow().isoformat()[0:10],
+                "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 
@@ -356,23 +356,5 @@ class Source(db.Model):
                     del response["ids"][id_type]
         return response
 
-
-
     def __repr__(self):
         return "<Source ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
-
-# select count(distinct work.paper_id)
-# from mid.journal journal
-# join mid.work work on work.journal_id=journal.journal_id
-# where issn='0138-9130' -- peerjissn='2167-8359'
-#
-# select ancestor_level, ancestor_name, count(distinct work.paper_id) as n, count(distinct work.paper_id)/6599.0 as prop
-# from mid.journal journal
-# join mid.work work on work.journal_id=journal.journal_id
-# join mid.work_concept wc on wc.paper_id=work.paper_id
-# join mid.concept concept on concept.field_of_study_id=wc.field_of_study
-# join mid.concept_self_and_ancestors_view ancestors on ancestors.id=concept.field_of_study_id
-# where issn='0138-9130' -- peerjissn='2167-8359'
-# group by ancestor_name, ancestor_level
-# order by n desc
-

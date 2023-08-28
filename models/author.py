@@ -359,7 +359,7 @@ class Author(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
-                "updated_date": datetime.datetime.utcnow().isoformat(),  # updated date needs to be at the time to_dict is called, because otherwise it would be stale after waiting in the queue
+                "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 

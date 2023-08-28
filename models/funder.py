@@ -189,7 +189,6 @@ class Funder(db.Model):
                     },
                     "counts_by_year": self.display_counts_by_year,
                     "x_concepts": self.concepts[0:25],
-                    #"sources_api_url": f"https://api.openalex.org/sources?filter=host_organization.id:{self.openalex_id_short}",
                     "updated_date": datetime.datetime.utcnow().isoformat(),
                     "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
                 }
