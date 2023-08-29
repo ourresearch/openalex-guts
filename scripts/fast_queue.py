@@ -13,6 +13,7 @@ from app import ELASTIC_URL
 from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
+from models import REDIS_WORK_QUEUE
 from util import elapsed
 
 # test this script locally
@@ -21,7 +22,6 @@ from util import elapsed
 # 3. Changes should be reflected in elasticsearch and the api.
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
-REDIS_WORK_QUEUE = 'queue:work_store'
 
 
 def run(**kwargs):
