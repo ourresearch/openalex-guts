@@ -1664,6 +1664,14 @@ class Work(db.Model):
 
         return final_countries
 
+    @cached_property
+    def countries_distinct_count(self):
+        countries = []
+        for affil in self.affiliations_list:
+            if affil.get("countries"):
+                countries += affil.get("countries")
+        return len(set(countries))
+
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
         
@@ -1711,6 +1719,7 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "countries_distinct_count": self.countries_distinct_count,
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
