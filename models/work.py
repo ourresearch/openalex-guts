@@ -1371,7 +1371,9 @@ class Work(db.Model):
         if self.abstract and self.abstract.abstract:
             my_dict['abstract'] = self.abstract.abstract
 
-        if self.fulltext and self.fulltext.fulltext:
+        if self.record_fulltext:
+            my_dict['fulltext'] = self.record_fulltext
+        elif self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
 
         if len(my_dict.get('authorships', [])) > 100:
@@ -1671,6 +1673,16 @@ class Work(db.Model):
             if affil.get("countries"):
                 countries += affil.get("countries")
         return len(set(countries))
+
+    @cached_property
+    def record_fulltext(self):
+        # currently this fulltext comes from parsed PDFs
+        for record in self.records:
+            if record.record_type == "crossref_doi" and record.fulltext:
+                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext)
+                clean_fulltext = ' '.join(clean_fulltext.split())
+                clean_fulltext = '\n'.join([line.strip() for line in clean_fulltext.splitlines() if line.strip()])
+                return clean_fulltext
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
