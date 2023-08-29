@@ -1,12 +1,11 @@
-import csv
 import argparse
+import csv
 from time import gmtime, mktime, sleep
 
 from redis import Redis
 
 from app import REDIS_QUEUE_URL
-from scripts.fast_queue import REDIS_WORK_QUEUE
-
+from models import REDIS_WORK_QUEUE
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
