@@ -7,6 +7,7 @@ run_once_work_add_everything: python -m scripts.queue_work_add_everything --chun
 run_once_work_add_most_things: python -m scripts.queue_work_add_everything --partial --chunk=$WORK_ADD_EVERYTHING_CHUNK_SIZE
 run_once_work_update_authors: python -m scripts.queue_work_update_authors --chunk=$WORK_ADD_EVERYTHING_CHUNK_SIZE
 run_once_work_process_sdgs: python -m scripts.queue_work_process_sdgs --chunk=100
+run_once_work_process_sdgs_bash: bash scripts/run_process_sdg_worker.sh
 
 fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=$AUTHOR_STORE_CHUNK_SIZE
 fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=$WORK_STORE_CHUNK_SIZE

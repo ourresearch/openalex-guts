@@ -215,10 +215,8 @@ class Author(db.Model):
         my_data = json.loads(self.orcid_object.orcid_data.api_json)
         return my_data.get("person", None)
 
-
     def store(self):
-        index_record = None
-        entity_hash = None
+        bulk_actions = []
 
         if self.merge_into_id is not None:
             entity_hash = entity_md5(self.merge_into_id)
@@ -226,6 +224,7 @@ class Author(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "merge-authors",
                     "_id": self.openalex_id,
                     "_source": {
@@ -233,6 +232,14 @@ class Author(db.Model):
                         "merge_into_id": as_author_openalex_id(self.merge_into_id),
                     }
                 }
+                delete_record = {
+                    "_op_type": "delete",
+                    "_index": "authors-v11",
+                    "_id": self.openalex_id,
+                }
+                bulk_actions.append(index_record)
+                bulk_actions.append(delete_record)
+
             else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
         else:
@@ -245,15 +252,17 @@ class Author(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "authors-v11",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
+                bulk_actions.append(index_record)
             else:
                 logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
-        return index_record
+        return bulk_actions
 
     @cached_property
     def concepts(self):
@@ -350,7 +359,7 @@ class Author(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
-                "updated_date": datetime.datetime.utcnow().isoformat(),  # updated date needs to be at the time to_dict is called, because otherwise it would be stale after waiting in the queue
+                "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
 
