@@ -158,6 +158,18 @@ def paginate_openalex(url, params=None, per_page=200):
         cursor = page_with_results["meta"]["next_cursor"]
 
 
+def entities_by_ids(id_list, api_endpoint='works', filterkey='openalex', chunksize=50, params=None):
+    if params is None:
+        params = {}
+    params['per-page'] = chunksize
+    for i in range(0, len(id_list), chunksize):
+        chunk = id_list[i:i+chunksize]
+        url = f"https://api.openalex.org/{api_endpoint}"
+        chunk_str = '|'.join(chunk)
+        params['filter'] = f'{filterkey}:{chunk_str}'
+        for r in paginate_openalex(url, params):
+            yield r
+
 def openalex_entities_by_ids(id_list, chunksize=50, params=None):
     id_list = [OpenAlexID(oid) for oid in id_list]
     if params is None:
@@ -168,13 +180,9 @@ def openalex_entities_by_ids(id_list, chunksize=50, params=None):
         raise RuntimeError("all ids in in id_list must be the same entity type")
     entity_type = list(entity_type)[0]
     api_endpoint = f"{entity_type}s"
-    for i in range(0, len(id_list), chunksize):
-        chunk = id_list[i:i+chunksize]
-        url = f"https://api.openalex.org/{api_endpoint}"
-        chunk_str = '|'.join([item.id_short for item in chunk])
-        params['filter'] = f'openalex:{chunk_str}'
-        for r in paginate_openalex(url, params):
-            yield r
+    ids_short = [item.id_short for item in id_list]
+    for r in entities_by_ids(ids_short, api_endpoint, filterkey='openalex', chunksize=chunksize, params=params):
+        yield r
 
 def change_source_type(source_id, new_source_type, old_source_type='journal', note='', session=None, commit=True):
     if session is None:
