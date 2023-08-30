@@ -19,15 +19,8 @@ from app import get_apiurl_from_openalex_url
 from app import logger
 from util import entity_md5
 
-# alter table institution rename column normalized_name to mag_normalized_name
-# alter table institution add column normalized_name varchar(65000)
-# update institution set normalized_name=f_normalize_title(institution.mag_normalized_name)
-
-# truncate mid.institution
-# insert into mid.institution (select * from legacy.mag_main_affiliations)
-# update mid.institution set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
-
 DELETED_INSTITUTION_ID = 4362561690
+
 
 def as_institution_openalex_id(id):
     from app import API_HOST
@@ -189,7 +182,7 @@ class Institution(db.Model):
             relationship_dict[row["related_ror_id"]] = row["relationship_type"].lower()
         ror_ids = relationship_dict.keys()
         if ror_ids:
-            objs = db.session.query(Institution).options(selectinload(Institution.ror).raiseload('*'), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
+            objs = db.session.query(Institution).options(selectinload(Institution.ror).raiseload('*'), selectinload(Institution.ancestors).raiseload('*'), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
             for obj in objs:
                 obj.relationship_status = relationship_dict[obj.ror_id]
             objs = sorted(objs, key=lambda x: (x.relationship_status if x.relationship_status else "", x.display_name if x.display_name else ""))
@@ -350,14 +343,14 @@ class Institution(db.Model):
         return data
 
     def store(self):
-        index_record = None
-        entity_hash = None
+        bulk_actions = []
 
         if self.merge_into_id is not None:
             entity_hash = entity_md5(self.merge_into_id)
             if entity_hash != self.json_entity_hash:
                 logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "merge-institutions",
                     "_id": self.openalex_id,
                     "_source": {
@@ -365,6 +358,13 @@ class Institution(db.Model):
                         "merge_into_id": as_institution_openalex_id(self.merge_into_id),
                     }
                 }
+                delete_record = {
+                    "_op_type": "delete",
+                    "_index": "institutions-v5",
+                    "_id": self.openalex_id,
+                }
+                bulk_actions.append(index_record)
+                bulk_actions.append(delete_record)
             else:
                 logger.info(f"already merged into {self.merge_into_id}, not saving again")
         else:
@@ -376,15 +376,17 @@ class Institution(db.Model):
             if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
+                    "_op_type": "index",
                     "_index": "institutions-v5",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
+                bulk_actions.append(index_record)
             else:
                 logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
-        return index_record
+        return bulk_actions
 
     @cached_property
     def concepts(self):
@@ -549,6 +551,10 @@ class Institution(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
+    @cached_property
+    def lineage(self):
+        return sorted([self.openalex_id] + [f"https://openalex.org/I{i.ancestor_id}" for i in self.ancestors])
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
@@ -556,11 +562,11 @@ class Institution(db.Model):
             "display_name": self.display_name,
             "country_code": self.country_code,
             "type": self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None,
+            "lineage": self.lineage,
         }
         # true for embedded related institutions
         if hasattr(self, "relationship_status"):
             response["relationship"] = self.relationship_status
-
         if return_level == "full":
             response.update({
                 "homepage_url": self.official_page,
@@ -609,7 +615,6 @@ class Institution(db.Model):
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=institutions.id:{self.openalex_id_short}",
-                # "updated_date": self.full_updated_date.isoformat()[0:10] if isinstance(self.full_updated_date, datetime.datetime) else self.full_updated_date[0:10],
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
@@ -636,3 +641,15 @@ class AffiliationString(db.Model):
     original_affiliation = db.Column(db.Text, primary_key=True)
     affiliation_ids = db.Column(JSONB)
     affiliation_ids_override = db.Column(JSONB)
+
+
+class InstitutionAncestors(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institution_ancestors_mv"
+
+    institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
+    ror_id = db.Column(db.String(256))
+    display_name = db.Column(db.Text)
+    ancestor_id = db.Column(db.BigInteger, primary_key=True)
+    ancestor_ror_id = db.Column(db.String(256))
+    ancestor_display_name = db.Column(db.Text)

@@ -1,5 +1,15 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-08-18
+- released new authors disambiguation feature
+- fixed missing source assignment for 5.7M works
+- improved affiliation matching resulting in additional ~1.1M works matched to institutions
+- works with more than 100 authors no longer have authors truncated
+- modified Work.type, added Work.type_crossref
+- added APC data for 3,508 journals
+- added authorships.countries attribute
+- resolved minor snapshot bugs affecting abstract_inverted_index and manifest, removed "@" fields
+
 RELEASE 2023-07-11
 - add references_count to works
 - add records across all entities

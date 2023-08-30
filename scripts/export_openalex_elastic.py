@@ -5,7 +5,6 @@ import multiprocessing as mp
 import os
 import time
 
-import boto3
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 import redis
@@ -14,9 +13,6 @@ from app import ELASTIC_URL
 
 data_dir = os.path.join(os.path.expanduser('~'), 'data', datetime.now().strftime("%Y_%m_%d"))
 print(f"data directory is {data_dir}")
-
-# Configure AWS S3 client
-s3 = boto3.client('s3')
 
 # Configure Elasticsearch client
 es = Elasticsearch([ELASTIC_URL])
@@ -117,8 +113,14 @@ def export_date(args):
                         del record["is_authors_truncated"]
 
                 # handle abstract inverted index
-                if entity_type == "works" and record.get("abstract_inverted_index"):
-                    record["abstract_inverted_index"] = json.loads(record["abstract_inverted_index"])
+                if (
+                        entity_type == "works"
+                        and record.get("abstract_inverted_index")
+                        and record.get("abstract_inverted_index").get("InvertedIndex")
+                ):
+                    record["abstract_inverted_index"] = json.loads(
+                        record["abstract_inverted_index"]["InvertedIndex"]
+                    )
 
                 line = json.dumps(record) + '\n'
                 line_size = len(line.encode('utf-8'))
@@ -149,7 +151,7 @@ def export_date(args):
 
 def export_entity(index_name, entity_type):
     distinct_updated_dates = get_distinct_updated_dates(index_name)
-    with mp.Pool(mp.cpu_count()) as p:
+    with mp.Pool(12) as p:
         p.map(export_date, [(index_name, entity_type, d) for d in distinct_updated_dates])
 
 

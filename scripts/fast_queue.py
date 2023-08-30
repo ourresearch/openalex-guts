@@ -13,6 +13,7 @@ from app import ELASTIC_URL
 from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
+from models import REDIS_WORK_QUEUE
 from util import elapsed
 
 # test this script locally
@@ -21,7 +22,6 @@ from util import elapsed
 # 3. Changes should be reflected in elasticsearch and the api.
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
-REDIS_WORK_QUEUE = 'queue:work_store'
 
 
 def run(**kwargs):
@@ -36,8 +36,11 @@ def run(**kwargs):
     if single_id := kwargs.get('id'):
         if objects := get_objects(entity_type, [single_id]):
             logger.info(f'found object {objects[0]}')
-            records_to_index = [r for r in [o.store() for o in objects] if r]
-            index_and_merge_object_records(records_to_index)
+            bulk_actions = []
+            for o in objects:
+                record_actions = o.store()
+                bulk_actions += [bulk_action for bulk_action in record_actions if bulk_action]
+            index_and_merge_object_records(bulk_actions)
             db.session.commit()
         else:
             logger.warn(f'found no object with id {single_id}')
@@ -51,7 +54,7 @@ def run(**kwargs):
             loop_start = time()
             if object_ids := fetch_queue_chunk_ids(queue_table, chunk):
                 objects = get_objects(entity_type, object_ids)
-                records_to_index = []
+                bulk_actions = []
 
                 for obj in objects:
                     method_start_time = time()
@@ -61,9 +64,10 @@ def run(**kwargs):
 
                     method_name = method_name.replace("update_once_", "")
                     method_to_run = getattr(obj, method_name)
-                    r = method_to_run()
-                    if method_name == "store" and r:
-                        records_to_index.append(r)
+                    record_actions = method_to_run()
+                    if method_name == "store" and record_actions:
+                        for bulk_action in record_actions:
+                            bulk_actions.append(bulk_action)
 
                     logger.info(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
 
@@ -72,10 +76,10 @@ def run(**kwargs):
                 db.session.commit()  # fail loudly for now
                 logger.info(f'commit took {elapsed(start_time, 4)}s')
 
-                if method_name == "store" and records_to_index:
+                if method_name == "store" and bulk_actions:
                     logger.info('indexing')
                     start_time = time()
-                    index_and_merge_object_records(records_to_index)
+                    index_and_merge_object_records(bulk_actions)
                     logger.info(f'indexing took {elapsed(start_time, 4)}s')
 
                 if entity_type == 'work' and method_name == 'store':
@@ -104,9 +108,9 @@ def log_work_store_time(started, finished, chunk_size):
     ).execution_options(autocommit=True))
 
 
-def index_and_merge_object_records(records_to_index):
+def index_and_merge_object_records(bulk_actions):
     es = Elasticsearch([ELASTIC_URL], timeout=30)
-    bulk(es, records_to_index)
+    bulk(es, bulk_actions)
 
 
 def store_json_objects(objects):
@@ -271,6 +275,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
+            selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ancestors).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
             selectinload(models.Work.fulltext),
@@ -292,6 +297,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.alternative_names),
             selectinload(models.Author.author_concepts),
             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
+            selectinload(models.Author.last_known_institution).selectinload(models.Institution.ancestors).raiseload('*'),
             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
             selectinload(models.Author.last_known_institution).raiseload('*'),
             selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).selectinload(models.Work.counts),

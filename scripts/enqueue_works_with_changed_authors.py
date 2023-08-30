@@ -5,7 +5,7 @@ from redis import Redis
 from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
-from scripts.fast_queue import REDIS_WORK_QUEUE
+from models import REDIS_WORK_QUEUE
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 

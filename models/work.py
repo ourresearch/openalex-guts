@@ -11,8 +11,10 @@ from typing import List
 
 import requests
 from cached_property import cached_property
-from sqlalchemy import orm, text
+from sqlalchemy import event, orm, text
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import get_history
+from sqlalchemy.types import ARRAY
 
 import models
 from app import COUNTRIES
@@ -159,7 +161,6 @@ class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work"
 
-    # id = db.Column(db.BigInteger)
     paper_id = db.Column(db.BigInteger, primary_key=True)
     doi = db.Column(db.Text)
     doc_type = db.Column(db.Text)
@@ -178,6 +179,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
+    previous_years = db.Column(ARRAY(db.Numeric))
 
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
@@ -1047,18 +1049,18 @@ class Work(db.Model):
             else:
                 is_corresponding = affil_list[0].get('is_corresponding_author', False)
 
-            raw_affiliation_strings = list(set([
+            raw_affiliation_strings = sorted(list(set([
                                 a.get("raw_affiliation_string") for a in affil_list
                                 if a.get("raw_affiliation_string")
-                             ]))
-            raw_affiliation_string = '; '.join(list(set([
+                             ])))
+            raw_affiliation_string = '; '.join(sorted(list(set([
                                  a.get("raw_affiliation_string") for a in affil_list
                                  if a.get("raw_affiliation_string")
-                             ])))
+                             ]))))
             # add countries
             if institution_list:
                 countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
-                countries = list(set(countries_list))
+                countries = sorted(list(set(countries_list)))
             elif not institution_list and raw_affiliation_string:
                 countries = self.get_countries_from_raw_affiliation(raw_affiliation_string)
             else:
@@ -1069,6 +1071,7 @@ class Work(db.Model):
                              "institutions": institution_list,
                              "countries": countries,
                              "is_corresponding": is_corresponding,
+                             "raw_author_name": affil_list[0]["raw_author_name"],
                              "raw_affiliation_strings": raw_affiliation_strings,
                              "raw_affiliation_string": raw_affiliation_string
                      }
@@ -1106,7 +1109,6 @@ class Work(db.Model):
                 author_match_names += [author_match_name]
         logger.info(f"author_match_names: {author_match_names}")
         return author_match_names
-
 
     def matches_authors_in_record(self, record_author_json):
         # returns True if either of them are missing authors, or if the authors match
@@ -1318,68 +1320,111 @@ class Work(db.Model):
 
     def store(self):
         if not self.full_updated_date:
-            return None
+            return []
 
-        index_record = None
-        entity_hash = None
+        index_suffix = elastic_index_suffix(self.year)
 
         if self.merge_into_id is not None:
-            entity_hash = entity_md5(self.merge_into_id)
-
-            if entity_hash != self.json_entity_hash:
-                logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
-                index_record = {
-                    "_index": "merge-works",
-                    "_id": self.openalex_id,
-                    "_source": {
-                        "id": self.openalex_id,
-                        "merge_into_id": as_work_openalex_id(self.merge_into_id),
-                    }
-                }
-            else:
-                logger.info(f"already merged into {self.merge_into_id}, not saving again")
+            bulk_actions = self.handle_merge(index_suffix)
         else:
-            my_dict = self.to_dict("full")
-            my_dict['updated'] = my_dict.get('updated_date')
-            my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
-            my_dict['@version'] = 1
-            my_dict['authors_count'] = len(self.affiliations_list)
-            my_dict['concepts_count'] = len(self.concepts_sorted)
-            my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
+            bulk_actions = self.handle_indexing(index_suffix)
+        return bulk_actions
 
-            if self.abstract and self.abstract.abstract:
-                my_dict['abstract'] = self.abstract.abstract
+    def handle_merge(self, index_suffix):
+        bulk_actions = []
+        entity_hash = entity_md5(self.merge_into_id)
 
-            if self.fulltext and self.fulltext.fulltext:
-                my_dict['fulltext'] = self.fulltext.fulltext
-
-            if len(my_dict.get('authorships', [])) > 100:
-                my_dict['authorships_full'] = my_dict.get('authorships', [])
-                my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
-                my_dict['authorships_truncated'] = True
-
-            if self.is_closed_springer:
-                my_dict.pop('abstract', None)
-                my_dict["abstract_inverted_index"] = None
-
-            entity_hash = entity_md5(my_dict)
-
-            if work_has_null_author_ids(my_dict):
-                logger.info('not saving work because some authors have null IDs')
-                index_record = None
-            elif entity_hash != self.json_entity_hash:
-                index_suffix = elastic_index_suffix(self.year)
-                logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-                index_record = {
-                    "_index": f"works-v18-{index_suffix}",
-                    "_id": self.openalex_id,
-                    "_source": my_dict
+        if entity_hash != self.json_entity_hash:
+            logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
+            index_record = {
+                "_op_type": "index",
+                "_index": "merge-works",
+                "_id": self.openalex_id,
+                "_source": {
+                    "id": self.openalex_id,
+                    "merge_into_id": as_work_openalex_id(self.merge_into_id),
                 }
-            else:
-                logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+            }
+            delete_record = {
+                "_op_type": "delete",
+                "_index": f"works-v18-{index_suffix}",
+                "_id": self.openalex_id,
+            }
+            bulk_actions.append(index_record)
+            bulk_actions.append(delete_record)
+        else:
+            logger.info(f"already merged into {self.merge_into_id}, not saving again")
+        self.json_entity_hash = entity_hash
+        return bulk_actions
+
+    def handle_indexing(self, index_suffix):
+        bulk_actions = []
+
+        my_dict = self.to_dict("full")
+        my_dict['updated'] = my_dict.get('updated_date')
+        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+        my_dict['@version'] = 1
+        my_dict['authors_count'] = len(self.affiliations_list)
+        my_dict['concepts_count'] = len(self.concepts_sorted)
+        my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
+
+        if self.abstract and self.abstract.abstract:
+            my_dict['abstract'] = self.abstract.abstract
+
+        if self.record_fulltext:
+            my_dict['fulltext'] = self.record_fulltext
+        elif self.fulltext and self.fulltext.fulltext:
+            my_dict['fulltext'] = self.fulltext.fulltext
+
+        if len(my_dict.get('authorships', [])) > 100:
+            my_dict['authorships_full'] = my_dict.get('authorships', [])
+            my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
+            my_dict['authorships_truncated'] = True
+
+        if self.is_closed_springer:
+            my_dict.pop('abstract', None)
+            my_dict["abstract_inverted_index"] = None
+
+        entity_hash = entity_md5(my_dict)
+
+        if work_has_null_author_ids(my_dict):
+            logger.info('not saving work because some authors have null IDs')
+        elif entity_hash != self.json_entity_hash:
+            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+            index_record = {
+                "_op_type": "index",
+                "_index": f"works-v18-{index_suffix}",
+                "_id": self.openalex_id,
+                "_source": my_dict
+            }
+            bulk_actions.append(index_record)
+
+            # check if year has changed, delete old records to prevent duplicate
+            if self.previous_years:
+                for old_year in self.previous_years:
+                    try:
+                        old_year = int(old_year)
+                    except ValueError:
+                        logger.warning(f"year for {self.openalex_id} changed but not a valid year {old_year}")
+                        continue
+                    logger.info(f"year for {self.openalex_id} changed from {old_year} to {self.year}")
+                    old_index_suffix = elastic_index_suffix(old_year)
+                    if old_index_suffix != index_suffix:
+                        logger.info(f"delete {self.openalex_id} from old index {old_index_suffix}")
+                        delete_record = {
+                            "_op_type": "delete",
+                            "_index": f"works-v18-{old_index_suffix}",
+                            "_id": self.openalex_id,
+                        }
+                        bulk_actions.append(delete_record)
+                    else:
+                        logger.info(f"year for {self.openalex_id} changed but still in same index {index_suffix}")
+                self.previous_years = None
+        else:
+            logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
-        return index_record
+        return bulk_actions
 
     @cached_property
     def display_counts_by_year(self):
@@ -1613,13 +1658,31 @@ class Work(db.Model):
                     _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
                          max([1 if re.search(fr"\b{i.lower()}\b", raw_affiliation.lower()) else 0 for i in y]) > 0]
 
-        final_countries = list(set(countries_in_string))
+        final_countries = sorted(list(set(countries_in_string)))
 
         # If we match to Georgia countries GE or GS, remove US match that came from short state string
         if "GE" in final_countries or "GS" in final_countries:
             final_countries.remove("US")
 
         return final_countries
+
+    @cached_property
+    def countries_distinct_count(self):
+        countries = []
+        for affil in self.affiliations_list:
+            if affil.get("countries"):
+                countries += affil.get("countries")
+        return len(set(countries))
+
+    @cached_property
+    def record_fulltext(self):
+        # currently this fulltext comes from parsed PDFs
+        for record in self.records:
+            if record.record_type == "crossref_doi" and record.fulltext:
+                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext)
+                clean_fulltext = ' '.join(clean_fulltext.split())
+                clean_fulltext = '\n'.join([line.strip() for line in clean_fulltext.splitlines() if line.strip()])
+                return clean_fulltext
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
@@ -1668,6 +1731,7 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "countries_distinct_count": self.countries_distinct_count,
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
@@ -1737,7 +1801,7 @@ class Work(db.Model):
 
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
-            response["updated_date"] = datetime.datetime.utcnow().isoformat()  # updated date needs to be at the time to_dict is called, because otherwise it would be stale after waiting in the queue
+            response["updated_date"] = datetime.datetime.utcnow().isoformat()
             response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
 
         # only include non-null IDs
@@ -1747,9 +1811,27 @@ class Work(db.Model):
 
         return response
 
-
     def __repr__(self):
         return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
+
+
+def on_year_change(mapper, connection, target):
+    hist = get_history(target, 'year')
+    if hist.has_changes():
+        old_year = hist.deleted[0] if hist.deleted else None
+        new_year = hist.added[0] if hist.added else None
+
+        if old_year != new_year and old_year is not None:
+            if target.previous_years is None:
+                logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (setting previous_years)")
+                target.previous_years = [old_year]
+            else:
+                if old_year not in target.previous_years:
+                    logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (adding to previous_years)")
+                    target.previous_years.append(old_year)
+
+
+event.listen(Work, 'before_update', on_year_change)
 
 
 class WorkFulltext(db.Model):
