@@ -1661,7 +1661,7 @@ class Work(db.Model):
         final_countries = sorted(list(set(countries_in_string)))
 
         # If we match to Georgia countries GE or GS, remove US match that came from short state string
-        if "GE" in final_countries or "GS" in final_countries:
+        if ("GE" in final_countries or "GS" in final_countries) and "US" in final_countries:
             final_countries.remove("US")
 
         return final_countries
