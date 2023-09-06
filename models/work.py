@@ -1389,6 +1389,13 @@ class Work(db.Model):
 
         if work_has_null_author_ids(my_dict):
             logger.info('not saving work because some authors have null IDs')
+            # log this to db
+            sq = """
+            INSERT INTO logs.store_fail_null_authors
+            (work_id, failed_at)
+            VALUES(:work_id, :now);
+            """
+            db.session.execute(text(sq), {"work_id": self.paper_id, "now": datetime.datetime.utcnow().isoformat()})
         elif entity_hash != self.json_entity_hash:
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
