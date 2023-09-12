@@ -571,7 +571,7 @@ class Work(db.Model):
                     "indexed_abstract": indexed_abstract
                 }
                 self.abstract_indexed_abstract = indexed_abstract
-                if self.abstract_indexed_abstract != self.abstract.indexed_abstract:
+                if not self.abstract or (self.abstract_indexed_abstract != self.abstract.indexed_abstract):
                     self.abstract = models.Abstract(**insert_dict)
                 return
 
