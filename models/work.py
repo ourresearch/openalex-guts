@@ -557,7 +557,6 @@ class Work(db.Model):
                                                        updated = datetime.datetime.utcnow().isoformat())
                                   for row in rows]
 
-
     def add_abstract(self):
         self.abstract_indexed_abstract = None
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -571,8 +570,9 @@ class Work(db.Model):
                     "paper_id": self.paper_id,
                     "indexed_abstract": indexed_abstract
                 }
-                self.abstract = models.Abstract(**insert_dict)
                 self.abstract_indexed_abstract = indexed_abstract
+                if self.abstract_indexed_abstract != self.abstract.indexed_abstract:
+                    self.abstract = models.Abstract(**insert_dict)
                 return
 
     def add_mesh(self):
@@ -990,6 +990,7 @@ class Work(db.Model):
         for record in records:
             if record.record_type == "pmh_record":
                 self.set_fields_from_record(record)
+
         for record in records:
             if record.record_type == "pubmed_record":
                 self.set_fields_from_record(record)
