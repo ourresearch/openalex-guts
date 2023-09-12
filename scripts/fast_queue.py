@@ -233,6 +233,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.fulltext).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.locations).selectinload(models.Location.journal).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),

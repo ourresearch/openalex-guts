@@ -80,7 +80,6 @@ class Record(db.Model):
 
     normalized_title = db.Column(db.Text)
     funders = db.Column(db.Text)
-    fulltext = db.Column(db.Text)
 
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
@@ -309,3 +308,13 @@ for line in work_type_lines:
         work_type_lookup[lookup.strip()] = {"work_type": work_type if work_type else None,
                                             "doc_type": doc_type if doc_type else None}
 
+
+class RecordFulltext(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "record_fulltext"
+
+    recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
+    fulltext = db.Column(db.Text)
+
+
+Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
