@@ -1685,8 +1685,8 @@ class Work(db.Model):
     def record_fulltext(self):
         # currently this fulltext comes from parsed PDFs
         for record in self.records:
-            if record.record_type == "crossref_doi" and record.fulltext:
-                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext)
+            if record.record_type == "crossref_doi" and record.fulltext and record.fulltext.fulltext:
+                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext.fulltext)
                 clean_fulltext = ' '.join(clean_fulltext.split())
                 clean_fulltext = '\n'.join([line.strip() for line in clean_fulltext.splitlines() if line.strip()])
                 return clean_fulltext
