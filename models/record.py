@@ -9,6 +9,7 @@ from collections import defaultdict
 from time import sleep
 import datetime
 import json
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
 from util import normalize_title_like_sql
@@ -314,7 +315,8 @@ class RecordFulltext(db.Model):
     __tablename__ = "record_fulltext"
 
     recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
-    fulltext = db.Column(db.Text)
+    _fulltext = db.Column('fulltext', db.Text)
+    truncated_fulltext = db.column_property(func.substring(_fulltext, 1, 200000))
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)

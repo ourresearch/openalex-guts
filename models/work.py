@@ -1373,12 +1373,7 @@ class Work(db.Model):
             my_dict['abstract'] = self.abstract.abstract
 
         if self.record_fulltext:
-            # truncate pdf fulltext
-            truncate_to = 100000
-            my_dict['fulltext'] = self.record_fulltext[:truncate_to] if len(self.record_fulltext) > truncate_to else self.record_fulltext
-
-            if len(self.record_fulltext) > truncate_to:
-                my_dict['fulltext_truncated'] = True
+            my_dict['fulltext'] = self.record_fulltext
         elif self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
 
@@ -1691,8 +1686,8 @@ class Work(db.Model):
     def record_fulltext(self):
         # currently this fulltext comes from parsed PDFs
         for record in self.records:
-            if record.record_type == "crossref_doi" and record.fulltext and record.fulltext.fulltext:
-                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext.fulltext)
+            if record.record_type == "crossref_doi" and record.fulltext and record.fulltext.truncated_fulltext:
+                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext.truncated_fulltext)
                 clean_fulltext = ' '.join(clean_fulltext.split())
                 clean_fulltext = '\n'.join([line.strip() for line in clean_fulltext.splitlines() if line.strip()])
                 return clean_fulltext
