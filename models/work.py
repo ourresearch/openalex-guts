@@ -1374,7 +1374,7 @@ class Work(db.Model):
 
         if self.record_fulltext:
             # truncate pdf fulltext
-            truncate_to = 300000
+            truncate_to = 200000
             my_dict['fulltext'] = self.record_fulltext[:truncate_to] if len(self.record_fulltext) > truncate_to else self.record_fulltext
 
             if len(self.record_fulltext) > truncate_to:
