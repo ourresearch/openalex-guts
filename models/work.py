@@ -1373,7 +1373,11 @@ class Work(db.Model):
             my_dict['abstract'] = self.abstract.abstract
 
         if self.record_fulltext:
-            my_dict['fulltext'] = self.record_fulltext
+            # truncate pdf fulltext to 500k characters
+            my_dict['fulltext'] = self.record_fulltext[:500000] if len(self.record_fulltext) > 500000 else self.record_fulltext
+
+            if len(self.record_fulltext) > 500000:
+                my_dict['fulltext_truncated'] = True
         elif self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
 
