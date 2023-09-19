@@ -1372,9 +1372,9 @@ class Work(db.Model):
         if self.abstract and self.abstract.abstract:
             my_dict['abstract'] = self.abstract.abstract
 
-        if self.record_fulltext:
-            my_dict['fulltext'] = self.record_fulltext
-        elif self.fulltext and self.fulltext.fulltext:
+        # if self.record_fulltext:
+        #     my_dict['fulltext'] = self.record_fulltext
+        if self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
 
         if len(my_dict.get('authorships', [])) > 100:

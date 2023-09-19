@@ -310,13 +310,13 @@ for line in work_type_lines:
                                             "doc_type": doc_type if doc_type else None}
 
 
-class RecordFulltext(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "record_fulltext"
-
-    recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
-    _fulltext = db.Column('fulltext', db.Text)
-    truncated_fulltext = db.column_property(func.substring(_fulltext, 1, 200000))
-
-
-Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
+# class RecordFulltext(db.Model):
+#     __table_args__ = {'schema': 'mid'}
+#     __tablename__ = "record_fulltext"
+#
+#     recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
+#     _fulltext = db.Column('fulltext', db.Text)
+#     truncated_fulltext = db.column_property(func.substring(_fulltext, 1, 200000))
+#
+#
+# Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
