@@ -151,8 +151,12 @@ def export_date(args):
 
 def export_entity(index_name, entity_type):
     distinct_updated_dates = get_distinct_updated_dates(index_name)
+
+    args_for_export = ((index_name, entity_type, d) for d in distinct_updated_dates)
+
     with mp.Pool(12) as p:
-        p.map(export_date, [(index_name, entity_type, d) for d in distinct_updated_dates])
+        _ = list(p.imap_unordered(export_date, args_for_export))
+
 
 
 def make_manifests():
