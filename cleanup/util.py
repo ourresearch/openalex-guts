@@ -4,6 +4,7 @@ DESCRIPTION = """util for cleanup"""
 
 import sys, os, time
 import re
+import json
 from pathlib import Path
 from datetime import datetime
 from typing import Union, Optional
@@ -145,8 +146,8 @@ def make_request(url, params=None):
 def paginate_openalex(url, params=None, per_page=200):
     if params is None:
         params = {}
-    if 'per-page' not in params and per_page:
-        params['per-page'] = per_page
+    if "per-page" not in params and per_page:
+        params["per-page"] = per_page
     cursor = "*"
     while cursor:
         params["cursor"] = cursor
@@ -158,49 +159,136 @@ def paginate_openalex(url, params=None, per_page=200):
         cursor = page_with_results["meta"]["next_cursor"]
 
 
-def entities_by_ids(id_list, api_endpoint='works', filterkey='openalex', chunksize=50, params=None):
+def entities_by_ids(
+    id_list, api_endpoint="works", filterkey="openalex", chunksize=50, params=None
+):
     if params is None:
         params = {}
-    params['per-page'] = chunksize
+    params["per-page"] = chunksize
     for i in range(0, len(id_list), chunksize):
-        chunk = id_list[i:i+chunksize]
+        chunk = id_list[i : i + chunksize]
         url = f"https://api.openalex.org/{api_endpoint}"
-        chunk_str = '|'.join(chunk)
-        params['filter'] = f'{filterkey}:{chunk_str}'
+        chunk_str = "|".join(chunk)
+        params["filter"] = f"{filterkey}:{chunk_str}"
         for r in paginate_openalex(url, params):
             yield r
+
 
 def openalex_entities_by_ids(id_list, chunksize=50, params=None):
     id_list = [OpenAlexID(oid) for oid in id_list]
     if params is None:
         params = {}
-    params['per-page'] = chunksize
+    params["per-page"] = chunksize
     entity_type = set([item.entity_type for item in id_list])
     if not len(entity_type) == 1:
         raise RuntimeError("all ids in in id_list must be the same entity type")
     entity_type = list(entity_type)[0]
     api_endpoint = f"{entity_type}s"
     ids_short = [item.id_short for item in id_list]
-    for r in entities_by_ids(ids_short, api_endpoint, filterkey='openalex', chunksize=chunksize, params=params):
+    for r in entities_by_ids(
+        ids_short,
+        api_endpoint,
+        filterkey="openalex",
+        chunksize=chunksize,
+        params=params,
+    ):
         yield r
 
-def change_source_type(source_id, new_source_type, old_source_type='journal', note='', session=None, commit=True):
+
+def change_source_type(
+    source_id,
+    new_source_type,
+    old_source_type="journal",
+    note="",
+    session=None,
+    commit=True,
+):
     if session is None:
         from app import db
+
         session = db.session
     from sqlalchemy import text
+
     if type(source_id) != int:
         source_id = OpenAlexID(source_id).id_int
     now = datetime.utcnow().isoformat()
-    sq = 'UPDATE mid.journal SET type = :new_source_type, updated_date = :now WHERE journal_id = :journal_id'
-    session.execute(text(sq), {"journal_id": source_id, "new_source_type": new_source_type, "now": now})
+    sq = "UPDATE mid.journal SET type = :new_source_type, updated_date = :now WHERE journal_id = :journal_id"
+    session.execute(
+        text(sq),
+        {"journal_id": source_id, "new_source_type": new_source_type, "now": now},
+    )
 
     sq = """
     INSERT INTO logs.source_type_rename
     (source_id, type_old, type_new, updated_at, note)
     VALUES(:source_id, :old_source_type, :new_source_type, :now, :note);
     """
-    session.execute(text(sq), {"source_id": source_id, "old_source_type": old_source_type, "new_source_type": new_source_type, "now": now, "note": note})
-    
+    session.execute(
+        text(sq),
+        {
+            "source_id": source_id,
+            "old_source_type": old_source_type,
+            "new_source_type": new_source_type,
+            "now": now,
+            "note": note,
+        },
+    )
+
     if commit is True:
         session.commit()
+
+
+def get_publisher_id(original_publisher):
+    if not original_publisher:
+        return None
+    original_publisher = original_publisher.replace("&", "").replace(",", "")
+    r = make_request(f"https://api.openalex.org/publishers?search={original_publisher}")
+    results = r.json()["results"]
+    if results:
+        return int(results[0]["id"].replace("https://openalex.org/P", ""))
+    else:
+        return None
+
+
+def add_new_source_to_db(
+    issn_list,
+    display_name,
+    source_type="journal",
+    publisher_str=None,
+    publisher_id=None,
+    session=None,
+    commit=True,
+):
+    # adds a new source to mid.journal table (the table that contains Sources)
+    # issn_list is a list of strings
+    if session is None:
+        from app import db
+
+        session = db.session
+    import models
+
+    for issn in issn_list:
+        existing_journals = (
+            db.session.query(models.Source)
+            .filter(models.Source.issns.contains(issn))
+            .all()
+        )
+        if existing_journals:
+            raise RuntimeError(f"Source with issn {issn} already exists in database")
+    now = datetime.utcnow().isoformat()
+    new_db_source = models.Source(
+        display_name=display_name,
+        issns=json.dumps(issn_list),
+        type=source_type,
+        issns_text_array=issn_list,
+        issn=issn_list[0],
+        created_date=now,
+        updated_date=now,
+    )
+    if publisher_str:
+        new_db_source.publisher = publisher_str
+        new_db_source.original_publisher = publisher_str
+    new_db_source = publisher_id or get_publisher_id(publisher_str)
+    db.session.add(new_db_source)
+    if commit is True:
+        db.session.commit()
