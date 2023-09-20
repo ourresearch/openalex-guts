@@ -20,7 +20,6 @@ def front_of_fast_queue(file_name, batch_size, no_redis=False):
 
     with open(file_name, 'r') as f:
         count = 0
-        epoch_time_seconds = mktime(gmtime(0))  # "front" of queue (oldest)
 
         reader = csv.reader(f)
         batch = {}
@@ -37,7 +36,7 @@ def front_of_fast_queue(file_name, batch_size, no_redis=False):
                 sleep(0.5)
 
             work_id = int(row[0].replace("https://openalex.org/W", ""))
-            batch[work_id] = epoch_time_seconds
+            batch[work_id] = -1
             count += 1
 
         # add remaining items in the batch if any
@@ -52,7 +51,7 @@ def front_of_fast_queue(file_name, batch_size, no_redis=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Front of Fast Queue Script")
     parser.add_argument("--file", required=True, help="Input CSV file name")
-    parser.add_argument("--batch-size", type=int, default=1000, help="Batch size (default: 1000)")
+    parser.add_argument("--batch-size", type=int, default=10000, help="Batch size (default: 10000)")
     parser.add_argument("--no-redis", action="store_true", help="Test script without saving to Redis")
     args = parser.parse_args()
 
