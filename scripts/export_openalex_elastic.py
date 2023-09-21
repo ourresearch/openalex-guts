@@ -59,7 +59,7 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "authors": "authors-v11",
+    "authors": "authors-v12",
     "concepts": "concepts-v8",
     "funders": "funders-v3",
     "institutions": "institutions-v5",
