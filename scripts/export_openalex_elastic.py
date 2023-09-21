@@ -1,3 +1,41 @@
+# 1. back up current snapshot
+#   $ aws s3 sync s3://openalex s3://openalex-sandbox/snapshot-backups/openalex-jsonl/current-date-yyyy-mm-dd
+
+# 2. run this script to creates the new contents of s3://openalex/data/ in a local temp directory ${data_dir}
+#   $ bash ./scripts/export_openalex_rds_snapshot.sh
+#   "dumping entity rows to local data dir ${data_dir}"
+
+# 3. export merged ids
+#   # 3.1 remove old ones
+#   $ aws s3 rm s3://openalex-sandbox/snapshot-merged-ids/merged_ids --recursive
+
+#   # 3.2 export the new list
+#   psql $OPENALEX_DB -f ./sql/export_merge_ids.sql
+
+#   # 3.3 copy the result to your local snapshot, gzip the files
+#   aws s3 sync s3://openalex-sandbox/snapshot-merged-ids/merged_ids ${data_dir}/merged_ids
+#   gzip ${data_dir}/merged_ids/*/*.csv
+#
+#   # 3.4 copy files to s3 staging folder
+#   aws s3 cp ${data_dir}/merged_ids s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging/data/merged_ids/ --recursive
+
+# 4. add txt files and browse page
+#   date the current release notes
+#   in files-for-datadumps/standard-format/RELEASE_NOTES.txt, change "Next Release" to "RELEASE YYYY-MM-DD"
+#   $ git add files-for-datadumps/RELEASE_NOTES.txt
+#   $ git commit -m "added YYYY-MM-DD release notes"
+#
+# 5. upload to S3 for QA
+#   aws s3 sync ${data_dir}/..  s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging
+#
+# 6. upload approved copy to s3
+#   set credentials for s3://openalex (separate from s3://openalex-sandbox)
+#   delete existing files: aws s3 rm --recursive s3://openalex/data/
+#   browse to data folder (ex /tmp/tmp.AsqlHWZ3U0/), and run: aws s3 sync . s3://openalex
+#   browse to files-for-datadumps/standard-format and run: aws s3 cp RELEASE_NOTES.txt s3://openalex/RELEASE_NOTES.txt
+#   check result at: https://openalex.s3.amazonaws.com/browse.html
+
+
 from datetime import datetime
 import gzip
 import json
@@ -116,11 +154,11 @@ def export_date(args):
                 if (
                         entity_type == "works"
                         and record.get("abstract_inverted_index")
-                        and record.get("abstract_inverted_index").get("InvertedIndex")
                 ):
                     record["abstract_inverted_index"] = json.loads(
-                        record["abstract_inverted_index"]["InvertedIndex"]
+                        record["abstract_inverted_index"]
                     )
+                    record["abstract_inverted_index"] = record["abstract_inverted_index"].get("InvertedIndex")
 
                 line = json.dumps(record) + '\n'
                 line_size = len(line.encode('utf-8'))
