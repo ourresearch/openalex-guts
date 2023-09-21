@@ -1372,10 +1372,12 @@ class Work(db.Model):
         if self.abstract and self.abstract.abstract:
             my_dict['abstract'] = self.abstract.abstract
 
-        # if self.record_fulltext:
-        #     my_dict['fulltext'] = self.record_fulltext
-        if self.fulltext and self.fulltext.fulltext:
+        if self.record_fulltext:
+            my_dict['fulltext'] = self.record_fulltext
+            my_dict['fulltext_origin'] = 'pdf'
+        elif self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
+            my_dict['fulltext_origin'] = 'ngrams'
 
         if len(my_dict.get('authorships', [])) > 100:
             my_dict['authorships_full'] = my_dict.get('authorships', [])
