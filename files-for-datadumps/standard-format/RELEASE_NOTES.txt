@@ -1,5 +1,17 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-09-20
+- added raw author name to authorships objects in works
+- institution lineage (parent institution IDs) available in works, authors, institutions
+- sustainable development goals assigned to 209 million works
+- improved institution matching for 1.1 million works
+- countries distinct count available in works
+- added ~700 new sources
+- matched primary source for 248,647 old works
+- abstract inverted index is correct object in snapshot (InvertedIndex key removed)
+- updated_dates are in full ISO format
+- documentation scripts updated for current snapshot
+
 RELEASE 2023-08-18
 - released new authors disambiguation feature
 - fixed missing source assignment for 5.7M works
