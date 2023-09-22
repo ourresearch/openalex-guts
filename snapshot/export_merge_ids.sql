@@ -37,4 +37,3 @@ call pg_temp.dump_merged_ids('mid.institution', 'I', 'institutions', 'affiliatio
 call pg_temp.dump_merged_ids('mid.concept', 'C', 'concepts', 'field_of_study_id');
 call pg_temp.dump_merged_ids('mid.funder', 'F', 'funders', 'funder_id');
 call pg_temp.dump_merged_ids('mid.publisher', 'P', 'publishers', 'publisher_id');
-
