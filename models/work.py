@@ -1374,10 +1374,14 @@ class Work(db.Model):
 
         if self.record_fulltext:
             my_dict['fulltext'] = self.record_fulltext
+            my_dict['has_fulltext'] = True
             my_dict['fulltext_origin'] = 'pdf'
         elif self.fulltext and self.fulltext.fulltext:
             my_dict['fulltext'] = self.fulltext.fulltext
+            my_dict['has_fulltext'] = True
             my_dict['fulltext_origin'] = 'ngrams'
+        else:
+            my_dict['has_fulltext'] = False
 
         if len(my_dict.get('authorships', [])) > 100:
             my_dict['authorships_full'] = my_dict.get('authorships', [])
