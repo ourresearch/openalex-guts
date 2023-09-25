@@ -360,7 +360,7 @@ class Institution(db.Model):
                 }
                 delete_record = {
                     "_op_type": "delete",
-                    "_index": "institutions-v5",
+                    "_index": "institutions-v7",
                     "_id": self.openalex_id,
                 }
                 bulk_actions.append(index_record)
@@ -377,7 +377,7 @@ class Institution(db.Model):
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "institutions-v5",
+                    "_index": "institutions-v7",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
