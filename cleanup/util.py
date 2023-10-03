@@ -258,6 +258,7 @@ def add_new_source_to_db(
     publisher_id=None,
     session=None,
     commit=True,
+    check_for_existing=True,
 ):
     # adds a new source to mid.journal table (the table that contains Sources)
     # issn_list is a list of strings
@@ -266,15 +267,18 @@ def add_new_source_to_db(
 
         session = db.session
     import models
+    from sqlalchemy.orm import Load
 
     for issn in issn_list:
-        existing_journals = (
-            db.session.query(models.Source)
-            .filter(models.Source.issns.contains(issn))
-            .all()
-        )
-        if existing_journals:
-            raise RuntimeError(f"Source with issn {issn} already exists in database")
+        if check_for_existing is True:
+            existing_journals = (
+                session.query(models.Source)
+                .options(Load(models.Source).lazyload('*'))
+                .filter(models.Source.issns.contains(issn))
+                .all()
+            )
+            if existing_journals:
+                raise RuntimeError(f"Source with issn {issn} already exists in database")
     now = datetime.utcnow().isoformat()
     new_db_source = models.Source(
         display_name=display_name,
@@ -288,7 +292,7 @@ def add_new_source_to_db(
     if publisher_str:
         new_db_source.publisher = publisher_str
         new_db_source.original_publisher = publisher_str
-    new_db_source = publisher_id or get_publisher_id(publisher_str)
-    db.session.add(new_db_source)
+    new_db_source.publisher_id = publisher_id or get_publisher_id(publisher_str)
+    session.add(new_db_source)
     if commit is True:
-        db.session.commit()
+        session.commit()
