@@ -46,8 +46,6 @@ def struct_changed(before, after):
 
     before_json = json.dumps(before, sort_keys=True)
     after_json = json.dumps(after, sort_keys=True)
-    print(before_json)
-    print(after_json)
 
     return before_json != after_json
 
