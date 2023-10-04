@@ -684,10 +684,10 @@ class Work(db.Model):
 
             def location_sort_key(loc):
                 return (
-                    loc.endpoint_id,
-                    loc.source_url,
-                    loc.url_for_landing_page,
-                    loc.url_for_pdf
+                    loc.endpoint_id or '',
+                    loc.source_url or '',
+                    loc.url_for_landing_page or '',
+                    loc.url_for_pdf or ''
                 )
 
             old_locs = [location_sort_key(loc) for loc in sorted(self.locations, key=location_sort_key)]
