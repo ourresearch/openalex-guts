@@ -31,6 +31,7 @@ from util import elapsed
 from util import f_generate_inverted_index
 from util import normalize_orcid
 from util import normalize_simple
+from util import struct_changed
 from util import truncate_on_word_break
 from util import work_has_null_author_ids
 
@@ -385,6 +386,7 @@ class Work(db.Model):
         if r.status_code == 200:
             self.concepts = []
             self.concepts_for_related_works = []
+
             if concept_names:
                 for i, concept_name in enumerate(concept_names):
                     score = response_json[0]["scores"][i]
@@ -476,7 +478,7 @@ class Work(db.Model):
             if record.record_type != "crossref_doi":
                 continue
 
-            self.funders = []
+            new_funders = []
             record_funders = json.loads(record.funders) if record.funders else []
             if not record_funders:
                 return
@@ -496,11 +498,23 @@ class Work(db.Model):
             for f in funders:
                 if f.funder_id not in seen_funders:
                     seen_funders.add(f.funder_id)
-                    self.funders.append(models.WorkFunder(
+                    new_funders.append(models.WorkFunder(
                         paper_id=self.paper_id,
                         funder_id=f.funder_id,
                         award=json_funders_by_doi.get(f.doi).get("award", [])
                     ))
+
+            def work_funder_dict(funder):
+                return {
+                    'f': funder.funder_id,
+                    'a': sorted(funder.award or [])
+                }
+
+            if struct_changed(
+                [work_funder_dict(wf) for wf in sorted(self.funders, key=lambda fun: fun.funder_id)],
+                [work_funder_dict(wf) for wf in sorted(new_funders, key=lambda fun: fun.funder_id)]
+            ):
+                self.funders = new_funders
 
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
@@ -514,23 +528,27 @@ class Work(db.Model):
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        # if not hasattr(self, "insert_dicts"):
-        #     self.insert_dicts = []
-
         matching_papers_sql = """
         with fos as (
-            select field_of_study_id from mid.concept_for_api_mv where field_of_study_id in %s
+            select
+            field_of_study_id,
+            num_papers
+            from mid.concept_for_api_mv
+            join mid.num_papers_by_concept_mv
+            on concept_for_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
+            where concept_for_api_mv.field_of_study_id in %s
         )
         select
             paper_id as related_paper_id,
             avg(score) as average_related_score,
             sum(score) as total_score
         from
-            fos
+            (select field_of_study_id from fos order by num_papers limit 5) rare_fos
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept wc
-                where wc.field_of_study = fos.field_of_study_id and wc.score > .3 order by score desc limit 15000
+                where wc.field_of_study = rare_fos.field_of_study_id
+                and wc.score > .3 order by score desc limit 1000
             ) papers_by_fos
         group by paper_id
         order by total_score desc
@@ -538,24 +556,18 @@ class Work(db.Model):
         """
 
         with get_db_cursor() as cur:
-            # print(cur.mogrify(matching_papers_sql, (tuple(self.concepts_for_related_works), )))
             cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_works), ))
             rows = cur.fetchall()
-            # print(rows)
 
-            # for row in rows:
-            #     score = row["average_related_score"] * row["average_related_score"]
-            #
-            #     self.insert_dicts += [{"WorkRelatedWork": {"paper_id": self.paper_id,
-            #                                                "recommended_paper_id": row["related_paper_id"],
-            #                                                "score": score,
-            #                                                "updated": datetime.datetime.utcnow().isoformat()
-            #                                                }}]
-            self.related_works = [models.WorkRelatedWork(paper_id = self.paper_id,
-                                                       recommended_paper_id = row["related_paper_id"],
-                                                       score = row["average_related_score"] * row["average_related_score"],
-                                                       updated = datetime.datetime.utcnow().isoformat())
-                                  for row in rows]
+            self.related_works = [
+                models.WorkRelatedWork(
+                    paper_id=self.paper_id,
+                    recommended_paper_id=row["related_paper_id"],
+                    score=row["average_related_score"] * row["average_related_score"],
+                    updated=datetime.datetime.utcnow().isoformat()
+                )
+                for row in rows
+            ]
 
     def add_abstract(self):
         self.abstract_indexed_abstract = None
@@ -576,19 +588,31 @@ class Work(db.Model):
                 return
 
     def add_mesh(self):
-        self.mesh = []
+        new_mesh = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
                 mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
                 for mesh_object in mesh_objects:
-                    if mesh_object.qualifier_ui == None:
+                    if mesh_object.qualifier_ui is None:
                         mesh_object.qualifier_ui = ""  # can't be null for primary key
-                self.mesh = mesh_objects
-                # for mesh_dict in mesh_dict_list:
-                #     mesh_dict["paper_id"] = self.paper_id
-                #     self.insert_dicts += [{"Mesh": mesh_dict}]
+                new_mesh = mesh_objects
+
+                def mesh_properties(m):
+                    return (
+                        m.get("is_major_topic"),
+                        m.get("descriptor_ui"),
+                        m.get("descriptor_name"),
+                        m.get("qualifier_ui"),
+                        m.get("qualifier_name"),
+                    )
+                old_mesh_dicts = sorted([m.to_dict() for m in self.mesh], key=mesh_properties)
+                new_mesh_dicts = sorted([m.to_dict() for m in new_mesh], key=mesh_properties)
+
+                if struct_changed(old_mesh_dicts, new_mesh_dicts):
+                    self.mesh = new_mesh
+
                 return
 
     def add_ids(self):
@@ -615,12 +639,17 @@ class Work(db.Model):
 
     def add_locations(self):
         from models.location import get_repository_institution_from_source_url
-        self.locations = []
+        new_locations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        records_with_unpaywall = [record for record in self.records_sorted if hasattr(record, "unpaywall") and record.unpaywall]
+        records_with_unpaywall = [
+            record for record in self.records_sorted
+            if hasattr(record, "unpaywall") and record.unpaywall
+        ]
+
         if not records_with_unpaywall:
             return
+
         record_to_use = records_with_unpaywall[0]
 
         for unpaywall_oa_location in record_to_use.unpaywall.oa_locations:
@@ -641,11 +670,13 @@ class Work(db.Model):
                 "version": unpaywall_oa_location["version"],
                 "license": unpaywall_oa_location["license"],
             }
+
             if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
                 insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
-            # self.insert_dicts += [{"Location": insert_dict}]
+
             if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
                 insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
+
             if insert_dict["endpoint_id"] == "ca8f8d56758a80a4f86":
                 # special case for arXiv
                 insert_dict["doi"] = insert_dict["pmh_id"].replace(
@@ -655,7 +686,22 @@ class Work(db.Model):
             
             if not insert_dict["version"]:
                 insert_dict["version"] = self.guess_version()
-            self.locations += [models.Location(**insert_dict)]
+
+            new_locations += [models.Location(**insert_dict)]
+
+            def location_sort_key(loc):
+                return (
+                    loc.endpoint_id or '',
+                    loc.source_url or '',
+                    loc.url_for_landing_page or '',
+                    loc.url_for_pdf or ''
+                )
+
+            old_locs = [location_sort_key(loc) for loc in sorted(self.locations, key=location_sort_key)]
+            new_locs = [location_sort_key(loc) for loc in sorted(new_locations, key=location_sort_key)]
+
+            if struct_changed(old_locs, new_locs):
+                self.locations = new_locations
 
     def add_references(self):
         from models import WorkExtraIds
@@ -668,7 +714,7 @@ class Work(db.Model):
         reference_source_num = 0
         for record in self.records:
             if record.citations:
-                self.references_unmatched = []
+                new_references_unmatched = []
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
                 try:
@@ -684,7 +730,19 @@ class Work(db.Model):
                             if my_clean_pmid:
                                 citation_pmids += [my_clean_pmid]
                         else:
-                            self.references_unmatched += [models.CitationUnmatched(reference_sequence_number=reference_source_num, raw_json=json.dumps(citation_dict))]
+                            new_references_unmatched += [
+                                models.CitationUnmatched(
+                                    reference_sequence_number=reference_source_num,
+                                    raw_json=json.dumps(citation_dict)
+                                )
+                            ]
+
+                    if struct_changed(
+                        [ref.raw_json for ref in sorted(self.references_unmatched, key=lambda um: um.reference_sequence_number)],
+                        [json.loads(ref.raw_json or '') for ref in sorted(new_references_unmatched, key=lambda um: um.reference_sequence_number)]
+                    ):
+                        self.references_unmatched = new_references_unmatched
+
 
                 except Exception as e:
                     logger.exception(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
@@ -706,7 +764,9 @@ class Work(db.Model):
 
         citation_paper_ids = list(set(citation_paper_ids))
         if citation_paper_ids:
-            self.references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
+            new_references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
+            if struct_changed([c.paper_reference_id for c in self.references], citation_paper_ids):
+                self.references = new_references
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
