@@ -40,6 +40,16 @@ def text_md5(text):
     return hashlib.md5(text.encode('utf-8')).hexdigest()
 
 
+def struct_changed(before, after):
+    if (before is None) != (after is None):
+        return True
+
+    before_json = json.dumps(before, sort_keys=True)
+    after_json = json.dumps(after, sort_keys=True)
+
+    return before_json != after_json
+
+
 def dictionary_nested_diff(old_dict, new_dict, top_level_keys_to_ignore):
     from deepdiff import DeepDiff
 
