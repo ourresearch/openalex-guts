@@ -94,6 +94,7 @@ from models.ror import (
     RorTypes,
     RorUpdates,
 )
+from sqlalchemy import text
 
 
 def get_most_recent_ror_dump_metadata():
@@ -169,6 +170,11 @@ def process_one_org(item):
     db.session.commit()
 
 
+def refresh_ancestors_mv():
+    sq = """refresh materialized view concurrently mid.institution_ancestors_mv"""
+    db.engine.execute(text(sq))
+
+
 def main(args):
     most_recent_file_obj = get_most_recent_ror_dump_metadata()
     md5_checksum = most_recent_file_obj.get("checksum", "").replace("md5:", "")
@@ -217,6 +223,8 @@ def main(args):
             process_one_org(item)
         ror_update_log_db.finished_update_at = datetime.utcnow().isoformat()
     finally:
+        logger.info("refreshing materialized view mid.institution_ancestors_mv")
+        refresh_ancestors_mv()
         db.session.add(ror_update_log_db)
         db.session.commit()
 
