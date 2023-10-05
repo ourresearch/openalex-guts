@@ -530,18 +530,25 @@ class Work(db.Model):
 
         matching_papers_sql = """
         with fos as (
-            select field_of_study_id from mid.concept_for_api_mv where field_of_study_id in %s
+            select
+            field_of_study_id,
+            num_papers
+            from mid.concept_for_api_mv
+            join mid.num_papers_by_concept_mv
+            on concept_for_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
+            where concept_for_api_mv.field_of_study_id in %s
         )
         select
             paper_id as related_paper_id,
             avg(score) as average_related_score,
             sum(score) as total_score
         from
-            fos
+            (select field_of_study_id from fos order by num_papers limit 5) rare_fos
             cross join lateral (
                 select paper_id, field_of_study, score
                 from mid.work_concept wc
-                where wc.field_of_study = fos.field_of_study_id and wc.score > .3 order by score desc limit 15000
+                where wc.field_of_study = rare_fos.field_of_study_id
+                and wc.score > .3 order by score desc limit 1000
             ) papers_by_fos
         group by paper_id
         order by total_score desc
