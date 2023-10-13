@@ -1287,13 +1287,17 @@ class Work(db.Model):
             "journal-article": "article",
             "proceedings-article": "article",
             "posted-content": "article",
+            "book-part": "book-chapter",
             "journal-issue": "paratext",
             "proceedings": "paratext",
+            "proceedings-series": "paratext",
             "journal": "paratext",
+            "journal-volume": "paratext",
             "report-series": "paratext",
             "component": "paratext",
             "monograph": "book",
             "reference-book": "book",
+            "book-set": "book",
         }
         # return mapping from lookup if it's in there, otherwise pass-through
         return lookup_crossref_to_openalex_type.get(self.type_crossref, self.type_crossref)
