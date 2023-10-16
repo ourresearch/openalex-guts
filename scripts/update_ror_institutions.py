@@ -101,6 +101,8 @@ def get_most_recent_ror_dump_metadata():
     # https://ror.readme.io/docs/data-dump#download-ror-data-dumps-programmatically-with-the-zenodo-api
     url = "https://zenodo.org/api/records/?communities=ror-data&sort=mostrecent"
     r = requests.get(url)
+    if r.status_code >= 400:
+        return None
     most_recent_hit = r.json()["hits"]["hits"][0]
     files = most_recent_hit["files"]
     most_recent_file_obj = files[-1]
@@ -177,6 +179,9 @@ def refresh_ancestors_mv():
 
 def main(args):
     most_recent_file_obj = get_most_recent_ror_dump_metadata()
+    if most_recent_file_obj is None:
+        logger.info("Failed to get ROR data. Exiting without doing any updates...")
+        return
     md5_checksum = most_recent_file_obj.get("checksum", "").replace("md5:", "")
     logger.info(f"most recent md5_checksum for ROR data: {md5_checksum}")
     most_recent_openalex_ror_update = (
