@@ -957,7 +957,7 @@ class Work(db.Model):
 
     @cached_property
     def looks_like_paratext(self):
-        if self.is_paratext or self.display_genre == "paratext":
+        if self.is_paratext:
             return True
 
         paratext_exprs = [
@@ -1860,7 +1860,7 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
-                "is_paratext": self.looks_like_paratext,
+                "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
