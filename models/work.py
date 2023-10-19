@@ -1503,6 +1503,7 @@ class Work(db.Model):
             logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
+        self.updated_date = my_dict.get('updated_date')
         return bulk_actions
 
     @cached_property
