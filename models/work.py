@@ -957,7 +957,7 @@ class Work(db.Model):
 
     @cached_property
     def looks_like_paratext(self):
-        if self.is_paratext:
+        if self.is_paratext or self.display_genre == "paratext":
             return True
 
         paratext_exprs = [
@@ -1289,11 +1289,12 @@ class Work(db.Model):
             "posted-content": "article",
             "book-part": "book-chapter",
             "journal-issue": "paratext",
-            "proceedings": "paratext",
-            "proceedings-series": "paratext",
             "journal": "paratext",
             "journal-volume": "paratext",
             "report-series": "paratext",
+            "proceedings": "paratext",
+            "proceedings-series": "paratext",
+            "book-series": "paratext",
             "component": "paratext",
             "monograph": "book",
             "reference-book": "book",
