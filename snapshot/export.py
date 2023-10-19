@@ -12,9 +12,6 @@
 #   aws s3 sync s3://openalex-sandbox/snapshot-merged-ids/merged_ids ${data_dir}/merged_ids
 #   gzip ${data_dir}/merged_ids/*/*.csv
 #
-#   # 2.4 copy files to s3 staging folder
-#   aws s3 cp ${data_dir}/merged_ids s3://openalex-sandbox/snapshot-yyyy-mm-dd-staging/data/merged_ids/ --recursive
-#
 # 3. run this script to creates the new contents of s3://openalex/data/ in a local directory ${data_dir}
 #   $ python3 -m snapshot.export
 #   "dumping entity rows to local data dir ${data_dir}"
@@ -199,6 +196,7 @@ def export_entity(index_name, entity_type):
 def make_manifests():
     remote_data_dir = 's3://openalex/data'
     for entity_type in entities_to_indices.keys():
+        print(f"making manifest for {entity_type}")
         total_content_length = 0
         total_record_count = 0
 
