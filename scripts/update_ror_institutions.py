@@ -99,7 +99,7 @@ from sqlalchemy import text
 
 def get_most_recent_ror_dump_metadata():
     # https://ror.readme.io/docs/data-dump#download-ror-data-dumps-programmatically-with-the-zenodo-api
-    url = "https://zenodo.org/api/records/?communities=ror-data&sort=mostrecent"
+    url = "https://zenodo.org/api/communities/ror-data/records?q=&sort=newest"
     r = requests.get(url)
     if r.status_code >= 400:
         return None
@@ -205,9 +205,9 @@ def main(args):
             )
             return
     logger.info("Beginning ROR update for OpenAlex")
-    file_url = most_recent_file_obj["links"]["self"]
-    filename = most_recent_file_obj.get("key")
-    size = most_recent_file_obj.get("size")
+    file_url = most_recent_file_obj["links"]["download"]
+    filename = most_recent_file_obj.get("filename")
+    size = most_recent_file_obj.get("filesize")
     ror_update_log_db = RorUpdates(
         md5_checksum=md5_checksum, url=file_url, filename=filename, size=size
     )
