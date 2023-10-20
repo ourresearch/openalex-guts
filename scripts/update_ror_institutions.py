@@ -214,12 +214,12 @@ def main(args):
     try:
         logger.info(f"downloading and unzipping ROR data from {file_url}")
         ror_data = download_and_unzip_ror_data(file_url)
-        logger.info(f"ROR data downloaded. there are {len(ror_data)} organizations")
-        ror_update_log_db.downloaded_at = datetime.utcnow().isoformat()
         if not ror_data:
             raise RuntimeError(
                 "error encountered when trying to download and unzip ROR data!"
             )
+        logger.info(f"ROR data downloaded. there are {len(ror_data)} organizations")
+        ror_update_log_db.downloaded_at = datetime.utcnow().isoformat()
         logger.info(f"beginning to process {len(ror_data)} ROR records")
         for i, item in enumerate(ror_data):
             if i in [10, 50, 100, 500, 1000, 5000, 10000] or i % 20000 == 0:
