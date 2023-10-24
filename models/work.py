@@ -1384,6 +1384,47 @@ class Work(db.Model):
                         )
         return formatted_sdgs
 
+    @property
+    def cited_by_percentile_year(self):
+        year = max(self.year, 1920)
+        citation_count = self.counts.citation_count if self.counts else 0
+
+        base_query = models.CitationPercentilesByYear.query.filter_by(year=year)
+
+        exact_row = base_query.filter_by(citation_count=citation_count).first()
+        higher_row = base_query.filter(models.CitationPercentilesByYear.citation_count > citation_count) \
+            .order_by(models.CitationPercentilesByYear.citation_count.asc()) \
+            .first()
+
+        if exact_row:
+            return self.format_percentiles(exact_row.percentile, higher_row.percentile if higher_row else exact_row.percentile)
+
+        # try closed lower row
+        lower_row = base_query.filter(models.CitationPercentilesByYear.citation_count < citation_count) \
+            .order_by(models.CitationPercentilesByYear.citation_count.desc()) \
+            .first()
+
+        if not lower_row or not higher_row:
+            logger.info(f"no percentiles for {self.paper_id} {self.year} {citation_count}")
+            return None
+
+        return self.format_percentiles(lower_row.percentile, higher_row.percentile)
+
+    @staticmethod
+    def format_percentiles(min_perc, max_perc):
+        min_percentile = float(round(min_perc * 100, 1))
+        max_percentile = float(round(max_perc * 100, 1))
+
+        # override for max value
+        if min_percentile == 100.0:
+            min_percentile = 99.9
+            max_percentile = 100.0
+
+        return {
+            "min": min_percentile,
+            "max": max_percentile
+        }
+
     def store(self):
         if not self.full_updated_date:
             return []
@@ -1871,6 +1912,7 @@ class Work(db.Model):
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
+                "cited_by_percentile_year": self.cited_by_percentile_year,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
             })
 
