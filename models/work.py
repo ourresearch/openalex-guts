@@ -1383,6 +1383,22 @@ class Work(db.Model):
                             }
                         )
         return formatted_sdgs
+    
+    @property
+    def all_work_keywords(self):
+        formatted_keywords = []
+        if self.work_keywords:
+            if  self.work_keywords.keywords:
+                for keyword in self.work_keywords.keywords:
+                    score = keyword.get("score")
+                    keyword = keyword.get("keyword")
+                    formatted_keywords.append(
+                        {
+                            "keyword": keyword,
+                            "score": score
+                        }
+                    )
+        return formatted_keywords
 
     def store(self):
         if not self.full_updated_date:
@@ -1873,6 +1889,9 @@ class Work(db.Model):
                 "apc_paid": self.apc_paid,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
             })
+
+            print(self.all_work_keywords)
+            # "keywords": self.all_work_keywords,
 
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None

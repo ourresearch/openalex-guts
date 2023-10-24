@@ -40,6 +40,7 @@ from models.summary_stats import PublisherImpactFactor, PublisherHIndex, Publish
 from models.summary_stats import SourceImpactFactor, SourceHIndex, SourceI10Index, SourceI10Index2Year, SourceHIndex2Year
 from models.unpaywall import Unpaywall
 from models.work import Work
+from models.work_keyword import WorkKeyword
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
@@ -59,6 +60,7 @@ Work.records = db.relationship("Record", lazy='selectin', backref="work")  # nor
 WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
+Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin')
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 
 # relationships with association tables
