@@ -1,3 +1,5 @@
+from sqlalchemy import PrimaryKeyConstraint
+
 from app import db
 
 
@@ -392,3 +394,18 @@ class Work2YearCitationCount(db.Model):
 
     def __repr__(self):
         return "<Work2YearCitationCount ( {} ) {} >".format(self.paper_id, self.count)
+
+
+class CitationPercentilesByYear(db.Model):
+    __table_args__ = (
+        PrimaryKeyConstraint('year', 'citation_count'),
+        {'schema': 'mid'}
+    )
+    __tablename__ = "citation_percentiles_by_year_mv"
+
+    year = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+    percentile = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<CitationPercentilesByYear ( {} ) {} {} >".format(self.year, self.citation_count, self.percentile)

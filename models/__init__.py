@@ -14,6 +14,7 @@ from models.citation import Citation, CitationUnmatched
 from models.concept import Concept
 from models.concept_ancestor import ConceptAncestor
 from models.counts import AuthorCountsByYearPapers, AuthorCountsByYearCitations
+from models.counts import CitationPercentilesByYear
 from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
