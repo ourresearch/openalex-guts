@@ -1383,6 +1383,21 @@ class Work(db.Model):
                             }
                         )
         return formatted_sdgs
+    
+    @property
+    def all_work_keywords(self):
+        formatted_keywords = []
+        if self.work_keywords and self.work_keywords.keywords:
+            for keyword in self.work_keywords.keywords:
+                score = keyword.get("score")
+                keyword = keyword.get("keyword")
+                formatted_keywords.append(
+                    {
+                        "keyword": keyword,
+                        "score": score
+                    }
+                )
+        return formatted_keywords
 
     @property
     def cited_by_percentile_year(self):
@@ -1912,6 +1927,7 @@ class Work(db.Model):
                 "referenced_works": self.references_list,
                 "referenced_works_count": len(self.references_list),
                 "sustainable_development_goals": self.sustainable_development_goals,
+                "keywords": self.all_work_keywords,
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
