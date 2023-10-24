@@ -1386,6 +1386,9 @@ class Work(db.Model):
 
     @property
     def cited_by_percentile_year(self):
+        if not self.year:
+            return None
+
         year = max(self.year, 1920)
         citation_count = self.counts.citation_count if self.counts else 0
 
