@@ -60,7 +60,7 @@ Work.records = db.relationship("Record", lazy='selectin', backref="work")  # nor
 WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
-Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin')
+Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 
 # relationships with association tables
