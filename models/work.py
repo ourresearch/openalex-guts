@@ -1393,7 +1393,7 @@ class Work(db.Model):
                 keyword = keyword.get("keyword")
                 formatted_keywords.append(
                     {
-                        "keyword": keyword,
+                        "keyword": keyword.lower() if keyword else None,
                         "score": score
                     }
                 )
