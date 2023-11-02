@@ -4,7 +4,7 @@ DESCRIPTION = """Update institutions from ROR datadump"""
 
 # Step 1: run this script (`python -m scripts.update_ror_institutions`)
 # (this will take 8 hours or so)
-# 
+#
 # Step 2: upsert into ins.ror_summary table:
 # ```sql
 # insert into ins.ror_summary
@@ -37,19 +37,19 @@ DESCRIPTION = """Update institutions from ROR datadump"""
 # 	longitude = ror.longitude,
 # 	city = ror.city,
 #   region = ror.state,
-# 	country = ror.country, 
+# 	country = ror.country,
 # 	updated_date = now() at time zone 'utc'
 # from ins.ror_summary ror
-# where i.ror_id = ror.ror_id; 
+# where i.ror_id = ror.ror_id;
 # ```
 #
 # Step 4: insert new rows in mid.institution
 # ```sql
 # with insert_rows as (
-# select rs.*, i.affiliation_id  
-# from ins.ror_summary rs 
-# left join mid.institution i 
-# 	on rs.ror_id = i.ror_id 
+# select rs.*, i.affiliation_id
+# from ins.ror_summary rs
+# left join mid.institution i
+# 	on rs.ror_id = i.ror_id
 # where i.affiliation_id is null
 # )
 # insert into mid.institution (display_name, official_page, wiki_page, iso3166_code, latitude, longitude, grid_id, ror_id, city, region, country, created_date, updated_date)
@@ -205,7 +205,11 @@ def main(args):
             )
             return
     logger.info("Beginning ROR update for OpenAlex")
-    file_url = most_recent_file_obj["links"]["download"]
+    try:
+        file_url = most_recent_file_obj["links"]["download"]
+    except KeyError:
+        logger.error("failed to update ROR data! Exiting without doing any updates...")
+        raise
     filename = most_recent_file_obj.get("filename")
     size = most_recent_file_obj.get("filesize")
     ror_update_log_db = RorUpdates(
@@ -216,7 +220,7 @@ def main(args):
         ror_data = download_and_unzip_ror_data(file_url)
         if not ror_data:
             raise RuntimeError(
-                "error encountered when trying to download and unzip ROR data!"
+                "failed to update ROR data! error encountered when trying to download and unzip ROR data! Exiting without doing any updates..."
             )
         logger.info(f"ROR data downloaded. there are {len(ror_data)} organizations")
         ror_update_log_db.downloaded_at = datetime.utcnow().isoformat()
