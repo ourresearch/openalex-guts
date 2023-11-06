@@ -206,12 +206,12 @@ def main(args):
             return
     logger.info("Beginning ROR update for OpenAlex")
     try:
-        file_url = most_recent_file_obj["links"]["download"]
+        file_url = most_recent_file_obj["links"]["self"]
     except KeyError:
         logger.error("failed to update ROR data! Exiting without doing any updates...")
         raise
-    filename = most_recent_file_obj.get("filename")
-    size = most_recent_file_obj.get("filesize")
+    filename = most_recent_file_obj.get("key")
+    size = most_recent_file_obj.get("size")
     ror_update_log_db = RorUpdates(
         md5_checksum=md5_checksum, url=file_url, filename=filename, size=size
     )
