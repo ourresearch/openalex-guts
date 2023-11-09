@@ -13,13 +13,7 @@ from app import logger
 from util import entity_md5
 from util import truncate_on_word_break
 
-DELETED_AUTHOR_ID = 4317838346
-
-# from app import get_next_openalex_id
-
-# truncate mid.author
-# insert into mid.author (select * from legacy.mag_main_authors)
-# update mid.author set display_name=replace(display_name, '\t', '') where display_name ~ '\t';
+DELETED_AUTHOR_ID = 5317838346
 
 
 def as_author_openalex_id(id):
@@ -43,12 +37,6 @@ class Author(db.Model):
     merge_into_date = db.Column(db.DateTime)
     json_entity_hash = db.Column(db.Text)
 
-    # def __init__(self, **kwargs):
-    #     self.author_id = get_next_openalex_id("author")
-    #     # self.created = datetime.datetime.utcnow().isoformat()
-    #     # self.updated = self.created
-    #     super(Author, self).__init__(**kwargs)
-
     @property
     def id(self):
         return self.author_id
@@ -60,17 +48,6 @@ class Author(db.Model):
             return None
 
         return matching_author_string(raw_author_string)
-
-
-        # sql_for_match = f"""
-        #     select f_matching_author_string(%s) as match_author_string;
-        #     """
-        # with get_db_cursor() as cur:
-        #     cur.execute(sql_for_match, (raw_author_string, ))
-        #     rows = cur.fetchall()
-        #     if rows:
-        #         return rows[0]["match_author_string"]
-        # return None
 
     @classmethod
     def try_to_match(cls, raw_author_string, original_orcid, citation_paper_ids):
