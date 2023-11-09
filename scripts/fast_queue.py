@@ -18,7 +18,7 @@ from util import elapsed
 
 # test this script locally
 # 1. Save environment variables to .env file with: heroku config -s > .env
-# 2. Run the script to save an example ID: heroku local:run python -m scripts.fast_queue --entity=work --method=store --id=2008120268
+# 2. Run the script to save an example ID: heroku local:run python -- -m scripts.fast_queue --entity=work --method=store --id=2008120268
 # 3. Changes should be reflected in elasticsearch and the api.
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
