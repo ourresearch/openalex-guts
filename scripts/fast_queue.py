@@ -113,7 +113,14 @@ def index_and_merge_object_records(bulk_actions):
     try:
         bulk(es, bulk_actions)
     except BulkIndexError as e:
-        print("Bulk index operation failed:", e.errors)
+        for error in e.errors:
+            # check if the error is due to a 'not_found' status when trying to delete
+            operation, result = next(iter(error.items()))
+            if operation == 'delete' and result.get('status') == 404:
+                # ignore document not found errors, possibly already deleted
+                pass
+            else:
+                print(f"An indexing error occurred: {error}")
 
 
 def store_json_objects(objects):
