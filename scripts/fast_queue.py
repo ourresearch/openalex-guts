@@ -3,7 +3,7 @@ from collections import defaultdict
 from time import sleep, time
 
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import bulk, BulkIndexError
 from redis import Redis
 from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
@@ -110,7 +110,10 @@ def log_work_store_time(started, finished, chunk_size):
 
 def index_and_merge_object_records(bulk_actions):
     es = Elasticsearch([ELASTIC_URL], timeout=30)
-    bulk(es, bulk_actions)
+    try:
+        bulk(es, bulk_actions)
+    except BulkIndexError as e:
+        print("Bulk index operation failed:", e.errors)
 
 
 def store_json_objects(objects):
