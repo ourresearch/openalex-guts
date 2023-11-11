@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import cache
 from time import sleep
 from time import time
+from enum import IntEnum
 from typing import List
 
 import requests
@@ -157,6 +158,12 @@ def override_location_sources(locations):
 
     return locations
 
+class OAStatusEnum(IntEnum):
+    closed = 1
+    bronze = 2
+    hybrid = 3
+    green = 4
+    gold = 5
 
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -915,6 +922,18 @@ class Work(db.Model):
                                 orm.Load(models.author.Author).raiseload('*')
                             ).get(author_id)
 
+    def update_oa_status_if_better(self, new_oa_status):
+        # update oa_status, only if it's better than the oa_status we already have
+        try:
+            new_oa_status_enum = OAStatusEnum[new_oa_status.lower()]
+            if new_oa_status_enum > OAStatusEnum[self.oa_status.lower()]:
+                return new_oa_status
+        except KeyError:
+            # probably an invalid new_oa_status
+            pass
+        # if we didn't update above, return the existing oa_status
+        return self.oa_status
+
     def set_fields_from_record(self, record):
         from util import normalize_doi
 
@@ -951,7 +970,7 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            self.oa_status = record.unpaywall.oa_status
+            self.oa_status = self.update_oa_status_if_better(record.unpaywall.oa_status)
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
