@@ -1887,10 +1887,9 @@ class Work(db.Model):
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
         # if is_oa and oa_status are inconsistent, we need to fix
-        if is_oa is False and oa_status != 'closed':
-            # TODO revisit this
-            is_oa = True
-        if is_oa is True and oa_status == 'closed':
+        if is_oa is False:
+            oa_status = 'closed'
+        elif is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
                 this_loc_oa_status = oa_status_from_location(loc)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
