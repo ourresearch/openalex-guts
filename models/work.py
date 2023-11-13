@@ -159,11 +159,32 @@ def override_location_sources(locations):
     return locations
 
 class OAStatusEnum(IntEnum):
-    closed = 1
-    bronze = 2
-    hybrid = 3
-    green = 4
+    # we prioritize publisher-hosted versions
+    # see https://docs.openalex.org/api-entities/works/work-object#any_repository_has_fulltext
+    closed = 0
+    unknown = 1
+    green = 2
+    bronze = 3
+    hybrid = 4
     gold = 5
+
+def oa_status_from_location(loc):
+    if not loc.get('is_oa'):
+        return 'closed'
+    source = loc.get('source')
+    if source is not None:
+        if source.is_in_doaj:
+            return 'gold'
+        if source.type == 'repository':
+            return 'green'
+        if loc.get('license') and loc['license'] not in ['unknown', 'unspecified-oa', 'implied-oa']:
+            return 'hybrid'
+        else:
+            return 'bronze'
+    else:
+        # if we don't know anything about the source, we can't determine OA status
+        return 'unknown'
+    
 
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -478,6 +499,12 @@ class Work(db.Model):
             logger.info("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+
+        # # at the end of all of this, if is_oa and oa_status are inconsistent, we need to fix
+        # if self.is_oa is True and (self.oa_status is None or self.oa_status == 'closed'):
+        #     for loc in self.oa_locations:
+        #         this_loc_oa_status = oa_status_from_location(loc)
+        #         self.oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -1857,6 +1884,17 @@ class Work(db.Model):
                     if institution.get("id"):
                         corresponding_institution_ids.append(institution.get("id"))
 
+        is_oa = self.is_oa
+        oa_status = self.oa_status or "closed"
+        # if is_oa and oa_status are inconsistent, we need to fix
+        if is_oa is False and oa_status != 'closed':
+            # TODO revisit this
+            is_oa = True
+        if is_oa is True and oa_status == 'closed':
+            for loc in self.oa_locations:
+                this_loc_oa_status = oa_status_from_location(loc)
+                oa_status = self.update_oa_status_if_better(this_loc_oa_status)
+
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
@@ -1878,8 +1916,8 @@ class Work(db.Model):
             "type": self.display_genre,
             "type_crossref": self.type_crossref,
             "open_access": {
-                "is_oa": self.is_oa,
-                "oa_status": self.oa_status or "closed",
+                "is_oa": is_oa,
+                "oa_status": oa_status,
                 "oa_url": self.oa_url,
                 "any_repository_has_fulltext": any(
                     [
