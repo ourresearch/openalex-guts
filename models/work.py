@@ -24,6 +24,7 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
+from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5
 from util import clean_html
 from util import detect_language_from_abstract_and_title
@@ -461,6 +462,10 @@ class Work(db.Model):
         self.add_funders()
         logger.info(f'add_funders took {elapsed(start_time, 2)} seconds')
 
+        start_time = time()
+        self.add_sdgs()
+        logger.info(f'add_sdgs took {elapsed(start_time, 2)} seconds')
+
         # for now, only add/update affiliations if they aren't there
         start_time = time()
         if not self.affiliations:
@@ -515,6 +520,10 @@ class Work(db.Model):
                 [work_funder_dict(wf) for wf in sorted(new_funders, key=lambda fun: fun.funder_id)]
             ):
                 self.funders = new_funders
+
+    def add_sdgs(self):
+        if not self.sdg:
+            get_and_save_sdgs(self)
 
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
