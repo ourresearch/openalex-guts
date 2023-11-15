@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import cache
 from time import sleep
 from time import time
+from enum import IntEnum
 from typing import List
 
 import requests
@@ -158,6 +159,33 @@ def override_location_sources(locations):
 
     return locations
 
+class OAStatusEnum(IntEnum):
+    # we prioritize publisher-hosted versions
+    # see https://docs.openalex.org/api-entities/works/work-object#any_repository_has_fulltext
+    closed = 0
+    unknown = 1
+    green = 2
+    bronze = 3
+    hybrid = 4
+    gold = 5
+
+def oa_status_from_location(loc):
+    if not loc.get('is_oa'):
+        return 'closed'
+    source = loc.get('source')
+    if source is not None:
+        if source['is_in_doaj']:
+            return 'gold'
+        if source['type'] == 'repository':
+            return 'green'
+        if loc.get('license') and loc['license'] not in ['unknown', 'unspecified-oa', 'implied-oa']:
+            return 'hybrid'
+        else:
+            return 'bronze'
+    else:
+        # if we don't know anything about the source, we'll assume that it's bronze (we might want to change this)
+        return 'bronze'
+    
 
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -476,6 +504,7 @@ class Work(db.Model):
             logger.info("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -924,6 +953,22 @@ class Work(db.Model):
                                 orm.Load(models.author.Author).raiseload('*')
                             ).get(author_id)
 
+    def update_oa_status_if_better(self, new_oa_status):
+        # update oa_status, only if it's better than the oa_status we already have
+        try:
+            new_oa_status_enum = OAStatusEnum[new_oa_status.lower()]
+            old_oa_status_enum = OAStatusEnum[self.oa_status.lower()] if self.oa_status else OAStatusEnum['closed']
+            if old_oa_status_enum.name in ['green', 'bronze'] and new_oa_status_enum.name in ['green', 'bronze']:
+                # I'm not comfortable making any change in this case. Leave it alone
+                return self.oa_status
+            elif new_oa_status_enum > old_oa_status_enum:
+                return new_oa_status
+        except KeyError:
+            # probably an invalid new_oa_status
+            pass
+        # if we didn't update above, return the existing oa_status
+        return self.oa_status
+
     def set_fields_from_record(self, record):
         from util import normalize_doi
 
@@ -960,7 +1005,7 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            self.oa_status = record.unpaywall.oa_status
+            self.oa_status = self.update_oa_status_if_better(record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
@@ -1847,6 +1892,17 @@ class Work(db.Model):
                     if institution.get("id"):
                         corresponding_institution_ids.append(institution.get("id"))
 
+        is_oa = self.is_oa
+        oa_status = self.oa_status or "closed"
+        # if is_oa and oa_status are inconsistent, we need to fix
+        if is_oa is False and oa_status != 'closed':
+            # on inspection, a lot of these seem to be open, so let's mark them OA
+            is_oa = True
+        elif is_oa is True and oa_status == 'closed':
+            for loc in self.oa_locations:
+                this_loc_oa_status = oa_status_from_location(loc)
+                oa_status = self.update_oa_status_if_better(this_loc_oa_status)
+
         response = {
             "id": self.openalex_id,
             "doi": self.doi_url,
@@ -1868,8 +1924,8 @@ class Work(db.Model):
             "type": self.display_genre,
             "type_crossref": self.type_crossref,
             "open_access": {
-                "is_oa": self.is_oa,
-                "oa_status": self.oa_status or "closed",
+                "is_oa": is_oa,
+                "oa_status": oa_status,
                 "oa_url": self.oa_url,
                 "any_repository_has_fulltext": any(
                     [
