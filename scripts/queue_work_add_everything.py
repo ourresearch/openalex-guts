@@ -159,6 +159,9 @@ class QueueWorkAddEverything:
                 models.Affiliation.institution
             ).raiseload('*'),
             selectinload(
+                models.Work.sdg
+            ).raiseload('*'),
+            selectinload(
                 models.Work.concepts
             ).selectinload(
                 models.WorkConcept.concept
