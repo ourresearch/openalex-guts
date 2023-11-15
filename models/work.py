@@ -174,17 +174,17 @@ def oa_status_from_location(loc):
         return 'closed'
     source = loc.get('source')
     if source is not None:
-        if source.is_in_doaj:
+        if source['is_in_doaj']:
             return 'gold'
-        if source.type == 'repository':
+        if source['type'] == 'repository':
             return 'green'
         if loc.get('license') and loc['license'] not in ['unknown', 'unspecified-oa', 'implied-oa']:
             return 'hybrid'
         else:
             return 'bronze'
     else:
-        # if we don't know anything about the source, we can't determine OA status
-        return 'unknown'
+        # if we don't know anything about the source, we'll assume that it's bronze (we might want to change this)
+        return 'bronze'
     
 
 class Work(db.Model):
@@ -505,11 +505,6 @@ class Work(db.Model):
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
 
-        # # at the end of all of this, if is_oa and oa_status are inconsistent, we need to fix
-        # if self.is_oa is True and (self.oa_status is None or self.oa_status == 'closed'):
-        #     for loc in self.oa_locations:
-        #         this_loc_oa_status = oa_status_from_location(loc)
-        #         self.oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -962,7 +957,11 @@ class Work(db.Model):
         # update oa_status, only if it's better than the oa_status we already have
         try:
             new_oa_status_enum = OAStatusEnum[new_oa_status.lower()]
-            if new_oa_status_enum > OAStatusEnum[self.oa_status.lower()]:
+            old_oa_status_enum = OAStatusEnum[self.oa_status.lower()] if self.oa_status else OAStatusEnum['closed']
+            if old_oa_status_enum.name in ['green', 'bronze'] and new_oa_status_enum.name in ['green', 'bronze']:
+                # I'm not comfortable making any change in this case. Leave it alone
+                return self.oa_status
+            elif new_oa_status_enum > old_oa_status_enum:
                 return new_oa_status
         except KeyError:
             # probably an invalid new_oa_status
@@ -1006,7 +1005,7 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            self.oa_status = self.update_oa_status_if_better(record.unpaywall.oa_status)
+            self.oa_status = self.update_oa_status_if_better(record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
@@ -1896,8 +1895,9 @@ class Work(db.Model):
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
         # if is_oa and oa_status are inconsistent, we need to fix
-        if is_oa is False:
-            oa_status = 'closed'
+        if is_oa is False and oa_status != 'closed':
+            # on inspection, a lot of these seem to be open, so let's mark them OA
+            is_oa = True
         elif is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
                 this_loc_oa_status = oa_status_from_location(loc)
