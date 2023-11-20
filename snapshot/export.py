@@ -1,5 +1,5 @@
 # 1. back up current snapshot
-#   $ python -m snapshot.backup
+#   $ python3 -m snapshot.backup
 
 # 2. export merged ids
 #   # 2.1 remove old ones
