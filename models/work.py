@@ -965,7 +965,7 @@ class Work(db.Model):
                 return new_oa_status
         except KeyError:
             # probably an invalid new_oa_status
-            pass
+            logger.info(f"invalid new_oa_status for {self.paper_id}: {new_oa_status}")
         # if we didn't update above, return the existing oa_status
         return self.oa_status
 
