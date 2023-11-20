@@ -1,5 +1,5 @@
 # 1. back up current snapshot
-#   $ aws s3 sync s3://openalex s3://openalex-sandbox/snapshot-backups/openalex-jsonl/current-date-yyyy-mm-dd
+#   $ python -m snapshot.backup
 
 # 2. export merged ids
 #   # 2.1 remove old ones
