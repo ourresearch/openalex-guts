@@ -1,16 +1,8 @@
 # 1. back up current snapshot
 #   $ python3 -m snapshot.backup
-
+#
 # 2. export merged ids
-#   # 2.1 remove old ones
-#   $ aws s3 rm s3://openalex-sandbox/snapshot-merged-ids/merged_ids --recursive
-
-#   # 2.2 export the new list
-#   psql $OPENALEX_DB -f ./snapshot/export_merge_ids.sql
-
-#   # 2.3 copy the result to your local snapshot, gzip the files
-#   aws s3 sync s3://openalex-sandbox/snapshot-merged-ids/merged_ids ${data_dir}/merged_ids
-#   gzip ${data_dir}/merged_ids/*/*.csv
+#   $ bash snapshot/export_merged_ids.sh
 #
 # 3. run this script to creates the new contents of s3://openalex/data/ in a local directory ${data_dir}
 #   $ python3 -m snapshot.export
