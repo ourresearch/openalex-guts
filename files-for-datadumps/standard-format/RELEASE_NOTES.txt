@@ -1,5 +1,13 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-11-21
+- improved affiliation matching for over 2 million works
+- added keywords to works
+- added cited_by_percentile_year to works
+- removed 3.9 million authors with 0 works (merged into deleted profile)
+- improved oa status classification, converting 2.1 million closed works to open access statuses
+ (ongoing - credit: https://subugoe.github.io/scholcomm_analytics/posts/oalex_oa_status/)
+
 RELEASE 2023-10-18
 - added new works
 - added more sources
