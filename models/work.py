@@ -346,7 +346,12 @@ class Work(db.Model):
         if not self.affiliations:
             return
 
-        affiliation_lookup = {aff.author_sequence_number: aff for aff in self.affiliations}
+        affiliation_lookup = {}
+        for aff in self.affiliations:
+            if aff.author_sequence_number not in affiliation_lookup:
+                affiliation_lookup[aff.author_sequence_number] = []
+            affiliation_lookup[aff.author_sequence_number].append(aff)
+
         records_with_affiliations = [record for record in self.records_sorted if record.authors]
 
         if records_with_affiliations:
@@ -359,11 +364,13 @@ class Work(db.Model):
             for author_idx, author_dict in enumerate(record_author_dict_list):
                 orcid = author_dict.get('orcid')
                 if orcid:
-                    affiliation = affiliation_lookup.get(author_idx + 1)
-                    if affiliation and not affiliation.original_orcid:
-                        logger.info(f"updating original_orcid for author_id {affiliation.author_id}, work_id {self.id} "
-                                    f"to {orcid}")
-                        affiliation.original_orcid = orcid
+                    affiliations = affiliation_lookup.get(author_idx + 1, [])
+                    for affiliation in affiliations:
+                        if not affiliation.original_orcid:
+                            logger.info(
+                                f"Updating original_orcid for author_id {affiliation.author_id}, work_id {self.id} "
+                                f"to {orcid}")
+                            affiliation.original_orcid = orcid
 
     def concept_api_input_data(self):
         abstract_dict = None
