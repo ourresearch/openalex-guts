@@ -366,6 +366,16 @@ class Work(db.Model):
                 if orcid:
                     affiliations = affiliation_lookup.get(author_idx + 1, [])
                     for affiliation in affiliations:
+                        # skip if name does not match
+                        family_name = author_dict.get('family')
+                        original_author = affiliation.original_author
+                        if family_name and original_author and family_name.lower() not in original_author.lower():
+                            if not affiliation.original_orcid:
+                                logger.info(
+                                    f"Skip updating author_id {affiliation.author_id}, work_id {self.id} because "
+                                    f"family name not in original_author")
+                                continue
+
                         if not affiliation.original_orcid:
                             logger.info(
                                 f"Updating original_orcid for author_id {affiliation.author_id}, work_id {self.id} "
