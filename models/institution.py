@@ -103,6 +103,14 @@ class Institution(db.Model):
             return None
         return self.iso3166_code.upper()
 
+    @property
+    def display_name_alternatives(self):
+        # display_name_alternatives include ROR aliases and labels
+        # see https://ror.readme.io/docs/ror-data-structure#alias-labels
+        aliases = self.aliases
+        labels = [item['label'] for item in self.labels]
+        return list(set(aliases + labels))
+
     # @cached_property
     # def wikipedia_data_url(self):
     #     if self.wiki_page:
@@ -573,7 +581,7 @@ class Institution(db.Model):
                 "image_url": self.image_url or self.get_image_url(),
                 "image_thumbnail_url": self.image_thumbnail_url or self.get_image_thumbnail_url(),
                 "display_name_acronyms": self.acronyms,
-                "display_name_alternatives": self.aliases,
+                "display_name_alternatives": self.display_name_alternatives,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "summary_stats": {
