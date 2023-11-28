@@ -342,6 +342,29 @@ class Work(db.Model):
 
                     affiliation_sequence_no += 1
 
+    def update_orcid(self):
+        if not self.affiliations:
+            return
+
+        affiliation_lookup = {aff.author_sequence_number: aff for aff in self.affiliations}
+        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+
+        if records_with_affiliations:
+            try:
+                record_author_dict_list = json.loads(records_with_affiliations[0].authors)
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decoding JSON authors for {self.id}: {e}")
+                return
+
+            for author_idx, author_dict in enumerate(record_author_dict_list):
+                orcid = author_dict.get('orcid')
+                if orcid:
+                    affiliation = affiliation_lookup.get(author_idx + 1)
+                    if affiliation and not affiliation.original_orcid:
+                        logger.info(f"updating original_orcid for author_id {affiliation.author_id}, work_id {self.id} "
+                                    f"to {orcid}")
+                        affiliation.original_orcid = orcid
+
     def concept_api_input_data(self):
         abstract_dict = None
         # for when abstract was added and not included in table yet
@@ -504,6 +527,9 @@ class Work(db.Model):
             logger.info("not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
             logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+            logger.info("updating orcid")
+            self.update_orcid()
+            logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
 
 
     def add_funders(self):
