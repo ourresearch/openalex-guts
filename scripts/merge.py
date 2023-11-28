@@ -9,6 +9,7 @@ import sys
 
 import models
 from app import db
+from merge.merge_institution import process_institution as merge_one_institution
 
 from util import elapsed
 
@@ -23,6 +24,13 @@ from util import elapsed
 
 def run(entity, merge_away_id, merge_into_id):
     entity = entity.lower()
+
+    # starting to move away from this script and into dedicated code
+    if entity == "institution":
+        # institution is the first entity to be moved away from this script. the others will be moved later.
+        merge_one_institution(old_id=merge_away_id, merge_into_id=merge_into_id)
+        return
+
     my_class = getattr(sys.modules["models"], entity.title())  # get entity class from models
     now = datetime.datetime.utcnow().isoformat()
 
@@ -53,25 +61,6 @@ def run(entity, merge_away_id, merge_into_id):
             work_obj.journal_id = merge_into_id
             work_obj.updated_date = now
             work_obj.full_updated_date = now
-    elif entity == "institution":
-        affiliation_objects = models.Affiliation.query.options(selectinload(models.Affiliation.work).raiseload('*'),
-                                                               orm.Load(models.Affiliation).raiseload('*')
-                                                               ).filter(models.Affiliation.affiliation_id==merge_away_id).all()
-        print(f"updating affiliation_id for {len(affiliation_objects)} works")
-        for affil_obj in affiliation_objects:
-            affil_obj.affiliation_id = merge_into_id
-            affil_obj.updated_date = now
-            if affil_obj.work:
-                affil_obj.work.full_updated_date = now
-
-        author_objects = models.Author.query.options(
-                orm.Load(models.Author).raiseload('*')
-                ).filter(models.Author.last_known_affiliation_id==merge_away_id).all()
-        print(f"updating affiliation_id for {len(author_objects)} last known affiliation in authors")
-        for author_obj in author_objects:
-            author_obj.last_known_affiliation_id = merge_into_id
-            author_obj.updated = now
-            author_obj.full_updated_date = now
     elif entity == "author":
         affiliation_objects = models.Affiliation.query.options(selectinload(models.Affiliation.work).raiseload('*'),
                                                                selectinload(models.Affiliation.author).raiseload('*'),
