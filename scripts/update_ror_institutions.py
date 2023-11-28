@@ -225,11 +225,16 @@ def main(args):
         logger.info(f"ROR data downloaded. there are {len(ror_data)} organizations")
         ror_update_log_db.downloaded_at = datetime.utcnow().isoformat()
         logger.info(f"beginning to process {len(ror_data)} ROR records")
-        for i, item in enumerate(ror_data):
-            if i in [10, 50, 100, 500, 1000, 5000, 10000] or i % 20000 == 0:
-                logger.info(f"{i} processed so far")
+        num_processed = 0
+        for item in ror_data:
+            if item.get('status') == 'withdrawn':
+                # skip this one
+                continue
             logger.debug(f"processing ROR ID: {item['id']}")
             process_one_org(item)
+            num_processed += 1
+            if num_processed in [10, 50, 100, 500, 1000, 5000, 10000] or num_processed % 20000 == 0:
+                logger.info(f"{num_processed} processed so far")
         ror_update_log_db.finished_update_at = datetime.utcnow().isoformat()
     finally:
         logger.info("refreshing materialized view mid.institution_ancestors_mv")
