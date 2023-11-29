@@ -15,12 +15,6 @@ from app import db
 from util import normalize_title_like_sql
 
 
-# alter table recordthresher_record add column started_label text;
-# alter table recordthresher_record add column started datetime;
-# alter table recordthresher_record add column finished datetime;
-# alter table recordthresher_record add column work_id bigint
-
-
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
     __tablename__ = "recordthresher_record"
@@ -103,7 +97,6 @@ class Record(db.Model):
         best_journal = sorted_journals[0]
         return best_journal.merged_into_source or best_journal
 
-
     def get_or_mint_work(self):
         from models.work import Work
         now = datetime.datetime.utcnow()
@@ -160,7 +153,7 @@ class Record(db.Model):
 
         if (not matching_work) \
                 and (not self.doi) and (not self.pmid) and (not self.pmcid) and (not self.arxiv_id) \
-                and ((not self.title) or (len(self.title) < 20)):
+                and ((not self.title) or (len(self.normalized_title) < 20)):
             self.work_id = -1
             print(f"{self.id} does not have a strong identifier and has no title, or title is too short, skipping")
             return
@@ -173,8 +166,6 @@ class Record(db.Model):
             print("no match, so minting")
             self.mint_work()
         return
-
-
 
     def mint_work(self):
         from models import Work
@@ -220,7 +211,6 @@ class Record(db.Model):
         print("processing record! {}".format(self.id))
 
         self.get_or_mint_work()
-
 
     def __repr__(self):
         return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
