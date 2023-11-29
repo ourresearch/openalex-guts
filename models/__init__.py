@@ -181,7 +181,7 @@ Record.work_matches_by_title = db.relationship(
         viewonly=True,
         uselist=True,
         # foreign_keys="Work.match_title",
-        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 20, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
+        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 19, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
     )
 
 Record.work_matches_by_doi = db.relationship(
