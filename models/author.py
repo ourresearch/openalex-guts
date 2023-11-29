@@ -300,6 +300,20 @@ class Author(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
+    def last_known_affiliation_override(self):
+        # quick fix implemented for Sorbonne University
+        # checks most recent paper's affiliations, and if Sorbonne is one of them, force it to be the last known institution
+        override_affiliation_ids = [39804081]  # just sorbonne for now, but more can be added
+        affils = sorted(self.affiliations, key=lambda x: x.work.publication_date, reverse=True)
+        affils_most_recent_work = [af.affiliation_id for af in affils if af.paper_id == affils[0].paper_id]
+        for affiliation_id in override_affiliation_ids:
+            if affiliation_id in affils_most_recent_work:
+                print(f"setting last_known_affiliation_id to {affiliation_id}")
+                self.last_known_affiliation_id = affiliation_id
+                db.session.add(self)
+                db.session.commit()
+                return
+
     def to_dict(self, return_level="full"):
         response = {
                 "id": self.openalex_id,
@@ -307,6 +321,7 @@ class Author(db.Model):
                 "display_name": truncate_on_word_break(self.display_name, 100),
               }
         if return_level == "full":
+            self.last_known_affiliation_override()
             response.update({
                 "display_name_alternatives": [truncate_on_word_break(n, 100) for n in self.all_alternative_names],
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
