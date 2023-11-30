@@ -997,6 +997,7 @@ def matching_author_string(origName):
     tag = 'unknown'
     # try:
     tag = 'ascii'
+    origName = reverse_name_if_comma(origName)
     words = origName.replace("'", '').replace('-', '').replace(',', '').replace('.', '').split()
     for i in reversed(range(len(words))):
         # Upper letter
@@ -1026,10 +1027,6 @@ def matching_author_string(origName):
         elif len(words[1]) == 1:
             result = words[1] + ' ' + words[0]
             tag = '1-letter-in-second'
-        # # 2 letters in second: Ea
-        # elif len(words[1]) == 2 and words[1][0] == words[1][0].upper() and words[1][1] == words[1][1].lower():
-        #     result = words[1][0] + ' ' + words[1][1] + ' ' + words[0]
-        #     tag = '2-letters-in-second'
 
     elif len(words) == 3:
         # 1 letter in second and third
@@ -1055,6 +1052,13 @@ def matching_author_string(origName):
 
     return response
 
+
+def reverse_name_if_comma(name):
+    parts = name.split(',')
+    if len(parts) == 2:
+        return parts[1].strip() + ' ' + parts[0].strip()
+    else:
+        return name
 
 def work_has_null_author_ids(w):
     if isinstance(w, dict):
