@@ -78,7 +78,7 @@ def process_institution(old_id, merge_into_id):
     affiliation_sql = f"""
                     UPDATE mid.affiliation
                     SET affiliation_id = {merge_into_id},
-                        updated_date = '{current_datetime}',
+                        updated_date = '{current_datetime}'
                     WHERE affiliation_id = {old_id}
                 """
     response = db.engine.execute(affiliation_sql)
@@ -89,7 +89,7 @@ def process_institution(old_id, merge_into_id):
     author_sql = f"""
                     UPDATE mid.author
                     SET last_known_affiliation_id = {merge_into_id},
-                        updated_date = '{current_datetime}',
+                        updated_date = '{current_datetime}'
                     WHERE last_known_affiliation_id = {old_id}
                 """
     response = db.engine.execute(author_sql)
