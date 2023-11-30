@@ -122,6 +122,7 @@ def get_records(record_ids):
         lazyload(models.Record.work_matches_by_title).joinedload(models.Work.affiliations).raiseload('*'),
         joinedload(models.Record.work_matches_by_doi).raiseload('*'),
         joinedload(models.Record.work_matches_by_pmid).raiseload('*'),
+        joinedload(models.Record.work_matches_by_arxiv_id).raiseload('*'),
         joinedload(models.Record.journals).raiseload('*'),
         joinedload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
         orm.Load(models.Record).raiseload('*')

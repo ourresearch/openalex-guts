@@ -122,7 +122,14 @@ class Record(db.Model):
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
                 matching_work = sorted_matching_works[0]
 
-        # by pmc_id or arxiv_id, later. match by id before match by title.
+        # by arxiv_id
+        if not matching_works:
+            if matching_works := [w for w in self.work_matches_by_arxiv_id if not w.merge_into_id]:
+                print("found by arxiv_id")
+                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+                matching_work = sorted_matching_works[0]
+
+        # by pmc_id later. match by id before match by title.
 
         # by title
         if not matching_work:
