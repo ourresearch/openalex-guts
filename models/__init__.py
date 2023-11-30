@@ -203,6 +203,14 @@ Record.work_matches_by_pmid = db.relationship(
     secondaryjoin="Work.paper_id == WorkExtraIds.paper_id"
 )
 
+Record.work_matches_by_arxiv_id = db.relationship(
+        'Work',
+        lazy='subquery',
+        viewonly=True,
+        uselist=True,
+        primaryjoin="and_(foreign(Record.arxiv_id) != None, foreign(Record.arxiv_id) == remote(Work.arxiv_id))"
+    )
+
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
