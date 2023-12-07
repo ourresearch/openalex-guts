@@ -325,6 +325,7 @@ def hydrate_role(openalex_id_short):
     # for entities that are organizations that can have multiple roles
     # this takes a short ID of one of the roles (e.g., https://openalex.org/I32971472)
     # and adds some known info about the entity
+    from models.institution import DELETED_INSTITUTION_ID
     if openalex_id_short.startswith('I'):
         cls = Institution
         role = 'institution'
@@ -335,7 +336,7 @@ def hydrate_role(openalex_id_short):
         cls = Funder
         role = 'funder'
     entity_id = int(openalex_id_short[1:])
-    if entity_id == 4362561690:
+    if entity_id == DELETED_INSTITUTION_ID:
         # this institution has been deleted
         return None
     entity = cls.query.options(selectinload(cls.counts).raiseload('*'), 

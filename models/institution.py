@@ -19,7 +19,7 @@ from app import get_apiurl_from_openalex_url
 from app import logger
 from util import entity_md5
 
-DELETED_INSTITUTION_ID = 4362561690
+DELETED_INSTITUTION_ID = 4389424196
 
 
 def as_institution_openalex_id(id):
