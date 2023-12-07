@@ -1514,7 +1514,7 @@ class Work(db.Model):
         if exact_row:
             return self.format_percentiles(exact_row.percentile, higher_row.percentile if higher_row else exact_row.percentile)
 
-        # try closed lower row
+        # try closest lower row
         lower_row = base_query.filter(models.CitationPercentilesByYear.citation_count < citation_count) \
             .order_by(models.CitationPercentilesByYear.citation_count.desc()) \
             .first()
@@ -1527,13 +1527,17 @@ class Work(db.Model):
 
     @staticmethod
     def format_percentiles(min_perc, max_perc):
-        min_percentile = float(round(min_perc * 100, 1))
-        max_percentile = float(round(max_perc * 100, 1))
+        min_percentile = int(round(min_perc * 100))
+        max_percentile = int(round(max_perc * 100))
 
         # override for max value
-        if min_percentile == 100.0:
-            min_percentile = 99.9
-            max_percentile = 100.0
+        if min_percentile == 100:
+            min_percentile = 99
+            max_percentile = 100
+
+        # override when min and max are the same
+        if min_percentile == max_percentile:
+            min_percentile = min_percentile - 1
 
         return {
             "min": min_percentile,
