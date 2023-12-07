@@ -304,7 +304,11 @@ class Author(db.Model):
         # quick fix implemented for Sorbonne University
         # checks most recent paper's affiliations, and if Sorbonne is one of them, force it to be the last known institution
         override_affiliation_ids = [39804081]  # just sorbonne for now, but more can be added
-        affils = sorted(self.affiliations, key=lambda x: x.work.publication_date, reverse=True)
+        affils = sorted(
+            self.affiliations,
+            key=lambda x: x.work.publication_date if x.work.publication_date is not None else '1800-01-01',  # set null date as old
+            reverse=True
+        )
         affils_most_recent_work = [af.affiliation_id for af in affils if af.paper_id == affils[0].paper_id]
         for affiliation_id in override_affiliation_ids:
             if affiliation_id in affils_most_recent_work:
