@@ -1573,7 +1573,7 @@ class Work(db.Model):
             }
             delete_record = {
                 "_op_type": "delete",
-                "_index": f"works-v20-{index_suffix}",
+                "_index": f"works-v21-{index_suffix}",
                 "_id": self.openalex_id,
             }
             bulk_actions.append(index_record)
@@ -1632,7 +1632,7 @@ class Work(db.Model):
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
-                "_index": f"works-v20-{index_suffix}",
+                "_index": f"works-v21-{index_suffix}",
                 "_id": self.openalex_id,
                 "_source": my_dict
             }
@@ -1652,7 +1652,7 @@ class Work(db.Model):
                         logger.info(f"delete {self.openalex_id} from old index {old_index_suffix}")
                         delete_record = {
                             "_op_type": "delete",
-                            "_index": f"works-v20-{old_index_suffix}",
+                            "_index": f"works-v21-{old_index_suffix}",
                             "_id": self.openalex_id,
                         }
                         bulk_actions.append(delete_record)
