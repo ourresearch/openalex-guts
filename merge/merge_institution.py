@@ -9,7 +9,7 @@ from app import db, logger
 1. Run this script to merge institution(s).
   single institution: heroku run python -- -m merge.merge_institution --old_id=123 --merge_into_id=456
   or
-  csv with header old_id, merge_into_id: python -m merge.merge_institution --input_file=merge_institutions.csv 
+  csv with header old_id, merge_into_id: heroku run python -- -m merge.merge_institution --input_file=merge_institutions.csv 
 2. Notify Justin so he can update AND.
 3. You may need to run this again to update mid.affiliation, since AND may have assigned using old ids.
 """
