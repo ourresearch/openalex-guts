@@ -9,7 +9,7 @@ from app import db, logger
 1. Run this script to merge work(s).
   single work: heroku run python -- -m merge.merge_work --old_id=123 --merge_into_id=456
   or
-  csv with header old_id, merge_into_id: python -m merge.merge_work --input_file=merge_works.csv 
+  csv with header old_id, merge_into_id: heroku run python -- -m merge.merge_work --input_file=merge_works.csv 
 """
 
 
