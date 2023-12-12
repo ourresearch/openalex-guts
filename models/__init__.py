@@ -70,7 +70,7 @@ Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", 
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
-Affiliation.institution = db.relationship("Institution") #don't delete orphan
+Affiliation.institution = db.relationship("Institution", lazy='selectin') #don't delete orphan
 
 Institution.ror = db.relationship("Ror", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author", cascade="all, delete-orphan")

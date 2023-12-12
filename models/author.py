@@ -318,6 +318,41 @@ class Author(db.Model):
                 db.session.commit()
                 return
 
+    @cached_property
+    def affiliations_for_api(self):
+        """
+        Affiliations field in the API. Different from self.affiliations.
+        Includes a list of years for each institution.
+        Limited to the first 'max_affiliations' number of unique affiliations.
+        """
+        max_affiliations = 10
+        max_years = 10
+        seen_institutions = {}
+        formatted_affiliations = []
+
+        for affiliation in self.affiliations:
+            if affiliation.affiliation_id is not None:
+                institution = affiliation.institution
+                year = affiliation.work.year
+                if institution not in seen_institutions:
+                    seen_institutions[institution] = [year]
+                elif year not in seen_institutions[institution]:
+                    seen_institutions[institution].append(year)
+
+        # sort institutions by the most recent year and limit to max_affiliations
+        sorted_institutions = sorted(seen_institutions.items(), key=lambda x: max(x[1]), reverse=True)[
+                              :max_affiliations]
+
+        for institution, years in sorted_institutions:
+            formatted_affiliations.append(
+                {
+                    "institution": institution.to_dict("minimum"),
+                    "years": sorted(years, reverse=True)[:max_years]
+                }
+            )
+
+        return formatted_affiliations
+
     def to_dict(self, return_level="full"):
         response = {
                 "id": self.openalex_id,
@@ -343,6 +378,7 @@ class Author(db.Model):
                     "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
                     "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
                 },
+                "affiliations": self.affiliations_for_api,
                 "ids": {
                     "openalex": self.openalex_id,
                     "orcid": self.orcid_url,
