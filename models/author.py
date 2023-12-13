@@ -211,7 +211,7 @@ class Author(db.Model):
                 }
                 delete_record = {
                     "_op_type": "delete",
-                    "_index": "authors-v12",
+                    "_index": "authors-v13",
                     "_id": self.openalex_id,
                 }
                 bulk_actions.append(index_record)
@@ -230,7 +230,7 @@ class Author(db.Model):
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "authors-v12",
+                    "_index": "authors-v13",
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
