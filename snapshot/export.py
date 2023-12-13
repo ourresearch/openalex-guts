@@ -49,7 +49,7 @@ r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
     "works": "works-v21-*,-*invalid-data",
-    "authors": "authors-v12",
+    "authors": "authors-v13",
     "concepts": "concepts-v8",
     "funders": "funders-v3",
     "institutions": "institutions-v7",
