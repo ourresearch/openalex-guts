@@ -487,10 +487,19 @@ class Work(db.Model):
             return
 
         if not self.records_sorted:
-            # not associated with a record, so leave it for now
-            # merged-away works have their records' work ids updated,
-            # so also do nothing for merged-away works
-            logger.info(f"No associated records for {self.paper_id}, so skipping")
+            # not associated with a record, update institutions only
+            logger.info(f"No associated records for {self.paper_id}, skipping most updates")
+
+            update_institutions = False
+            # fix for many works assigned to 4362561690
+            for aff in self.affiliations:
+                if aff.affiliation_id == 4362561690:
+                    update_institutions = True
+                    break
+            if update_institutions:
+                start_time = time()
+                self.update_institutions()
+                logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
             return
 
         start_time = time()
