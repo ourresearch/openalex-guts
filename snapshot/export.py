@@ -1,4 +1,4 @@
-# 1. back up current snapshot
+# 1. back up current snapshot (one more time)
 #   $ python3 -m snapshot.backup
 #
 # 2. export merged ids
@@ -23,6 +23,8 @@
 #   browse to data folder (ex ~/data/2023_09_20), and run: aws s3 sync . s3://openalex/data
 #   browse to files-for-datadumps/standard-format and run: aws s3 cp RELEASE_NOTES.txt s3://openalex/RELEASE_NOTES.txt
 #   check result at: https://openalex.s3.amazonaws.com/browse.html
+#
+# 7. add snapshot to backups folder at s3://openalex-sandbox/snapshot-backups/openalex-jsonl/{current_date}
 
 
 from datetime import datetime
