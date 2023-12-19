@@ -202,7 +202,7 @@ class Author(db.Model):
                 logger.info(f"merging {self.openalex_id} into {self.merge_into_id}")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "merge-authors",
+                    "_index": "merge-authors-v1",
                     "_id": self.openalex_id,
                     "_source": {
                         "id": self.openalex_id,

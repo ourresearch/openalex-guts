@@ -5,8 +5,13 @@ declare merge_date date;
 declare bucket text := 'openalex-sandbox';
 declare data_prefix text := 'snapshot-merged-ids';
 declare csv_file_name text;
+declare additional_condition text := '';
 begin
     execute format('select array_agg(distinct merge_into_date::date) from %s where merge_into_id is not null', tbl) into distinct_merge_dates;
+
+    if tbl::text = 'mid.author' then
+        additional_condition := format(' and %s::bigint > 5000000000', id_column);
+    end if;
 
     if distinct_merge_dates is not null then
         foreach merge_date in array distinct_merge_dates
@@ -16,8 +21,8 @@ begin
 
             perform aws_s3.query_export_to_s3(
                 format(
-                    'select merge_into_date::date as merge_date, %L || %s as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and merge_into_date::date = %L',
-                    id_prefix, id_column, id_prefix, tbl, merge_date
+                    'select merge_into_date::date as merge_date, %L || %s as id, %L || merge_into_id as merge_into_id from %s where merge_into_id is not null and merge_into_date::date = %L%s',
+                    id_prefix, id_column, id_prefix, tbl, merge_date, additional_condition
                 ),
                 aws_commons.create_s3_uri(bucket, csv_file_name, 'us-east-1'),
                 options :='format csv, header'
