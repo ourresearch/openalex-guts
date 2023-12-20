@@ -17,6 +17,9 @@ def get_and_save_sdgs(work):
     if not text_to_process:
         logger.info(f"error processing sdgs for {work.id} - no text to process")
         return None
+    elif text_too_short(text_to_process):
+        logger.info(f"error processing sdgs for {work.id} - text too short")
+        return None
 
     # call the API
     url = SDG_CLASSIFIER_URL
@@ -40,6 +43,15 @@ def get_text_for_sdg_classification(work):
         return work.abstract.abstract
     else:
         return None
+
+
+def text_too_short(text):
+    word_minimum = 5
+    character_minimum = 25
+    if len(text.split()) < word_minimum or len(text) < character_minimum:
+        return True
+    else:
+        return False
 
 
 def process_api_response(result):
