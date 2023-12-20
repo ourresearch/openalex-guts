@@ -1,12 +1,11 @@
 import subprocess
-from datetime import datetime
 
 
 def backup_snapshot():
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    print(f"Backing up snapshot for {current_date}...")
+    snapshot_date = '2023-11-21'
+    print(f"Backing up snapshot for {snapshot_date}...")
 
-    command = f"aws s3 sync s3://openalex s3://openalex-sandbox/snapshot-backups/openalex-jsonl/{current_date}"
+    command = f"aws s3 sync s3://openalex s3://openalex-sandbox/snapshot-backups/openalex-jsonl/{snapshot_date}"
     result = subprocess.run(command, shell=True, check=True)
 
     if result.returncode == 0:
