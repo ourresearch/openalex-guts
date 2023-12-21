@@ -1,5 +1,11 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2023-12-20
+- added Author.affiliations, an author's 10 most recent associated institutions and years of publications
+- merged 566k duplicated works associated with HAL repository
+- removed old author IDs (ID less than 5000000000) from merged_ids/authors
+- changed cited_by_percentile_year in works to an integer
+
 RELEASE 2023-11-21
 - improved affiliation matching for over 2 million works
 - added keywords to works
