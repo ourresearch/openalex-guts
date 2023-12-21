@@ -334,9 +334,9 @@ class Author(db.Model):
             if affiliation.affiliation_id is not None and affiliation.work.merge_into_id is None:
                 institution = affiliation.institution
                 year = affiliation.work.year
-                if institution not in seen_institutions:
+                if institution not in seen_institutions and year is not None:
                     seen_institutions[institution] = [year]
-                elif year not in seen_institutions[institution]:
+                elif year not in seen_institutions[institution] and year is not None:
                     seen_institutions[institution].append(year)
 
         # sort institutions by the most recent year and limit to max_affiliations
