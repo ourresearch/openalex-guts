@@ -319,6 +319,33 @@ class Author(db.Model):
                 return
 
     @cached_property
+    def last_known_institutions(self):
+        """
+        last_known_institutions will be a list of institutions, to handle the cases where the last work has multiple affiliations
+        We will deprecate last_known_institution, and use this instead
+        """
+        # get a list of tuples: (publication_date, affiliation), sorted by publication date, most recent first
+        sorted_affiliations = sorted(
+            [
+                (datetime.datetime.fromisoformat(affil.work.publication_date), affil)
+                for affil in self.affiliations
+            ],
+            key=lambda x: x[0],
+            reverse=True,
+        )
+        last_affil_ids = set()
+        last_known_institutions = []
+        max_dt = sorted_affiliations[0][0]
+        for dt, affil in sorted_affiliations:
+            if dt == max_dt and affil.affiliation_id not in last_affil_ids:
+                last_affil_ids.add(affil.affiliation_id)
+                if affil.institution:
+                    last_known_institutions.append(affil.institution.to_dict("minimum"))
+            else:
+                break
+        return last_known_institutions
+
+    @cached_property
     def affiliations_for_api(self):
         """
         Affiliations field in the API. Different from self.affiliations.
@@ -387,7 +414,8 @@ class Author(db.Model):
                     "wikipedia": self.wikipedia_url,
                     "mag": self.author_id if self.author_id < MAX_MAG_ID else None
                 },
-                "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,
+                "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,  # we will deprecate this in favor of last_known_institutions
+                "last_known_institutions": self.last_known_institutions,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
