@@ -276,6 +276,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.references_unmatched).raiseload('*'),
             selectinload(models.Work.mesh),
             selectinload(models.Work.doi_ra),
+            selectinload(models.Work.retraction_watch),
             selectinload(models.Work.funders).selectinload(models.WorkFunder.funder).raiseload('*'),
             selectinload(models.Work.funders).raiseload('*'),
             selectinload(models.Work.counts),
