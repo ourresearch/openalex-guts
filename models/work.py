@@ -1177,6 +1177,8 @@ class Work(db.Model):
     def is_retracted(self):
         if self.doc_sub_types != None:
             return True
+        elif self.retraction_watch and self.retraction_watch.is_retracted:
+            return True
         return False
 
     @cached_property

@@ -31,6 +31,7 @@ from models.work_sdg import WorkSDG
 from models.orcid import Orcid
 from models.publisher import Publisher
 from models.record import Record
+from models.retraction_watch import RetractionWatch
 from models.ror import Ror
 from models.source import Source
 from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index, AuthorI10Index2Year, AuthorHIndex2Year
@@ -63,6 +64,7 @@ Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
+Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
