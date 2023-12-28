@@ -250,12 +250,35 @@ def get_publisher_id(original_publisher):
         return None
 
 
+def get_apc_usd(apc_prices):
+    from currency_converter import CurrencyConverter
+    # first check if USD is already there
+    for item in apc_prices:
+        if item.get('currency') and item['currency'].upper() == 'USD':
+            if 'price' in item:
+                return item['price']
+    # otherwise, convert first item
+    c = CurrencyConverter()
+    currency = apc_prices[0].get('currency', None)
+    price = apc_prices[0].get('price', None)
+    if currency is not None and price is not None:
+        apc_in_usd_converted = c.convert(price, currency.upper(), 'USD')
+        apc_in_usd = int(apc_in_usd_converted)
+        return apc_in_usd
+    else:
+        return None
+
 def add_new_source_to_db(
     issn_list,
     display_name,
     source_type="journal",
     publisher_str=None,
     publisher_id=None,
+    webpage=None,
+    alternate_titles=None,
+    country_code=None,
+    apc_prices=None,
+    apc_usd=None,
     session=None,
     commit=True,
     check_for_existing=True,
@@ -279,6 +302,8 @@ def add_new_source_to_db(
             )
             if existing_journals:
                 raise RuntimeError(f"Source with issn {issn} already exists in database")
+    if apc_usd is None and apc_prices is not None and len(apc_prices) > 0:
+        apc_usd = get_apc_usd(apc_prices)
     now = datetime.utcnow().isoformat()
     new_db_source = models.Source(
         display_name=display_name,
@@ -286,6 +311,11 @@ def add_new_source_to_db(
         type=source_type,
         issns_text_array=issn_list,
         issn=issn_list[0],
+        webpage=webpage,
+        alternate_titles=alternate_titles,
+        country_code=country_code,
+        apc_prices=apc_prices,
+        apc_usd=apc_usd,
         created_date=now,
         updated_date=now,
     )
