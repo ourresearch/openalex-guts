@@ -46,7 +46,7 @@ class Source(db.Model):
     repository_id = db.Column(db.Text)
     type = db.Column(db.Text)
     apc_prices = db.Column(JSONB)
-    apc_usd = db.Column(JSONB)
+    apc_usd = db.Column(db.Integer)
     is_society_journal = db.Column(db.Boolean)
     societies = db.Column(JSONB)
     alternate_titles = db.Column(JSONB)
