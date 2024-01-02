@@ -51,20 +51,27 @@ class QueueMakeParselandRTRecords:
             for work in works:
                 logger.info(f'making record for {work}')
                 try:
-                    response = requests.get(_parseland_api_url(work['doi']), verify=False).json()
-                    authors = response.get('authors')
-                    pl_record = Record(
-                        id=_record_id(work['doi']),
-                        record_type='crossref_parseland',
-                        authors=authors and json.dumps(authors),
-                        published_date=response.get('published_date'),
-                        genre=response.get('genre'),
-                        abstract=response.get('abstract'),
-                        doi=work['doi']
-                    )
-                    db.session.merge(pl_record)
+                    api_url = _parseland_api_url(work['doi'])
+                    logger.info(f'calling {api_url}')
+                    response = requests.get(_parseland_api_url(work['doi']), verify=False)
+                    if response.ok:
+                        response = response.json()['message']
+                        authors = response.get('authors')
+                        pl_record = Record(
+                            id=_record_id(work['doi']),
+                            record_type='crossref_parseland',
+                            authors=authors and json.dumps(authors),
+                            published_date=response.get('published_date'),
+                            genre=response.get('genre'),
+                            abstract=response.get('abstract'),
+                            doi=work['doi'],
+                            work_id=-1
+                        )
+                        db.session.merge(pl_record)
+                    else:
+                        logger.error(f"no response for {work['doi']}")
                 except:
-                    logger.error(f"couldn't make record for work['doi']")
+                    logger.exception()
 
             db.session.execute(
                 text(f'''
