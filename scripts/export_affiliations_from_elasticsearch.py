@@ -68,7 +68,7 @@ def main(args):
     part_file = gzip.open(str(outfp), "wt")
     total_size = 0
 
-    s = Search(using=es, index="works-v21-*,-*invalid-data")
+    s = Search(using=es, index="works-v22-*,-*invalid-data")
     s = s.sort(*["id"])
     s = s.source(
         excludes=[
