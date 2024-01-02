@@ -52,7 +52,6 @@ class QueueMakeParselandRTRecords:
                 logger.info(f'making record for {work}')
                 try:
                     api_url = _parseland_api_url(work['doi'])
-                    logger.info(f'calling {api_url}')
                     response = requests.get(_parseland_api_url(work['doi']), verify=False)
                     if response.ok:
                         response = response.json()['message']
