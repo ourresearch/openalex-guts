@@ -99,6 +99,11 @@ class Record(db.Model):
 
     def get_or_mint_work(self):
         from models.work import Work
+        if not self.is_primary_record():
+            print(
+                f'record {self.id} is of type {self.record_type} '
+                'and is matched to a primary record via an association table'
+            )
         now = datetime.datetime.utcnow()
 
         if self.genre == "component":
@@ -173,6 +178,9 @@ class Record(db.Model):
             print("no match, so minting")
             self.mint_work()
         return
+
+    def is_primary_record(self):
+        return self.record_type and self.record_type in {'crossref_doi', 'pubmed_record', 'pmh_record'}
 
     def mint_work(self):
         from models import Work
