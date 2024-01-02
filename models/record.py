@@ -104,6 +104,7 @@ class Record(db.Model):
                 f'record {self.id} is of type {self.record_type} '
                 'and is matched to a primary record via an association table'
             )
+            return
         now = datetime.datetime.utcnow()
 
         if self.genre == "component":
