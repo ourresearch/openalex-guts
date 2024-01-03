@@ -48,6 +48,7 @@ class QueueMakeParselandRTRecords:
                 sleep(60)
                 continue
 
+            insert_values = []
             for work in works:
                 logger.info(f'making record for {work}')
                 try:
@@ -66,11 +67,14 @@ class QueueMakeParselandRTRecords:
                             doi=work['doi'],
                             work_id=-1
                         )
-                        db.session.merge(pl_record)
+                        insert_values.append(pl_record)
                     else:
                         logger.error(f"no response for {work['doi']}")
                 except:
                     logger.exception()
+
+            if insert_values:
+                db.session.bulk_save_objects(insert_values)
 
             db.session.execute(
                 text(f'''
