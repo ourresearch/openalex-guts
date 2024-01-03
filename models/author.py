@@ -3,12 +3,10 @@ import json
 import re
 
 from cached_property import cached_property
-from sqlalchemy import orm
 
 from app import MAX_MAG_ID
 from app import db
 from app import get_apiurl_from_openalex_url
-from app import get_db_cursor
 from app import logger
 from util import entity_md5
 from util import truncate_on_word_break
@@ -42,56 +40,12 @@ class Author(db.Model):
         return self.author_id
 
     @classmethod
-    def matching_author_string(cls, raw_author_string):
-        from util import matching_author_string
+    def matching_author_strings(cls, raw_author_string):
+        from util import matching_author_strings
         if not raw_author_string:
             return None
 
-        return matching_author_string(raw_author_string)
-
-    @classmethod
-    def try_to_match(cls, raw_author_string, original_orcid, citation_paper_ids):
-        if not raw_author_string and not original_orcid:
-            return None
-
-        match_with_orcid = f"""
-            select author_id from mid.author_orcid
-            join mid.author using (author_id)
-            where author_orcid.orcid = '{original_orcid}'
-            and author.merge_into_id is null
-            """
-
-        match_name = Author.matching_author_string(raw_author_string)
-        if len(citation_paper_ids) > 1:
-            citation_paper_ids_tuple = tuple(citation_paper_ids)
-        else:
-            # doesn't parse into sql properly if only one, so duplicate it for no harm
-            citation_paper_ids_tuple = tuple(citation_paper_ids + citation_paper_ids)
-        match_with_citations = f"""
-            select affil.author_id 
-            from mid.author author
-            join mid.affiliation affil on affil.author_id=author.author_id
-            where author.author_id is not null
-            and author.merge_into_id is null
-            and affil.paper_id in {citation_paper_ids_tuple}
-            and author.match_name = '{match_name}'
-            """
-
-        with get_db_cursor() as cur:
-            if original_orcid:
-                cur.execute(match_with_orcid)
-                rows = cur.fetchall()
-                if rows:
-                    logger.info(f"matched: author using orcid")
-                    return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
-            if citation_paper_ids:
-                cur.execute(match_with_citations)
-                rows = cur.fetchall()
-                if rows:
-                    logger.info(f"matched: author using citations")
-                    return Author.query.options(orm.Load(Author).raiseload('*')).get(rows[0]["author_id"])
-        return None
-
+        return matching_author_strings(raw_author_string)
 
     @property
     def last_known_institution_id(self):

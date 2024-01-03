@@ -330,7 +330,6 @@ class Work(db.Model):
                             original_author=author_affiliations[0].original_author,
                             original_affiliation=original_affiliation,
                             original_orcid=author_affiliations[0].original_orcid,
-                            match_author=author_affiliations[0].match_author,
                             match_institution_name=models.Institution.matching_institution_name(original_affiliation),
                             is_corresponding_author=is_corresponding_author,
                             updated_date=datetime.datetime.utcnow().isoformat()
@@ -873,7 +872,6 @@ class Work(db.Model):
         author_dict_list = json.loads(record.authors)
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
-            # my_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
@@ -882,24 +880,6 @@ class Work(db.Model):
 
             raw_author_string = original_name if original_name else None
             original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
-            #if raw_author_string:
-            #    my_author = models.Author.try_to_match(raw_author_string, original_orcid, self.citation_paper_ids)
-
-            author_match_name = models.Author.matching_author_string(raw_author_string)
-            # print(f"author_match_name: {author_match_name}")
-
-            # if raw_author_string and not my_author:
-            #    my_author = models.Author(display_name=raw_author_string,
-            #        match_name=author_match_name,
-            #        created_date=datetime.datetime.utcnow().isoformat(),
-            #        full_updated_date=datetime.datetime.utcnow().isoformat(),
-            #        updated_date=datetime.datetime.utcnow().isoformat())
-            #    if original_orcid:
-            #        my_author_orcid = models.AuthorOrcid(orcid=original_orcid)
-            #        my_author.orcids = [my_author_orcid]
-
-            # if my_author:
-            #     my_author.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
 
             seen_institution_ids = set()
 
@@ -956,54 +936,15 @@ class Work(db.Model):
                             original_author=raw_author_string,
                             original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
                             original_orcid=original_orcid,
-                            match_author=author_match_name,
                             match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
                             is_corresponding_author=author_dict.get('is_corresponding'),
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
-                        # my_affiliation.author = my_author
                         my_affiliation.institution = my_institution
                         self.affiliations += [my_affiliation]
                         affiliation_sequence_order += 1
 
-            # self.set_known_authors_from_institutions()
-
         return
-
-    @staticmethod
-    @cache
-    def author_ids_known_by_name_and_institution():
-        known_authors = defaultdict(dict)
-        match_names_query = text(
-            'select match_author, affiliation_id, author_id from mid.author_ids_by_author_name_institution'
-        )
-
-        for row in db.engine.execute(match_names_query).all():
-            match_author, affiliation_id, author_id = row
-            known_authors[match_author][affiliation_id] = author_id
-
-        return known_authors
-
-    def set_known_authors_from_institutions(self):
-        # get all institution affiliations from this paper's authors
-        paper_affiliation_ids = [affiliation_id for affiliation_id in [
-            a.institution and a.institution.affiliation_id
-            for a in self.affiliations
-        ] if affiliation_id]
-
-        for affiliation in self.affiliations:
-            if affiliation.author and affiliation.author_id is None:
-                # we made a new author. see if it's really one we know by name and institution
-                if affiliation.match_author in self.author_ids_known_by_name_and_institution():
-                    for paper_affiliation_id in paper_affiliation_ids:
-                        if author_id := self.author_ids_known_by_name_and_institution()[affiliation.match_author].get(
-                                paper_affiliation_id
-                        ):
-                            logger.info(f'set {affiliation.match_author} author_id to {author_id} based on affiliation {paper_affiliation_id}')
-                            db.session.expunge(affiliation.author)
-                            affiliation.author = models.author.Author.query.options(
-                                orm.Load(models.author.Author).raiseload('*')
-                            ).get(author_id)
 
     def update_oa_status_if_better(self, new_oa_status):
         # update oa_status, only if it's better than the oa_status we already have
@@ -1266,17 +1207,14 @@ class Work(db.Model):
         author_dict_list = json.loads(record_author_json)
 
         for author_sequence_order, author_dict in enumerate(author_dict_list):
-            my_author = None
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
 
             raw_author_string = original_name if original_name else None
-            author_match_name = models.Author.matching_author_string(raw_author_string)
-            # print(f"author_match_name: {author_match_name}")
-            if author_match_name:
-                author_match_names += [author_match_name]
-        logger.info(f"author_match_names: {author_match_names}")
+            author_match_strings = models.Author.matching_author_strings(raw_author_string)
+            if author_match_strings:
+                author_match_names.extend(author_match_strings)
         return author_match_names
 
     def matches_authors_in_record(self, record_author_json):
@@ -1297,11 +1235,15 @@ class Work(db.Model):
         for original_name in [self.first_author_original_name, self.last_author_original_name]:
             logger.info(f"original_name: {original_name}")
             if original_name:
-                author_match_name = models.Author.matching_author_string(original_name)
-                logger.info(f"author_match_name: {author_match_name}")
-                if author_match_name and (author_match_name in Work.author_match_names_from_record_json(record_author_json)):
-                    logger.info("author match!")
-                    return True
+                author_match_strings = models.Author.matching_author_strings(original_name)
+                logger.info(f"author_match_strings: {author_match_strings}")
+                for author_match_string in author_match_strings:
+                    logger.info(f"author_match_string: {author_match_string}")
+                    match_names_from_record_json = Work.author_match_names_from_record_json(record_author_json)
+                    logger.info(f"match_names_from_record_json: {match_names_from_record_json}")
+                    if author_match_string and (author_match_string in match_names_from_record_json):
+                        logger.info("author match!")
+                        return True
 
         logger.info("author no match")
         return False
