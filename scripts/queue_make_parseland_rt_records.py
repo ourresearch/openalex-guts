@@ -80,7 +80,8 @@ class QueueMakeParselandRTRecords:
                 insert_values = [v for v in insert_values if v]
 
             if insert_values:
-                db.session.bulk_save_objects(insert_values)
+                for insert_value in insert_values:
+                    db.session.merge(insert_value)
 
             db.session.execute(
                 text(f'''
