@@ -35,7 +35,7 @@ def _get_parseland_dict(work):
             pl_record = Record(
                 id=_record_id(work['doi']),
                 record_type='crossref_parseland',
-                authors=authors and json.dumps(authors),
+                authors=(authors and json.dumps(authors)) or '[]',
                 published_date=response.get('published_date'),
                 genre=response.get('genre'),
                 abstract=response.get('abstract'),
