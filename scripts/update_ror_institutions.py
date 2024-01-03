@@ -177,6 +177,73 @@ def refresh_ancestors_mv():
     db.engine.execute(text(sq))
 
 
+def send_email(to_address, subject, msg):
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_url = f"https://api.mailgun.net/v3/ourresearch.org/messages"
+    mailgun_auth = ("api", mailgun_api_key)
+    body = f"""This is an automated email sent from {__file__}\n\n{msg}"""
+    mailgun_data = {
+        "from": "OurResearch Mailgun <mailgun@ourresearch.org>",
+        "to": [to_address],
+        "subject": subject,
+        "text": body,
+    }
+    requests.post(mailgun_url, auth=mailgun_auth, data=mailgun_data)
+
+
+def handle_withdrawn(item):
+    """Handle institutions marked "withdrawn" by ROR"""
+    from models.institution import Institution, DELETED_INSTITUTION_ID
+    from merge.merge_institution import process_institution
+
+    logger.debug(f'processing withdrawn ROR iD: {item["id"]}')
+    ror_id = ror_short_id(item["id"])
+    institution = db.session.query(Institution).filter_by(ror_id=ror_id).all()
+    if not institution or len(institution) != 1:
+        send_email(
+            "support@openalex.org",
+            "ROR update error",
+            f"error encountered when trying to update withdrawn ROR ID: {ror_id}",
+        )
+        return
+    old_institution_id = institution[0].id
+    successor = [
+        ror_short_id(rel["id"])
+        for rel in item.get("relationships", [])
+        if rel["type"] == "Successor"
+    ]
+    if len(successor) > 1:
+        send_email(
+            "support@openalex.org",
+            "ROR update error",
+            f"error encountered when trying to update withdrawn ROR ID: {ror_id} (more than 1 successor)",
+        )
+        return
+    elif len(successor) == 1:
+        new_ror_id = successor[0]
+        new_institution = (
+            db.session.query(Institution).filter_by(ror_id=new_ror_id).all()
+        )
+        if not new_institution or len(new_institution) != 1:
+            send_email(
+                "support@openalex.org",
+                "ROR update error",
+                f"error encountered when trying to update withdrawn ROR ID: {ror_id} (successor institution {new_ror_id} not found)",
+            )
+            return
+        new_institution_id = new_institution[0].id
+        msg = f"merging institution {old_institution_id} into successor institution {new_institution_id}"
+    else:
+        new_institution_id = DELETED_INSTITUTION_ID
+        msg = f"merging institution {old_institution_id} into DELETED_INSTITUTION_ID {DELETED_INSTITUTION_ID}"
+    if institution[0].merge_into_id and institution[0].merge_into_id == new_institution_id:
+        logger.debug(f'institution {old_institution_id} (ror_id: {ror_id}) has already been merged into institution {new_institution_id}')
+        return
+    else:
+        logger.debug(msg)
+        process_institution(old_institution_id, new_institution_id, null_ror_id=False)
+
+
 def main(args):
     most_recent_file_obj = get_most_recent_ror_dump_metadata()
     if most_recent_file_obj is None:
@@ -227,13 +294,15 @@ def main(args):
         logger.info(f"beginning to process {len(ror_data)} ROR records")
         num_processed = 0
         for item in ror_data:
-            if item.get('status') == 'withdrawn':
-                # skip this one
-                continue
+            if item.get("status") == "withdrawn":
+                handle_withdrawn(item)
             logger.debug(f"processing ROR ID: {item['id']}")
             process_one_org(item)
             num_processed += 1
-            if num_processed in [10, 50, 100, 500, 1000, 5000, 10000] or num_processed % 20000 == 0:
+            if (
+                num_processed in [10, 50, 100, 500, 1000, 5000, 10000]
+                or num_processed % 20000 == 0
+            ):
                 logger.info(f"{num_processed} processed so far")
         ror_update_log_db.finished_update_at = datetime.utcnow().isoformat()
     finally:
