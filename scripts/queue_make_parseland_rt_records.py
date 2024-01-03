@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import json
 import uuid
+from multiprocessing import Pool
 from time import sleep, time
 
 import requests
@@ -22,6 +23,32 @@ def _record_id(doi):
     return shortuuid.encode(
         uuid.UUID(bytes=hashlib.sha256(f'parseland:{doi}'.encode('utf-8')).digest()[0:16])
     )
+
+
+def _get_parseland_dict(work):
+    logger.info(f'making record for {work}')
+    try:
+        response = requests.get(_parseland_api_url(work['doi']), verify=False)
+        if response.ok:
+            response = response.json()['message']
+            authors = response.get('authors')
+            pl_record = Record(
+                id=_record_id(work['doi']),
+                record_type='crossref_parseland',
+                authors=authors and json.dumps(authors),
+                published_date=response.get('published_date'),
+                genre=response.get('genre'),
+                abstract=response.get('abstract'),
+                doi=work['doi'],
+                work_id=-1
+            )
+            return pl_record
+        else:
+            logger.error(f"no response for {work['doi']}")
+            return None
+    except:
+        logger.exception()
+        return None
 
 
 class QueueMakeParselandRTRecords:
@@ -48,30 +75,9 @@ class QueueMakeParselandRTRecords:
                 sleep(60)
                 continue
 
-            insert_values = []
-            for work in works:
-                logger.info(f'making record for {work}')
-                try:
-                    api_url = _parseland_api_url(work['doi'])
-                    response = requests.get(_parseland_api_url(work['doi']), verify=False)
-                    if response.ok:
-                        response = response.json()['message']
-                        authors = response.get('authors')
-                        pl_record = Record(
-                            id=_record_id(work['doi']),
-                            record_type='crossref_parseland',
-                            authors=authors and json.dumps(authors),
-                            published_date=response.get('published_date'),
-                            genre=response.get('genre'),
-                            abstract=response.get('abstract'),
-                            doi=work['doi'],
-                            work_id=-1
-                        )
-                        insert_values.append(pl_record)
-                    else:
-                        logger.error(f"no response for {work['doi']}")
-                except:
-                    logger.exception()
+            with Pool(5) as pool:
+                insert_values = pool.map(_get_parseland_dict, works)
+                insert_values = [v for v in insert_values if v]
 
             if insert_values:
                 db.session.bulk_save_objects(insert_values)
