@@ -21,4 +21,4 @@ fast_update_once_update_institutions: python -m scripts.fast_queue --entity=work
 fast_update_once_add_work_concepts: python -m scripts.fast_queue --entity=work --method=update_once_add_work_concepts --chunk=100
 fast_update_once_add_related_works: python -m scripts.fast_queue --entity=work --method=update_once_add_related_works --chunk=100
 
-run_once_make_parseland_records: python -m scripts.queue_make_parseland_rt_records --chunk=100
+run_once_make_parseland_records: python -m scripts.queue_make_parseland_rt_records --chunk=$PARSELAND_RT_CHUNK_SIZE
