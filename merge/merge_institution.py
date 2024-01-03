@@ -54,22 +54,34 @@ def merge_institutions(input_file, old_id, merge_into_id):
     logger.info("Done.")
 
 
-def process_institution(old_id, merge_into_id):
+def process_institution(old_id, merge_into_id, null_ror_id=True):
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info(f"Merging {old_id} into {merge_into_id}")
 
     # update mid.institution
-    logger.info(
-        f"Updating merge_into_id and merge_into_date for {old_id} into {merge_into_id}. Set ror_id to null."
-    )
-    merge_institution_sql = f"""
-                    UPDATE mid.institution
-                    SET merge_into_id = {merge_into_id},
-                        merge_into_date = '{current_datetime}',
-                        updated_date = '{current_datetime}',
-                        ror_id = null
-                    WHERE affiliation_id = {old_id}
-                """
+    if null_ror_id is True:
+        logger.info(
+            f"Updating merge_into_id and merge_into_date for {old_id} into {merge_into_id}. Set ror_id to null."
+        )
+        merge_institution_sql = f"""
+                        UPDATE mid.institution
+                        SET merge_into_id = {merge_into_id},
+                            merge_into_date = '{current_datetime}',
+                            updated_date = '{current_datetime}',
+                            ror_id = null
+                        WHERE affiliation_id = {old_id}
+                    """
+    else:
+        logger.info(
+            f"Updating merge_into_id and merge_into_date for {old_id} into {merge_into_id}."
+        )
+        merge_institution_sql = f"""
+                        UPDATE mid.institution
+                        SET merge_into_id = {merge_into_id},
+                            merge_into_date = '{current_datetime}',
+                            updated_date = '{current_datetime}'
+                        WHERE affiliation_id = {old_id}
+                    """
     response = db.engine.execute(merge_institution_sql)
     logger.info(f"Rows affected: {response.rowcount}")
 
@@ -111,6 +123,7 @@ def process_institution(old_id, merge_into_id):
     logger.info(f"Rows affected: {response.rowcount}")
 
     # update mid.affiliation_string_v2.affiliation_ids_override, replacing the old id with the new id
+    # TODO: This is too complicated. We should reevaluate.
     logger.info(
         f"Updating affiliation_string_v2 table (override) for {old_id} into {merge_into_id}"
     )
