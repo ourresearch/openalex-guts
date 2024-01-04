@@ -79,6 +79,20 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
+    def __init__(self, **kwargs):
+        super(Record, self).__init__(**kwargs)
+        self._remove_raw_marker()
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self._remove_raw_marker()
+
+    def _remove_raw_marker(self):
+        if self.authors:
+            authors = json.loads(self.authors)
+            authors = [a for a in authors if 'is_raw_record' not in a]
+            self.authors = json.dumps(authors)
+
     @property
     def score(self):
         if self.record_type == "crossref_doi":

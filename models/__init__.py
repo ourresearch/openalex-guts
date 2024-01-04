@@ -167,6 +167,14 @@ Record.journals = db.relationship(
     )
 )
 
+Record.parseland_record = db.relationship(
+    "Record",
+    lazy='selectin',
+    uselist=False,
+    viewonly=True,
+    primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'crossref_parseland', foreign(Record.doi) == remote(Record.doi))"
+)
+
 Source.merged_into_source = db.relationship(
     "Source",
     lazy='selectin',
