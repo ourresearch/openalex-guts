@@ -104,6 +104,7 @@ class Record(db.Model):
                 f'record {self.id} is of type {self.record_type} '
                 'and is matched to a primary record via an association table'
             )
+            self.work_id = -1
             return
         now = datetime.datetime.utcnow()
 
