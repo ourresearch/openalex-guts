@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import hashlib
 import json
 import uuid
@@ -40,7 +41,8 @@ def _get_parseland_dict(work):
                 genre=response.get('genre'),
                 abstract=response.get('abstract'),
                 doi=work['doi'],
-                work_id=-1
+                work_id=-1,
+                updated=datetime.datetime.utcnow().isoformat()
             )
             return pl_record
         else:
