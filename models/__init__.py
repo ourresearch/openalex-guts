@@ -175,6 +175,16 @@ Record.parseland_record = db.relationship(
     primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'crossref_parseland', foreign(Record.doi) == remote(Record.doi))"
 )
 
+Record.child_records = db.relationship(
+    'Record',
+    lazy='subquery',
+    viewonly=True,
+    uselist=True,
+    secondary="ins.recordthresher_parent_record",
+    primaryjoin="Record.id == RecordthresherParentRecord.parent_record_id",
+    secondaryjoin="and_(RecordthresherParentRecord.record_id == Record.id, Record.record_type == 'secondary_pmh_record')"
+)
+
 Source.merged_into_source = db.relationship(
     "Source",
     lazy='selectin',
