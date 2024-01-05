@@ -1497,6 +1497,24 @@ class Work(db.Model):
             "max": max_percentile
         }
 
+    @property
+    def indexed_in(self):
+        sources = []
+        for record in self.records_sorted:
+            if record.record_type == "crossref_doi":
+                sources.append("crossref")
+            if record.record_type == "pubmed_record":
+                sources.append("pubmed")
+            if record.record_type == "pmh_record" and record.pmh_id:
+                pmh_id_lower = record.pmh_id.lower()
+                if "oai:arxiv.org" in pmh_id_lower:
+                    sources.append("arxiv")
+                if "oai:doaj.org/" in pmh_id_lower:
+                    sources.append("doaj")
+                if "oai:hal:" in pmh_id_lower:
+                    sources.append("hal")
+        return sorted(list(set(sources)))
+
     def store(self):
         if not self.full_updated_date:
             return []
@@ -1923,6 +1941,7 @@ class Work(db.Model):
             "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
             "type": self.display_genre,
             "type_crossref": self.type_crossref,
+            "indexed_in": self.indexed_in,
             "open_access": {
                 "is_oa": is_oa,
                 "oa_status": oa_status,
