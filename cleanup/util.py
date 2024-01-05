@@ -165,11 +165,15 @@ def entities_by_ids(
     if params is None:
         params = {}
     params["per-page"] = chunksize
+    existing_filter = params.get("filter")
     for i in range(0, len(id_list), chunksize):
         chunk = id_list[i : i + chunksize]
         url = f"https://api.openalex.org/{api_endpoint}"
         chunk_str = "|".join(chunk)
-        params["filter"] = f"{filterkey}:{chunk_str}"
+        if existing_filter:
+            params["filter"] = existing_filter + f",{filterkey}:{chunk_str}"
+        else:
+            params["filter"] = f"{filterkey}:{chunk_str}"
         for r in paginate_openalex(url, params):
             yield r
 
