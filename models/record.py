@@ -13,7 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
 from util import normalize_title_like_sql
-
+from models.parseland_utils import merge_crossref_with_parseland
 
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
@@ -85,13 +85,20 @@ class Record(db.Model):
 
     @orm.reconstructor
     def init_on_load(self):
-        self._remove_raw_marker()
+        if self._remove_raw_marker() and self.parseland_record:
+            merge_crossref_with_parseland(self, self.parseland_record)
 
     def _remove_raw_marker(self):
+        removed_marker = False
         if self.authors:
             authors = json.loads(self.authors)
+            initial_len = len(authors)
             authors = [a for a in authors if 'is_raw_record' not in a]
+            final_len = len(authors)
+            if initial_len != final_len:
+                removed_marker = True
             self.authors = json.dumps(authors)
+        return removed_marker
 
     @property
     def score(self):
@@ -314,7 +321,7 @@ work_type_strings = """
     journal article,journal-article,Journal
     journal-article,journal-article,Journal
     meta-analysis,journal-article,Journal
-    article,journal-article,Journal
+    article,journal-article,Journac
     case reports,journal-article,Journal
     component,component,
     info:eu-repo/semantics/lecture,other,
@@ -338,6 +345,14 @@ class RecordFulltext(db.Model):
     recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
     _fulltext = db.Column('fulltext', db.Text)
     truncated_fulltext = db.column_property(func.substring(_fulltext, 1, 200000))
+
+
+class RecordthresherParentRecord(db.Model):
+    __table_args__ = {'schema': 'ins'}
+    __tablename__ = "recordthresher_parent_record"
+
+    record_id = db.Column(db.Text, primary_key=True)
+    parent_record_id = db.Column(db.Text, primary_key=True)
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
