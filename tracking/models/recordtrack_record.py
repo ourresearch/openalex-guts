@@ -84,6 +84,7 @@ class RecordTrack(db.Model):
             from redis import Redis
             from app import REDIS_QUEUE_URL
             from models import REDIS_WORK_QUEUE
+            event = RecordTrackEvent(recordtrack_record_id=self.id)
             _redis = Redis.from_url(REDIS_QUEUE_URL)
             redis_rank = _redis.zrank(REDIS_WORK_QUEUE, self.work_id)
             redis_total = _redis.zcard(REDIS_WORK_QUEUE)
