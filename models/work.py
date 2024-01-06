@@ -1511,8 +1511,6 @@ class Work(db.Model):
                     sources.append("arxiv")
                 if "oai:doaj.org/" in pmh_id_lower:
                     sources.append("doaj")
-                if "oai:hal:" in pmh_id_lower:
-                    sources.append("hal")
         return sorted(list(set(sources)))
 
     def store(self):
