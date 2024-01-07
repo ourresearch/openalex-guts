@@ -1080,7 +1080,13 @@ class Work(db.Model):
         if not self.records:
             return []
 
-        return sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
+        records = sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
+
+        # shouldn't be necessary but records have reconstructor undone sometimes
+        for record in records:
+            record.init_on_load()
+
+        return records
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
