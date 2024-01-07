@@ -140,7 +140,6 @@ def _parseland_record_dict(parseland_record):
     }
 
     pl_authors = json.loads(parseland_record.authors or '[]') or []
-    logger.info(f'got {len(pl_authors)} authors')
 
     for pl_author in pl_authors:
         author = {
