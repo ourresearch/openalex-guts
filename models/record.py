@@ -1,6 +1,6 @@
 from cached_property import cached_property
 from sqlalchemy import text
-from sqlalchemy import orm
+from sqlalchemy import orm, event
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import deferred
@@ -357,3 +357,8 @@ class RecordthresherParentRecord(db.Model):
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
+
+
+@event.listens_for(Record, 'refresh')
+def load_happened(target, context, attrs):
+    target.init_on_load()
