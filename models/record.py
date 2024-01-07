@@ -81,7 +81,8 @@ class Record(db.Model):
 
     def __init__(self, **kwargs):
         super(Record, self).__init__(**kwargs)
-        self._remove_raw_marker()
+        if self._remove_raw_marker() and self.parseland_record:
+            merge_crossref_with_parseland(self, self.parseland_record)
 
     @orm.reconstructor
     def init_on_load(self):
