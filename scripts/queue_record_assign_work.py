@@ -60,6 +60,7 @@ def run(**kwargs):
 
                 for p in possibly_colliding_records:
                     start = time()
+                    p.init_on_load()
                     p.process_record()
                     db.session.commit()
                     logger.info(f'did {p.id} in {elapsed(start, 2)} seconds')
