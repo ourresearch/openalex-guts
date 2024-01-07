@@ -4,10 +4,10 @@ import json
 import os
 import re
 from collections import defaultdict
+from enum import IntEnum
 from functools import cache
 from time import sleep
 from time import time
-from enum import IntEnum
 from typing import List
 
 import requests
@@ -1079,6 +1079,7 @@ class Work(db.Model):
     def records_sorted(self):
         if not self.records:
             return []
+
         return sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
 
     def set_fields_from_all_records(self):
