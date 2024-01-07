@@ -1074,21 +1074,17 @@ class Work(db.Model):
 
         return None
 
-    def get_records_sorted(self):
-        records = sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
-        # shouldn't be necessary but records have reconstructor undone sometimes
-        # records shared by works in previous batches may be cached and detached by commit?
-        for record in records:
-            record.init_on_load()
-
-        return records
-
-    @cached_property
+    @property
     def records_sorted(self):
         if not self.records:
             return []
 
-        return self.get_records_sorted()
+        records = sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
+        # shouldn't be necessary but records have reconstructor undone sometimes
+        for record in records:
+            record.init_on_load()
+
+        return records
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
