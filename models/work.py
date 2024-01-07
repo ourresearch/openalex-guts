@@ -1079,7 +1079,7 @@ class Work(db.Model):
     def records_sorted(self):
         if not self.records:
             return []
-        return sorted(self.records, key=lambda x: x.score, reverse=True)
+        return sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
