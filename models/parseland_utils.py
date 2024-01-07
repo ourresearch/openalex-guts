@@ -114,10 +114,10 @@ def _match_pl_author(crossref_author, crossref_author_idx, normalized_pl_authors
     for pl_author_idx, pl_author_name in enumerate(normalized_pl_authors):
         name_match_score = 0
 
-        if family and family in pl_author_name:
+        if family and pl_author_name and family in pl_author_name:
             name_match_score += 2
 
-        if given and given in pl_author_name:
+        if given and pl_author_name and given in pl_author_name:
             name_match_score += 1
 
         index_difference = abs(crossref_author_idx - pl_author_idx)
