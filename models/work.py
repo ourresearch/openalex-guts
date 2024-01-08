@@ -1469,6 +1469,13 @@ class Work(db.Model):
             .order_by(models.CitationPercentilesByYear.citation_count.asc()) \
             .first()
 
+        # sometimes cited_by_count is higher than the highest row in the table. In that case return highest row in table.
+        if higher_row is None:
+            higher_row = base_query.order_by(models.CitationPercentilesByYear.citation_count.desc()) \
+                .first()
+            if higher_row and higher_row.citation_count > citation_count:
+                higher_row = None
+
         if exact_row:
             return self.format_percentiles(exact_row.percentile, higher_row.percentile if higher_row else exact_row.percentile)
 
