@@ -1,2 +1,3 @@
 from .recordtrack_record import RecordTrack
 from .recordtrack_event import RecordTrackEvent
+from .recordtrack_event_hash import RecordTrackEventHash
