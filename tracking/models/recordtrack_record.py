@@ -7,7 +7,7 @@ from util import text_md5
 def existing_hash(hash: str):
     from . import RecordTrackEvent
 
-    results = db.session.query(RecordTrackEvent).filter_by(query_hash=hash).all()
+    results = db.session.query(RecordTrackEvent).filter_by(payload_hash=hash).all()
     return results
 
 
