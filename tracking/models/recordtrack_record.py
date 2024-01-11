@@ -58,7 +58,7 @@ class RecordTrack(db.Model):
             self.last_tracked_at = now
             if not self.work_id:
                 work_id = work_id_from_recordthresher_result(results)
-                if work_id:
+                if work_id and work_id > 0:
                     self.work_id = work_id
                     self.work_id_found = now
             db.session.commit()
