@@ -35,8 +35,8 @@ def get_and_save_embeddings(work):
 
 
 def text_too_short(text):
-    word_minimum = 5
-    character_minimum = 25
+    word_minimum = 3
+    character_minimum = 20
     if len(text.split()) < word_minimum or len(text) < character_minimum:
         return True
     else:
