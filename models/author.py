@@ -283,10 +283,13 @@ class Author(db.Model):
             [
                 (datetime.datetime.fromisoformat(affil.work.publication_date), affil)
                 for affil in self.affiliations
+                if affil.affiliation_id is not None and affil.work.merge_into_id is None
             ],
             key=lambda x: x[0],
             reverse=True,
         )
+        if not sorted_affiliations:
+            return []
         last_affil_ids = set()
         last_known_institutions = []
         max_dt = sorted_affiliations[0][0]
