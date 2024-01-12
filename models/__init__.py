@@ -27,6 +27,7 @@ from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitut
 from models.location import Location
 from models.mesh import Mesh
 from models.work_openapc import WorkOpenAPC
+from models.work_embedding import WorkEmbedding
 from models.work_sdg import WorkSDG
 from models.orcid import Orcid
 from models.publisher import Publisher
@@ -61,6 +62,7 @@ Work.related_works = db.relationship("WorkRelatedWork", lazy='selectin', backref
 Work.records = db.relationship("Record", lazy='selectin', backref="work")  # normally don't get, just for add_everything
 WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
+Work.embeddings = db.relationship("WorkEmbedding", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
