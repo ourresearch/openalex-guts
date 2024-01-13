@@ -199,7 +199,7 @@ Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
 Record.work_matches_by_title = db.relationship(
         'Work',
-        lazy='dynamic',
+        lazy='subquery',
         viewonly=True,
         uselist=True,
         # foreign_keys="Work.match_title",

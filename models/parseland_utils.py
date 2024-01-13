@@ -1,23 +1,90 @@
 import json
-from copy import deepcopy
 import re
-from app import logger
-from util import normalize
+from copy import deepcopy
+
 import math
+
+from util import normalize
 
 
 def merge_crossref_with_parseland(crossref_record, parseland_record):
+    from models import Record
+
+    if not crossref_record:
+        return None
+
     if not (
         crossref_record and crossref_record.record_type == 'crossref_doi'
         and parseland_record and parseland_record.record_type == 'crossref_parseland'
     ):
-        return None
+        return crossref_record
+
+    cloned_crossref_record = Record(
+        id=crossref_record.id,
+        updated=crossref_record.updated,
+
+        # ids
+        record_type=crossref_record.record_type,
+        doi=crossref_record.doi,
+        pmid=crossref_record.pmid,
+        pmh_id=crossref_record.pmh_id,
+        pmcid=crossref_record.pmcid,
+        arxiv_id=crossref_record.arxiv_id,
+
+        # metadata
+        title=crossref_record.title,
+        published_date=crossref_record.published_date,
+        genre=crossref_record.genre,
+        abstract=crossref_record.abstract,
+        mesh=crossref_record.mesh,
+        publisher=crossref_record.publisher,
+        normalized_book_publisher=crossref_record.normalized_book_publisher,
+        normalized_conference=crossref_record.normalized_conference,
+        institution_host=crossref_record.institution_host,
+        is_retracted=crossref_record.is_retracted,
+        volume=crossref_record.volume,
+        issue=crossref_record.issue,
+        first_page=crossref_record.first_page,
+        last_page=crossref_record.last_page,
+
+        # related tables
+        citations=crossref_record.citations,
+        authors=crossref_record.authors,
+
+        # source links
+        repository_id=crossref_record.repository_id,
+        # the journal_id in record is not the openalex journal ID
+        journal_issns=crossref_record.journal_issns,
+        journal_issn_l=crossref_record.journal_issn_l,
+        venue_name=crossref_record.venue_name,
+
+        # record data
+        record_webpage_url=crossref_record.record_webpage_url,
+        record_webpage_archive_url=crossref_record.record_webpage_archive_url,
+        record_structured_url=crossref_record.record_structured_url,
+        record_structured_archive_url=crossref_record.record_structured_archive_url,
+
+        # oa and urls
+        work_pdf_url=crossref_record.work_pdf_url,
+        work_pdf_archive_url=crossref_record.work_pdf_archive_url,
+        is_work_pdf_url_free_to_read=crossref_record.is_work_pdf_url_free_to_read,
+        is_oa=crossref_record.is_oa,
+        oa_date=crossref_record.oa_date,
+        open_license=crossref_record.open_license,
+        open_version=crossref_record.open_version,
+
+        normalized_title=crossref_record.normalized_title,
+        funders=crossref_record.funders,
+
+        # relationship to works is set in Work
+        work_id=crossref_record.work_id
+    )
 
     parseland_dict = _parseland_record_dict(parseland_record)
     pl_authors = parseland_dict.get('authors', [])
     normalized_pl_authors = [normalize(author.get('raw', '')) for author in pl_authors]
 
-    crossref_authors = json.loads(crossref_record.authors or '[]')
+    crossref_authors = json.loads(cloned_crossref_record.authors or '[]')
     for crossref_author_idx, crossref_author in enumerate(crossref_authors):
         best_match_idx = _match_pl_author(
             crossref_author,
@@ -34,8 +101,8 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
                 crossref_record.doi
             )
 
-    crossref_record.abstract = crossref_record.abstract or parseland_dict.get('abstract')
-    crossref_record.authors = json.dumps(crossref_authors)
+    cloned_crossref_record.abstract = crossref_record.abstract or parseland_dict.get('abstract')
+    cloned_crossref_record.authors = json.dumps(crossref_authors)
 
 
 def _reconcile_affiliations(crossref_author, pl_author, doi):
