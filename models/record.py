@@ -185,7 +185,7 @@ class Record(db.Model):
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.with_parseland_data.authors or self.with_parseland_data.authors == []:
+                    if not self.with_parseland_data or not self.with_parseland_data.authors or self.with_parseland_data.authors == []:
                         # is considered a match
                         matching_work = matching_work_temp
                         print(f"no authors for {self.id}, so considering it an author match")
