@@ -162,7 +162,7 @@ class Record(db.Model):
 
         # by title
         if not matching_work:
-            if matching_works := [w for w in self.work_matches_by_title if not w.merge_into_id]:
+            if matching_works := [w for w in self.work_matches_by_title.limit(50) if not w.merge_into_id]:
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
 
                 # just look at the first 20 matches

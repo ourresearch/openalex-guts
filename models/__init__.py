@@ -199,11 +199,12 @@ Record.unpaywall = db.relationship("Unpaywall", lazy='selectin', uselist=False)
 
 Record.work_matches_by_title = db.relationship(
         'Work',
-        lazy='subquery',
+        lazy='dynamic',
         viewonly=True,
         uselist=True,
         # foreign_keys="Work.match_title",
-        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 19, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))"
+        primaryjoin="and_(func.length(foreign(Record.normalized_title)) > 19, foreign(Record.normalized_title) == remote(Work.unpaywall_normalize_title))",
+        order_by='desc(remote(Work.full_updated_date))'
     )
 
 Record.work_matches_by_doi = db.relationship(
