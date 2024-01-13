@@ -1,6 +1,6 @@
 from cached_property import cached_property
 from sqlalchemy import text
-from sqlalchemy import orm, event
+from sqlalchemy import orm, event, and_, desc, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import deferred
@@ -14,6 +14,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from app import db
 from util import normalize_title_like_sql
 from models.parseland_utils import merge_crossref_with_parseland
+
 
 class Record(db.Model):
     __table_args__ = {'schema': 'ins'}
@@ -49,7 +50,6 @@ class Record(db.Model):
     # related tables
     citations = db.Column(db.Text)
     authors = db.Column(db.Text)
-    mesh = db.Column(db.Text)
 
     # source links
     repository_id = db.Column(db.Text)
@@ -79,27 +79,26 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
+    @cached_property
+    def with_parseland_data(self):
+        if self.parseland_record:
+            return merge_crossref_with_parseland(self, self.parseland_record)
+        else:
+            return self
+
     def __init__(self, **kwargs):
         super(Record, self).__init__(**kwargs)
-        if self._remove_raw_marker() and self.parseland_record:
-            merge_crossref_with_parseland(self, self.parseland_record)
+        self._remove_raw_marker()
 
     @orm.reconstructor
     def init_on_load(self):
-        if self._remove_raw_marker() and self.parseland_record:
-            merge_crossref_with_parseland(self, self.parseland_record)
+        self._remove_raw_marker()
 
     def _remove_raw_marker(self):
-        removed_marker = False
         if self.authors:
             authors = json.loads(self.authors)
-            initial_len = len(authors)
             authors = [a for a in authors if 'is_raw_record' not in a]
-            final_len = len(authors)
-            if initial_len != final_len:
-                removed_marker = True
             self.authors = json.dumps(authors)
-        return removed_marker
 
     @property
     def score(self):
@@ -162,7 +161,22 @@ class Record(db.Model):
 
         # by title
         if not matching_work:
-            if matching_works := [w for w in self.work_matches_by_title.limit(50) if not w.merge_into_id]:
+            # don't use self.work_matches_by_title because sometimes there are many matches and
+            # setting lazy='dynamic' to enable a limit here causes all properties of works to be loaded
+            work_matches_by_title = db.session.query(Work).options(
+                orm.Load(Work).joinedload(Work.affiliations).raiseload('*'),
+                orm.Load(Work).raiseload('*')
+            ).filter(
+                and_(
+                    self.normalized_title is not None,
+                    len(self.normalized_title) > 19,
+                    Work.unpaywall_normalize_title == self.normalized_title
+                )
+            ).order_by(
+                desc(Work.full_updated_date)
+            ).limit(50).all()
+
+            if matching_works := [w for w in work_matches_by_title if not w.merge_into_id]:
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
 
                 # just look at the first 20 matches
@@ -171,13 +185,13 @@ class Record(db.Model):
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.authors or self.authors == []:
+                    if not self.with_parseland_data.authors or self.with_parseland_data.authors == []:
                         # is considered a match
                         matching_work = matching_work_temp
                         print(f"no authors for {self.id}, so considering it an author match")
                         break
 
-                    if matching_work_temp.matches_authors_in_record(self.authors):
+                    if matching_work_temp.matches_authors_in_record(self.with_parseland_data.authors):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
                         break
