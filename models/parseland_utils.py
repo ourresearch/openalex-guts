@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import math
 
+from app import logger
 from util import normalize
 
 
@@ -19,6 +20,7 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
     ):
         return crossref_record
 
+    logger.info(f"merging record {crossref_record.id} with parseland record {parseland_record.id}")
     cloned_crossref_record = Record(
         id=crossref_record.id,
         updated=crossref_record.updated,
@@ -103,6 +105,8 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
 
     cloned_crossref_record.abstract = crossref_record.abstract or parseland_dict.get('abstract')
     cloned_crossref_record.authors = json.dumps(crossref_authors)
+
+    return cloned_crossref_record
 
 
 def _reconcile_affiliations(crossref_author, pl_author, doi):
