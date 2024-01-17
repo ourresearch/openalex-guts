@@ -558,7 +558,7 @@ class Work(db.Model):
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-        for record in self.records:
+        for record in self.records_merged:
             if record.record_type != "crossref_doi":
                 continue
 
@@ -660,7 +660,7 @@ class Work(db.Model):
     def add_abstract(self):
         self.abstract_indexed_abstract = None
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-        for record in self.records:
+        for record in self.records_merged:
             if record.abstract:
                 indexed_abstract = f_generate_inverted_index(record.abstract)
                 if len(indexed_abstract) >= 60000:
@@ -678,7 +678,7 @@ class Work(db.Model):
     def add_mesh(self):
         new_mesh = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-        for record in self.records:
+        for record in self.records_merged:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
                 mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
@@ -706,7 +706,7 @@ class Work(db.Model):
     def add_ids(self):
         arxiv_repository_id = "ca8f8d56758a80a4f86"
         already_found_pmid = False
-        for record in self.records:
+        for record in self.records_merged:
             # pmid
             if record.pmid and (already_found_pmid is False):
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -800,7 +800,7 @@ class Work(db.Model):
         self.citation_paper_ids = []
 
         reference_source_num = 0
-        for record in self.records:
+        for record in self.records_merged:
             if record.citations:
                 new_references_unmatched = []
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -1076,10 +1076,17 @@ class Work(db.Model):
 
     @cached_property
     def records_sorted(self):
-        if not self.records:
+        if not self.records_merged:
             return []
 
-        return sorted([r for r in self.records if r.is_primary_record()], key=lambda x: x.score, reverse=True) or []
+        return sorted([
+            r for r in self.records_merged if r.is_primary_record()],
+            key=lambda x: x.score, reverse=True
+        ) or []
+
+    @property
+    def records_merged(self):
+        return [r.with_parseland_data for r in self.records or [] if r.with_parseland_data]
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
@@ -1668,7 +1675,7 @@ class Work(db.Model):
                 journal_id_match = loc
             elif loc.host_type == "publisher" and not publisher_host_type_match:
                 publisher_host_type_match = loc
-            elif not self.records and not legacy_mag_match:
+            elif not self.records_merged and not legacy_mag_match:
                 legacy_mag_match = loc
 
         return journal_id_match or publisher_host_type_match or legacy_mag_match
@@ -1786,7 +1793,7 @@ class Work(db.Model):
                 if other_location_dict['landing_page_url']:
                     seen_urls.add(other_location_dict['landing_page_url'])
 
-                if not self.records and self.journal:
+                if not self.records_merged and self.journal:
                     # mag location, assume it came from the work's mag journal
                     other_location_dict['source'] = self.journal.to_dict(return_level='minimum')
 
@@ -1896,7 +1903,7 @@ class Work(db.Model):
     @cached_property
     def record_fulltext(self):
         # currently this fulltext comes from parsed PDFs
-        for record in self.records:
+        for record in self.records_merged:
             if record.record_type == "crossref_doi" and record.fulltext and record.fulltext.truncated_fulltext:
                 clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext.truncated_fulltext)
                 clean_fulltext = ' '.join(clean_fulltext.split())
