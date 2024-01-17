@@ -25,6 +25,6 @@ def work_id_from_recordthresher_result(r: List[Row]) -> Union[int, None]:
     if not r:
         return None
     for row in r:
-        if row["work_id"]:
+        if row["work_id"] and row["work_id"] > 0:
             return row["work_id"]
     return None
