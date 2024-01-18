@@ -1609,6 +1609,9 @@ class Work(db.Model):
             my_dict.pop('abstract', None)
             my_dict["abstract_inverted_index"] = None
 
+        if self.embeddings:
+            my_dict["vector_embedding"] = self.embeddings and self.embeddings.embedding
+
         entity_hash = entity_md5(my_dict)
 
         if work_has_null_author_ids(my_dict):
