@@ -96,6 +96,10 @@ from models.ror import (
 )
 from sqlalchemy import text
 
+# Sentry for error logging
+import sentry_sdk
+sentry_sdk.init(dsn=os.environ.get("SENTRY_DSN"))
+
 
 def get_most_recent_ror_dump_metadata():
     # https://ror.readme.io/docs/data-dump#download-ror-data-dumps-programmatically-with-the-zenodo-api
