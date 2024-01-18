@@ -57,6 +57,5 @@ SQLAlchemy==1.4.17
 sqlalchemy-redshift==0.8.9
 unicodecsv==0.14.1
 Unidecode==1.2.0
-urllib3==1.26.7
 verboselogs==1.7
 Werkzeug==2.0.1
