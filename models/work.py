@@ -1600,9 +1600,6 @@ class Work(db.Model):
         else:
             my_dict['has_fulltext'] = False
 
-        if self.embeddings:
-            my_dict['embeddings'] = self.embeddings and self.embeddings.embedding
-
         if len(my_dict.get('authorships', [])) > 100:
             my_dict['authorships_full'] = my_dict.get('authorships', [])
             my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
