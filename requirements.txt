@@ -49,6 +49,7 @@ requests==2.26.0
 requests-cache[redis]==1.0.1
 rsa==4.7.2
 s3-concat==0.2.3
+sentry-sdk==1.31.0
 shortuuid==1.0.1
 simplejson==3.3.1
 six==1.16.0
