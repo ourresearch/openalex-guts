@@ -1,17 +1,19 @@
 import requests
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Float
 
 from app import db, logger, ELASTIC_URL
 
 
 class WorkEmbedding(db.Model):
     """
-    This model stores the sparse vector embeddings that power semantic search.
+    This model stores the dense vector embeddings that power semantic search.
     """
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "work_embedding"
+    __tablename__ = "work_vector_embedding"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    embeddings = db.Column(db.JSON)
+    embedding = db.Column(ARRAY(Float))
 
 
 def get_and_save_embeddings(work):
@@ -28,14 +30,14 @@ def get_and_save_embeddings(work):
     response = call_embeddings_api(text_to_process)
 
     if response.status_code == 200:
-        result = response.json()["predicted_value"]
+        result = get_embeddings_from_response(response)
         save_embeddings_to_db(work.id, result)
     else:
         logger.warn(f"error processing title embeddings for {work.id} - other than 200 response from classifier")
 
 
 def text_too_short(text):
-    word_minimum = 3
+    word_minimum = 2
     character_minimum = 20
     if len(text.split()) < word_minimum or len(text) < character_minimum:
         return True
@@ -45,12 +47,17 @@ def text_too_short(text):
 
 def call_embeddings_api(text):
     """
-    Use the ELSER v2 model from elasticsearch to create embeddings.
+    Use the minilm-l12-v2 model to create embeddings.
     """
-    url = f"{ELASTIC_URL}/_inference/sparse_embedding/.elser_model_2_linux-x86_64"
-    data = {"input": text}
+    url = f"{ELASTIC_URL}/_ml/trained_models/sentence-transformers__all-minilm-l12-v2/_infer"
+    data = {"docs": [{"text_field": text}]}
     response = requests.post(url, json=data)
     return response
+
+
+def get_embeddings_from_response(response):
+    result = response.json()["inference_results"][0]["predicted_value"]
+    return result
 
 
 def save_embeddings_to_db(paper_id, result):
@@ -59,7 +66,7 @@ def save_embeddings_to_db(paper_id, result):
     if existing_record:
         existing_record.embeddings = result
     else:
-        new_record = WorkEmbedding(paper_id=paper_id, embeddings=result)
+        new_record = WorkEmbedding(paper_id=paper_id, embedding=result)
         db.session.add(new_record)
 
     db.session.commit()

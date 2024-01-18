@@ -21,7 +21,7 @@ def process_embeddings(work):
     print(f"Processing {work.id}")
     get_and_save_embeddings(work)
     db.session.execute('''
-                    UPDATE queue.run_once_work_process_embeddings 
+                    UPDATE queue.run_once_work_process_vector_embeddings 
                     SET finished = NOW() 
                     WHERE work_id = :work_id
                 ''', {'work_id': work.id})
@@ -41,7 +41,7 @@ class QueueWorkProcessEmbeddings:
         if single_id:
             work = QueueWorkProcessEmbeddings.fetch_works([single_id])[0]
             db.session.execute('''
-                UPDATE queue.run_once_work_process_embeddings
+                UPDATE queue.run_once_work_process_vector_embeddings
                 SET started = NOW() 
                 WHERE work_id = :work_id
             ''', {'work_id': single_id})
@@ -71,7 +71,7 @@ class QueueWorkProcessEmbeddings:
                         continue
 
                 db.session.execute('''
-                    UPDATE queue.run_once_work_process_embeddings
+                    UPDATE queue.run_once_work_process_vector_embeddings
                     SET finished = NOW() 
                     WHERE work_id = any(:work_ids)
                 ''', {'work_ids': work_ids})
@@ -91,7 +91,7 @@ class QueueWorkProcessEmbeddings:
         with db.engine.begin() as connection:
             queue_query = text(f"""
                 SELECT work_id
-                FROM queue.run_once_work_process_embeddings
+                FROM queue.run_once_work_process_vector_embeddings
                 WHERE started IS NULL
                 LIMIT :chunk
                 FOR UPDATE SKIP LOCKED
@@ -101,7 +101,7 @@ class QueueWorkProcessEmbeddings:
 
             # Immediately mark the fetched IDs as started within the same transaction
             connection.execute("""
-                UPDATE queue.run_once_work_process_embeddings
+                UPDATE queue.run_once_work_process_vector_embeddings
                 SET started = NOW() 
                 WHERE work_id = ANY(%(id_list)s)
             """, {'id_list': id_list})
