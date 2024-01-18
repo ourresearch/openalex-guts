@@ -1424,7 +1424,7 @@ class Work(db.Model):
     @property
     def sustainable_development_goals(self):
         formatted_sdgs = []
-        threshold = 0.1
+        threshold = 0.4
         if self.sdg and self.sdg.predictions:
             for sdg_prediction in self.sdg.predictions:
                 score = sdg_prediction.get("prediction")
