@@ -1432,6 +1432,15 @@ class Work(db.Model):
                 if score and sdg and score > threshold:
                     # validate sdg fields exist
                     if sdg.get("id") and sdg.get("name"):
+
+                        # override some names
+                        if sdg.get("name") == "Peace, Justice and strong institutions":
+                            sdg["name"] = "Peace, justice, and strong institutions"
+                        elif sdg.get("name") == "Quality Education":
+                            sdg["name"] = "Quality education"
+                        elif sdg.get("name") == "Life in Land":
+                            sdg["name"] = "Life on land"
+
                         formatted_sdgs.append(
                             {
                                 "id": sdg.get("id"),
