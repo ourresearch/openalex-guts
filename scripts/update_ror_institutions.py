@@ -95,9 +95,11 @@ from models.ror import (
     RorUpdates,
 )
 from sqlalchemy import text
+from sqlalchemy.orm import Load
 
 # Sentry for error logging
 import sentry_sdk
+
 sentry_sdk.init(dsn=os.environ.get("SENTRY_DSN"))
 
 
@@ -202,7 +204,12 @@ def handle_withdrawn(item):
 
     logger.debug(f'processing withdrawn ROR iD: {item["id"]}')
     ror_id = ror_short_id(item["id"])
-    institution = db.session.query(Institution).filter_by(ror_id=ror_id).all()
+    institution = (
+        db.session.query(Institution)
+        .options(Load(Institution).lazyload("*"))
+        .filter_by(ror_id=ror_id)
+        .all()
+    )
     if not institution or len(institution) != 1:
         send_email(
             "support@openalex.org",
@@ -226,7 +233,10 @@ def handle_withdrawn(item):
     elif len(successor) == 1:
         new_ror_id = successor[0]
         new_institution = (
-            db.session.query(Institution).filter_by(ror_id=new_ror_id).all()
+            db.session.query(Institution)
+            .options(Load(Institution).lazyload("*"))  # if we don't have this then it might take a very long time
+            .filter_by(ror_id=new_ror_id)
+            .all()
         )
         if not new_institution or len(new_institution) != 1:
             send_email(
@@ -240,8 +250,13 @@ def handle_withdrawn(item):
     else:
         new_institution_id = DELETED_INSTITUTION_ID
         msg = f"merging institution {old_institution_id} into DELETED_INSTITUTION_ID {DELETED_INSTITUTION_ID}"
-    if institution[0].merge_into_id and institution[0].merge_into_id == new_institution_id:
-        logger.debug(f'institution {old_institution_id} (ror_id: {ror_id}) has already been merged into institution {new_institution_id}')
+    if (
+        institution[0].merge_into_id
+        and institution[0].merge_into_id == new_institution_id
+    ):
+        logger.debug(
+            f"institution {old_institution_id} (ror_id: {ror_id}) has already been merged into institution {new_institution_id}"
+        )
         return
     else:
         logger.debug(msg)
