@@ -94,7 +94,7 @@ def create_search_query(index_name, d, search_after=None):
     page_size = 1000
     s = Search(using=es, index=index_name).query("term", updated_date=d)
     s = s.sort(*["-cited_by_count", "id"])
-    s = s.source(excludes=['_source', 'embeddings', 'fulltext', 'abstract', 'version', '@version', '@timestamp'])
+    s = s.source(excludes=['_source', 'embeddings', 'fulltext', 'abstract', 'vector_embedding', 'version', '@version', '@timestamp'])
     if search_after:
         s = s.extra(size=page_size, search_after=search_after)
     else:
