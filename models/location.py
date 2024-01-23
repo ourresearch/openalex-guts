@@ -88,6 +88,9 @@ class Location(db.Model):
     def display_license(self):
         if not self.license:
             return None
+        if 'publisher-specific, author manuscript' in self.license.lower():
+            # manual override; this should affect only a few works, and this whole table should be deprecated soon
+            return 'publisher-specific-oa'
         return self.license.lower().split(":", 1)[0]
 
     @property
