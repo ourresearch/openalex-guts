@@ -382,21 +382,14 @@ class Work(db.Model):
                             affiliation.original_orcid = orcid
 
     def concept_api_input_data(self):
-        abstract_dict = None
-        # for when abstract was added and not included in table yet
-        if hasattr(self, "abstract_indexed_abstract"):
-            abstract_dict = self.abstract_indexed_abstract
-        elif self.abstract:
-            abstract_dict = self.abstract.indexed_abstract
-
-        has_abstract = True if abstract_dict else False
+        abstract = self.abstract.abstract if self.abstract else None
 
         return {
             "title": self.work_title.lower() if self.work_title else None,
             "doc_type": self.doc_type,
             "journal": self.journal.display_name.lower() if self.journal else None,
-            "abstract": abstract_dict,
-            "inverted_abstract": has_abstract,
+            "abstract": abstract,
+            "inverted_abstract": False,
             "paper_id": self.paper_id
         }
 
