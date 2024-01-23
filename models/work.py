@@ -966,7 +966,7 @@ class Work(db.Model):
 
         if not self.created_date:
             self.created_date = datetime.datetime.utcnow().isoformat()
-        self.original_title = record.title[:60000] if record.title else None
+        self.original_title = record.title[:60000] if record.title else self.original_title
         self.paper_title = normalize_simple(self.original_title, remove_articles=False, remove_spaces=False)
         self.unpaywall_normalize_title = record.normalized_title[:60000] if record.normalized_title else None
         self.updated_date = datetime.datetime.utcnow().isoformat()
