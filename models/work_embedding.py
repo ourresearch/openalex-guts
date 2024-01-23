@@ -1,8 +1,9 @@
 import requests
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import Float
+from elasticsearch import Elasticsearch, helpers
 
-from app import db, logger, ELASTIC_URL
+from app import db, logger, ELASTIC_URL, ELASTIC_EMBEDDINGS_URL
 
 
 class WorkEmbedding(db.Model):
@@ -70,3 +71,25 @@ def save_embeddings_to_db(paper_id, result):
         db.session.add(new_record)
 
     db.session.commit()
+
+
+def generate_actions(works):
+    for work in works:
+        if work.embeddings and work.embeddings.embedding:
+            action = {
+                "_index": "work-vectors-v1",
+                "_id": work.openalex_id,
+                "_source": {
+                    "id": work.openalex_id,
+                    "display_name": work.work_title,
+                    "cited_by_count": work.counts.citation_count if work.counts else 0,
+                    "vector_embedding": work.embeddings.embedding
+                }
+            }
+            yield action
+
+
+def store_embeddings(works):
+    es = Elasticsearch(ELASTIC_EMBEDDINGS_URL)
+    actions = generate_actions(works)
+    helpers.bulk(es, actions)
