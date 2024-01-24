@@ -1,6 +1,4 @@
 import requests
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy import Float
 from elasticsearch import Elasticsearch, helpers
 
 from app import db, logger, ELASTIC_URL, ELASTIC_EMBEDDINGS_URL
@@ -11,10 +9,10 @@ class WorkEmbedding(db.Model):
     This model stores the dense vector embeddings that power semantic search.
     """
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "work_vector_embedding"
+    __tablename__ = "work_embedding"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    embedding = db.Column(ARRAY(Float))
+    embeddings = db.Column(db.JSON)
 
 
 def get_and_save_embeddings(work):
@@ -75,7 +73,7 @@ def save_embeddings_to_db(paper_id, result):
 
 def generate_actions(works):
     for work in works:
-        if work.embeddings and work.embeddings.embedding:
+        if work.embeddings and work.embeddings.embeddings:
             action = {
                 "_index": "work-vectors-v1",
                 "_id": work.openalex_id,
@@ -83,7 +81,7 @@ def generate_actions(works):
                     "id": work.openalex_id,
                     "display_name": work.work_title,
                     "cited_by_count": work.counts.citation_count if work.counts else 0,
-                    "vector_embedding": work.embeddings.embedding
+                    "embeddings": work.embeddings.embeddings
                 }
             }
             yield action
