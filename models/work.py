@@ -1837,8 +1837,12 @@ class Work(db.Model):
             locations.append(lastchance_location)
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
+        # ! Note that this does name matching of sources, which is problematic. I'm too nervous to change it now because I don't know how many works it will affect, so I'm just hard-coding manual exceptions.
+        source_match_exceptions = ['Zoonoses']
         if locations and locations[0]['source'] is None and self.safety_journals:
-            locations[0]['source'] = self.safety_journals[0].to_dict(return_level='minimum')
+            source_match = self.safety_journals[0].to_dict(return_level='minimum')
+            if source_match and source_match['display_name'] not in source_match_exceptions:
+                locations[0]['source'] = source_match
 
         locations = override_location_sources(locations)
         for loc in locations:
