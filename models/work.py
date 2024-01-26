@@ -25,7 +25,6 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
-from models.topic import is_valid_topic_id
 from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5
 from util import clean_html
