@@ -42,6 +42,9 @@ from models.summary_stats import InstitutionImpactFactor, InstitutionHIndex, Ins
 from models.summary_stats import PublisherImpactFactor, PublisherHIndex, PublisherI10Index, PublisherI10Index2Year
 from models.summary_stats import SourceImpactFactor, SourceHIndex, SourceI10Index, SourceI10Index2Year, SourceHIndex2Year
 from models.topic import Topic
+from models.subfield import Subfield
+from models.field import Field
+from models.domain import Domain
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
@@ -79,6 +82,9 @@ Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, dele
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution", lazy='selectin') #don't delete orphan
 
+Topic.subfields = db.relationship("Subfield", lazy='selectin', backref="topics", uselist=False)
+Topic.fields = db.relationship("Field", lazy='selectin', backref="topics", uselist=False)
+Topic.domains = db.relationship("Domain", lazy='selectin', backref="topics", uselist=False)
 Institution.ror = db.relationship("Ror", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author", cascade="all, delete-orphan")
 AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
@@ -241,7 +247,6 @@ Record.work_matches_by_arxiv_id = db.relationship(
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
-Topic.stored = db.relationship("JsonTopics", lazy='selectin', uselist=False, viewonly=True)
 Source.stored = db.relationship("JsonSources", lazy='selectin', uselist=False, viewonly=True)
 Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
 Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
@@ -340,7 +345,7 @@ def single_work_query():
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
-         selectinload(Work.topics).selectinload(WorkTopic.topic),
+         selectinload(Work.topics).selectinload(WorkTopic.topic).selectinload(Topic.subfield),
          orm.Load(Work).raiseload('*'))
 
 def work_from_id(work_id):

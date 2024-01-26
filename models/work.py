@@ -210,7 +210,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
-    topics_input_hash = db.Column(db.Text)
+    # topics_input_hash = db.Column(db.Text)
     previous_years = db.Column(ARRAY(db.Numeric))
 
     doi_lower = db.Column(db.Text)
@@ -417,14 +417,14 @@ class Work(db.Model):
         ).hexdigest()
     
     def add_work_topics(self):
-        current_topics_input_hash = self.get_topics_input_hash()
-        if self.topics_input_hash == '-1':
-            logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
-            self.topics_input_hash = current_topics_input_hash
-            return
-        if self.topics_input_hash == current_topics_input_hash:
-            logger.info('skipping topic classification because inputs are unchanged')
-            return
+        # current_topics_input_hash = self.get_topics_input_hash()
+        # if self.topics_input_hash == '-1':
+        #     logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
+        #     self.topics_input_hash = current_topics_input_hash
+        #     return
+        # if self.topics_input_hash == current_topics_input_hash:
+        #     logger.info('skipping topic classification because inputs are unchanged')
+        #     return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -447,9 +447,10 @@ class Work(db.Model):
             if r.status_code == 200:
                 try:
                     response_json = r.json()
-                    data = response_json[0]
-                    topic_ids = [i['topic_id'] for i in data]
-                    topic_scores = [i['topic_score'] for i in data]
+                    resp_data = response_json[0]
+                    print(data)
+                    topic_ids = [i['topic_id'] for i in resp_data]
+                    topic_scores = [i['topic_score'] for i in resp_data]
                     keep_calling = False
                 except Exception as e:
                     logger.error(f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
@@ -478,7 +479,7 @@ class Work(db.Model):
                 for i, (topic_id, topic_score) in enumerate(zip(topic_ids, 
                                                                 topic_scores)):
 
-                    if topic_id and is_valid_toic_id(topic_id):
+                    if topic_id and is_valid_topic_id(topic_id):
                         new_work_topic = models.WorkTopic(
                             topic_id=topic_id,
                             score=topic_score,
@@ -490,7 +491,7 @@ class Work(db.Model):
 
                         self.topics_for_related_works.append(topic_id)
 
-            self.topics_input_hash = current_topics_input_hash
+            # self.topics_input_hash = current_topics_input_hash
 
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
@@ -611,11 +612,13 @@ class Work(db.Model):
         start_time = time()
         self.add_references()  # must be before affiliations
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
-
+        print('HAHA')
         if not skip_concepts_and_related_works:
             start_time = time()
             self.add_work_concepts()
             logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
+
+            print('HAHA2')
 
             start_time = time()
             self.add_work_topicss()
@@ -1365,6 +1368,18 @@ class Work(db.Model):
     @property
     def topics_sorted(self):
         return sorted(self.topics, key=lambda x: x.score, reverse=True)
+
+    @property
+    def subfields_sorted(self):
+        return sorted(self.subfields, key=lambda x: x['id'], reverse=False)
+    
+    @property
+    def fields_sorted(self):
+        return sorted(self.fields, key=lambda x: x['id'], reverse=False)
+    
+    @property
+    def domains_sorted(self):
+        return sorted(self.domains, key=lambda x: x['id'], reverse=False)
     
     @property
     def locations_sorted(self):
@@ -2106,6 +2121,15 @@ class Work(db.Model):
                         "award_id": None
                     })
 
+            # getting full dict for topic, subfield, field, domain
+            topics_fields_subfields_domains = [topic.to_dict("minimum") for topic in self.topics_sorted]
+            self.subfields = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['subfield']['id'], 'display_name': x['subfield']['display_name']} 
+                                                                for x in topics_fields_subfields_domains]}]
+            self.fields = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['field']['id'], 'display_name': x['field']['display_name']} 
+                                                                for x in topics_fields_subfields_domains]}]
+            self.domains = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['domain']['id'], 'display_name': x['domain']['display_name']} 
+                                                                for x in topics_fields_subfields_domains]}]
+            
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
@@ -2122,6 +2146,10 @@ class Work(db.Model):
                 "is_retracted": self.is_retracted,
                 "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+                "topics": [{'id':x['id'], 'display_name': x['display_name'], 'score': x['score']} for x in topics_fields_subfields_domains],
+                "subfields": self.subfields_sorted,
+                "fields": self.fields_sorted,
+                "domains": self.domains_sorted,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
@@ -2135,11 +2163,7 @@ class Work(db.Model):
                 "cited_by_percentile_year": self.cited_by_percentile_year,
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
             })
-
-            # "topics": [topic.to_dict("minimum") for topic in self.topics_sorted],
-            # also add subfield, field, domain
-            print([topic.to_dict("minimum") for topic in self.topics_sorted])
-            print([concept.to_dict("minimum") for concept in self.concepts_sorted])
+            
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
                 if self.is_closed_springer:

@@ -55,49 +55,6 @@ class Topic(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
-    # @cached_property
-    # def ancestors_raw(self):
-    #     q = """
-    #     WITH RECURSIVE leaf (child_field_of_study_id, child_field, child_level, field_of_study_id, parent_field, parent_level) AS (
-    #     SELECT  linking.child_field_of_study_id,
-    #             child_fields.display_name as child_field,
-    #             child_fields.level as child_level,
-    #             linking.field_of_study_id,
-    #             parent_fields.display_name as parent_field,
-    #             parent_fields.level as parent_level
-    #     FROM    legacy.mag_advanced_field_of_study_children linking
-    #     JOIN    legacy.mag_advanced_fields_of_study child_fields on child_fields.field_of_study_id=linking.child_field_of_study_id
-    #     JOIN    legacy.mag_advanced_fields_of_study parent_fields on parent_fields.field_of_study_id=linking.field_of_study_id
-    #     WHERE   child_field_of_study_id = :concept_id
-    #     UNION ALL
-    #     SELECT  linking2.child_field_of_study_id,
-    #             child_fields2.display_name as child_field,
-    #             child_fields2.level as child_level,
-    #             linking2.field_of_study_id,
-    #             parent_fields2.display_name as parent_field,
-    #             parent_fields2.level as parent_level
-    #     FROM    legacy.mag_advanced_field_of_study_children linking2
-    #     JOIN    legacy.mag_advanced_fields_of_study child_fields2 on child_fields2.field_of_study_id=linking2.child_field_of_study_id
-    #     JOIN    legacy.mag_advanced_fields_of_study parent_fields2 on parent_fields2.field_of_study_id=linking2.field_of_study_id
-
-    #     INNER JOIN leaf l
-    #     On l.field_of_study_id = linking2.child_field_of_study_id
-    #     )
-    #     SELECT distinct child_field_of_study_id as id, child_field as name, child_level as level, field_of_study_id as ancestor_id, parent_field as ancestor_name, parent_level as ancestor_level FROM leaf
-
-    #     """
-    #     rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
-    #     return rows
-
-    # @cached_property
-    # def ancestors(self):
-    #     rows = self.ancestors_raw
-    #     row_dict = {row["ancestor_id"]: row for row in rows}
-    #     ancestors = [{"id": as_concept_openalex_id(row["ancestor_id"]),
-    #                 "display_name": row["ancestor_name"],
-    #                 "level": row["ancestor_level"]} for row in row_dict.values()]
-    #     ancestors = sorted(ancestors, key=lambda x: (x["level"], x["display_name"]), reverse=True)
-    #     return ancestors
 
     # @cached_property
     # def extended_attributes(self):
@@ -350,35 +307,35 @@ class Topic(db.Model):
     #     response = response_json.replace('\\"', '*')
     #     return response
 
-    def store(self):
-        bulk_actions = []
+    # def store(self):
+    #     bulk_actions = []
 
-        my_dict = self.to_dict()
-        my_dict['updated'] = my_dict.get('updated_date')
-        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
-        my_dict['@version'] = 1
-        entity_hash = entity_md5(my_dict)
-        old_entity_hash = self.json_entity_hash and self.json_entity_hash.json_entity_hash
+    #     my_dict = self.to_dict()
+    #     my_dict['updated'] = my_dict.get('updated_date')
+    #     my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
+    #     my_dict['@version'] = 1
+    #     entity_hash = entity_md5(my_dict)
+    #     old_entity_hash = self.json_entity_hash and self.json_entity_hash.json_entity_hash
 
-        if entity_hash != old_entity_hash:
-            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
-            index_record = {
-                "_op_type": "index",
-                "_index": "topics-v1",
-                "_id": self.openalex_id,
-                "_source": my_dict
-            }
-            bulk_actions.append(index_record)
-        else:
-            logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+    #     if entity_hash != old_entity_hash:
+    #         logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+    #         index_record = {
+    #             "_op_type": "index",
+    #             "_index": "topics-v1",
+    #             "_id": self.openalex_id,
+    #             "_source": my_dict
+    #         }
+    #         bulk_actions.append(index_record)
+    #     else:
+    #         logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
 
-        db.session.merge(
-            ConceptJsonEntityHash(
-                topic_id=self.topic_id,
-                json_entity_hash=entity_hash
-            )
-        )
-        return bulk_actions
+    #     db.session.merge(
+    #         TopicJsonEntityHash(
+    #             topic_id=self.topic_id,
+    #             json_entity_hash=entity_hash
+    #         )
+    #     )
+    #     return bulk_actions
 
     # def clean_metadata(self):
     #     if not self.metadata:
@@ -439,41 +396,42 @@ class Topic(db.Model):
     #     non_null_ancestors = [ancestor for ancestor in self.ancestors if ancestor and ancestor.my_ancestor]
     #     return sorted(non_null_ancestors, key=lambda x: (-1 * x.my_ancestor.level, x.my_ancestor.display_name), reverse=False)
 
-    @cached_property
-    def display_counts_by_year(self):
-        response_dict = {}
-        all_rows = self.counts_by_year
-        for count_row in all_rows:
-            response_dict[count_row.year] = {
-                "year": count_row.year,
-                "works_count": 0,
-                "oa_works_count": 0,
-                "cited_by_count": 0
-            }
-        for count_row in all_rows:
-            if count_row.type == "citation_count":
-                response_dict[count_row.year]["cited_by_count"] = int(count_row.n)
-            elif count_row.type == "oa_paper_count":
-                response_dict[count_row.year]["oa_works_count"] = int(count_row.n)
-            else:
-                response_dict[count_row.year]["works_count"] = int(count_row.n)
+    # @cached_property
+    # def display_counts_by_year(self):
+    #     response_dict = {}
+    #     all_rows = self.counts_by_year
+    #     for count_row in all_rows:
+    #         response_dict[count_row.year] = {
+    #             "year": count_row.year,
+    #             "works_count": 0,
+    #             "oa_works_count": 0,
+    #             "cited_by_count": 0
+    #         }
+    #     for count_row in all_rows:
+    #         if count_row.type == "citation_count":
+    #             response_dict[count_row.year]["cited_by_count"] = int(count_row.n)
+    #         elif count_row.type == "oa_paper_count":
+    #             response_dict[count_row.year]["oa_works_count"] = int(count_row.n)
+    #         else:
+    #             response_dict[count_row.year]["works_count"] = int(count_row.n)
 
-        my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
-        response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
-        return response
+    #     my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
+    #     response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
+    #     return response
 
-    def oa_percent(self):
-        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
-            return 0
+    # def oa_percent(self):
+    #     if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
+    #         return 0
 
-        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
+    #     return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "wikidata": self.wikidata_id,
             "display_name": self.display_name,
-            "level": self.level,
+            "subfield": self.subfields.to_dict("minimal"),
+            "field": self.fields.to_dict("minimal"),
+            "domain": self.domains.to_dict("minimal")
         }
         if return_level == "full":
             response.update({
@@ -533,15 +491,15 @@ def is_valid_topic_id(topic_id):
     return topic_id and topic_id in _valid_topic_ids
 
 
-class TopicJsonEntityHash(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "topic_json_entity_hash"
+# class TopicJsonEntityHash(db.Model):
+#     __table_args__ = {'schema': 'mid'}
+#     __tablename__ = "topic_json_entity_hash"
 
-    topic_id = db.Column(
-        db.Integer, db.ForeignKey("mid.topics"), primary_key=True)
-    json_entity_hash = db.Column(db.Text)
+#     topic_id = db.Column(
+#         db.Integer, db.ForeignKey("mid.topics"), primary_key=True)
+#     json_entity_hash = db.Column(db.Text)
 
 
-Topic.json_entity_hash = db.relationship(
-    TopicJsonEntityHash, lazy='selectin', uselist=False
-)
+# Topic.json_entity_hash = db.relationship(
+#     TopicJsonEntityHash, lazy='selectin', uselist=False
+# )
