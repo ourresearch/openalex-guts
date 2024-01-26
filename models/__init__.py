@@ -41,12 +41,14 @@ from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Inde
 from models.summary_stats import InstitutionImpactFactor, InstitutionHIndex, InstitutionI10Index, InstitutionI10Index2Year, InstitutionHIndex2Year
 from models.summary_stats import PublisherImpactFactor, PublisherHIndex, PublisherI10Index, PublisherI10Index2Year
 from models.summary_stats import SourceImpactFactor, SourceHIndex, SourceI10Index, SourceI10Index2Year, SourceHIndex2Year
+from models.topic import Topic
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
 from models.work_concept import WorkConcept
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
+from models.work_topic import WorkTopic
 
 REDIS_WORK_QUEUE = 'queue:work_store'
 
@@ -71,6 +73,7 @@ Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', usel
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.topics = db.relationship("WorkTopic", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
@@ -85,6 +88,7 @@ Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-o
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
+WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
 
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Author.counts_2year = db.relationship("AuthorCounts2Year", lazy='selectin', viewonly=True, uselist=False)
@@ -237,6 +241,7 @@ Record.work_matches_by_arxiv_id = db.relationship(
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 
 Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
+Topic.stored = db.relationship("JsonTopics", lazy='selectin', uselist=False, viewonly=True)
 Source.stored = db.relationship("JsonSources", lazy='selectin', uselist=False, viewonly=True)
 Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
 Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
@@ -288,8 +293,14 @@ def openalex_id_from_orcid(orcid):
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
 
+def topic_from_id(topic_id):
+    return Topic.query.filter(Topic.topic_id==topic_id).first()
+
 def concept_from_name(name):
     return Concept.query.filter(Concept.display_name.ilike(f'{name}')).order_by(func.length(Concept.display_name)).first()
+
+def topic_from_name(name):
+    return Topic.query.filter(Topic.display_name.ilike(f'{name}')).order_by(func.length(Topic.display_name)).first()
 
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
@@ -329,6 +340,7 @@ def single_work_query():
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
+         selectinload(Work.topics).selectinload(WorkTopic.topic),
          orm.Load(Work).raiseload('*'))
 
 def work_from_id(work_id):
