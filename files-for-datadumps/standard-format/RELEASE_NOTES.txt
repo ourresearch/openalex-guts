@@ -1,7 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-RELEASE upcoming
+RELEASE 2024-01-24
 - added Author.last_known_institutions, a list of institutions for the affiliations of the author's most recent work (last_known_affiliation will be deprecated in the future)
+- added indexed_in to works
+- merged around 300 institutions based on ROR data
 - removed the license type "publisher-specific, author manuscript" from ~140k work locations, changing them to either "publisher-specific-oa" or closed
 
 RELEASE 2023-12-20
