@@ -482,13 +482,13 @@ class Topic(db.Model):
         return "<Topic ( {} ) {} {}>".format(self.openalex_api_url, self.id, self.display_name)
 
 
-logger.info(f"loading valid topic IDs")
-_valid_topics = db.session.query(Topic.topic_id).options(orm.Load(Topic).raiseload('*')).all()
-_valid_topic_ids = set([t.topic_id for t in _valid_topics])
+# logger.info(f"loading valid topic IDs")
+# _valid_topics = db.session.query(Topic.topic_id).options(orm.Load(Topic).raiseload('*')).all()
+# _valid_topic_ids = set([t.topic_id for t in _valid_topics])
 
 
-def is_valid_topic_id(topic_id):
-    return topic_id and topic_id in _valid_topic_ids
+# def is_valid_topic_id(topic_id):
+#     return topic_id and topic_id in _valid_topic_ids
 
 
 # class TopicJsonEntityHash(db.Model):
