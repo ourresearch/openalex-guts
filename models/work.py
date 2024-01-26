@@ -2122,13 +2122,13 @@ class Work(db.Model):
                     })
 
             # getting full dict for topic, subfield, field, domain
-            topics_fields_subfields_domains = [topic.to_dict("minimum") for topic in self.topics_sorted]
+            topics_fields_subfields_domains = [topic.to_dict("minimum") for topic in self.topics_sorted] if self.topics_sorted else []
             self.subfields = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['subfield']['id'], 'display_name': x['subfield']['display_name']} 
-                                                                for x in topics_fields_subfields_domains]}]
+                                                                for x in topics_fields_subfields_domains]}] if self.topics_sorted else []
             self.fields = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['field']['id'], 'display_name': x['field']['display_name']} 
-                                                                for x in topics_fields_subfields_domains]}]
+                                                                for x in topics_fields_subfields_domains]}] if self.topics_sorted else []
             self.domains = [dict(t) for t in {tuple(d.items()) for d in [{'id':x['domain']['id'], 'display_name': x['domain']['display_name']} 
-                                                                for x in topics_fields_subfields_domains]}]
+                                                                for x in topics_fields_subfields_domains]}] if self.topics_sorted else []
             
             response.update({
                 # "doc_type": self.doc_type,
