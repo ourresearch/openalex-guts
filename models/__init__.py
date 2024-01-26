@@ -298,14 +298,14 @@ def openalex_id_from_orcid(orcid):
 def concept_from_id(concept_id):
     return Concept.query.filter(Concept.field_of_study_id==concept_id).first()
 
-def topic_from_id(topic_id):
-    return Topic.query.filter(Topic.topic_id==topic_id).first()
+# def topic_from_id(topic_id):
+#     return Topic.query.filter(Topic.topic_id==topic_id).first()
 
 def concept_from_name(name):
     return Concept.query.filter(Concept.display_name.ilike(f'{name}')).order_by(func.length(Concept.display_name)).first()
 
-def topic_from_name(name):
-    return Topic.query.filter(Topic.display_name.ilike(f'{name}')).order_by(func.length(Topic.display_name)).first()
+# def topic_from_name(name):
+#     return Topic.query.filter(Topic.display_name.ilike(f'{name}')).order_by(func.length(Topic.display_name)).first()
 
 def institution_from_id(institution_id):
     return Institution.query.filter(Institution.affiliation_id==institution_id).first()
@@ -345,7 +345,6 @@ def single_work_query():
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
-         selectinload(Work.topics).selectinload(WorkTopic.topic).selectinload(Topic.subfield),
          orm.Load(Work).raiseload('*'))
 
 def work_from_id(work_id):
