@@ -619,9 +619,9 @@ class Work(db.Model):
 
             print('HAHA2')
 
-            start_time = time()
-            self.add_work_topicss()
-            logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
+            # start_time = time()
+            # self.add_work_topicss()
+            # logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
