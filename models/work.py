@@ -416,82 +416,82 @@ class Work(db.Model):
             json.dumps(self.topic_api_input_data(), sort_keys=True).encode('utf-8')
         ).hexdigest()
     
-    def add_work_topics(self):
-        # current_topics_input_hash = self.get_topics_input_hash()
-        # if self.topics_input_hash == '-1':
-        #     logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
-        #     self.topics_input_hash = current_topics_input_hash
-        #     return
-        # if self.topics_input_hash == current_topics_input_hash:
-        #     logger.info('skipping topic classification because inputs are unchanged')
-        #     return
+    # def add_work_topics(self):
+    #     # current_topics_input_hash = self.get_topics_input_hash()
+    #     # if self.topics_input_hash == '-1':
+    #     #     logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
+    #     #     self.topics_input_hash = current_topics_input_hash
+    #     #     return
+    #     # if self.topics_input_hash == current_topics_input_hash:
+    #     #     logger.info('skipping topic classification because inputs are unchanged')
+    #     #     return
 
-        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+    #     self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        data = self.topic_api_input_data()
-        api_key = os.getenv("SAGEMAKER_API_KEY")
+    #     data = self.topic_api_input_data()
+    #     api_key = os.getenv("SAGEMAKER_API_KEY")
 
-        headers = {"X-API-Key": api_key}
-        api_url = "https://5gl84dua69.execute-api.us-east-1.amazonaws.com/api/"
+    #     headers = {"X-API-Key": api_key}
+    #     api_url = "https://5gl84dua69.execute-api.us-east-1.amazonaws.com/api/"
 
-        number_tries = 0
-        keep_calling = True
-        topic_ids = None
-        topic_scores = None
-        response_json = None
-        r = None
+    #     number_tries = 0
+    #     keep_calling = True
+    #     topic_ids = None
+    #     topic_scores = None
+    #     response_json = None
+    #     r = None
 
-        while keep_calling:
-            r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
+    #     while keep_calling:
+    #         r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
 
-            if r.status_code == 200:
-                try:
-                    response_json = r.json()
-                    resp_data = response_json[0]
-                    print(data)
-                    topic_ids = [i['topic_id'] for i in resp_data]
-                    topic_scores = [i['topic_score'] for i in resp_data]
-                    keep_calling = False
-                except Exception as e:
-                    logger.error(f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
-                    topic_ids = None
-                    topic_scores = None
-                    keep_calling = False
+    #         if r.status_code == 200:
+    #             try:
+    #                 response_json = r.json()
+    #                 resp_data = response_json[0]
+    #                 print(data)
+    #                 topic_ids = [i['topic_id'] for i in resp_data]
+    #                 topic_scores = [i['topic_score'] for i in resp_data]
+    #                 keep_calling = False
+    #             except Exception as e:
+    #                 logger.error(f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
+    #                 topic_ids = None
+    #                 topic_scores = None
+    #                 keep_calling = False
 
-            elif r.status_code == 500:
-                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
-                sleep(0.5)
-                number_tries += 1
-                if number_tries > 60:
-                    keep_calling = False
+    #         elif r.status_code == 500:
+    #             logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+    #             sleep(0.5)
+    #             number_tries += 1
+    #             if number_tries > 60:
+    #                 keep_calling = False
 
-            else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
-                topic_ids = None
-                topic_scores = None
-                keep_calling = False
+    #         else:
+    #             logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+    #             topic_ids = None
+    #             topic_scores = None
+    #             keep_calling = False
 
-        if r.status_code == 200:
-            self.topics = []
-            self.topics_for_related_works = []
+    #     if r.status_code == 200:
+    #         self.topics = []
+    #         self.topics_for_related_works = []
 
-            if topic_ids and topic_scores:
-                for i, (topic_id, topic_score) in enumerate(zip(topic_ids, 
-                                                                topic_scores)):
+    #         if topic_ids and topic_scores:
+    #             for i, (topic_id, topic_score) in enumerate(zip(topic_ids, 
+    #                                                             topic_scores)):
 
-                    if topic_id and is_valid_topic_id(topic_id):
-                        new_work_topic = models.WorkTopic(
-                            topic_id=topic_id,
-                            score=topic_score,
-                            algorithm_version=1,
-                            updated_date=datetime.datetime.utcnow().isoformat()
-                        )
+    #                 if topic_id and is_valid_topic_id(topic_id):
+    #                     new_work_topic = models.WorkTopic(
+    #                         topic_id=topic_id,
+    #                         score=topic_score,
+    #                         algorithm_version=1,
+    #                         updated_date=datetime.datetime.utcnow().isoformat()
+    #                     )
 
-                        self.topics.append(new_work_topic)
+    #                     self.topics.append(new_work_topic)
 
-                        self.topics_for_related_works.append(topic_id)
+    #                     self.topics_for_related_works.append(topic_id)
 
-            # self.topics_input_hash = current_topics_input_hash
+    #         # self.topics_input_hash = current_topics_input_hash
 
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
