@@ -25,6 +25,7 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
+from models.topic import is_valid_topic_id
 from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5
 from util import clean_html
@@ -209,6 +210,7 @@ class Work(db.Model):
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
     concepts_input_hash = db.Column(db.Text)
+    topics_input_hash = db.Column(db.Text)
     previous_years = db.Column(ARRAY(db.Numeric))
 
     doi_lower = db.Column(db.Text)
@@ -392,11 +394,103 @@ class Work(db.Model):
             "inverted_abstract": False,
             "paper_id": self.paper_id
         }
+    
+    def topic_api_input_data(self):
+        abstract = self.abstract.abstract if self.abstract else None
+
+        return {
+            "title": self.work_title if self.work_title else "",
+            "abstract": abstract,
+            "journal_display_name": self.journal.display_name.lower() if self.journal else "",
+            "referenced_works": self.references_list,
+            "inverted": False,
+        }
 
     def get_concepts_input_hash(self):
         return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode('utf-8')
         ).hexdigest()
+    
+    def get_topics_input_hash(self):
+        return hashlib.md5(
+            json.dumps(self.topic_api_input_data(), sort_keys=True).encode('utf-8')
+        ).hexdigest()
+    
+    def add_work_topics(self):
+        current_topics_input_hash = self.get_topics_input_hash()
+        if self.topics_input_hash == '-1':
+            logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
+            self.topics_input_hash = current_topics_input_hash
+            return
+        if self.topics_input_hash == current_topics_input_hash:
+            logger.info('skipping topic classification because inputs are unchanged')
+            return
+
+        self.full_updated_date = datetime.datetime.utcnow().isoformat()
+
+        data = self.topic_api_input_data()
+        api_key = os.getenv("SAGEMAKER_API_KEY")
+
+        headers = {"X-API-Key": api_key}
+        api_url = "https://5gl84dua69.execute-api.us-east-1.amazonaws.com/api/"
+
+        number_tries = 0
+        keep_calling = True
+        topic_ids = None
+        topic_scores = None
+        response_json = None
+        r = None
+
+        while keep_calling:
+            r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
+
+            if r.status_code == 200:
+                try:
+                    response_json = r.json()
+                    data = response_json[0]
+                    topic_ids = [i['topic_id'] for i in data]
+                    topic_scores = [i['topic_score'] for i in data]
+                    keep_calling = False
+                except Exception as e:
+                    logger.error(f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
+                    topic_ids = None
+                    topic_scores = None
+                    keep_calling = False
+
+            elif r.status_code == 500:
+                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                sleep(0.5)
+                number_tries += 1
+                if number_tries > 60:
+                    keep_calling = False
+
+            else:
+                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                topic_ids = None
+                topic_scores = None
+                keep_calling = False
+
+        if r.status_code == 200:
+            self.topics = []
+            self.topics_for_related_works = []
+
+            if topic_ids and topic_scores:
+                for i, (topic_id, topic_score) in enumerate(zip(topic_ids, 
+                                                                topic_scores)):
+
+                    if topic_id and is_valid_toic_id(topic_id):
+                        new_work_topic = models.WorkTopic(
+                            topic_id=topic_id,
+                            score=topic_score,
+                            algorithm_version=1,
+                            updated_date=datetime.datetime.utcnow().isoformat()
+                        )
+
+                        self.topics.append(new_work_topic)
+
+                        self.topics_for_related_works.append(topic_id)
+
+            self.topics_input_hash = current_topics_input_hash
 
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
@@ -502,15 +596,6 @@ class Work(db.Model):
         self.add_abstract()  # must be before work_concepts
         logger.info(f'add_abstract took {elapsed(start_time, 2)} seconds')
 
-        if not skip_concepts_and_related_works:
-            start_time = time()
-            self.add_work_concepts()
-            logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
-
-            start_time = time()
-            self.add_related_works()  # must be after work_concepts
-            logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
-
         start_time = time()
         self.add_mesh()
         logger.info(f'add_mesh took {elapsed(start_time, 2)} seconds')
@@ -526,6 +611,19 @@ class Work(db.Model):
         start_time = time()
         self.add_references()  # must be before affiliations
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
+
+        if not skip_concepts_and_related_works:
+            start_time = time()
+            self.add_work_concepts()
+            logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
+
+            start_time = time()
+            self.add_work_topicss()
+            logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
+
+            start_time = time()
+            self.add_related_works()  # must be after work_concepts
+            logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -1265,6 +1363,10 @@ class Work(db.Model):
         return sorted(self.concepts, key=lambda x: x.score, reverse=True)
 
     @property
+    def topics_sorted(self):
+        return sorted(self.topics, key=lambda x: x.score, reverse=True)
+    
+    @property
     def locations_sorted(self):
         return sorted(self.locations, key=lambda x: x.score, reverse=True)
 
@@ -1577,6 +1679,7 @@ class Work(db.Model):
         my_dict['@version'] = 1
         my_dict['authors_count'] = len(self.affiliations_list)
         my_dict['concepts_count'] = len(self.concepts_sorted)
+        my_dict['topics_count'] = len(self.topics_sorted)
         my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
 
         if self.abstract and self.abstract.abstract:
@@ -2033,6 +2136,10 @@ class Work(db.Model):
                 "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
             })
 
+            # "topics": [topic.to_dict("minimum") for topic in self.topics_sorted],
+            # also add subfield, field, domain
+            print([topic.to_dict("minimum") for topic in self.topics_sorted])
+            print([concept.to_dict("minimum") for concept in self.concepts_sorted])
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
                 if self.is_closed_springer:

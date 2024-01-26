@@ -292,6 +292,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ancestors).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).raiseload('*'),
             selectinload(models.Work.concepts).selectinload(models.WorkConcept.concept).raiseload('*'),
+            selectinload(models.Work.topics).selectinload(models.WorkTopic.topic).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
             selectinload(models.Work.fulltext),
