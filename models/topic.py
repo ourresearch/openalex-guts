@@ -37,6 +37,7 @@ class Topic(db.Model):
     domain_id = db.Column(db.Integer)
     wikipedia_url = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
+    created_date = db.Column(db.DateTime)
 
     @cached_property
     def id(self):
@@ -435,39 +436,33 @@ class Topic(db.Model):
         }
         if return_level == "full":
             response.update({
-                "description": self.description,
+                "summary": self.summary,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                "summary_stats": {
-                    "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
-                    "h_index": (self.h_index and self.h_index.h_index) or 0,
-                    "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
-                    "oa_percent": self.oa_percent(),
-                    "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                    "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
-                    "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
-                    "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
-                    "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
-                },
+                # "summary_stats": {
+                #     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
+                #     "h_index": (self.h_index and self.h_index.h_index) or 0,
+                #     "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
+                #     "oa_percent": self.oa_percent(),
+                #     "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                #     "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                #     "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
+                #     "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
+                #     "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,
+                #     "2yr_h_index": int(self.h_index_2year.h_index or 0) if self.h_index_2year else 0
+                # },
                 "ids": {
                     "openalex": self.openalex_id,
-                    "wikidata": self.wikidata_id,
-                    "wikipedia": self.wikipedia_url,
-                    "umls_aui": self.umls_aui_urls if self.umls_aui_urls else None,
-                    "umls_cui": self.umls_cui_urls if self.umls_cui_urls else None,
-                    "mag": self.field_of_study_id if self.field_of_study_id < MAX_MAG_ID else None
                 },
-                "image_url": self.image_url,
-                "image_thumbnail_url": self.image_thumbnail_url,
-                "international": {
-                    "display_name": self.display_name_international,
-                    "description": self.description_international
-                },
-                "ancestors": [ancestor.my_ancestor.to_dict("minimal") for ancestor in self.ancestors_sorted],
-                "related_concepts": self.related_concepts,
-                "counts_by_year": self.display_counts_by_year,
-                "works_api_url": f"https://api.openalex.org/works?filter=concepts.id:{self.openalex_id_short}",
+                "wikipedia_url": self.wikipedia_url,
+                # "image_url": self.image_url,
+                # "image_thumbnail_url": self.image_thumbnail_url,
+                # "international": {
+                #     "display_name": self.display_name_international,
+                #     "description": self.description_international
+                # },
+                # "counts_by_year": self.display_counts_by_year,
+                # "works_api_url": f"https://api.openalex.org/works?filter=concepts.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
