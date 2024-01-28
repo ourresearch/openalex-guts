@@ -409,3 +409,56 @@ class CitationPercentilesByYear(db.Model):
 
     def __repr__(self):
         return "<CitationPercentilesByYear ( {} ) {} {} >".format(self.year, self.citation_count, self.percentile)
+
+
+class TopicCounts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_topics_mv"
+
+    topic_id = db.Column(db.Integer, db.ForeignKey("mid.topics.topic_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<TopicCounts ( {} ) {} {} >".format(self.topic_id, self.paper_count, self.citation_count)
+
+
+class SubfieldCounts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_subfields_mv"
+
+    subfield_id = db.Column(db.Integer, db.ForeignKey("mid.subfields.subfield_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<SubfieldCounts ( {} ) {} {} >".format(self.subfield_id, self.paper_count, self.citation_count)
+
+
+class FieldCounts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_fields_mv"
+
+    field_id = db.Column(db.Integer, db.ForeignKey("mid.fields.field_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<FieldCounts ( {} ) {} {} >".format(self.field_id, self.paper_count, self.citation_count)
+
+
+class DomainCounts(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "citation_domains_mv"
+
+    domain_id = db.Column(db.Integer, db.ForeignKey("mid.domains.domain_id"), primary_key=True)
+    paper_count = db.Column(db.Numeric)
+    oa_paper_count = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
+
+    def __repr__(self):
+        return "<DomainCounts ( {} ) {} {} >".format(self.domain_id, self.paper_count, self.citation_count)
+
