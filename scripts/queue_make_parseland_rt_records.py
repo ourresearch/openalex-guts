@@ -9,6 +9,7 @@ from time import sleep, time
 import requests
 import shortuuid
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert
 
 from app import db
 from app import logger
@@ -53,6 +54,15 @@ def _get_parseland_dict(work):
         return None
 
 
+def record_dict(rt_record):
+    row_dict = {}
+
+    for column in rt_record.__table__.columns:
+        row_dict[column.name] = getattr(rt_record, column.name)
+
+    return row_dict
+
+
 class QueueMakeParselandRTRecords:
     @staticmethod
     def queue_name():
@@ -82,8 +92,15 @@ class QueueMakeParselandRTRecords:
                 insert_values = [v for v in insert_values if v]
 
             if insert_values:
-                for insert_value in insert_values:
-                    db.session.merge(insert_value)
+                logger.info(f'inserting {len(insert_values)} records')
+                result_proxy = db.session.execute(
+                    insert(Record).values(
+                        [record_dict(r) for r in insert_values]
+                    ).on_conflict_do_nothing(index_elements=['id'])
+                )
+                logger.info(f"{result_proxy.rowcount} records were new")
+            else:
+                logger.info('inserting no records')
 
             db.session.execute(
                 text(f'''
