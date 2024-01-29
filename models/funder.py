@@ -4,6 +4,7 @@ from cached_property import cached_property
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 
+from app import FUNDERS_INDEX
 from app import db
 from app import logger
 from util import entity_md5
@@ -220,7 +221,7 @@ class Funder(db.Model):
                 }
                 delete_record = {
                     "_op_type": "delete",
-                    "_index": "funders-v3",
+                    "_index": FUNDERS_INDEX,
                     "_id": self.openalex_id,
                 }
                 bulk_actions.append(index_record)
@@ -238,7 +239,7 @@ class Funder(db.Model):
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "funders-v3",
+                    "_index": FUNDERS_INDEX,
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }

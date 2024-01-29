@@ -24,6 +24,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 
 from app import ELASTIC_URL
+from app import WORKS_INDEX
 
 # Configure Elasticsearch client
 es = Elasticsearch([ELASTIC_URL], timeout=60, max_retries=10, retry_on_timeout=True)
@@ -68,7 +69,7 @@ def main(args):
     part_file = gzip.open(str(outfp), "wt")
     total_size = 0
 
-    s = Search(using=es, index="works-v22-*,-*invalid-data")
+    s = Search(using=es, index=WORKS_INDEX)
     s = s.sort(*["id"])
     s = s.source(
         excludes=[

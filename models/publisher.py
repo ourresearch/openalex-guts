@@ -5,6 +5,7 @@ from cached_property import cached_property
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 
+from app import PUBLISHERS_INDEX
 from app import db
 from app import logger
 from util import dictionary_nested_diff, entity_md5
@@ -208,7 +209,7 @@ class Publisher(db.Model):
                 }
                 delete_record = {
                     "_op_type": "delete",
-                    "_index": "publishers-v4",
+                    "_index": PUBLISHERS_INDEX,
                     "_id": self.openalex_id,
                 }
                 bulk_actions.append(index_record)
@@ -226,7 +227,7 @@ class Publisher(db.Model):
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "publishers-v4",
+                    "_index": PUBLISHERS_INDEX,
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
