@@ -148,6 +148,16 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
+# indexes
+AUTHORS_INDEX = "authors-v13"
+CONCEPTS_INDEX = "concepts-v8"
+FUNDERS_INDEX = "funders-v3"
+INSTITUTIONS_INDEX = "institutions-v7"
+PUBLISHERS_INDEX = "publishers-v4"
+SOURCES_INDEX = "sources-v2"
+WORKS_INDEX_PREFIX = "works-v22"
+WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
+
 # for raw affiliation matching
 COUNTRIES = {
     "AD": ["Andorra"],

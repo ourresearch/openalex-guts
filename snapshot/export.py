@@ -38,6 +38,15 @@ from elasticsearch_dsl import Search
 import redis
 
 from app import ELASTIC_URL
+from app import (
+    AUTHORS_INDEX,
+    CONCEPTS_INDEX,
+    FUNDERS_INDEX,
+    INSTITUTIONS_INDEX,
+    PUBLISHERS_INDEX,
+    SOURCES_INDEX,
+    WORKS_INDEX,
+)
 
 data_dir = os.path.join(os.path.expanduser('~'), 'data', datetime.now().strftime("%Y_%m_%d"))
 print(f"data directory is {data_dir}")
@@ -49,13 +58,13 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "works": "works-v22-*,-*invalid-data",
-    "authors": "authors-v13",
-    "concepts": "concepts-v8",
-    "funders": "funders-v3",
-    "institutions": "institutions-v7",
-    "publishers": "publishers-v4",
-    "sources": "sources-v2",
+    "works": WORKS_INDEX,
+    "authors": AUTHORS_INDEX,
+    "concepts": CONCEPTS_INDEX,
+    "funders": FUNDERS_INDEX,
+    "institutions": INSTITUTIONS_INDEX,
+    "publishers": PUBLISHERS_INDEX,
+    "sources": SOURCES_INDEX,
 }
 
 

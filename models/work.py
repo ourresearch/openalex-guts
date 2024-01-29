@@ -18,6 +18,7 @@ from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.types import ARRAY
 
 import models
+from app import WORKS_INDEX_PREFIX
 from app import COUNTRIES
 from app import MAX_MAG_ID
 from app import db
@@ -1674,7 +1675,7 @@ class Work(db.Model):
             }
             delete_record = {
                 "_op_type": "delete",
-                "_index": f"works-v22-{index_suffix}",
+                "_index": f"{WORKS_INDEX_PREFIX}-{index_suffix}",
                 "_id": self.openalex_id,
             }
             bulk_actions.append(index_record)
@@ -1734,7 +1735,7 @@ class Work(db.Model):
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
-                "_index": f"works-v22-{index_suffix}",
+                "_index": f"{WORKS_INDEX_PREFIX}-{index_suffix}",
                 "_id": self.openalex_id,
                 "_source": my_dict
             }
@@ -1754,7 +1755,7 @@ class Work(db.Model):
                         logger.info(f"delete {self.openalex_id} from old index {old_index_suffix}")
                         delete_record = {
                             "_op_type": "delete",
-                            "_index": f"works-v22-{old_index_suffix}",
+                            "_index": f"{WORKS_INDEX_PREFIX}-{old_index_suffix}",
                             "_id": self.openalex_id,
                         }
                         bulk_actions.append(delete_record)

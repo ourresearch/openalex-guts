@@ -7,6 +7,7 @@ from cached_property import cached_property
 from sqlalchemy import orm
 from sqlalchemy import text
 
+from app import CONCEPTS_INDEX
 from app import MAX_MAG_ID
 from app import USER_AGENT
 from app import db
@@ -372,7 +373,7 @@ class Concept(db.Model):
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
-                "_index": "concepts-v8",
+                "_index": CONCEPTS_INDEX,
                 "_id": self.openalex_id,
                 "_source": my_dict
             }

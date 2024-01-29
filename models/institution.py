@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 
+from app import INSTITUTIONS_INDEX
 from app import MAX_MAG_ID
 from app import USER_AGENT
 from app import db
@@ -368,7 +369,7 @@ class Institution(db.Model):
                 }
                 delete_record = {
                     "_op_type": "delete",
-                    "_index": "institutions-v7",
+                    "_index": INSTITUTIONS_INDEX,
                     "_id": self.openalex_id,
                 }
                 bulk_actions.append(index_record)
@@ -385,7 +386,7 @@ class Institution(db.Model):
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
                 index_record = {
                     "_op_type": "index",
-                    "_index": "institutions-v7",
+                    "_index": INSTITUTIONS_INDEX,
                     "_id": self.openalex_id,
                     "_source": my_dict
                 }
