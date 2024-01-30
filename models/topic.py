@@ -430,9 +430,9 @@ class Topic(db.Model):
         response = {
             "id": self.openalex_id,
             "display_name": self.display_name,
-            "subfield": self.subfields.to_dict("minimal"),
-            "field": self.fields.to_dict("minimal"),
-            "domain": self.domains.to_dict("minimal")
+            "subfield": self.subfield.to_dict("minimal"),
+            "field": self.field.to_dict("minimal"),
+            "domain": self.domain.to_dict("minimal")
         }
         if return_level == "full":
             response.update({
