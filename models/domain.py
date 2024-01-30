@@ -2,9 +2,9 @@ from app import db
 
 class Domain(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "domains"
+    __tablename__ = "domain"
 
-    domain_id = db.Column(db.Integer, db.ForeignKey("mid.topics.domain_id"), primary_key=True)
+    domain_id = db.Column(db.Integer, db.ForeignKey("mid.topic.domain_id"), primary_key=True)
     display_name = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
 
