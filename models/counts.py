@@ -415,7 +415,7 @@ class TopicCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_topics_mv"
 
-    topic_id = db.Column(db.Integer, db.ForeignKey("mid.topics.topic_id"), primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey("mid.topic.topic_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
     oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
@@ -428,7 +428,7 @@ class SubfieldCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_subfields_mv"
 
-    subfield_id = db.Column(db.Integer, db.ForeignKey("mid.subfields.subfield_id"), primary_key=True)
+    subfield_id = db.Column(db.Integer, db.ForeignKey("mid.subfield.subfield_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
     oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
@@ -441,7 +441,7 @@ class FieldCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_fields_mv"
 
-    field_id = db.Column(db.Integer, db.ForeignKey("mid.fields.field_id"), primary_key=True)
+    field_id = db.Column(db.Integer, db.ForeignKey("mid.field.field_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
     oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)
@@ -454,7 +454,7 @@ class DomainCounts(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "citation_domains_mv"
 
-    domain_id = db.Column(db.Integer, db.ForeignKey("mid.domains.domain_id"), primary_key=True)
+    domain_id = db.Column(db.Integer, db.ForeignKey("mid.domain.domain_id"), primary_key=True)
     paper_count = db.Column(db.Numeric)
     oa_paper_count = db.Column(db.Numeric)
     citation_count = db.Column(db.Numeric)

@@ -26,7 +26,7 @@ from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
 from models.concept import is_valid_concept_id
-# from models.topic import is_valid_topic_id
+from models.topic import is_valid_topic_id
 from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5
 from util import clean_html
@@ -421,7 +421,7 @@ class Work(db.Model):
         current_topics_input_hash = self.get_topics_input_hash()
         if self.topics_input_hash == '-1':
             logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
-            # self.topics_input_hash = current_topics_input_hash
+            self.topics_input_hash = current_topics_input_hash
             return
         elif self.topics_input_hash == current_topics_input_hash:
             logger.info('skipping topic classification because inputs are unchanged')
@@ -626,9 +626,9 @@ class Work(db.Model):
 
         #if skip_concepts_and_related_works:
         # After initial burst, need to remove this because topics is slow
-        # start_time = time()
-        # self.add_work_topics()
-        # logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
+        start_time = time()
+        self.add_work_topics()
+        logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -1371,9 +1371,9 @@ class Work(db.Model):
     # def topics_fields_subfields_domains(self):
     #     return [topic.to_dict("minimum") for topic in self.topics_sorted] if self.topics_sorted else []
 
-    # @property
-    # def topics_sorted(self):
-    #     return sorted(self.topics, key=lambda x: x.score, reverse=True)
+    @property
+    def topics_sorted(self):
+        return sorted(self.topics, key=lambda x: x.score, reverse=True)
 
     # @property
     # def primary_topic(self):
@@ -1713,7 +1713,7 @@ class Work(db.Model):
         my_dict['@version'] = 1
         my_dict['authors_count'] = len(self.affiliations_list)
         my_dict['concepts_count'] = len(self.concepts_sorted)
-        # my_dict['topics_count'] = len(self.topics_sorted)
+        my_dict['topics_count'] = len(self.topics_sorted)
         my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
 
         if self.abstract and self.abstract.abstract:
@@ -2143,12 +2143,6 @@ class Work(db.Model):
                         "funder_display_name": fd.get("display_name"),
                         "award_id": None
                     })
-            
-            # print("topics", [topic.to_dict("minimum") for topic in self.topics_sorted] if self.topics_sorted else [])
-            # print("primary_topic", [topic.to_dict("minimum") for topic in self.topics_sorted[:1]][0] if self.topics_sorted else None)
-
-                # "topics": [topic.to_dict("minimum") for topic in self.topics_sorted] if self.topics_sorted else [],
-                # "primary_topic": [topic.to_dict("minimum") for topic in self.topics_sorted[:1]][0] if self.topics_sorted else None,
 
             response.update({
                 # "doc_type": self.doc_type,
@@ -2166,6 +2160,8 @@ class Work(db.Model):
                 "is_retracted": self.is_retracted,
                 "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
+                "topics": [topic.to_dict("minimum") for topic in self.topics_sorted][:3] if self.topics_sorted else [],
+                "primary_topic": [topic.to_dict("minimum") for topic in self.topics_sorted[:1]][0] if self.topics_sorted else None,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
