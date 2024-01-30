@@ -3,9 +3,9 @@ from app import db
 
 class Subfield(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "subfields"
+    __tablename__ = "subfield"
 
-    subfield_id = db.Column(db.Integer, db.ForeignKey("mid.topics.subfield_id"), primary_key=True)
+    subfield_id = db.Column(db.Integer, db.ForeignKey("mid.topic.subfield_id"), primary_key=True)
     display_name = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)

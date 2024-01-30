@@ -41,17 +41,17 @@ from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Inde
 from models.summary_stats import InstitutionImpactFactor, InstitutionHIndex, InstitutionI10Index, InstitutionI10Index2Year, InstitutionHIndex2Year
 from models.summary_stats import PublisherImpactFactor, PublisherHIndex, PublisherI10Index, PublisherI10Index2Year
 from models.summary_stats import SourceImpactFactor, SourceHIndex, SourceI10Index, SourceI10Index2Year, SourceHIndex2Year
-from models.topic import Topic
-from models.subfield import Subfield
-from models.field import Field
-from models.domain import Domain
+# from models.topic import Topic
+# from models.subfield import Subfield
+# from models.field import Field
+# from models.domain import Domain
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
 from models.work_concept import WorkConcept
+# from models.work_topic import WorkTopic
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
-from models.work_topic import WorkTopic
 
 REDIS_WORK_QUEUE = 'queue:work_store'
 
@@ -76,15 +76,15 @@ Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', usel
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.topics = db.relationship("WorkTopic", lazy='selectin', backref="work", cascade="all, delete-orphan")
+# Work.topics = db.relationship("WorkTopic", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
 Affiliation.institution = db.relationship("Institution", lazy='selectin') #don't delete orphan
 
-Topic.subfields = db.relationship("Subfield", lazy='selectin', backref="topics", uselist=False)
-Topic.fields = db.relationship("Field", lazy='selectin', backref="topics", uselist=False)
-Topic.domains = db.relationship("Domain", lazy='selectin', backref="topics", uselist=False)
+# Topic.subfields = db.relationship("Subfield", lazy='selectin', backref="topics", uselist=False)
+# Topic.fields = db.relationship("Field", lazy='selectin', backref="topics", uselist=False)
+# Topic.domains = db.relationship("Domain", lazy='selectin', backref="topics", uselist=False)
 Institution.ror = db.relationship("Ror", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author", cascade="all, delete-orphan")
 AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
@@ -94,7 +94,7 @@ Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-o
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
-WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
+# WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
 
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Author.counts_2year = db.relationship("AuthorCounts2Year", lazy='selectin', viewonly=True, uselist=False)
@@ -349,6 +349,7 @@ def single_work_query():
          selectinload(Work.affiliations).selectinload(Affiliation.author).selectinload(Author.orcids),
          selectinload(Work.affiliations).selectinload(Affiliation.institution).selectinload(Institution.ror),
          selectinload(Work.concepts).selectinload(WorkConcept.concept),
+        #  selectinload(Work.topics).selectinload(WorkTopic.topic),
          orm.Load(Work).raiseload('*'))
 
 def work_from_id(work_id):

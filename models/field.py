@@ -3,9 +3,9 @@ from app import db
 
 class Field(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "fields"
+    __tablename__ = "field"
 
-    field_id = db.Column(db.Integer, db.ForeignKey("mid.topics.field_id"), primary_key=True)
+    field_id = db.Column(db.Integer, db.ForeignKey("mid.topic.field_id"), primary_key=True)
     display_name = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
