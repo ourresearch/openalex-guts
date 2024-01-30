@@ -8,7 +8,7 @@ class WorkTopic(db.Model):
     __tablename__ = "work_topic"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    topic_id = db.Column(db.Integer, db.ForeignKey("mid.topics.topic_id"), primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey("mid.topic.topic_id"), primary_key=True)
     score = db.Column(db.Float)
     algorithm_version = db.Column(db.Integer)
     updated_date = db.Column(db.DateTime)

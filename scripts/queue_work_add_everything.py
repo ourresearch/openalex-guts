@@ -168,6 +168,23 @@ class QueueWorkAddEverything:
             ).selectinload(
                 models.WorkConcept.concept
             ).raiseload('*'),
+            # selectinload(
+            #     models.Work.topics
+            # ).selectinload(
+            #     models.WorkTopic.topic
+            # ).raiseload('*'),
+            # selectinload(
+            #     models.Work.topics).selectinload(models.WorkTopic.topic
+            # ).raiseload('*'),
+            # selectinload(
+            #     models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.subfields
+            # ).raiseload('*'),
+            # selectinload(
+            #     models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.fields
+            # ).raiseload('*'),
+            # selectinload(
+            #     models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.domains
+            # ).raiseload('*'),
             orm.Load(models.Work).raiseload('*')
         )
 
