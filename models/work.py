@@ -627,7 +627,7 @@ class Work(db.Model):
         #if skip_concepts_and_related_works:
         # After initial burst, need to remove this because topics is slow
         start_time = time()
-        self.add_work_topics()
+        # self.add_work_topics()
         logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
