@@ -368,6 +368,8 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Publisher.publisher_id.in_(object_ids)).all()
     elif entity_type == "funder":
         objects = db.session.query(models.Funder).filter(models.Funder.funder_id.in_(object_ids)).all()
+    elif entity_type == "topic":
+        objects = db.session.query(models.Topic).filter(models.Topic.topic_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
