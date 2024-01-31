@@ -55,7 +55,6 @@ class Topic(db.Model):
         my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
         my_dict['@version'] = 1
         entity_hash = entity_md5(my_dict)
-        print(my_dict)
         old_entity_hash = self.json_entity_hash
 
         if entity_hash != old_entity_hash:
