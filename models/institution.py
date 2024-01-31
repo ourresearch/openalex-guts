@@ -489,7 +489,6 @@ class Institution(db.Model):
         if unknown_names:
             api_key = os.getenv("SAGEMAKER_API_KEY")
             data = [{"affiliation_string": unknown_name} for unknown_name in unknown_names]
-            logger.info(f"Getting institution ids from strings for {len(data)} unknown names: {data}")
             headers = {"X-API-Key": api_key}
             api_url = "https://ybb43coxn4.execute-api.us-east-1.amazonaws.com/api/" # institution lookup endpoint
 
