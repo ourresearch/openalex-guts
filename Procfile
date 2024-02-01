@@ -19,6 +19,7 @@ fast_store_institutions: python -m scripts.fast_queue --entity=institution --met
 fast_store_publishers: python -m scripts.fast_queue --entity=publisher --method=store --chunk=1
 fast_store_funders: python -m scripts.fast_queue --entity=funder --method=store --chunk=1
 fast_store_topics: python -m scripts.fast_queue --entity=topic --method=store --chunk=1
+fast_store_domains: python -m scripts.fast_queue --entity=domain --method=store --chunk=1
 
 fast_update_once_update_institutions: python -m scripts.fast_queue --entity=work --method=update_once_update_institutions --chunk=100
 fast_update_once_add_work_concepts: python -m scripts.fast_queue --entity=work --method=update_once_add_work_concepts --chunk=100
