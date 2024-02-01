@@ -60,6 +60,8 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
         journal_issn_l=crossref_record.journal_issn_l,
         venue_name=crossref_record.venue_name,
 
+        journals=crossref_record.journals,
+
         # record data
         record_webpage_url=crossref_record.record_webpage_url,
         record_webpage_archive_url=crossref_record.record_webpage_archive_url,
