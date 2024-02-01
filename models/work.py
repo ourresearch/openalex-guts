@@ -1485,6 +1485,7 @@ class Work(db.Model):
             "monograph": "book",
             "reference-book": "book",
             "book-set": "book",
+            "edited-book": "book",
         }
         # return mapping from lookup if it's in there, otherwise pass-through
         return lookup_crossref_to_openalex_type.get(self.type_crossref, self.type_crossref)
