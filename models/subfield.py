@@ -77,7 +77,7 @@ class Subfield(db.Model):
                 "topics": self.topics_list(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                "works_api_url": f"https://api.openalex.org/works?filter=topics.subfield.id={self.subfield_id}",
+                "works_api_url": f"https://api.openalex.org/works?filter=topics.subfield.id:{self.subfield_id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
