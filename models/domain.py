@@ -22,7 +22,9 @@ class Domain(db.Model):
             .filter(models.Topic.domain_id == self.domain_id)
             .all()
         )
-        return [field.to_dict(return_level="minimum") for field in fields_query]
+        fields_list = [field.to_dict(return_level="minimum") for field in fields_query]
+        field_list_sorted = sorted(fields_list, key=lambda x: x['display_name'].lower())
+        return field_list_sorted
 
     def store(self):
         bulk_actions = []
