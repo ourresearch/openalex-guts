@@ -53,6 +53,7 @@ def main(args):
             item["created"]["timestamp"] / 1000
         )
         rec.note = f'publisher: {item.get("publisher")}'
+        rec.active = True
         logger.info(f"adding new RecordTrack with doi {doi}")
         db.session.add(rec)
         db.session.commit()
