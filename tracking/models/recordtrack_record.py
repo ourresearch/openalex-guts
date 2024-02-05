@@ -27,6 +27,8 @@ class RecordTrack(db.Model):
     api_found = db.Column(db.DateTime)
     note = db.Column(db.Text)
     active = db.Column(db.Boolean)
+    origin = db.Column(db.Text)
+    origin_timestamp = db.Column(db.DateTime)
 
     def track(self):
         from . import RecordTrackEvent, RecordTrackEventHash
