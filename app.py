@@ -155,7 +155,7 @@ FUNDERS_INDEX = "funders-v3"
 INSTITUTIONS_INDEX = "institutions-v7"
 PUBLISHERS_INDEX = "publishers-v4"
 SOURCES_INDEX = "sources-v2"
-TOPICS_INDEX = "topics-v2"
+TOPICS_INDEX = "topics-v3"
 WORKS_INDEX_PREFIX = "works-v22"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 
