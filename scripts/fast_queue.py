@@ -382,6 +382,8 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Type).filter(models.Type.type_id.in_(object_ids)).all()
     elif entity_type == "country":
         objects = db.session.query(models.Country).filter(models.Country.country_id.in_(object_ids)).all()
+    elif entity_type == "language":
+        objects = db.session.query(models.Language).filter(models.Language.language_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
