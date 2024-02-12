@@ -25,6 +25,7 @@ from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.institution import InstitutionAncestors
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
+from models.language import Language
 from models.location import Location
 from models.mesh import Mesh
 from models.work_openapc import WorkOpenAPC
