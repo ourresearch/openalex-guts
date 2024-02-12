@@ -62,7 +62,7 @@ class SDG(db.Model):
         if return_level == "full":
             response.update({
                 "works_count": self.works_count,
-                "citation_count": self.cached_citation_count,
+                "cited_by_count": self.cached_citation_count,
                 "works_api_url": f"https://api.openalex.org/works?filter=sustainable_development_goals.id:{self.un_metadata_id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
