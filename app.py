@@ -157,6 +157,7 @@ PUBLISHERS_INDEX = "publishers-v4"
 SDGS_INDEX = "sdgs-v1"
 SOURCES_INDEX = "sources-v2"
 TOPICS_INDEX = "topics-v3"
+TYPES_INDEX = "types-v1"
 WORKS_INDEX_PREFIX = "works-v22"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 

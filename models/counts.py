@@ -1,6 +1,10 @@
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+from redis import Redis
+from requests_cache import CachedSession, RedisCache
 from sqlalchemy import PrimaryKeyConstraint
 
-from app import db
+from app import db, ELASTIC_URL, REDIS_URL, WORKS_INDEX
 
 
 class AuthorCounts(db.Model):
@@ -462,3 +466,50 @@ class DomainCounts(db.Model):
     def __repr__(self):
         return "<DomainCounts ( {} ) {} {} >".format(self.domain_id, self.paper_count, self.citation_count)
 
+
+def cache_expiration():
+    return 3600 * 24 * 3
+
+
+def cached_session():
+    connection = Redis.from_url(REDIS_URL)
+    cache_backend = RedisCache(connection=connection, expire_after=None)
+    session = CachedSession(cache_name="cache", backend=cache_backend,
+                            expire_after=cache_expiration())
+    return session
+
+
+def works_count_from_api(group_by_key, id):
+    session = cached_session()
+    r = session.get(f"https://api.openalex.org/works?group-by={group_by_key}")
+    group_by = r.json().get("group_by")
+    for group in group_by:
+        if group.get("key") == id:
+            return group.get("count")
+
+
+def fetch_citation_sum(id):
+    es = Elasticsearch([ELASTIC_URL], timeout=30)
+    s = Search(using=es, index=WORKS_INDEX)
+    s = s.query("term", type=id)
+    s.aggs.bucket("citation_count", "sum", field="cited_by_count")
+    response = s.execute()
+    return response.aggregations.citation_count.value
+
+
+def citation_count_from_elastic(key, id):
+    redis = Redis.from_url(REDIS_URL)
+    cache_key = f"{key}_{id}_citation_count"
+
+    # try to retrieve the cached value
+    cached_citation_count = redis.get(cache_key)
+    if cached_citation_count is not None:
+        cached_citation_count_str = cached_citation_count.decode('utf-8')
+        return int(float(cached_citation_count_str))
+
+    # if not cached, compute the value
+    citation_count = fetch_citation_sum(id)
+
+    # cache the newly computed value
+    redis.set(cache_key, citation_count, ex=cache_expiration())
+    return int(citation_count)
