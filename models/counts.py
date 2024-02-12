@@ -488,10 +488,10 @@ def works_count_from_api(group_by_key, id):
             return group.get("count")
 
 
-def fetch_citation_sum(id):
+def fetch_citation_sum(key, id):
     es = Elasticsearch([ELASTIC_URL], timeout=30)
     s = Search(using=es, index=WORKS_INDEX)
-    s = s.query("term", type=id)
+    s = s.query("term", **{key: id})
     s.aggs.bucket("citation_count", "sum", field="cited_by_count")
     response = s.execute()
     return response.aggregations.citation_count.value
@@ -508,7 +508,7 @@ def citation_count_from_elastic(key, id):
         return int(float(cached_citation_count_str))
 
     # if not cached, compute the value
-    citation_count = fetch_citation_sum(id)
+    citation_count = fetch_citation_sum(key, id)
 
     # cache the newly computed value
     redis.set(cache_key, citation_count, ex=cache_expiration())
