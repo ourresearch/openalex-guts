@@ -376,6 +376,8 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Field).filter(models.Field.field_id.in_(object_ids)).all()
     elif entity_type == "subfield":
         objects = db.session.query(models.Subfield).filter(models.Subfield.subfield_id.in_(object_ids)).all()
+    elif entity_type == "sdg":
+        objects = db.session.query(models.SDG).filter(models.SDG.sdg_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
