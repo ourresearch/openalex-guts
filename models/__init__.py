@@ -19,6 +19,7 @@ from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
+from models.country import Country
 from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
@@ -97,6 +98,8 @@ Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-o
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
+
+Country.continent = db.relationship("Continent", lazy='selectin', backref="countries", uselist=False)
 
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Author.counts_2year = db.relationship("AuthorCounts2Year", lazy='selectin', viewonly=True, uselist=False)
