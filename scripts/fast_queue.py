@@ -378,12 +378,12 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Subfield).filter(models.Subfield.subfield_id.in_(object_ids)).all()
     elif entity_type == "sdg":
         objects = db.session.query(models.SDG).filter(models.SDG.sdg_id.in_(object_ids)).all()
+    elif entity_type == "type":
+        objects = db.session.query(models.Type).filter(models.Type.type_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
     return objects
 
 
-
-# python -m scripts.fast_queue --entity=work --method=add_everything --limit=3
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run fast queue.")
     parser.add_argument('--entity', type=str, help="the entity type to run")
@@ -396,14 +396,3 @@ if __name__ == "__main__":
 
     parsed_args = parser.parse_args()
     run(**vars(parsed_args))
-
-# for reference, currently running queues
-
-# get those that don't have the new concepts yet
-# insert into queue.update_once_work_concepts (id) (select distinct paper_id from mid.work_concept where uses_newest_algorithm=False and algorithm_version=2)
-
-# got all those that don't have related works already
-# insert into queue.update_once_work_related_works (id) (select distinct paper_id from mid.work w where not exists (select 1 from mid.related_work rw where rw.paper_id=w.paper_id))
-
-# affiliations with paper_id > 4200 already updated
-# insert into queue.update_once_affiliation_institutions (id) (select distinct paper_id from mid.affiliation where original_affiliation is not null and paper_id<4200000000)

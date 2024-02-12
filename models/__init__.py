@@ -46,6 +46,7 @@ from models.subfield import Subfield
 from models.field import Field
 from models.domain import Domain
 from models.sdg import SDG
+from models.type import Type
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
