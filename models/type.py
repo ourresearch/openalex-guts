@@ -24,6 +24,10 @@ class Type(db.Model):
     def id(self):
         return self.type_id
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/types/{self.id}"
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, TYPES_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -31,7 +35,7 @@ class Type(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
         }
         if return_level == "full":

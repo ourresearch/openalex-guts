@@ -22,6 +22,10 @@ class Language(db.Model):
     def id(self):
         return self.language_id
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/languages/{self.id}"
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, LANGUAGES_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -29,7 +33,7 @@ class Language(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
         }
         if return_level == "full":
