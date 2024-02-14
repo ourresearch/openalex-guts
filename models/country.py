@@ -18,9 +18,17 @@ class Continent(db.Model):
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/continents/{self.wikidata_id}"
+
+    @property
+    def wikidata_url(self):
+        return f"https://wikidata.org/wiki/{self.wikidata_id}"
+
     def to_dict(self):
         return {
-            "id": f"https://wikidata.org/wiki/{self.wikidata_id}",
+            "id": self.openalex_id,
             "display_name": self.display_name,
         }
 
@@ -41,6 +49,10 @@ class Country(db.Model):
     def id(self):
         return self.country_id
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/countries/{self.id}"
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, COUNTRIES_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -48,7 +60,7 @@ class Country(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
         }
         if return_level == "full":

@@ -22,6 +22,10 @@ class SDG(db.Model):
         return self.sdg_id
 
     @property
+    def openalex_id(self):
+        return f"https://openalex.org/sdgs/{self.sdg_id}"
+
+    @property
     def un_metadata_id(self):
         return f"https://metadata.un.org/sdg/{self.sdg_id}"
 
@@ -32,11 +36,15 @@ class SDG(db.Model):
 
     def to_dict(self, return_level="full"):
         response = {
-            "id": self.un_metadata_id,
+            "id": self.openalex_id,
             "display_name": self.display_name,
         }
         if return_level == "full":
             response.update({
+                "ids": {
+                    "openalex": self.openalex_id,
+                    "un": self.un_metadata_id
+                },
                 "works_count": works_count_from_api("sustainable_development_goals.id", self.un_metadata_id),
                 "cited_by_count": citation_count_from_elastic("sustainable_development_goals.id", self.un_metadata_id),
                 "works_api_url": f"https://api.openalex.org/works?filter=sustainable_development_goals.id:{self.un_metadata_id}",
