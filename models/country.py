@@ -20,7 +20,7 @@ class Continent(db.Model):
 
     @property
     def openalex_id(self):
-        return f"https://openalex.org/continents/{self.wikidata_id}"
+        return f"https://openalex.org/continents/{self.wikidata_id.lower()}"
 
     @property
     def wikidata_url(self):
@@ -51,7 +51,7 @@ class Country(db.Model):
 
     @property
     def openalex_id(self):
-        return f"https://openalex.org/countries/{self.id}"
+        return f"https://openalex.org/countries/{self.id.lower()}"
 
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, COUNTRIES_INDEX)
