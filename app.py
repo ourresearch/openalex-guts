@@ -152,6 +152,7 @@ app.config["COMPRESS_DEBUG"] = compress_json
 AUTHORS_INDEX = "authors-v13"
 CONCEPTS_INDEX = "concepts-v8"
 COUNTRIES_INDEX = "countries-v1"
+DOMAINS_INDEX = "domains-v1"
 FUNDERS_INDEX = "funders-v3"
 INSTITUTIONS_INDEX = "institutions-v7"
 LANGUAGES_INDEX = "languages-v1"
