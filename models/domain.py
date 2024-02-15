@@ -23,6 +23,10 @@ class Domain(db.Model):
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
 
+    @property
+    def id(self):
+        return self.domain_id
+
     def fields(self):
         fields_query = (
             db.session.query(models.Field)
