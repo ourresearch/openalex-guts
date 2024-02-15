@@ -1,8 +1,12 @@
 import datetime
 
-from app import db, logger
+from sqlalchemy.dialects.postgresql import JSONB
+
+from app import db
+from bulk_actions import create_bulk_actions
 import models
-from util import entity_md5
+from app import DOMAINS_INDEX
+
 
 
 class Domain(db.Model):
@@ -11,6 +15,10 @@ class Domain(db.Model):
 
     domain_id = db.Column(db.Integer, db.ForeignKey("mid.topic.domain_id"), primary_key=True)
     display_name = db.Column(db.Text)
+    display_name_alternatives = db.Column(JSONB)
+    description = db.Column(db.Text)
+    wikidata_url = db.Column(db.Text)
+    wikipedia_url = db.Column(db.Text)
     json_entity_hash = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
@@ -27,27 +35,8 @@ class Domain(db.Model):
         return field_list_sorted
 
     def store(self):
-        bulk_actions = []
-
-        my_dict = self.to_dict()
-        my_dict['updated'] = my_dict.get('updated_date')
-        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
-        my_dict['@version'] = 1
-        entity_hash = entity_md5(my_dict)
-        old_entity_hash = self.json_entity_hash
-
-        if entity_hash != old_entity_hash:
-            logger.info(f"dictionary for {self.domain_id} new or changed, so save again")
-            index_record = {
-                "_op_type": "index",
-                "_index": "domains-v1",
-                "_id": self.domain_id,
-                "_source": my_dict
-            }
-            bulk_actions.append(index_record)
-        else:
-            logger.info(f"dictionary not changed, don't save again {self.domain_id}")
-        self.json_entity_hash = entity_hash
+        bulk_actions, new_entity_hash = create_bulk_actions(self, DOMAINS_INDEX)
+        self.json_entity_hash = new_entity_hash
         return bulk_actions
 
     def to_dict(self, return_level="full"):
@@ -55,6 +44,12 @@ class Domain(db.Model):
                     'display_name': self.display_name}
         if return_level == "full":
             response.update({
+                "description": self.description,
+                "display_name_alternatives": self.display_name_alternatives,
+                "ids": {
+                    "wikidata": self.wikidata_url,
+                    "wikipedia": self.wikipedia_url
+                },
                 "fields": self.fields(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
