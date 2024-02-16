@@ -65,6 +65,7 @@ class Country(db.Model):
         }
         if return_level == "full":
             response.update({
+                "country_id": self.id,
                 "continent": self.continent.to_dict(),
                 "is_global_south": self.is_global_south,
                 "works_count": works_count_from_api("authorships.countries", self.id),
