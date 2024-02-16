@@ -68,7 +68,7 @@ class Subfield(db.Model):
                 "display_name_alternatives": self.display_name_alternatives,
                 "ids": {
                     "wikidata": self.wikidata_url,
-                    "wikipedia": self.wikipedia_url
+                    "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None
                 },
                 "field": self.field(),
                 "domain": self.domain(),
