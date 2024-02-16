@@ -52,7 +52,7 @@ class Domain(db.Model):
                 "display_name_alternatives": self.display_name_alternatives,
                 "ids": {
                     "wikidata": self.wikidata_url,
-                    "wikipedia": self.wikipedia_url
+                    "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None
                 },
                 "fields": self.fields(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
