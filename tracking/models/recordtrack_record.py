@@ -64,6 +64,35 @@ class RecordTrack(db.Model):
                     self.work_id = work_id
                     self.work_id_found = now
             db.session.commit()
+        elif self.arxiv_id:
+            from ..trackdb import (
+                query_recordthresher_record_by_arxiv_id,
+                work_id_from_recordthresher_result,
+            )
+            event_hash = RecordTrackEventHash(recordtrack_record_id=self.id)
+            results = query_recordthresher_record_by_arxiv_id(self.arxiv_id)
+            now = datetime.utcnow().isoformat()
+            payload = [dict(x) for x in results]
+            payload_str = json.dumps(payload, default=str, sort_keys=True)
+            payload_hash = text_md5(payload_str)
+            event_hash.query_type = "openalex-db_recordthresher_record_by_arxiv_id"
+            event_hash.event_timestamp = now
+            event_hash.payload_hash = payload_hash
+            db.session.add(event_hash)
+            if not existing_hash(payload_hash):
+                event = RecordTrackEvent(recordtrack_record_id=self.id)
+                event.payload = json.loads(payload_str)
+                event.query_type = "openalex-db_recordthresher_record_by_arxiv_id"
+                event.payload_hash = text_md5(payload_str)
+                event.event_timestamp = now
+                db.session.add(event)
+            self.last_tracked_at = now
+            if not self.work_id:
+                work_id = work_id_from_recordthresher_result(results)
+                if work_id and work_id > 0:
+                    self.work_id = work_id
+                    self.work_id_found = now
+            db.session.commit()
 
         # mid.work table
         if self.work_id:
@@ -87,6 +116,8 @@ class RecordTrack(db.Model):
                 event.event_timestamp = now
                 db.session.add(event)
             self.last_tracked_at = now
+            if not self.doi and result is not None:
+                self.doi = result['doi_lower']
             db.session.commit()
 
         # OpenAlex API
