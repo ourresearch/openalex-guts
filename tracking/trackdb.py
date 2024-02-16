@@ -13,6 +13,15 @@ def query_recordthresher_record_by_doi(doi: str) -> List[Row]:
     return result
 
 
+def query_recordthresher_record_by_arxiv_id(arxiv_id: str) -> List[Row]:
+    sq = """select * from ins.recordthresher_record where arxiv_id like :arxiv_id order by id"""
+    params = {
+        "arxiv_id": arxiv_id,
+    }
+    result = db.session.execute(text(sq), params).all()
+    return result
+
+
 def query_work_by_work_id(work_id: int) -> Union[Row, None]:
     sq = """select * from mid.work where paper_id = :work_id"""
     params = {
