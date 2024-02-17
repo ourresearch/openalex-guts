@@ -29,6 +29,7 @@ class RecordTrack(db.Model):
     active = db.Column(db.Boolean)
     origin = db.Column(db.Text)
     origin_timestamp = db.Column(db.DateTime)
+    first_tracked_at = db.Column(db.DateTime)
 
     def track(self):
         from . import RecordTrackEvent, RecordTrackEventHash
@@ -58,6 +59,8 @@ class RecordTrack(db.Model):
                 event.event_timestamp = now
                 db.session.add(event)
             self.last_tracked_at = now
+            if not self.first_tracked_at:
+                self.first_tracked_at = now
             if not self.work_id:
                 work_id = work_id_from_recordthresher_result(results)
                 if work_id and work_id > 0:
@@ -87,6 +90,8 @@ class RecordTrack(db.Model):
                 event.event_timestamp = now
                 db.session.add(event)
             self.last_tracked_at = now
+            if not self.first_tracked_at:
+                self.first_tracked_at = now
             if not self.work_id:
                 work_id = work_id_from_recordthresher_result(results)
                 if work_id and work_id > 0:
@@ -116,6 +121,8 @@ class RecordTrack(db.Model):
                 event.event_timestamp = now
                 db.session.add(event)
             self.last_tracked_at = now
+            if not self.first_tracked_at:
+                self.first_tracked_at = now
             if not self.doi and result is not None:
                 self.doi = result['doi_lower']
             db.session.commit()
