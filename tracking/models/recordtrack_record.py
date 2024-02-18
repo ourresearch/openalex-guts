@@ -50,7 +50,6 @@ class RecordTrack(db.Model):
             event_hash.query_type = "openalex-db_recordthresher_record"
             event_hash.event_timestamp = now
             event_hash.payload_hash = payload_hash
-            db.session.add(event_hash)
             if not existing_hash(payload_hash):
                 event = RecordTrackEvent(recordtrack_record_id=self.id)
                 event.payload = json.loads(payload_str)
@@ -58,6 +57,8 @@ class RecordTrack(db.Model):
                 event.payload_hash = text_md5(payload_str)
                 event.event_timestamp = now
                 db.session.add(event)
+                event_hash.recordtrack_event_id = event.id
+            db.session.add(event_hash)
             self.last_tracked_at = now
             if not self.first_tracked_at:
                 self.first_tracked_at = now
@@ -81,7 +82,6 @@ class RecordTrack(db.Model):
             event_hash.query_type = "openalex-db_recordthresher_record_by_arxiv_id"
             event_hash.event_timestamp = now
             event_hash.payload_hash = payload_hash
-            db.session.add(event_hash)
             if not existing_hash(payload_hash):
                 event = RecordTrackEvent(recordtrack_record_id=self.id)
                 event.payload = json.loads(payload_str)
@@ -89,6 +89,8 @@ class RecordTrack(db.Model):
                 event.payload_hash = text_md5(payload_str)
                 event.event_timestamp = now
                 db.session.add(event)
+                event_hash.recordtrack_event_id = event.id
+            db.session.add(event_hash)
             self.last_tracked_at = now
             if not self.first_tracked_at:
                 self.first_tracked_at = now
@@ -112,7 +114,6 @@ class RecordTrack(db.Model):
             event_hash.query_type = "openalex-db_work"
             event_hash.event_timestamp = now
             event_hash.payload_hash = payload_hash
-            db.session.add(event_hash)
             if not existing_hash(payload_hash):
                 event = RecordTrackEvent(recordtrack_record_id=self.id)
                 event.payload = json.loads(payload_str)
@@ -120,6 +121,8 @@ class RecordTrack(db.Model):
                 event.payload_hash = text_md5(payload_str)
                 event.event_timestamp = now
                 db.session.add(event)
+                event_hash.recordtrack_event_id = event.id
+            db.session.add(event_hash)
             self.last_tracked_at = now
             if not self.first_tracked_at:
                 self.first_tracked_at = now
@@ -141,7 +144,6 @@ class RecordTrack(db.Model):
             event_hash.query_type = "api"
             event_hash.event_timestamp = now
             event_hash.payload_hash = payload_hash
-            db.session.add(event_hash)
             if not existing_hash(payload_hash):
                 event = RecordTrackEvent(recordtrack_record_id=self.id)
                 event.payload = result
@@ -149,6 +151,8 @@ class RecordTrack(db.Model):
                 event.query_type = "api"
                 event.event_timestamp = now
                 db.session.add(event)
+                event_hash.recordtrack_event_id = event.id
+            db.session.add(event_hash)
             self.last_tracked_at = now
             db.session.commit()
 
@@ -172,7 +176,6 @@ class RecordTrack(db.Model):
             event_hash.query_type = "redis_work_queue"
             event_hash.event_timestamp = now
             event_hash.payload_hash = payload_hash
-            db.session.add(event_hash)
             if not existing_hash(payload_hash):
                 event = RecordTrackEvent(recordtrack_record_id=self.id)
                 event.payload = payload
@@ -180,5 +183,7 @@ class RecordTrack(db.Model):
                 event.query_type = "redis_work_queue"
                 event.event_timestamp = now
                 db.session.add(event)
+                event_hash.recordtrack_event_id = event.id
+            db.session.add(event_hash)
             self.last_tracked_at = now
             db.session.commit()
