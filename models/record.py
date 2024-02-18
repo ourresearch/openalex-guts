@@ -362,7 +362,3 @@ class RecordthresherParentRecord(db.Model):
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
 
-
-@event.listens_for(Record, 'refresh')
-def load_happened(target, context, attrs):
-    target.init_on_load()
