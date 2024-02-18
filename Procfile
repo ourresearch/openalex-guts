@@ -22,6 +22,10 @@ fast_store_topics: python -m scripts.fast_queue --entity=topic --method=store --
 fast_store_domains: python -m scripts.fast_queue --entity=domain --method=store --chunk=1
 fast_store_fields: python -m scripts.fast_queue --entity=field --method=store --chunk=1
 fast_store_subfields: python -m scripts.fast_queue --entity=subfield --method=store --chunk=1
+fast_store_sdgs: python -m scripts.fast_queue --entity=sdg --method=store --chunk=1
+fast_store_types: python -m scripts.fast_queue --entity=type --method=store --chunk=1
+fast_store_countries: python -m scripts.fast_queue --entity=country --method=store --chunk=1
+fast_store_languages: python -m scripts.fast_queue --entity=language --method=store --chunk=1
 
 fast_update_once_update_institutions: python -m scripts.fast_queue --entity=work --method=update_once_update_institutions --chunk=100
 fast_update_once_add_work_concepts: python -m scripts.fast_queue --entity=work --method=update_once_add_work_concepts --chunk=100

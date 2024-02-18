@@ -6,6 +6,7 @@ from sqlalchemy import orm
 from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
+from app import TOPICS_INDEX
 from util import entity_md5
 
 
@@ -61,7 +62,7 @@ class Topic(db.Model):
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
-                "_index": "topics-v1",
+                "_index": TOPICS_INDEX,
                 "_id": self.openalex_id,
                 "_source": my_dict
             }
@@ -83,9 +84,12 @@ class Topic(db.Model):
             response.update({
                 "description": self.summary,
                 "keywords": [keyword.strip() for keyword in self.keywords.split(";")] if self.keywords else [],
+                "ids": {
+                    "openalex": self.openalex_id,
+                    "wikipedia": self.wikipedia_url
+                },
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                "wikipedia_url": self.wikipedia_url,
                 "works_api_url": f"https://api.openalex.org/works?filter=topics.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]

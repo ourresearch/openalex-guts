@@ -1,8 +1,11 @@
 import datetime
 
-from app import db, logger
+from sqlalchemy.dialects.postgresql import JSONB
+
+from app import db
+from bulk_actions import create_bulk_actions
 import models
-from util import entity_md5
+from app import SUBFIELDS_INDEX
 
 
 class Subfield(db.Model):
@@ -11,9 +14,17 @@ class Subfield(db.Model):
 
     subfield_id = db.Column(db.Integer, db.ForeignKey("mid.topic.subfield_id"), primary_key=True)
     display_name = db.Column(db.Text)
+    display_name_alternatives = db.Column(JSONB)
+    description = db.Column(db.Text)
+    wikidata_url = db.Column(db.Text)
+    wikipedia_url = db.Column(db.Text)
     json_entity_hash = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
+
+    @property
+    def id(self):
+        return self.subfield_id
 
     def field(self):
         field_query = (
@@ -44,27 +55,8 @@ class Subfield(db.Model):
         return topics_list_sorted
 
     def store(self):
-        bulk_actions = []
-
-        my_dict = self.to_dict()
-        my_dict['updated'] = my_dict.get('updated_date')
-        my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
-        my_dict['@version'] = 1
-        entity_hash = entity_md5(my_dict)
-        old_entity_hash = self.json_entity_hash
-
-        if entity_hash != old_entity_hash:
-            logger.info(f"dictionary for {self.subfield_id} new or changed, so save again")
-            index_record = {
-                "_op_type": "index",
-                "_index": "subfields-v1",
-                "_id": self.subfield_id,
-                "_source": my_dict
-            }
-            bulk_actions.append(index_record)
-        else:
-            logger.info(f"dictionary not changed, don't save again {self.subfield_id}")
-        self.json_entity_hash = entity_hash
+        bulk_actions, new_entity_hash = create_bulk_actions(self, SUBFIELDS_INDEX)
+        self.json_entity_hash = new_entity_hash
         return bulk_actions
 
     def to_dict(self, return_level="full"):
@@ -72,6 +64,12 @@ class Subfield(db.Model):
                     'display_name': self.display_name}
         if return_level == "full":
             response.update({
+                "description": self.description,
+                "display_name_alternatives": self.display_name_alternatives,
+                "ids": {
+                    "wikidata": self.wikidata_url,
+                    "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None
+                },
                 "field": self.field(),
                 "domain": self.domain(),
                 "topics": self.topics_list(),

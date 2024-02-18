@@ -288,6 +288,7 @@ work_type_strings = """
     info:eu-repo/semantics/masterthesis,dissertation,Thesis
     other,other,
     book,book,Book
+    edited-book,edited-book,Book
     dissertation,dissertation,Thesis
     info:eu-repo/semantics/article,journal-article,Journal
     monograph,monograph,Book

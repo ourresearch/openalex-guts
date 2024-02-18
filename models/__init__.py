@@ -19,11 +19,13 @@ from models.counts import ConceptCountsByYear
 from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYearCitations
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
+from models.country import Country
 from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.institution import InstitutionAncestors
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
+from models.language import Language
 from models.location import Location
 from models.mesh import Mesh
 from models.work_openapc import WorkOpenAPC
@@ -45,6 +47,8 @@ from models.topic import Topic
 from models.subfield import Subfield
 from models.field import Field
 from models.domain import Domain
+from models.sdg import SDG
+from models.type import Type
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
@@ -95,6 +99,8 @@ Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-o
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
+
+Country.continent = db.relationship("Continent", lazy='selectin', backref="countries", uselist=False)
 
 Author.counts = db.relationship("AuthorCounts", lazy='selectin', viewonly=True, uselist=False)
 Author.counts_2year = db.relationship("AuthorCounts2Year", lazy='selectin', viewonly=True, uselist=False)
