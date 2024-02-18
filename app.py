@@ -151,10 +151,18 @@ app.config["COMPRESS_DEBUG"] = compress_json
 # indexes
 AUTHORS_INDEX = "authors-v13"
 CONCEPTS_INDEX = "concepts-v8"
+COUNTRIES_INDEX = "countries-v1"
+DOMAINS_INDEX = "domains-v1"
+FIELDS_INDEX = "fields-v1"
 FUNDERS_INDEX = "funders-v3"
 INSTITUTIONS_INDEX = "institutions-v7"
+LANGUAGES_INDEX = "languages-v1"
 PUBLISHERS_INDEX = "publishers-v4"
+SDGS_INDEX = "sdgs-v1"
 SOURCES_INDEX = "sources-v2"
+SUBFIELDS_INDEX = "subfields-v1"
+TOPICS_INDEX = "topics-v3"
+TYPES_INDEX = "types-v1"
 WORKS_INDEX_PREFIX = "works-v22"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 
