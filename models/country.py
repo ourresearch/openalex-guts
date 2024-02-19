@@ -75,6 +75,7 @@ class Country(db.Model):
         if return_level == "full":
             response.update({
                 "country_id": self.id,
+                "country_code": self.id,
                 "description": self.description,
                 "display_name_alternatives": self.display_name_alternatives,
                 "ids": {
