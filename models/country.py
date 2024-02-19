@@ -9,31 +9,6 @@ from models.counts import citation_count_from_elastic, works_count_from_api
 from bulk_actions import create_bulk_actions
 
 
-class Continent(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "continent"
-
-    continent_id = db.Column(db.Integer, primary_key=True)
-    display_name = db.Column(db.Text)
-    wikidata_id = db.Column(db.Text)
-    updated_date = db.Column(db.DateTime)
-    created_date = db.Column(db.DateTime)
-
-    @property
-    def openalex_id(self):
-        return f"https://openalex.org/continents/{self.wikidata_id}"
-
-    @property
-    def wikidata_url(self):
-        return f"https://wikidata.org/wiki/{self.wikidata_id}"
-
-    def to_dict(self):
-        return {
-            "id": self.openalex_id,
-            "display_name": self.display_name,
-        }
-
-
 class Country(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "country"
