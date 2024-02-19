@@ -76,11 +76,12 @@ class Country(db.Model):
             response.update({
                 "country_id": self.id,
                 "description": self.description,
+                "display_name_alternatives": self.display_name_alternatives,
                 "ids": {
                     "openalex": self.openalex_id,
                     "iso": self.iso_id,
                     "wikidata": self.wikidata_url,
-                    "wikipedia": self.wikipedia_url,
+                    "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None,
                 },
                 "continent": self.continent.to_dict(),
                 "is_global_south": self.is_global_south,
