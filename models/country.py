@@ -1,6 +1,7 @@
 import datetime
-
 from cached_property import cached_property
+
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app import db
 from app import COUNTRIES_INDEX
@@ -20,7 +21,7 @@ class Continent(db.Model):
 
     @property
     def openalex_id(self):
-        return f"https://openalex.org/continents/{self.wikidata_id.lower()}"
+        return f"https://openalex.org/continents/{self.wikidata_id}"
 
     @property
     def wikidata_url(self):
@@ -39,6 +40,10 @@ class Country(db.Model):
 
     country_id = db.Column(db.Text, primary_key=True)
     display_name = db.Column(db.Text)
+    display_name_alternatives = db.Column(JSONB)
+    description = db.Column(db.Text)
+    wikidata_url = db.Column(db.Text)
+    wikipedia_url = db.Column(db.Text)
     continent_id = db.Column(db.Integer, db.ForeignKey("mid.continent.continent_id"))
     is_global_south = db.Column(db.Boolean)
     json_entity_hash = db.Column(db.Text)
@@ -51,7 +56,11 @@ class Country(db.Model):
 
     @property
     def openalex_id(self):
-        return f"https://openalex.org/countries/{self.id.lower()}"
+        return f"https://openalex.org/countries/{self.id}"
+
+    @property
+    def iso_id(self):
+        return f"https://www.iso.org/obp/ui/#iso:code:3166:{self.id}"
 
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, COUNTRIES_INDEX)
@@ -66,6 +75,13 @@ class Country(db.Model):
         if return_level == "full":
             response.update({
                 "country_id": self.id,
+                "description": self.description,
+                "ids": {
+                    "openalex": self.openalex_id,
+                    "iso_3166": self.iso_id,
+                },
+                "wikidata_url": self.wikidata_url,
+                "wikipedia_url": self.wikipedia_url,
                 "continent": self.continent.to_dict(),
                 "is_global_south": self.is_global_south,
                 "works_count": works_count_from_api("authorships.countries", self.id),
