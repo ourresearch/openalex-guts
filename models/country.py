@@ -79,9 +79,9 @@ class Country(db.Model):
                 "ids": {
                     "openalex": self.openalex_id,
                     "iso": self.iso_id,
+                    "wikidata": self.wikidata_url,
+                    "wikipedia": self.wikipedia_url,
                 },
-                "wikidata": self.wikidata_url,
-                "wikipedia": self.wikipedia_url,
                 "continent": self.continent.to_dict(),
                 "is_global_south": self.is_global_south,
                 "works_count": works_count_from_api("authorships.countries", self.id),
