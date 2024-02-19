@@ -20,6 +20,7 @@ from models.counts import InstitutionCountsByYearPapers, InstitutionCountsByYear
 from models.counts import SourceCountsByYearPapers, SourceCountsByYearCitations
 from models.counts import WorkCountsByYear
 from models.country import Country
+from models.continent import Continent
 from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
