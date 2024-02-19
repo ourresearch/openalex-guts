@@ -88,7 +88,7 @@ class Country(db.Model):
                 "is_global_south": self.is_global_south,
                 "works_count": works_count_from_api("authorships.countries", self.id),
                 "cited_by_count": citation_count_from_elastic("authorships.countries", self.id),
-                "authors_api_url": f"https://api.openalex.org/authors?filter=institution.country_code:{self.id}",
+                "authors_api_url": f"https://api.openalex.org/authors?filter=last_known_institutions.country_code:{self.id}",
                 "institutions_api_url": f"https://api.openalex.org/institutions?filter=country_code:{self.id}",
                 "works_api_url": f"https://api.openalex.org/works?filter=authorships.countries:{self.id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
