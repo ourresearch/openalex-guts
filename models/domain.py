@@ -27,6 +27,10 @@ class Domain(db.Model):
     def id(self):
         return self.domain_id
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/domains/{self.id}"
+
     def fields(self):
         fields_query = (
             db.session.query(models.Field)
@@ -44,8 +48,10 @@ class Domain(db.Model):
         return bulk_actions
 
     def to_dict(self, return_level="full"):
-        response = {'id': self.domain_id, 
-                    'display_name': self.display_name}
+        response = {
+            'id': self.openalex_id,
+            'display_name': self.display_name
+        }
         if return_level == "full":
             response.update({
                 "description": self.description,
