@@ -26,6 +26,10 @@ class Subfield(db.Model):
     def id(self):
         return self.subfield_id
 
+    @property
+    def openalex_id(self):
+        return f"https://openalex.org/subfields/{self.id}"
+
     def field(self):
         field_query = (
             db.session.query(models.Field)
@@ -60,8 +64,10 @@ class Subfield(db.Model):
         return bulk_actions
 
     def to_dict(self, return_level="full"):
-        response = {'id': self.subfield_id, 
-                    'display_name': self.display_name}
+        response = {
+            'id': self.openalex_id,
+            'display_name': self.display_name
+        }
         if return_level == "full":
             response.update({
                 "description": self.description,
