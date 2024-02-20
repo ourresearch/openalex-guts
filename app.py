@@ -164,7 +164,7 @@ SOURCES_INDEX = "sources-v2"
 SUBFIELDS_INDEX = "subfields-v1"
 TOPICS_INDEX = "topics-v3"
 TYPES_INDEX = "types-v1"
-WORKS_INDEX_PREFIX = "works-v22"
+WORKS_INDEX_PREFIX = "works-v23"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 
 # for raw affiliation matching
