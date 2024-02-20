@@ -8,7 +8,6 @@ import models
 from app import DOMAINS_INDEX
 
 
-
 class Domain(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "domain"
