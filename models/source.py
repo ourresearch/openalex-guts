@@ -14,11 +14,6 @@ from util import entity_md5
 from util import truncate_on_word_break
 
 
-# truncate mid.journal
-# insert into mid.journal (select * from legacy.mag_main_journals)
-# update mid.journal set display_title=replace(display_title, '\\\\/', '/');
-# update mid.journal set publisher=replace(publisher, '\t', '') where publisher ~ '\t';
-
 def as_source_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/S{id}"
@@ -29,7 +24,6 @@ class Source(db.Model):
     __tablename__ = "journal"
 
     journal_id = db.Column(db.BigInteger, primary_key=True)
-    # rank integer,
     normalized_name = db.Column(db.Text)
     display_name = db.Column(db.Text)
     issn = db.Column(db.Text)
@@ -116,6 +110,7 @@ class Source(db.Model):
             my_dict['@timestamp'] = datetime.datetime.utcnow().isoformat()
             my_dict['@version'] = 1
             entity_hash = entity_md5(my_dict)
+            print(my_dict)
 
             if entity_hash != self.json_entity_hash:
                 logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
@@ -201,10 +196,10 @@ class Source(db.Model):
 
     @property
     def host_organization(self):
-        if self.type == "journal" and self.publisher_entity:
-            return self.publisher_entity
-        elif self.type == "repository" and self.institution:
+        if self.type == "repository" and self.institution:
             return self.institution
+        elif self.publisher_entity:
+            return self.publisher_entity
         else:
             return None
 
@@ -220,46 +215,18 @@ class Source(db.Model):
             return None
 
     def host_organization_lineage(self):
-        if self.type == "journal" and self.publisher_entity:
-            return self.publisher_entity.lineage()
-        elif self.type == "repository" and self.institution:
-            return [self.institution.openalex_id]
-        else:
-            return []
-
-    @property
-    def host_institution_lineage(self):
         if self.type == "repository" and self.institution:
             return [self.institution.openalex_id]
-        else:
-            return []
-
-    @property
-    def host_institution_lineage_names(self):
-        if self.type == "repository" and self.institution:
-            return [self.institution.display_name]
-        else:
-            return []
-
-    @property
-    def publisher_lineage(self):
-        if self.publisher_entity and self.type != "repository":
+        elif self.publisher_entity:
             return self.publisher_entity.lineage()
-        else:
-            return []
-
-    @property
-    def publisher_lineage_names(self):
-        if self.publisher_entity and self.type != "repository":
-            return self.publisher_entity.lineage_names()
         else:
             return []
 
     def host_organization_lineage_names(self):
-        if self.type == "journal" and self.publisher_entity:
-            return self.publisher_entity.lineage_names()
-        elif self.type == "repository" and self.institution:
+        if self.type == "repository" and self.institution:
             return [self.institution.display_name]
+        elif self.publisher_entity:
+            return self.publisher_entity.lineage_names()
         else:
             return []
 
@@ -305,11 +272,6 @@ class Source(db.Model):
             "host_organization_lineage_names": self.host_organization_lineage_names(),
             "is_oa": self.is_oa or False,
             "is_in_doaj": self.is_in_doaj or False,
-            "host_institution_lineage": self.host_institution_lineage,
-            "host_institution_lineage_names": self.host_institution_lineage_names,
-            "publisher_lineage": self.publisher_lineage,
-            "publisher_lineage_names": self.publisher_lineage_names,
-            "publisher_id": self.publisher_entity and self.publisher_entity.openalex_id,
             "type": self.type,
         }
         if return_level == "full":
