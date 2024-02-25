@@ -830,6 +830,7 @@ class Work(db.Model):
             record for record in self.records_sorted
             if hasattr(record, "unpaywall") and record.unpaywall
         ]
+        logger.info(f'{len(records_with_unpaywall)} - records_with_unpaywall')
 
         if not records_with_unpaywall:
             return
@@ -886,6 +887,7 @@ class Work(db.Model):
 
             if struct_changed(old_locs, new_locs):
                 self.locations = new_locations
+                logger.info(f'Updated {len(new_locs)} locations')
 
     def add_references(self):
         from models import WorkExtraIds
@@ -1225,7 +1227,7 @@ class Work(db.Model):
             return True
         return False
 
-    @cached_property
+    @property
     def affiliations_sorted(self):
         return sorted(self.affiliations, key=lambda x: x.author_sequence_number)
 
@@ -1234,7 +1236,7 @@ class Work(db.Model):
         # sort so major topics at the top and the rest is alphabetical
         return sorted(self.mesh, key=lambda x: (not x.is_major_topic, x.descriptor_name), reverse=False)
 
-    @cached_property
+    @property
     def affiliations_list(self):
         affiliations = [affiliation for affiliation in self.affiliations_sorted]
         if not affiliations:
