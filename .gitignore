@@ -115,7 +115,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-venv_prod/
+venv_prod*/
 
 # Spyder project settings
 .spyderproject
@@ -167,3 +167,10 @@ data/doaj_20*.csv
 
 # scratch directory
 scratch/
+
+# vscode editor
+.vscode/**/*
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
