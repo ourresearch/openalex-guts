@@ -1099,6 +1099,49 @@ class Work(db.Model):
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
+    def set_fields_from_override_record(self, override):
+        from util import normalize_doi
+
+        self.updated_date = datetime.datetime.utcnow().isoformat()
+        if override.title:
+            self.original_title = override.title
+            self.paper_title = normalize_simple(self.original_title, remove_articles=False, remove_spaces=False)
+
+        if override.venue_name:
+            self.original_venue = override.venue_name
+        if override.journal:
+            self.journal_id = override.journal.journal_id
+            self.original_venue = override.journal.display_name  # overwrite override.venue_name if have a normalized name
+            self.publisher = override.journal.publisher
+
+            # don't include line below, it makes sqlalchemy errors, handle another way
+            # self.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
+
+        if override.doi:
+            self.doi = normalize_doi(override.doi, return_none_if_error=True)
+            self.doi_lower = self.doi
+        if override.published_date:
+            self.publication_date = override.published_date.isoformat()[0:10]
+            self.year = int(override.published_date.isoformat()[0:4])
+
+        if override.is_retracted:
+            self.doc_sub_types = "Retracted"
+
+        # mapping of recordthresher_record fields to Work (self) fields:
+        other_allowed_overrides = {
+            "volume": "volume",
+            "issue": "issue",
+            "first_page": "first_page",
+            "last_page": "last_page",
+            "normalized_work_type": "genre",
+            "normalized_doc_type": "doc_type",
+            "record_webpage_url": "best_url",
+        }
+        for rt_field, work_field in other_allowed_overrides.items():
+            override_val = getattr(override, rt_field, None)
+            if override_val:
+                setattr(self, work_field, override_val)
+
     @cached_property
     def looks_like_paratext(self):
         if self.is_paratext:
@@ -1210,6 +1253,10 @@ class Work(db.Model):
         for record in records:
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
+
+        for record in records:
+            if record.record_type == "override":
+                self.set_fields_from_override_record(record)
 
         # self.delete_dict["Work"] += [self.paper_id]
         insert_dict = {}
