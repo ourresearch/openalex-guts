@@ -41,10 +41,14 @@ from app import ELASTIC_URL
 from app import (
     AUTHORS_INDEX,
     CONCEPTS_INDEX,
+    DOMAINS_INDEX,
+    FIELDS_INDEX,
     FUNDERS_INDEX,
     INSTITUTIONS_INDEX,
     PUBLISHERS_INDEX,
     SOURCES_INDEX,
+    SUBFIELDS_INDEX,
+    TOPICS_INDEX,
     WORKS_INDEX,
 )
 
@@ -65,6 +69,10 @@ entities_to_indices = {
     "institutions": INSTITUTIONS_INDEX,
     "publishers": PUBLISHERS_INDEX,
     "sources": SOURCES_INDEX,
+    "topics": TOPICS_INDEX,
+    "domains": DOMAINS_INDEX,
+    "fields": FIELDS_INDEX,
+    "subfields": SUBFIELDS_INDEX,
 }
 
 
