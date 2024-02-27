@@ -91,6 +91,8 @@ class Record(db.Model):
 
     @property
     def score(self):
+        if self.record_type == "override":
+            return 500
         if self.record_type == "crossref_doi":
             return 100
         if self.record_type == "pubmed_record":
@@ -109,6 +111,9 @@ class Record(db.Model):
 
     def get_or_mint_work(self):
         from models.work import Work
+        if self.record_type == "override":
+            # This should already be connected to a work via work_id
+            return
         if not self.is_primary_record():
             print(
                 f'record {self.id} is of type {self.record_type} '
@@ -207,7 +212,7 @@ class Record(db.Model):
         return
 
     def is_primary_record(self):
-        return self.record_type and self.record_type in {'crossref_doi', 'pubmed_record', 'pmh_record'}
+        return self.record_type and self.record_type in {'crossref_doi', 'pubmed_record', 'pmh_record', 'override'}
 
     def mint_work(self):
         from models import Work
