@@ -3,7 +3,7 @@
 #   $ python3 -m snapshot.backup
 #
 # 2. export merged ids
-#   $ bash ./snapshot/export_merged_ids.sh
+#   $ bash ./snapshot/export_merge_ids.sh
 #
 # 3. run this script to creates the new contents of s3://openalex/data/ in a local directory ${data_dir}
 #   $ python3 -m snapshot.export
