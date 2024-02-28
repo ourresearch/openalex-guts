@@ -7,6 +7,7 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
 from app import TOPICS_INDEX
+import models
 from util import entity_md5
 
 
@@ -48,6 +49,21 @@ class Topic(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
+    @property
+    def siblings(self):
+        siblings_query = (
+            db.session.query(models.Topic)
+            .filter(models.Topic.subfield_id == self.subfield_id)
+            .all()
+        )
+        topics_list = [
+            {'id': topic.openalex_id, 'display_name': topic.display_name}
+            for topic in siblings_query
+            if topic.topic_id != self.topic_id
+        ]
+        topics_list_sorted = sorted(topics_list, key=lambda x: x['display_name'].lower())
+        return topics_list_sorted
+
     def store(self):
         bulk_actions = []
 
@@ -88,6 +104,7 @@ class Topic(db.Model):
                     "openalex": self.openalex_id,
                     "wikipedia": self.wikipedia_url
                 },
+                "siblings": self.siblings,
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "works_api_url": f"https://api.openalex.org/works?filter=topics.id:{self.openalex_id_short}",
