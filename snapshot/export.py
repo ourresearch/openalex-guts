@@ -144,8 +144,9 @@ def export_date(args):
             try:
                 record_id = int(record_id.replace(index_id_prefix, ""))
             except ValueError:
-                print(f"Skipping record {record_id}. Not an integer.")
-                continue
+                if entity_type not in ["domains", "fields", "subfields"]:
+                    print(f"Skipping record {record_id}. Not an integer.")
+                    continue
             if r.sadd('record_ids', record_id):
                 count += 1
                 record = hit.to_dict()
@@ -183,6 +184,8 @@ def export_date(args):
                 part_file.write(line)
                 total_size += line_size
             else:
+                with open(f'duplicate_record_ids_{entity_type}.csv', 'a') as f:
+                    f.write(f"{entity_type[0].upper()}{record_id}\n")
                 print(f"Skipping record {record_id}. Already in dataset.")
 
         # Get the last document's sort value and use it for the search_after parameter
