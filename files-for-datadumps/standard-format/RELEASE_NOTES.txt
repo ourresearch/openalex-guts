@@ -1,5 +1,12 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-02-27
+- added topics to works
+- modified ID format for topic domain, field, and subfield within works, from integer to openalex string. About 60% of
+    works have the new format. The remaining 40% will be updated by the next release.
+- added new topics, domains, fields, and subfields entities to the snapshot
+- fixed host_organization bug within sources
+
 RELEASE 2024-01-24
 - added Author.last_known_institutions, a list of institutions for the affiliations of the author's most recent work (last_known_affiliation will be deprecated in the future)
 - added indexed_in to works
