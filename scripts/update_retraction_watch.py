@@ -22,6 +22,7 @@ root_logger = logging.getLogger()
 logger = root_logger.getChild(__name__)
 
 import requests
+from cleanup.util import make_request
 import pandas as pd
 
 from app import db
@@ -36,7 +37,7 @@ def request_retraction_watch_data():
     logger.info(
         f"downloading retraction watch data from {csv_download_url} (using mailto: {params['mailto']})"
     )
-    r = requests.get(csv_download_url, params=params)
+    r = make_request(csv_download_url, params=params)
     r.raise_for_status()
     return r
 
