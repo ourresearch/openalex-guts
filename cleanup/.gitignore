@@ -1,4 +1,5 @@
 data/
 logs/
 # leave out notebooks for now
-notebooks/
+notebooks/**/*
+!notebooks/**/*_keep.ipynb
