@@ -13,6 +13,7 @@ class SDG(db.Model):
 
     sdg_id = db.Column(db.Integer, primary_key=True)
     display_name = db.Column(db.Text)
+    description = db.Column(db.Text)
     json_entity_hash = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
@@ -45,6 +46,7 @@ class SDG(db.Model):
                     "openalex": self.openalex_id,
                     "un": self.un_metadata_id
                 },
+                "description": self.description if self.description else "",
                 "works_count": works_count_from_api("sustainable_development_goals.id", self.un_metadata_id),
                 "cited_by_count": citation_count_from_elastic("sustainable_development_goals.id", self.un_metadata_id),
                 "works_api_url": f"https://api.openalex.org/works?filter=sustainable_development_goals.id:{self.un_metadata_id}",
