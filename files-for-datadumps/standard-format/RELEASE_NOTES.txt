@@ -1,5 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+UPCOMING RELEASE
+- marked 2,661 additional works as retracted using Retraction Watch data, and set up automatic updates for Retraction Watch (see https://doi.org/10.13003/c23rw1d9 for info about Retraction Watch)
+
 RELEASE 2024-02-27
 - added topics to works
 - modified ID format for topic domain, field, and subfield within works, from integer to openalex string. About 60% of
