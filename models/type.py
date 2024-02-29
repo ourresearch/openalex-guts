@@ -15,6 +15,7 @@ class Type(db.Model):
 
     type_id = db.Column(db.Text, primary_key=True)
     display_name = db.Column(db.Text)
+    description = db.Column(db.Text)
     crossref_types = db.Column(JSONB)
     json_entity_hash = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
@@ -40,6 +41,7 @@ class Type(db.Model):
         }
         if return_level == "full":
             response.update({
+                "description": self.description if self.description else "",
                 "crossref_types": sorted(self.crossref_types) if self.crossref_types else [],
                 "works_count": works_count_from_api("type", self.id),
                 "cited_by_count": citation_count_from_elastic("type", self.id),
