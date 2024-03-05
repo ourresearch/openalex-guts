@@ -51,7 +51,7 @@ class SDG(db.Model):
                     "wikidata": f"https://www.wikidata.org/wiki/{self.wikidata_id}",
                 },
                 "description": self.description if self.description else "",
-                "works_count": works_count_from_api("sustainable_development_goals.id", self.un_metadata_id),
+                "works_count": works_count_from_api("sustainable_development_goals.id", self.openalex_id),
                 "cited_by_count": citation_count_from_elastic("sustainable_development_goals.id", self.un_metadata_id),
                 "works_api_url": f"https://api.openalex.org/works?filter=sustainable_development_goals.id:{self.un_metadata_id}",
                 "image_url": self.image_url,
