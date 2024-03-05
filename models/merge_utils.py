@@ -8,7 +8,9 @@ from app import logger
 from util import normalize
 
 
-def merge_crossref_with_parseland(crossref_record, parseland_record, cls):
+def merge_crossref_with_parseland(crossref_record, parseland_record):
+    from models import Record
+
     if not crossref_record:
         return None
 
@@ -24,7 +26,7 @@ def merge_crossref_with_parseland(crossref_record, parseland_record, cls):
     exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state', 'insert_dict'}
     crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if
                          k not in exclude_attrs}
-    cloned_crossref_record = cls(**crossref_record_d)
+    cloned_crossref_record = Record(**crossref_record_d)
 
     parseland_dict = _parseland_record_dict(parseland_record)
     pl_authors = parseland_dict.get('authors', [])
