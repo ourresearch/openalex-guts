@@ -82,7 +82,7 @@ class Record(db.Model):
     @cached_property
     def with_parseland_data(self):
         if self.parseland_record:
-            return merge_crossref_with_parseland(self, self.parseland_record, self.__class__)
+            return merge_crossref_with_parseland(self, self.parseland_record)
         else:
             return self
 
