@@ -6,11 +6,10 @@ import math
 
 from app import logger
 from util import normalize
+from models import Record
 
 
 def merge_crossref_with_parseland(crossref_record, parseland_record):
-    from models import Record
-
     if not crossref_record:
         return None
 
@@ -23,8 +22,9 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
     logger.info(
         f"merging record {crossref_record.id} with parseland record {parseland_record.id}")
 
-    exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state'}
-    crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if k not in exclude_attrs}
+    exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state', 'insert_dict'}
+    crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if
+                         k not in exclude_attrs}
     cloned_crossref_record = Record(**crossref_record_d)
 
     parseland_dict = _parseland_record_dict(parseland_record)
@@ -66,7 +66,7 @@ def _reconcile_affiliations(crossref_author, pl_author, doi):
     # Sometimes Crossref will have English version and Parseland will have version in another language
     # We probably don't want to keep version that is not in English
     pl_affs = [aff for aff in pl_affs if aff['name'].isascii()] if \
-    crossref_author['affiliation'] else pl_affs
+        crossref_author['affiliation'] else pl_affs
     for aff in crossref_author['affiliation']:
         # Assume crossref affiliation is better version initially
         if all((aff.get('department'), aff.get('id'), not pl_affs,
