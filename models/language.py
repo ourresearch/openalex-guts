@@ -38,7 +38,7 @@ class Language(db.Model):
         }
         if return_level == "full":
             response.update({
-                "works_count": works_count_from_api("language", self.id),
+                "works_count": works_count_from_api("language", self.openalex_id),
                 "cited_by_count": citation_count_from_elastic("language", self.id),
                 "works_api_url": f"https://api.openalex.org/works?filter=language:{self.id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),

@@ -14,6 +14,9 @@ class SDG(db.Model):
     sdg_id = db.Column(db.Integer, primary_key=True)
     display_name = db.Column(db.Text)
     description = db.Column(db.Text)
+    wikidata_id = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    image_thumbnail_url = db.Column(db.Text)
     json_entity_hash = db.Column(db.Text)
     updated_date = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime)
@@ -44,12 +47,15 @@ class SDG(db.Model):
             response.update({
                 "ids": {
                     "openalex": self.openalex_id,
-                    "un": self.un_metadata_id
+                    "un": self.un_metadata_id,
+                    "wikidata": f"https://www.wikidata.org/wiki/{self.wikidata_id}",
                 },
                 "description": self.description if self.description else "",
-                "works_count": works_count_from_api("sustainable_development_goals.id", self.un_metadata_id),
+                "works_count": works_count_from_api("sustainable_development_goals.id", self.openalex_id),
                 "cited_by_count": citation_count_from_elastic("sustainable_development_goals.id", self.un_metadata_id),
                 "works_api_url": f"https://api.openalex.org/works?filter=sustainable_development_goals.id:{self.un_metadata_id}",
+                "image_url": self.image_url,
+                "image_thumbnail_url": self.image_thumbnail_url,
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
