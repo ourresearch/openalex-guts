@@ -12,8 +12,8 @@ import json
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
+from models.merge_utils import merge_crossref_with_parseland
 from util import normalize_title_like_sql
-from models.parseland_utils import merge_crossref_with_parseland
 
 
 class Record(db.Model):
