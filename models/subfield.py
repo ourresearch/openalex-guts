@@ -58,6 +58,22 @@ class Subfield(db.Model):
         topics_list_sorted = sorted(topics_list, key=lambda x: x['display_name'].lower())
         return topics_list_sorted
 
+    def siblings(self):
+        field_id = self.field().get('id').split("/")[-1]
+        siblings_query = (
+            db.session.query(models.Subfield)
+            .join(models.Topic, models.Subfield.subfield_id == models.Topic.subfield_id)
+            .filter(models.Topic.field_id == field_id)
+            .all()
+        )
+        subfields_list = [
+            {'id': subfield.openalex_id, 'display_name': subfield.display_name}
+            for subfield in siblings_query
+            if subfield.subfield_id != self.subfield_id
+        ]
+        subfields_list_sorted = sorted(subfields_list, key=lambda x: x['display_name'].lower())
+        return subfields_list_sorted
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, SUBFIELDS_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -79,6 +95,7 @@ class Subfield(db.Model):
                 "field": self.field(),
                 "domain": self.domain(),
                 "topics": self.topics_list(),
+                "siblings": self.siblings(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "works_api_url": f"https://api.openalex.org/works?filter=topics.subfield.id:{self.subfield_id}",

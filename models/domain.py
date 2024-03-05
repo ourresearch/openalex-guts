@@ -41,6 +41,16 @@ class Domain(db.Model):
         field_list_sorted = sorted(fields_list, key=lambda x: x['display_name'].lower())
         return field_list_sorted
 
+    def siblings(self):
+        siblings_query = (
+            db.session.query(models.Domain)
+            .filter(models.Domain.domain_id != self.domain_id)
+            .all()
+        )
+        domains_list = [{'id': domain.openalex_id, 'display_name': domain.display_name} for domain in siblings_query]
+        domains_list_sorted = sorted(domains_list, key=lambda x: x['display_name'].lower())
+        return domains_list_sorted
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, DOMAINS_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -60,6 +70,7 @@ class Domain(db.Model):
                     "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None
                 },
                 "fields": self.fields(),
+                "siblings": self.siblings(),
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
                 "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "works_api_url": f"https://api.openalex.org/works?filter=topics.domain.id:{self.domain_id}",

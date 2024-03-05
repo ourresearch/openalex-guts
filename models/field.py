@@ -49,6 +49,22 @@ class Field(db.Model):
         subfield_list_sorted = sorted(subfields_list, key=lambda x: x['display_name'].lower())
         return subfield_list_sorted
 
+    def siblings(self):
+        domain_id = self.domain().get('id').split("/")[-1]
+        siblings_query = (
+            db.session.query(models.Field)
+            .join(models.Topic, models.Field.field_id == models.Topic.field_id)
+            .filter(models.Topic.domain_id == domain_id)
+            .all()
+        )
+        fields_list = [
+            {'id': field.openalex_id, 'display_name': field.display_name}
+            for field in siblings_query
+            if field.field_id != self.field_id
+        ]
+        fields_list_sorted = sorted(fields_list, key=lambda x: x['display_name'].lower())
+        return fields_list_sorted
+
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, FIELDS_INDEX)
         self.json_entity_hash = new_entity_hash
@@ -67,10 +83,11 @@ class Field(db.Model):
                     "wikidata": self.wikidata_url,
                     "wikipedia": self.wikipedia_url.replace(" ", "_") if self.wikipedia_url else None
                 },
-                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "domain": self.domain(),
                 "subfields": self.subfields(),
+                "siblings": self.siblings(),
+                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
+                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
                 "works_api_url": f"https://api.openalex.org/works?filter=topics.field.id:{self.field_id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
