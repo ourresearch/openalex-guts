@@ -40,7 +40,7 @@ class SourceType(db.Model):
         if return_level == "full":
             response.update({
                 "description": self.description if self.description else None,
-                "works_count": works_count_from_api("locations.source.type", self.openalex_id),
+                "works_count": works_count_from_api("locations.source.type", self.openalex_id.replace(" ", "%20")),
                 "cited_by_count": citation_count_from_elastic("locations.source.type", self.id),
                 "works_api_url": f"https://api.openalex.org/works?filter=type:{self.id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
