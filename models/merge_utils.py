@@ -63,6 +63,7 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
     cloned_crossref_record.abstract = crossref_record.abstract or parsed_dict.get(
         'abstract')
     cloned_crossref_record.authors = json.dumps(crossref_authors)
+    cloned_crossref_record.citations = crossref_record.citations if len(crossref_record.citations or '[]') > 3 else json.dumps(parsed_dict.get('citations'))
 
     return cloned_crossref_record
 
@@ -165,11 +166,12 @@ def _match_parsed_author(crossref_author, crossref_author_idx,
 
 
 def _parsed_record_dict(parsed_record):
-    parseland_dict = {
+    parsed_dict = {
         'authors': [],
         'published_date': None,
         'genre': None,
-        'abstract': None
+        'abstract': None,
+        'citations': []
     }
 
     pl_authors = json.loads(parsed_record.authors or '[]') or []
@@ -189,13 +191,14 @@ def _parsed_record_dict(parsed_record):
         if orcid := pl_author.get('orcid'):
             author['orcid'] = orcid
 
-        parseland_dict['authors'].append(_normalize_author(author))
+        parsed_dict['authors'].append(_normalize_author(author))
 
-    parseland_dict['published_date'] = parsed_record.published_date
-    parseland_dict['genre'] = parsed_record.genre
-    parseland_dict['abstract'] = parsed_record.abstract
+    parsed_dict['published_date'] = parsed_record.published_date
+    parsed_dict['genre'] = parsed_record.genre
+    parsed_dict['abstract'] = parsed_record.abstract
+    parsed_dict['citations'] = json.loads(parsed_record.citations or '[]') or []
 
-    return parseland_dict
+    return parsed_dict
 
 
 def _normalize_author(author):
