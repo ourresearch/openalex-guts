@@ -123,6 +123,7 @@ class QueueWorkAddEverything:
             selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.unpaywall).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).raiseload('*'),
