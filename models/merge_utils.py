@@ -7,8 +7,16 @@ import math
 from app import logger
 from util import normalize
 
+PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
-def merge_crossref_with_parseland(crossref_record, parseland_record):
+
+def has_affs(parsed_record):
+    authors = json.loads(parsed_record.authors)
+    return any(
+        [bool(author.get('affiliations')) for author in authors])
+
+
+def merge_crossref_with_parsed(crossref_record, parsed_record):
     from models import Record
 
     if not crossref_record:
@@ -16,26 +24,27 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
 
     if not (
             crossref_record and crossref_record.record_type == 'crossref_doi'
-            and parseland_record and parseland_record.record_type == 'crossref_parseland'
+            and parsed_record and parsed_record.record_type in PARSED_RECORD_TYPES
     ):
         return crossref_record
 
     logger.info(
-        f"merging record {crossref_record.id} with parseland record {parseland_record.id}")
+        f"merging record {crossref_record.id} with parsed record {parsed_record.id}")
 
-    exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state', 'insert_dict'}
+    exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state',
+                     'insert_dict'}
     crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if
                          k not in exclude_attrs}
     cloned_crossref_record = Record(**crossref_record_d)
 
-    parseland_dict = _parseland_record_dict(parseland_record)
-    pl_authors = parseland_dict.get('authors', [])
+    parsed_dict = _parsed_record_dict(parsed_record)
+    pl_authors = parsed_dict.get('authors', [])
     normalized_pl_authors = [normalize(author.get('raw', '')) for author in
                              pl_authors]
 
     crossref_authors = json.loads(cloned_crossref_record.authors or '[]')
     for crossref_author_idx, crossref_author in enumerate(crossref_authors):
-        best_match_idx = _match_pl_author(
+        best_match_idx = _match_parsed_author(
             crossref_author,
             crossref_author_idx,
             normalized_pl_authors
@@ -51,7 +60,7 @@ def merge_crossref_with_parseland(crossref_record, parseland_record):
                 crossref_record.doi
             )
 
-    cloned_crossref_record.abstract = crossref_record.abstract or parseland_dict.get(
+    cloned_crossref_record.abstract = crossref_record.abstract or parsed_dict.get(
         'abstract')
     cloned_crossref_record.authors = json.dumps(crossref_authors)
 
@@ -128,8 +137,8 @@ def _match_affiliation(aff, other_affs):
     return best_match_idx
 
 
-def _match_pl_author(crossref_author, crossref_author_idx,
-                     normalized_pl_authors):
+def _match_parsed_author(crossref_author, crossref_author_idx,
+                         normalized_pl_authors):
     family = normalize(crossref_author.get('family') or '')
     given = normalize(crossref_author.get('given') or '')
 
@@ -155,7 +164,7 @@ def _match_pl_author(crossref_author, crossref_author_idx,
     return best_match_idx
 
 
-def _parseland_record_dict(parseland_record):
+def _parsed_record_dict(parsed_record):
     parseland_dict = {
         'authors': [],
         'published_date': None,
@@ -163,7 +172,7 @@ def _parseland_record_dict(parseland_record):
         'abstract': None
     }
 
-    pl_authors = json.loads(parseland_record.authors or '[]') or []
+    pl_authors = json.loads(parsed_record.authors or '[]') or []
 
     for pl_author in pl_authors:
         author = {
@@ -182,9 +191,9 @@ def _parseland_record_dict(parseland_record):
 
         parseland_dict['authors'].append(_normalize_author(author))
 
-    parseland_dict['published_date'] = parseland_record.published_date
-    parseland_dict['genre'] = parseland_record.genre
-    parseland_dict['abstract'] = parseland_record.abstract
+    parseland_dict['published_date'] = parsed_record.published_date
+    parseland_dict['genre'] = parsed_record.genre
+    parseland_dict['abstract'] = parsed_record.abstract
 
     return parseland_dict
 
