@@ -126,6 +126,7 @@ def get_records(record_ids):
         joinedload(models.Record.journals).raiseload('*'),
         joinedload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
         joinedload(models.Record.parseland_record).raiseload('*'),
+        joinedload(models.Record.pdf_record).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
     ).filter(models.Record.id.in_(record_ids)).all()
 

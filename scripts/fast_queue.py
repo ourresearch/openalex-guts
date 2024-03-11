@@ -297,6 +297,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.field).raiseload('*'),
             selectinload(models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.domain).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
             selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
