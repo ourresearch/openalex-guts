@@ -199,6 +199,14 @@ Record.parseland_record = db.relationship(
     primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'crossref_parseland', foreign(Record.doi) == remote(Record.doi))"
 )
 
+Record.pdf_record = db.relationship(
+    "Record",
+    lazy='selectin',
+    uselist=False,
+    viewonly=True,
+    primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'parsed_pdf', foreign(Record.doi) == remote(Record.doi))"
+)
+
 Record.child_records = db.relationship(
     'Record',
     lazy='subquery',
