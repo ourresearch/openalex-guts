@@ -12,7 +12,7 @@ import json
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
-from models.merge_utils import merge_crossref_with_parseland
+from models.merge_utils import merge_crossref_with_parsed, has_affs
 from util import normalize_title_like_sql
 
 
@@ -80,9 +80,14 @@ class Record(db.Model):
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
     @cached_property
-    def with_parseland_data(self):
-        if self.parseland_record:
-            return merge_crossref_with_parseland(self, self.parseland_record)
+    def with_parsed_data(self):
+        if self.parseland_record and has_affs(self.parseland_record):
+            return merge_crossref_with_parsed(self, self.parseland_record)
+        elif self.pdf_record and has_affs(self.pdf_record):
+            return merge_crossref_with_parsed(self, self.pdf_record)
+        elif self.parseland_record or self.pdf_record:
+            return merge_crossref_with_parsed(self,
+                                              self.parseland_record or self.pdf_record)
         else:
             return self
 
@@ -179,13 +184,13 @@ class Record(db.Model):
                         print(f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.with_parseland_data or not self.with_parseland_data.authors or self.with_parseland_data.authors == []:
+                    if not self.with_parsed_data or not self.with_parsed_data.authors or self.with_parsed_data.authors == []:
                         # is considered a match
                         matching_work = matching_work_temp
                         print(f"no authors for {self.id}, so considering it an author match")
                         break
 
-                    if matching_work_temp.matches_authors_in_record(self.with_parseland_data.authors):
+                    if matching_work_temp.matches_authors_in_record(self.with_parsed_data.authors):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
                         break
