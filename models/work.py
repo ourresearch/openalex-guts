@@ -1227,7 +1227,7 @@ class Work(db.Model):
 
     @property
     def records_merged(self):
-        return [r.with_parseland_data for r in self.records or [] if r.with_parseland_data]
+        return [r.with_parsed_data for r in self.records or [] if r.with_parsed_data]
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
