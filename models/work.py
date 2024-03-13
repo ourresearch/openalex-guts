@@ -1215,7 +1215,7 @@ class Work(db.Model):
 
         return None
 
-    @cached_property
+    @property
     def records_sorted(self):
         if not self.records_merged:
             return []
@@ -1957,6 +1957,7 @@ class Work(db.Model):
                 and other_location.url_for_landing_page not in seen_urls
                 and other_location.url_for_pdf not in seen_urls
             ):
+                logger.info(f'Appending Unpaywall location to work - {self.paper_id}')
                 other_location_dict = other_location.to_locations_dict()
 
                 if other_location_dict['pdf_url']:
