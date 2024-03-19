@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 
+from app import COUNTRIES_ENDPOINT_PREFIX
 from app import INSTITUTIONS_INDEX
 from app import MAX_MAG_ID
 from app import USER_AGENT
@@ -564,13 +565,19 @@ class Institution(db.Model):
     def lineage(self):
         return sorted([self.openalex_id] + [f"https://openalex.org/I{i.ancestor_id}" for i in self.ancestors])
 
+    @property
+    def type(self):
+        return self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None
+
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
             "ror": self.ror_url,
             "display_name": self.display_name,
             "country_code": self.country_code,
-            "type": self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None,
+            "country_id": f"{COUNTRIES_ENDPOINT_PREFIX}/{self.country_code}" if self.country_code else None,
+            "type": self.type,
+            "type_id": f"https://openalex.org/institution-types/{self.type}" if self.type else None,
             "lineage": self.lineage,
         }
         # true for embedded related institutions
