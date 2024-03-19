@@ -19,6 +19,7 @@ from sqlalchemy.types import ARRAY
 
 import models
 from app import WORKS_INDEX_PREFIX
+from app import COUNTRIES_ENDPOINT_PREFIX
 from app import COUNTRIES
 from app import MAX_MAG_ID
 from app import db
@@ -1332,6 +1333,7 @@ class Work(db.Model):
                              "author": affil_list[0]["author"],
                              "institutions": institution_list,
                              "countries": countries,
+                             "country_ids": [f"{COUNTRIES_ENDPOINT_PREFIX}/{c}" for c in countries],
                              "is_corresponding": is_corresponding,
                              "raw_author_name": affil_list[0]["raw_author_name"],
                              "raw_affiliation_strings": raw_affiliation_strings,
@@ -2136,6 +2138,7 @@ class Work(db.Model):
             "publication_year": self.year,
             "publication_date": self.publication_date,
             "language": self.language,
+            "language_id": f"https://openalex.org/languages/{self.language}",
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
@@ -2147,6 +2150,7 @@ class Work(db.Model):
             "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
             "type": self.display_genre,
             "type_crossref": self.type_crossref,
+            "type_id": f"https://openalex.org/work-types/{self.display_genre}",
             "indexed_in": self.indexed_in,
             "open_access": {
                 "is_oa": is_oa,

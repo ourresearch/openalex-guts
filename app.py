@@ -168,6 +168,9 @@ TYPES_INDEX = "types-v2"
 WORKS_INDEX_PREFIX = "works-v23"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 
+# endpoint prefixes
+COUNTRIES_ENDPOINT_PREFIX = "https://openalex.org/countries"
+
 # for raw affiliation matching
 COUNTRIES = {
     "AD": ["Andorra"],
