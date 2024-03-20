@@ -387,6 +387,8 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Language).filter(models.Language.language_id.in_(object_ids)).all()
     elif entity_type == "continent":
         objects = db.session.query(models.Continent).filter(models.Continent.continent_id.in_(object_ids)).all()
+    elif entity_type == "institution_type":
+        objects = db.session.query(models.InstitutionType).filter(models.InstitutionType.institution_type_id.in_(object_ids)).all()
     elif entity_type == "source_type":
         objects = db.session.query(models.SourceType).filter(models.SourceType.source_type_id.in_(object_ids)).all()
     logger.info(f'got {len(objects)} objects in {elapsed(start_time, 4)}s')
