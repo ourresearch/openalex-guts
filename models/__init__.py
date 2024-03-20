@@ -25,6 +25,7 @@ from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.institution import InstitutionAncestors
+from models.institution_type import InstitutionType
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.language import Language
 from models.location import Location
