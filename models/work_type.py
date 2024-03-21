@@ -13,7 +13,7 @@ class WorkType(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work_type"
 
-    type_id = db.Column(db.Text, primary_key=True)
+    work_type_id = db.Column(db.Text, primary_key=True)
     display_name = db.Column(db.Text)
     description = db.Column(db.Text)
     crossref_types = db.Column(JSONB)
@@ -23,7 +23,7 @@ class WorkType(db.Model):
 
     @cached_property
     def id(self):
-        return self.type_id
+        return self.work_type_id
 
     @property
     def openalex_id(self):
