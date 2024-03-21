@@ -40,9 +40,9 @@ class InstitutionType(db.Model):
         if return_level == "full":
             response.update({
                 "description": self.description if self.description else None,
-                "works_count": works_count_from_api("authorships.institutions.type", self.openalex_id.replace(" ", "%20")),
+                "works_count": works_count_from_api("authorships.institutions.type", self.id),
                 "cited_by_count": citation_count_from_elastic("authorships.institutions.type", self.id),
-                "works_api_url": f"https://api.openalex.org/works?filter=insitution.type:{self.id}",
+                "works_api_url": f"https://api.openalex.org/works?filter=authorships.institutions.type:{self.id}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
             })
