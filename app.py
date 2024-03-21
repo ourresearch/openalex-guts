@@ -165,7 +165,7 @@ SOURCES_INDEX = "sources-v2"
 SOURCE_TYPES_INDEX = "source-types-v1"
 SUBFIELDS_INDEX = "subfields-v2"
 TOPICS_INDEX = "topics-v4"
-TYPES_INDEX = "types-v2"
+WORK_TYPES_INDEX = "work-types-v1"
 WORKS_INDEX_PREFIX = "works-v23"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 

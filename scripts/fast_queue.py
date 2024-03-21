@@ -379,8 +379,8 @@ def get_objects(entity_type, object_ids):
         objects = db.session.query(models.Subfield).filter(models.Subfield.subfield_id.in_(object_ids)).all()
     elif entity_type == "sdg":
         objects = db.session.query(models.SDG).filter(models.SDG.sdg_id.in_(object_ids)).all()
-    elif entity_type == "type":
-        objects = db.session.query(models.Type).filter(models.Type.type_id.in_(object_ids)).all()
+    elif entity_type == "work_type":
+        objects = db.session.query(models.WorkType).filter(models.WorkType.type_id.in_(object_ids)).all()
     elif entity_type == "country":
         objects = db.session.query(models.Country).filter(models.Country.country_id.in_(object_ids)).all()
     elif entity_type == "language":
