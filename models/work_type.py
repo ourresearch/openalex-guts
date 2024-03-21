@@ -27,7 +27,7 @@ class WorkType(db.Model):
 
     @property
     def openalex_id(self):
-        return f"https://openalex.org/work-types/{self.id}"
+        return f"https://openalex.org/types/{self.id}"
 
     def store(self):
         bulk_actions, new_entity_hash = create_bulk_actions(self, WORK_TYPES_INDEX)
