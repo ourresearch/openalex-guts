@@ -51,7 +51,7 @@ from models.field import Field
 from models.domain import Domain
 from models.sdg import SDG
 from models.source_type import SourceType
-from models.type import Type
+from models.work_type import WorkType
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
