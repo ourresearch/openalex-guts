@@ -260,10 +260,12 @@ class Work(db.Model):
             return
 
         record_author_dict_list = []
-        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
+        if not records_with_affiliations:
+            records_with_affiliations = [record for record in self.records_sorted if record.authors]
 
         if records_with_affiliations:
-            record_author_dict_list = json.loads(records_with_affiliations[0].authors)
+            record_author_dict_list = records_with_affiliations[0].authors_json
 
         all_affiliations = sorted(
             self.affiliations,
@@ -305,9 +307,12 @@ class Work(db.Model):
             for new_institution_id_list in new_institution_id_lists:
                 new_institution_ids.update([i for i in new_institution_id_list if i])
 
+            strings_need_update = not all([aff1 == aff2 for aff1, aff2 in zip([author_aff.original_affiliation for author_aff in author_affiliations], original_affiliations)])
+
             if (
                 old_institution_ids == new_institution_ids
                 and is_corresponding_author == author_affiliations[0].is_corresponding_author
+                and not strings_need_update
             ):
                 self.affiliations.extend(author_affiliations)
                 continue
@@ -354,7 +359,9 @@ class Work(db.Model):
                 affiliation_lookup[aff.author_sequence_number] = []
             affiliation_lookup[aff.author_sequence_number].append(aff)
 
-        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
+        if not records_with_affiliations:
+            records_with_affiliations = [record for record in self.records_sorted if record.authors]
 
         if records_with_affiliations:
             try:
@@ -960,15 +967,16 @@ class Work(db.Model):
         self.affiliations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        records_with_affiliations = [record for record in self.records_sorted if record.authors]
+        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
+        if not records_with_affiliations:
+            records_with_affiliations = [record for record in self.records_sorted if record.authors]
         if not records_with_affiliations:
             logger.info("no affiliation data found in any of the records")
             return
 
         record = records_with_affiliations[0]
-        author_dict_list = json.loads(record.authors)
 
-        for author_sequence_order, author_dict in enumerate(author_dict_list):
+        for author_sequence_order, author_dict in enumerate(record.authors_json):
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"], author_dict["family"])
@@ -1038,7 +1046,7 @@ class Work(db.Model):
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
                         my_affiliation.institution = my_institution
-                        self.affiliations += [my_affiliation]
+                        self.affiliations.append(my_affiliation)
                         affiliation_sequence_order += 1
 
         return

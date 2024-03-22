@@ -79,6 +79,14 @@ class Record(db.Model):
     # relationship to works is set in Work
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
 
+    @property
+    def has_affiliations(self):
+        return any([bool(author.get('affiliation')) or bool(author.get('affiliations')) for author in self.authors_json])
+
+    @property
+    def authors_json(self):
+        return json.loads(self.authors or '[]')
+
     @cached_property
     def with_parsed_data(self):
         if self.parseland_record and has_affs(self.parseland_record):
