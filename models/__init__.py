@@ -25,6 +25,7 @@ from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.institution import InstitutionAncestors
+from models.institution_type import InstitutionType
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.language import Language
 from models.location import Location
@@ -50,7 +51,7 @@ from models.field import Field
 from models.domain import Domain
 from models.sdg import SDG
 from models.source_type import SourceType
-from models.type import Type
+from models.work_type import WorkType
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword

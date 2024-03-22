@@ -4,16 +4,16 @@ from cached_property import cached_property
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app import db
-from app import TYPES_INDEX
+from app import WORK_TYPES_INDEX
 from models.counts import citation_count_from_elastic, works_count_from_api
 from bulk_actions import create_bulk_actions
 
 
-class Type(db.Model):
+class WorkType(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "type"
+    __tablename__ = "work_type"
 
-    type_id = db.Column(db.Text, primary_key=True)
+    work_type_id = db.Column(db.Text, primary_key=True)
     display_name = db.Column(db.Text)
     description = db.Column(db.Text)
     crossref_types = db.Column(JSONB)
@@ -23,14 +23,14 @@ class Type(db.Model):
 
     @cached_property
     def id(self):
-        return self.type_id
+        return self.work_type_id
 
     @property
     def openalex_id(self):
         return f"https://openalex.org/types/{self.id}"
 
     def store(self):
-        bulk_actions, new_entity_hash = create_bulk_actions(self, TYPES_INDEX)
+        bulk_actions, new_entity_hash = create_bulk_actions(self, WORK_TYPES_INDEX)
         self.json_entity_hash = new_entity_hash
         return bulk_actions
 
@@ -52,4 +52,4 @@ class Type(db.Model):
         return response
 
     def __repr__(self):
-        return f"<Type {self.id} {self.display_name}>"
+        return f"<WorkType {self.id} {self.display_name}>"

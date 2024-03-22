@@ -4,6 +4,7 @@ from cached_property import cached_property
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 
+from app import COUNTRIES_ENDPOINT_PREFIX
 from app import FUNDERS_INDEX
 from app import db
 from app import logger
@@ -168,6 +169,7 @@ class Funder(db.Model):
                 {
                     "alternate_titles": self.alternate_titles or [],
                     "country_code": self.country_code,
+                    "country_id": f"{COUNTRIES_ENDPOINT_PREFIX}/{self.country_code}" if self.country_code else None,
                     "description": self.description,
                     "homepage_url": self.homepage_url,
                     "image_url": self.image_url,
