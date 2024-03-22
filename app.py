@@ -156,7 +156,8 @@ COUNTRIES_INDEX = "countries-v2"
 DOMAINS_INDEX = "domains-v2"
 FIELDS_INDEX = "fields-v2"
 FUNDERS_INDEX = "funders-v3"
-INSTITUTIONS_INDEX = "institutions-v7"
+INSTITUTIONS_INDEX = "institutions-v8"
+INSTITUTION_TYPES_INDEX = "institution-types-v1"
 LANGUAGES_INDEX = "languages-v1"
 PUBLISHERS_INDEX = "publishers-v4"
 SDGS_INDEX = "sdgs-v2"
@@ -164,9 +165,12 @@ SOURCES_INDEX = "sources-v2"
 SOURCE_TYPES_INDEX = "source-types-v1"
 SUBFIELDS_INDEX = "subfields-v2"
 TOPICS_INDEX = "topics-v4"
-TYPES_INDEX = "types-v2"
+WORK_TYPES_INDEX = "work-types-v1"
 WORKS_INDEX_PREFIX = "works-v23"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
+
+# endpoint prefixes
+COUNTRIES_ENDPOINT_PREFIX = "https://openalex.org/countries"
 
 # for raw affiliation matching
 COUNTRIES = {

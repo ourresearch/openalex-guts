@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import ARRAY
 
+from app import COUNTRIES_ENDPOINT_PREFIX
 from app import MAX_MAG_ID
 from app import db
 from app import get_apiurl_from_openalex_url
@@ -273,6 +274,7 @@ class Source(db.Model):
             "is_oa": self.is_oa or False,
             "is_in_doaj": self.is_in_doaj or False,
             "type": self.type,
+            "type_id": f"https://openalex.org/source-types/{self.type}".replace(" ", "%20") if self.type else None,
         }
         if return_level == "full":
             response.update({
@@ -294,6 +296,7 @@ class Source(db.Model):
                 "abbreviated_title": self.abbreviated_title,
                 "homepage_url": self.webpage,
                 "country_code": self.country_code,
+                "country_id": f"{COUNTRIES_ENDPOINT_PREFIX}/{self.country_code}" if self.country_code else None,
                 "ids": {
                     "openalex": self.openalex_id,
                     "issn_l": self.issn,
