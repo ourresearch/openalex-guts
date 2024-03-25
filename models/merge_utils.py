@@ -4,10 +4,13 @@ from copy import deepcopy
 
 import math
 
-from app import logger
+import redis
+
+from app import logger, REDIS_QUEUE_URL
 from util import normalize
 
 PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
+REDIS_CONN = redis.StrictRedis.from_url(REDIS_QUEUE_URL)
 
 
 def has_affs(parsed_record):
@@ -30,6 +33,8 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
 
     logger.info(
         f"merging record {crossref_record.id} with parsed record {parsed_record.id}")
+    if parsed_record.record_type == 'parsed_pdf':
+        REDIS_CONN.sadd('pdf_aff_works', crossref_record.work_id)
 
     exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state',
                      'insert_dict'}
