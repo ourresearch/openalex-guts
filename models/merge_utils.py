@@ -33,7 +33,7 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
 
     logger.info(
         f"merging record {crossref_record.id} with parsed record {parsed_record.id}")
-    if parsed_record.record_type == 'parsed_pdf':
+    if parsed_record.record_type == 'parsed_pdf' and crossref_record.work_id is not None:
         REDIS_CONN.sadd('pdf_aff_works', crossref_record.work_id)
 
     exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state',
