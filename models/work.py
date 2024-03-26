@@ -624,19 +624,13 @@ class Work(db.Model):
             logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
             # After initial burst, need to move this here becauase topics is slow
-            # start_time = time()
-            # self.add_work_topics()
-            # logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
+            start_time = time()
+            self.add_work_topics()
+            logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
             logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
-
-        #if skip_concepts_and_related_works:
-        # After initial burst, need to remove this because topics is slow
-        start_time = time()
-        self.add_work_topics()
-        logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
