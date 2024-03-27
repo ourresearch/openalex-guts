@@ -225,7 +225,13 @@ class Record(db.Model):
         return
 
     def is_primary_record(self):
-        return self.record_type and self.record_type in {'crossref_doi', 'pubmed_record', 'pmh_record', 'override'}
+        return self.record_type and self.record_type in {
+            "crossref_doi",
+            "datacite_doi",
+            "pubmed_record",
+            "pmh_record",
+            "override",
+        }
 
     def mint_work(self):
         from models import Work
