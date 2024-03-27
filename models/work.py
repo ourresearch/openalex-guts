@@ -1254,6 +1254,10 @@ class Work(db.Model):
                 self.set_fields_from_record(record)
 
         for record in records:
+            if record.record_type == "datacite_doi":
+                self.set_fields_from_record(record)
+
+        for record in records:
             if record.record_type == "crossref_doi":
                 self.set_fields_from_record(record)
 
@@ -1709,6 +1713,8 @@ class Work(db.Model):
         for record in self.records_sorted:
             if record.record_type == "crossref_doi":
                 sources.append("crossref")
+            if record.record_type == "datacite_doi":
+                sources.append("datacite")
             if record.record_type == "pubmed_record":
                 sources.append("pubmed")
             if record.record_type == "pmh_record" and record.pmh_id:
@@ -1878,7 +1884,7 @@ class Work(db.Model):
 
         # make sure to add doi location first
         for r in self.records_sorted:
-            if r.record_type == 'crossref_doi':
+            if r.record_type == 'crossref_doi' or r.record_type == 'datacite_doi':
                 doi_url = f'https://doi.org/{r.doi}'
 
                 doi_location = {
@@ -2010,6 +2016,23 @@ class Work(db.Model):
                 pubmed_location['is_published'] = is_published(pubmed_location['version'])
 
                 locations.append(pubmed_location)
+                break
+
+        # then datacite metadata
+        for r in self.records_sorted:
+            if r.record_type == 'datacite_doi':
+                datacite_source = models.Source.query.get(4393179698)
+                datacite_location = {
+                    'source': datacite_source.to_dict(return_level='minimum'),
+                    'pdf_url': None,
+                    'landing_page_url': f'https://api.datacite.org/dois/{r.doi}',
+                    'is_oa': None,
+                    'version': None,
+                    'license': None,
+                    'doi': r.doi,
+                }
+
+                locations.append(datacite_location)
                 break
 
         # last chance, make a location if there is a DOI but no locations yet

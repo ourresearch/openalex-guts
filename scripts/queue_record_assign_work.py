@@ -11,11 +11,17 @@ from app import logger
 from util import elapsed
 
 
+"""
+Run with a recordthresher id: heroku local:run python -- -m scripts.queue_record_assign_work --id=RAqCquzTh3SziwFZGMcbCA
+"""
+
+
 def run(**kwargs):
     if single_id := kwargs.get('id'):
         if record := get_records([single_id]):
             record[0].process_record()
             finish_object_ids([single_id])
+            db.session.commit()
         else:
             logger.warn(f'found no recordthresher record with id {single_id}')
     else:
