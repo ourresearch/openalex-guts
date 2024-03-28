@@ -299,6 +299,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
+            selectinload(models.Work.related_versions).selectinload(models.WorkRelatedVersion.related_work).raiseload('*'),
             selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()

@@ -654,6 +654,10 @@ class Work(db.Model):
             self.update_orcid()
             logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
 
+        start_time = time()
+        self.add_related_versions()
+        logger.info(f'add_versions took {elapsed(start_time, 2)} seconds')
+
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
         for record in self.records_merged:
@@ -701,6 +705,31 @@ class Work(db.Model):
     def add_sdgs(self):
         if not self.sdg:
             get_and_save_sdgs(self)
+
+    def add_related_versions(self):
+        """
+        Take in DOIs in record.record_related_version, convert them to work ids and save them in mid.work_related_version table.
+        """
+        all_dois = set()
+        for r in self.records_sorted:
+            if r.related_version_dois:
+                all_dois.update([relation.related_version_doi.lower() for relation in r.related_version_dois])
+
+        related_works = models.Work.query.with_entities(models.Work.paper_id).filter(models.Work.doi_lower.in_(all_dois)).all()
+
+        versions_already_saved = models.WorkRelatedVersion.query.filter(models.WorkRelatedVersion.work_id == self.paper_id).all()
+        versions_pairs_already_saved = set([(v.work_id, v.version_work_id) for v in versions_already_saved])
+
+        logger.info(f"related_works: {related_works}")
+        for related_work in related_works:
+            if (self.paper_id, related_work[0]) in versions_pairs_already_saved:
+                logger.info(f"Skipping adding related version {related_work[0]} to {self.paper_id} because it's already there")
+            else:
+                logger.info(f"Adding related version {related_work[0]} to {self.paper_id}")
+                self.related_versions.append(models.WorkRelatedVersion(
+                    work_id=self.work_id,
+                    version_work_id=related_work[0],
+                ))
 
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
@@ -1061,6 +1090,12 @@ class Work(db.Model):
             logger.info(f"invalid new_oa_status for {self.paper_id}. old: {self.oa_status} new: {new_oa_status}")
         # if we didn't update above, return the existing oa_status
         return self.oa_status
+
+    def work_versions(self):
+        """
+        Points to other versions of the work, currently found in DataCite.
+        """
+        return [version.related_work.openalex_id for version in self.related_versions]
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
@@ -2193,6 +2228,7 @@ class Work(db.Model):
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
+            "versions": self.work_versions(),
         }
 
         if self.extra_ids:

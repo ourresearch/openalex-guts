@@ -52,6 +52,7 @@ from models.domain import Domain
 from models.sdg import SDG
 from models.source_type import SourceType
 from models.work_type import WorkType
+from models.work_related_version import WorkRelatedVersion
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
@@ -79,6 +80,13 @@ Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
+Work.related_versions = db.relationship(
+    "WorkRelatedVersion",
+    lazy="selectin",
+    primaryjoin="Work.paper_id==WorkRelatedVersion.work_id",
+    uselist=True,
+)
+WorkRelatedVersion.related_work = db.relationship("Work", foreign_keys=[WorkRelatedVersion.version_work_id], lazy='selectin', uselist=False)
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
@@ -264,6 +272,14 @@ Record.work_matches_by_arxiv_id = db.relationship(
         uselist=True,
         primaryjoin="and_(foreign(Record.arxiv_id) != None, foreign(Record.arxiv_id) == remote(Work.arxiv_id))"
     )
+
+
+Record.related_version_dois = db.relationship(
+    'RecordRelatedVersion',
+    lazy='selectin',
+    uselist='true',
+    primaryjoin="Record.doi == remote(RecordRelatedVersion.doi)",
+)
 
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 
