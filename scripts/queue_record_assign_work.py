@@ -115,8 +115,9 @@ def finish_object_ids(object_ids):
             )
             on conflict do nothing
             '''
-        ).bindparams(record_ids=object_ids).execution_options(autocommit=True)
+        ).bindparams(record_ids=object_ids)
     )
+    db.session.commit()
     logger.info(f'enqueueing mapped works took {elapsed(start_time, 2)} seconds')
 
 
