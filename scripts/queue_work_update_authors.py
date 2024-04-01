@@ -14,13 +14,9 @@ from util import elapsed
 
 
 def update_authors(work):
-    records_with_affiliations = [record for record in work.records_sorted if record.has_affiliations]
-    if not records_with_affiliations:
-        records_with_affiliations = [record for record in work.records_sorted if
-                                     record.authors]
 
-    if records_with_affiliations:
-        record_author_dict_list = json.loads(records_with_affiliations[0].authors)
+    if work.affiliation_records_sorted:
+        record_author_dict_list = json.loads(work.affiliation_records_sorted[0].authors)
         num_authors = set([a.author_sequence_number for a in work.affiliations])
 
         if len(record_author_dict_list) == len(num_authors):
