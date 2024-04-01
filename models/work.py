@@ -73,6 +73,7 @@ def as_work_openalex_id(id):
     from app import API_HOST
     return f"{API_HOST}/W{id}"
 
+
 def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     insert_dicts = []
     data_list = []
@@ -81,7 +82,8 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
         data_list += [{
             "title": row["paper_title"].lower() if row["paper_title"] else None,
             "doc_type": row["doc_type"],
-            "journal": row["journal_title"].lower() if row["journal_title"] else None,
+            "journal": row["journal_title"].lower() if row[
+                "journal_title"] else None,
             "abstract": row["indexed_abstract"],
             "inverted_abstract": has_abstract,
             "paper_id": row["paper_id"]
@@ -93,10 +95,11 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
     api_key = os.getenv("SAGEMAKER_API_KEY")
     headers = {"X-API-Key": api_key}
     # api_url = "https://4rwjth9jek.execute-api.us-east-1.amazonaws.com/api/" #for version without abstracts
-    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for version with abstracts
+    api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/"  # for version with abstracts
     r = requests.post(api_url, json=json.dumps(data_list), headers=headers)
     if r.status_code != 200:
-        logger.error(f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
+        logger.error(
+            f"error in call_sagemaker_bulk_lookup_new_work_concepts: status code {r} reason {r.reason}")
         return []
 
     api_json = r.json()
@@ -104,11 +107,13 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
         if api_dict["tags"] != []:
             for i, concept_name in enumerate(api_dict["tags"]):
                 insert_dicts += [{"WorkConcept": {"paper_id": row["paper_id"],
-                                                       "field_of_study": api_dict["tag_ids"][i],
-                                                       "score": api_dict["scores"][i],
-                                                       "algorithm_version": 3,
-                                                       "uses_newest_algorithm": True,
-                                                       "updated_date": datetime.datetime.utcnow().isoformat()}}]
+                                                  "field_of_study":
+                                                      api_dict["tag_ids"][i],
+                                                  "score": api_dict["scores"][
+                                                      i],
+                                                  "algorithm_version": 3,
+                                                  "uses_newest_algorithm": True,
+                                                  "updated_date": datetime.datetime.utcnow().isoformat()}}]
     response = ConceptLookupResponse()
     response.insert_dicts = insert_dicts
     response.delete_dict = {"WorkConcept": [row["paper_id"] for row in rows]}
@@ -118,7 +123,8 @@ def call_sagemaker_bulk_lookup_new_work_concepts(rows):
 @cache
 def pubmed_json():
     return models.source.Source.query.options(
-        selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+        selectinload(models.Source.publisher_entity).selectinload(
+            models.Publisher.self_and_ancestors).raiseload('*'),
         selectinload(models.Source.publisher_entity).raiseload('*'),
         selectinload(models.Source.institution).raiseload('*'),
         orm.Load(models.Source).raiseload('*')
@@ -128,7 +134,8 @@ def pubmed_json():
 @cache
 def arxiv_json():
     return models.source.Source.query.options(
-        selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
+        selectinload(models.Source.publisher_entity).selectinload(
+            models.Publisher.self_and_ancestors).raiseload('*'),
         selectinload(models.Source.publisher_entity).raiseload('*'),
         selectinload(models.Source.institution).raiseload('*'),
         orm.Load(models.Source).raiseload('*')
@@ -151,7 +158,8 @@ def override_location_sources(locations):
             pdf_url = loc.get('pdf_url') or ''
             landing_page_url = loc.get('landing_page_url') or ''
 
-            if re.search(url_pattern, pdf_url) or re.search(url_pattern, landing_page_url):
+            if re.search(url_pattern, pdf_url) or re.search(url_pattern,
+                                                            landing_page_url):
                 loc['source'] = source_json
 
                 if not re.search(url_pattern, pdf_url):
@@ -161,6 +169,7 @@ def override_location_sources(locations):
                     loc['landing_page_url'] = None
 
     return locations
+
 
 class OAStatusEnum(IntEnum):
     # we prioritize publisher-hosted versions
@@ -172,6 +181,7 @@ class OAStatusEnum(IntEnum):
     hybrid = 4
     gold = 5
 
+
 def oa_status_from_location(loc):
     if not loc.get('is_oa'):
         return 'closed'
@@ -181,14 +191,16 @@ def oa_status_from_location(loc):
             return 'gold'
         if source['type'] == 'repository':
             return 'green'
-        if loc.get('license') and loc['license'] not in ['unknown', 'unspecified-oa', 'implied-oa']:
+        if loc.get('license') and loc['license'] not in ['unknown',
+                                                         'unspecified-oa',
+                                                         'implied-oa']:
             return 'hybrid'
         else:
             return 'bronze'
     else:
         # if we don't know anything about the source, we'll assume that it's bronze (we might want to change this)
         return 'bronze'
-    
+
 
 class Work(db.Model):
     __table_args__ = {'schema': 'mid'}
@@ -203,7 +215,8 @@ class Work(db.Model):
     publication_date = db.Column(db.DateTime)
     online_date = db.Column(db.DateTime)
     publisher = db.Column(db.Text)
-    journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"))
+    journal_id = db.Column(db.BigInteger,
+                           db.ForeignKey("mid.journal.journal_id"))
     volume = db.Column(db.Text)
     issue = db.Column(db.Text)
     first_page = db.Column(db.Text)
@@ -261,21 +274,21 @@ class Work(db.Model):
             return
 
         record_author_dict_list = []
-        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
-        if not records_with_affiliations:
-            records_with_affiliations = [record for record in self.records_sorted if record.authors]
 
-        if records_with_affiliations:
-            record_author_dict_list = records_with_affiliations[0].authors_json
+        if self.affiliation_records_sorted:
+            record_author_dict_list = self.affiliation_records_sorted[
+                0].authors_json
 
         all_affiliations = sorted(
             self.affiliations,
-            key=lambda a: (a.author_sequence_number, a.affiliation_sequence_number)
+            key=lambda a: (
+                a.author_sequence_number, a.affiliation_sequence_number)
         )
 
         self.affiliations = []
 
-        author_sequence_nos = sorted(set([a.author_sequence_number for a in all_affiliations]))
+        author_sequence_nos = sorted(
+            set([a.author_sequence_number for a in all_affiliations]))
 
         update_original_affiliations = False
         if len(record_author_dict_list) == len(author_sequence_nos):
@@ -283,7 +296,8 @@ class Work(db.Model):
 
         for author_idx, author_sequence_no in enumerate(author_sequence_nos):
             author_affiliations = sorted(
-                [a for a in all_affiliations if a.author_sequence_number == author_sequence_no],
+                [a for a in all_affiliations if
+                 a.author_sequence_number == author_sequence_no],
                 key=lambda a: a.affiliation_sequence_number
             )
 
@@ -291,34 +305,48 @@ class Work(db.Model):
             if update_original_affiliations:
                 original_affiliations = [
                     aff.get('name')
-                    for aff in record_author_dict_list[author_idx].get('affiliation', [])
+                    for aff in
+                    record_author_dict_list[author_idx].get('affiliation', [])
                     if aff.get('name')
                 ]
-                is_corresponding_author = record_author_dict_list[author_idx].get('is_corresponding', False)
+                is_corresponding_author = record_author_dict_list[
+                    author_idx].get('is_corresponding', False)
             if not original_affiliations:
-                original_affiliations = [a.original_affiliation for a in author_affiliations if a.original_affiliation]
-                is_corresponding_author = author_affiliations[0].is_corresponding_author
+                original_affiliations = [a.original_affiliation for a in
+                                         author_affiliations if
+                                         a.original_affiliation]
+                is_corresponding_author = author_affiliations[
+                    0].is_corresponding_author
 
-            old_institution_ids = set([a.affiliation_id for a in author_affiliations if a.affiliation_id])
+            old_institution_ids = set(
+                [a.affiliation_id for a in author_affiliations if
+                 a.affiliation_id])
 
             new_institution_id_lists = models.Institution.get_institution_ids_from_strings(
                 original_affiliations, retry_attempts=affiliation_retry_attempts
             )
             new_institution_ids = set()
             for new_institution_id_list in new_institution_id_lists:
-                new_institution_ids.update([i for i in new_institution_id_list if i])
+                new_institution_ids.update(
+                    [i for i in new_institution_id_list if i])
 
-            strings_need_update = not all([aff1 == aff2 for aff1, aff2 in zip([author_aff.original_affiliation for author_aff in author_affiliations], original_affiliations)])
+            strings_need_update = not all([aff1 == aff2 for aff1, aff2 in
+                                           zip([author_aff.original_affiliation
+                                                for author_aff in
+                                                author_affiliations],
+                                               original_affiliations)])
 
             if (
-                old_institution_ids == new_institution_ids
-                and is_corresponding_author == author_affiliations[0].is_corresponding_author
-                and not strings_need_update
+                    old_institution_ids == new_institution_ids
+                    and is_corresponding_author == author_affiliations[
+                0].is_corresponding_author
+                    and not strings_need_update
             ):
                 self.affiliations.extend(author_affiliations)
                 continue
 
-            id_lookup = dict(zip(original_affiliations, new_institution_id_lists))
+            id_lookup = dict(
+                zip(original_affiliations, new_institution_id_lists))
 
             affiliation_sequence_no = 1
             seen_ids = set()
@@ -334,12 +362,16 @@ class Work(db.Model):
                         models.Affiliation(
                             author_id=author_affiliations[0].author_id,
                             affiliation_id=affiliation_id,
-                            author_sequence_number=author_affiliations[0].author_sequence_number,
+                            author_sequence_number=author_affiliations[
+                                0].author_sequence_number,
                             affiliation_sequence_number=affiliation_sequence_no,
-                            original_author=author_affiliations[0].original_author,
+                            original_author=author_affiliations[
+                                0].original_author,
                             original_affiliation=original_affiliation,
-                            original_orcid=author_affiliations[0].original_orcid,
-                            match_institution_name=models.Institution.matching_institution_name(original_affiliation),
+                            original_orcid=author_affiliations[
+                                0].original_orcid,
+                            match_institution_name=models.Institution.matching_institution_name(
+                                original_affiliation),
                             is_corresponding_author=is_corresponding_author,
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
@@ -360,13 +392,10 @@ class Work(db.Model):
                 affiliation_lookup[aff.author_sequence_number] = []
             affiliation_lookup[aff.author_sequence_number].append(aff)
 
-        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
-        if not records_with_affiliations:
-            records_with_affiliations = [record for record in self.records_sorted if record.authors]
-
-        if records_with_affiliations:
+        if self.affiliation_records_sorted:
             try:
-                record_author_dict_list = json.loads(records_with_affiliations[0].authors)
+                record_author_dict_list = json.loads(
+                    self.affiliation_records_sorted[0].authors)
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON authors for {self.id}: {e}")
                 return
@@ -403,7 +432,7 @@ class Work(db.Model):
             "inverted_abstract": False,
             "paper_id": self.paper_id
         }
-    
+
     def topic_api_input_data(self):
         abstract = self.abstract.abstract if self.abstract else None
 
@@ -417,22 +446,26 @@ class Work(db.Model):
 
     def get_concepts_input_hash(self):
         return hashlib.md5(
-            json.dumps(self.concept_api_input_data(), sort_keys=True).encode('utf-8')
+            json.dumps(self.concept_api_input_data(), sort_keys=True).encode(
+                'utf-8')
         ).hexdigest()
-    
+
     def get_topics_input_hash(self):
         return hashlib.md5(
-            json.dumps(self.topic_api_input_data(), sort_keys=True).encode('utf-8')
+            json.dumps(self.topic_api_input_data(), sort_keys=True).encode(
+                'utf-8')
         ).hexdigest()
-    
+
     def add_work_topics(self):
         current_topics_input_hash = self.get_topics_input_hash()
         if self.topics_input_hash == '-1':
-            logger.info('skipping topic classification because it should not have topics for now. Set input hash to current.')
+            logger.info(
+                'skipping topic classification because it should not have topics for now. Set input hash to current.')
             self.topics_input_hash = current_topics_input_hash
             return
         elif self.topics_input_hash == current_topics_input_hash:
-            logger.info('skipping topic classification because inputs are unchanged')
+            logger.info(
+                'skipping topic classification because inputs are unchanged')
             return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -451,7 +484,8 @@ class Work(db.Model):
         # r = None
 
         while keep_calling:
-            r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
+            r = requests.post(api_url, json=json.dumps([data], sort_keys=True),
+                              headers=headers)
 
             if r.status_code == 200:
                 try:
@@ -461,20 +495,23 @@ class Work(db.Model):
                     topic_scores = [i['topic_score'] for i in resp_data]
                     keep_calling = False
                 except Exception as e:
-                    logger.error(f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
+                    logger.error(
+                        f"error {e} in add_work_topics with {self.id}, response {r}, called with {api_url} data: {data}")
                     topic_ids = None
                     topic_scores = None
                     keep_calling = False
 
             elif r.status_code == 500:
-                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                logger.error(
+                    f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 sleep(0.5)
                 number_tries += 1
                 if number_tries > 60:
                     keep_calling = False
 
             else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                logger.error(
+                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 topic_ids = None
                 topic_scores = None
                 keep_calling = False
@@ -484,7 +521,7 @@ class Work(db.Model):
             self.topics_for_related_works = []
 
             if topic_ids and topic_scores:
-                for i, (topic_id, topic_score) in enumerate(zip(topic_ids, 
+                for i, (topic_id, topic_score) in enumerate(zip(topic_ids,
                                                                 topic_scores)):
                     if topic_id and is_valid_topic_id(topic_id):
                         new_work_topic = models.WorkTopic(
@@ -512,7 +549,7 @@ class Work(db.Model):
         api_key = os.getenv("SAGEMAKER_API_KEY")
 
         headers = {"X-API-Key": api_key}
-        api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/" #for vesion with abstracts
+        api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/"  # for vesion with abstracts
 
         number_tries = 0
         keep_calling = True
@@ -521,7 +558,8 @@ class Work(db.Model):
         r = None
 
         while keep_calling:
-            r = requests.post(api_url, json=json.dumps([data], sort_keys=True), headers=headers)
+            r = requests.post(api_url, json=json.dumps([data], sort_keys=True),
+                              headers=headers)
 
             if r.status_code == 200:
                 try:
@@ -529,19 +567,22 @@ class Work(db.Model):
                     concept_names = response_json[0]["tags"]
                     keep_calling = False
                 except Exception as e:
-                    logger.error(f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
+                    logger.error(
+                        f"error {e} in add_work_concepts with {self.id}, response {r}, called with {api_url} data: {data} headers: {headers}")
                     concept_names = None
                     keep_calling = False
 
             elif r.status_code == 500:
-                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                logger.error(
+                    f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 sleep(1)
                 number_tries += 1
                 if number_tries > 60:
                     keep_calling = False
 
             else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                logger.error(
+                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 concept_names = None
                 keep_calling = False
 
@@ -566,7 +607,8 @@ class Work(db.Model):
                         self.concepts.append(new_work_concept)
 
                         if score > 0.3:
-                            self.concepts_for_related_works.append(field_of_study)
+                            self.concepts_for_related_works.append(
+                                field_of_study)
 
             self.concepts_input_hash = current_concepts_input_hash
 
@@ -576,12 +618,14 @@ class Work(db.Model):
 
         if self.merge_into_id:
             # don't add relation table entries for merged works
-            logger.info(f"not updating W{self.paper_id} because it was merged into W{self.merge_into_id}")
+            logger.info(
+                f"not updating W{self.paper_id} because it was merged into W{self.merge_into_id}")
             return
 
         if not self.records_sorted:
             # not associated with a record, update institutions only
-            logger.info(f"No associated records for {self.paper_id}, skipping most updates")
+            logger.info(
+                f"No associated records for {self.paper_id}, skipping most updates")
 
             update_institutions = False
             # fix for many works assigned to 4362561690
@@ -592,12 +636,14 @@ class Work(db.Model):
             if update_institutions:
                 start_time = time()
                 self.update_institutions()
-                logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+                logger.info(
+                    f'update_institutions took {elapsed(start_time, 2)} seconds')
             return
 
         start_time = time()
         self.set_fields_from_all_records()
-        logger.info(f'set_fields_from_all_records took {elapsed(start_time, 2)} seconds')
+        logger.info(
+            f'set_fields_from_all_records took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_abstract()  # must be before work_concepts
@@ -621,16 +667,19 @@ class Work(db.Model):
         if not skip_concepts_and_related_works:
             start_time = time()
             self.add_work_concepts()
-            logger.info(f'add_work_concepts took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
             # After initial burst, need to move this here becauase topics is slow
             start_time = time()
             self.add_work_topics()
-            logger.info(f'add_work_topics took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
-            logger.info(f'add_related_works took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'add_related_works took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -645,11 +694,14 @@ class Work(db.Model):
         if not self.affiliations:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
-            logger.info(f'add_affiliations took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'add_affiliations took {elapsed(start_time, 2)} seconds')
         else:
-            logger.info("not adding affiliations because work already has some set, but updating institutions")
+            logger.info(
+                "not adding affiliations because work already has some set, but updating institutions")
             self.update_institutions()
-            logger.info(f'update_institutions took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'update_institutions took {elapsed(start_time, 2)} seconds')
             logger.info("updating orcid")
             self.update_orcid()
             logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
@@ -665,7 +717,8 @@ class Work(db.Model):
                 continue
 
             new_funders = []
-            record_funders = json.loads(record.funders) if record.funders else []
+            record_funders = json.loads(
+                record.funders) if record.funders else []
             if not record_funders:
                 return
 
@@ -697,8 +750,10 @@ class Work(db.Model):
                 }
 
             if struct_changed(
-                [work_funder_dict(wf) for wf in sorted(self.funders, key=lambda fun: fun.funder_id)],
-                [work_funder_dict(wf) for wf in sorted(new_funders, key=lambda fun: fun.funder_id)]
+                    [work_funder_dict(wf) for wf in
+                     sorted(self.funders, key=lambda fun: fun.funder_id)],
+                    [work_funder_dict(wf) for wf in
+                     sorted(new_funders, key=lambda fun: fun.funder_id)]
             ):
                 self.funders = new_funders
 
@@ -713,19 +768,27 @@ class Work(db.Model):
         all_dois = set()
         for r in self.records_sorted:
             if r.related_version_dois:
-                all_dois.update([relation.related_version_doi.lower() for relation in r.related_version_dois])
+                all_dois.update(
+                    [relation.related_version_doi.lower() for relation in
+                     r.related_version_dois])
 
-        related_works = models.Work.query.with_entities(models.Work.paper_id).filter(models.Work.doi_lower.in_(all_dois)).all()
+        related_works = models.Work.query.with_entities(
+            models.Work.paper_id).filter(
+            models.Work.doi_lower.in_(all_dois)).all()
 
-        versions_already_saved = models.WorkRelatedVersion.query.filter(models.WorkRelatedVersion.work_id == self.paper_id).all()
-        versions_pairs_already_saved = set([(v.work_id, v.version_work_id) for v in versions_already_saved])
+        versions_already_saved = models.WorkRelatedVersion.query.filter(
+            models.WorkRelatedVersion.work_id == self.paper_id).all()
+        versions_pairs_already_saved = set(
+            [(v.work_id, v.version_work_id) for v in versions_already_saved])
 
         logger.info(f"related_works: {related_works}")
         for related_work in related_works:
             if (self.paper_id, related_work[0]) in versions_pairs_already_saved:
-                logger.info(f"Skipping adding related version {related_work[0]} to {self.paper_id} because it's already there")
+                logger.info(
+                    f"Skipping adding related version {related_work[0]} to {self.paper_id} because it's already there")
             else:
-                logger.info(f"Adding related version {related_work[0]} to {self.paper_id}")
+                logger.info(
+                    f"Adding related version {related_work[0]} to {self.paper_id}")
                 self.related_versions.append(models.WorkRelatedVersion(
                     work_id=self.work_id,
                     version_work_id=related_work[0],
@@ -734,7 +797,9 @@ class Work(db.Model):
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
             if self.concepts:
-                self.concepts_for_related_works = [c.field_of_study for c in self.concepts if c.score > .3]
+                self.concepts_for_related_works = [c.field_of_study for c in
+                                                   self.concepts if
+                                                   c.score > .3]
             else:
                 return
 
@@ -771,14 +836,16 @@ class Work(db.Model):
         """
 
         with get_db_cursor() as cur:
-            cur.execute(matching_papers_sql, (tuple(self.concepts_for_related_works), ))
+            cur.execute(matching_papers_sql,
+                        (tuple(self.concepts_for_related_works),))
             rows = cur.fetchall()
 
             self.related_works = [
                 models.WorkRelatedWork(
                     paper_id=self.paper_id,
                     recommended_paper_id=row["related_paper_id"],
-                    score=row["average_related_score"] * row["average_related_score"],
+                    score=row["average_related_score"] * row[
+                        "average_related_score"],
                     updated=datetime.datetime.utcnow().isoformat()
                 )
                 for row in rows
@@ -792,13 +859,15 @@ class Work(db.Model):
                 indexed_abstract = f_generate_inverted_index(record.abstract)
                 if len(indexed_abstract) >= 60000:
                     # truncate the abstract if too long
-                    indexed_abstract = f_generate_inverted_index(record.abstract[0:30000])
+                    indexed_abstract = f_generate_inverted_index(
+                        record.abstract[0:30000])
                 insert_dict = {
                     "paper_id": self.paper_id,
                     "indexed_abstract": indexed_abstract
                 }
                 self.abstract_indexed_abstract = indexed_abstract
-                if not self.abstract or (self.abstract_indexed_abstract != self.abstract.indexed_abstract):
+                if not self.abstract or (
+                        self.abstract_indexed_abstract != self.abstract.indexed_abstract):
                     self.abstract = models.Abstract(**insert_dict)
                 return
 
@@ -808,7 +877,8 @@ class Work(db.Model):
         for record in self.records_merged:
             if record.mesh:
                 mesh_dict_list = json.loads(record.mesh)
-                mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in mesh_dict_list]
+                mesh_objects = [models.Mesh(**mesh_dict) for mesh_dict in
+                                mesh_dict_list]
                 for mesh_object in mesh_objects:
                     if mesh_object.qualifier_ui is None:
                         mesh_object.qualifier_ui = ""  # can't be null for primary key
@@ -822,8 +892,11 @@ class Work(db.Model):
                         m.get("qualifier_ui"),
                         m.get("qualifier_name"),
                     )
-                old_mesh_dicts = sorted([m.to_dict() for m in self.mesh], key=mesh_properties)
-                new_mesh_dicts = sorted([m.to_dict() for m in new_mesh], key=mesh_properties)
+
+                old_mesh_dicts = sorted([m.to_dict() for m in self.mesh],
+                                        key=mesh_properties)
+                new_mesh_dicts = sorted([m.to_dict() for m in new_mesh],
+                                        key=mesh_properties)
 
                 if struct_changed(old_mesh_dicts, new_mesh_dicts):
                     self.mesh = new_mesh
@@ -838,11 +911,18 @@ class Work(db.Model):
             if record.pmid and (already_found_pmid is False):
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 # self.insert_dicts += [{"WorkExtraIds": {"paper_id": self.paper_id, "attribute_type": 2, "attribute_value": record.pmid}}]
-                if record.pmid not in [extra.attribute_value for extra in self.extra_ids if extra.attribute_type==2]:
-                    self.extra_ids += [models.WorkExtraIds(paper_id=self.paper_id, attribute_type=2, attribute_value=record.pmid)]
+                if record.pmid not in [extra.attribute_value for extra in
+                                       self.extra_ids if
+                                       extra.attribute_type == 2]:
+                    self.extra_ids += [
+                        models.WorkExtraIds(paper_id=self.paper_id,
+                                            attribute_type=2,
+                                            attribute_value=record.pmid)]
                 already_found_pmid = True
             # arxiv_id
-            if (record.arxiv_id) and (record.repository_id is arxiv_repository_id or (not self.arxiv_id)):
+            if (record.arxiv_id) and (
+                    record.repository_id is arxiv_repository_id or (
+                    not self.arxiv_id)):
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
                 self.arxiv_id = record.arxiv_id
 
@@ -877,18 +957,23 @@ class Work(db.Model):
                 "is_best": unpaywall_oa_location["is_best"],
                 "oa_date": unpaywall_oa_location["oa_date"],
                 "pmh_id": unpaywall_oa_location["pmh_id"],
-                "repository_institution": unpaywall_oa_location["repository_institution"],
+                "repository_institution": unpaywall_oa_location[
+                    "repository_institution"],
                 "updated": unpaywall_oa_location["updated"],
                 "source_url": unpaywall_oa_location["url"],
                 "url": unpaywall_oa_location["url"],
-                "url_for_landing_page": unpaywall_oa_location["url_for_landing_page"],
+                "url_for_landing_page": unpaywall_oa_location[
+                    "url_for_landing_page"],
                 "url_for_pdf": unpaywall_oa_location["url_for_pdf"],
                 "version": unpaywall_oa_location["version"],
                 "license": unpaywall_oa_location["license"],
             }
 
-            if get_repository_institution_from_source_url(unpaywall_oa_location["url"]):
-                insert_dict["repository_institution"] = get_repository_institution_from_source_url(unpaywall_oa_location["url"])
+            if get_repository_institution_from_source_url(
+                    unpaywall_oa_location["url"]):
+                insert_dict[
+                    "repository_institution"] = get_repository_institution_from_source_url(
+                    unpaywall_oa_location["url"])
 
             if insert_dict["evidence"] == "oa repository (via pmcid lookup)":
                 insert_dict["endpoint_id"] = "daaf77eacc58eec31bb"
@@ -899,7 +984,7 @@ class Work(db.Model):
                     'oai:arXiv.org:',
                     '10.48550/arxiv.'
                 )
-            
+
             if not insert_dict["version"]:
                 insert_dict["version"] = self.guess_version()
 
@@ -913,8 +998,10 @@ class Work(db.Model):
                     loc.url_for_pdf or ''
                 )
 
-            old_locs = [location_sort_key(loc) for loc in sorted(self.locations, key=location_sort_key)]
-            new_locs = [location_sort_key(loc) for loc in sorted(new_locations, key=location_sort_key)]
+            old_locs = [location_sort_key(loc) for loc in
+                        sorted(self.locations, key=location_sort_key)]
+            new_locs = [location_sort_key(loc) for loc in
+                        sorted(new_locations, key=location_sort_key)]
 
             if struct_changed(old_locs, new_locs):
                 self.locations = new_locations
@@ -939,7 +1026,8 @@ class Work(db.Model):
                     for citation_dict in citation_dict_list:
                         reference_source_num += 1
                         if "doi" in citation_dict:
-                            my_clean_doi = clean_doi(citation_dict["doi"], return_none_if_error=True)
+                            my_clean_doi = clean_doi(citation_dict["doi"],
+                                                     return_none_if_error=True)
                             if my_clean_doi:
                                 citation_dois += [my_clean_doi]
                         elif "pmid" in citation_dict:
@@ -955,22 +1043,34 @@ class Work(db.Model):
                             ]
 
                     if struct_changed(
-                        [ref.raw_json for ref in sorted(self.references_unmatched, key=lambda um: um.reference_sequence_number)],
-                        [json.loads(ref.raw_json or '') for ref in sorted(new_references_unmatched, key=lambda um: um.reference_sequence_number)]
+                            [ref.raw_json for ref in
+                             sorted(self.references_unmatched, key=lambda
+                                     um: um.reference_sequence_number)],
+                            [json.loads(ref.raw_json or '') for ref in
+                             sorted(new_references_unmatched, key=lambda
+                                     um: um.reference_sequence_number)]
                     ):
                         self.references_unmatched = new_references_unmatched
 
 
                 except Exception as e:
-                    logger.exception(f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
+                    logger.exception(
+                        f"error json parsing citations, but continuing on other papers {self.paper_id} {e}")
 
         if citation_dois:
-            works = db.session.query(Work).options(orm.Load(Work).raiseload('*')).filter(Work.doi_lower.in_(citation_dois)).all()
+            works = db.session.query(Work).options(
+                orm.Load(Work).raiseload('*')).filter(
+                Work.doi_lower.in_(citation_dois)).all()
             for my_work in works:
                 my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
-            citation_paper_ids += [work.merge_into_id or work.paper_id for work in works if work.paper_id]
+            citation_paper_ids += [work.merge_into_id or work.paper_id for work
+                                   in works if work.paper_id]
         if citation_pmids:
-            work_ids = db.session.query(WorkExtraIds).options(orm.Load(WorkExtraIds).selectinload(models.WorkExtraIds.work).raiseload('*')).filter(WorkExtraIds.attribute_type==2, WorkExtraIds.attribute_value.in_(citation_pmids)).all()
+            work_ids = db.session.query(WorkExtraIds).options(
+                orm.Load(WorkExtraIds).selectinload(
+                    models.WorkExtraIds.work).raiseload('*')).filter(
+                WorkExtraIds.attribute_type == 2,
+                WorkExtraIds.attribute_value.in_(citation_pmids)).all()
             for my_work_id in work_ids:
                 if my_work_id.work:
                     my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -981,8 +1081,10 @@ class Work(db.Model):
 
         citation_paper_ids = list(set(citation_paper_ids))
         if citation_paper_ids:
-            new_references = [models.Citation(paper_reference_id=reference_id) for reference_id in citation_paper_ids]
-            if struct_changed([c.paper_reference_id for c in self.references], citation_paper_ids):
+            new_references = [models.Citation(paper_reference_id=reference_id)
+                              for reference_id in citation_paper_ids]
+            if struct_changed([c.paper_reference_id for c in self.references],
+                              citation_paper_ids):
                 self.references = new_references
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
@@ -991,45 +1093,49 @@ class Work(db.Model):
         self.affiliations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
-        records_with_affiliations = [record for record in self.records_sorted if record.has_affiliations]
-        if not records_with_affiliations:
-            records_with_affiliations = [record for record in self.records_sorted if record.authors]
-        if not records_with_affiliations:
+        if not self.affiliation_records_sorted:
             logger.info("no affiliation data found in any of the records")
             return
 
-        record = records_with_affiliations[0]
+        record = self.affiliation_records_sorted[0]
 
-        for author_sequence_order, author_dict in enumerate(record.authors_json):
+        for author_sequence_order, author_dict in enumerate(
+                record.authors_json):
             original_name = author_dict["raw"]
             if author_dict["family"]:
-                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                original_name = "{} {}".format(author_dict["given"],
+                                               author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
 
             raw_author_string = original_name if original_name else None
-            original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+            original_orcid = normalize_orcid(author_dict["orcid"]) if \
+                author_dict["orcid"] else None
 
             seen_institution_ids = set()
 
             affiliation_sequence_order = 1
             for affiliation_dict in author_dict["affiliation"]:
-                raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                raw_affiliation_string = affiliation_dict["name"] if \
+                    affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institutions = []
 
                 if raw_affiliation_string:
                     institution_id_matches = models.Institution.get_institution_ids_from_strings(
-                        [raw_affiliation_string], retry_attempts=affiliation_retry_attempts
+                        [raw_affiliation_string],
+                        retry_attempts=affiliation_retry_attempts
                     )
-                    for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                    for institution_id_match in [m for m in
+                                                 institution_id_matches[0] if
+                                                 m]:
                         my_institution = models.Institution.query.options(
                             orm.Load(models.Institution).raiseload('*')
                         ).get(institution_id_match)
 
                         if (
-                            my_institution and my_institution.affiliation_id
-                            and my_institution.affiliation_id in seen_institution_ids
+                                my_institution and my_institution.affiliation_id
+                                and my_institution.affiliation_id in seen_institution_ids
                         ):
                             continue
                         my_institutions.append(my_institution)
@@ -1060,13 +1166,16 @@ class Work(db.Model):
                 if raw_author_string or raw_affiliation_string:
                     for my_institution in my_institutions:
                         my_affiliation = models.Affiliation(
-                            author_sequence_number=author_sequence_order+1,
+                            author_sequence_number=author_sequence_order + 1,
                             affiliation_sequence_number=affiliation_sequence_order,
                             original_author=raw_author_string,
-                            original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                            original_affiliation=raw_affiliation_string[
+                                                 :2500] if raw_affiliation_string else None,
                             original_orcid=original_orcid,
-                            match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
-                            is_corresponding_author=author_dict.get('is_corresponding'),
+                            match_institution_name=models.Institution.matching_institution_name(
+                                raw_affiliation_string),
+                            is_corresponding_author=author_dict.get(
+                                'is_corresponding'),
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
                         my_affiliation.institution = my_institution
@@ -1079,15 +1188,20 @@ class Work(db.Model):
         # update oa_status, only if it's better than the oa_status we already have
         try:
             new_oa_status_enum = OAStatusEnum[new_oa_status.lower()]
-            old_oa_status_enum = OAStatusEnum[self.oa_status.lower()] if self.oa_status else OAStatusEnum['closed']
-            if old_oa_status_enum.name in ['green', 'bronze'] and new_oa_status_enum.name in ['green', 'bronze']:
+            old_oa_status_enum = OAStatusEnum[
+                self.oa_status.lower()] if self.oa_status else OAStatusEnum[
+                'closed']
+            if old_oa_status_enum.name in ['green',
+                                           'bronze'] and new_oa_status_enum.name in [
+                'green', 'bronze']:
                 # I'm not comfortable making any change in this case. Leave it alone
                 return self.oa_status
             elif new_oa_status_enum > old_oa_status_enum:
                 return new_oa_status
         except (AttributeError, KeyError):
             # probably an invalid new_oa_status
-            logger.info(f"invalid new_oa_status for {self.paper_id}. old: {self.oa_status} new: {new_oa_status}")
+            logger.info(
+                f"invalid new_oa_status for {self.paper_id}. old: {self.oa_status} new: {new_oa_status}")
         # if we didn't update above, return the existing oa_status
         return self.oa_status
 
@@ -1095,16 +1209,21 @@ class Work(db.Model):
         """
         Points to other versions of the work, currently found in DataCite.
         """
-        return [version.related_work.openalex_id for version in self.related_versions]
+        return [version.related_work.openalex_id for version in
+                self.related_versions]
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
 
         if not self.created_date:
             self.created_date = datetime.datetime.utcnow().isoformat()
-        self.original_title = record.title[:60000] if record.title else self.original_title
-        self.paper_title = normalize_simple(self.original_title, remove_articles=False, remove_spaces=False)
-        self.unpaywall_normalize_title = record.normalized_title[:60000] if record.normalized_title else None
+        self.original_title = record.title[
+                              :60000] if record.title else self.original_title
+        self.paper_title = normalize_simple(self.original_title,
+                                            remove_articles=False,
+                                            remove_spaces=False)
+        self.unpaywall_normalize_title = record.normalized_title[
+                                         :60000] if record.normalized_title else None
         self.updated_date = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -1119,8 +1238,10 @@ class Work(db.Model):
 
         self.doi = normalize_doi(record.doi, return_none_if_error=True)
         self.doi_lower = self.doi
-        self.publication_date = record.published_date.isoformat()[0:10] if record.published_date else None
-        self.year = int(record.published_date.isoformat()[0:4]) if record.published_date else None
+        self.publication_date = record.published_date.isoformat()[
+                                0:10] if record.published_date else None
+        self.year = int(record.published_date.isoformat()[
+                        0:4]) if record.published_date else None
 
         self.volume = record.volume
         self.issue = record.issue
@@ -1133,7 +1254,8 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            self.oa_status = self.update_oa_status_if_better(record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
+            self.oa_status = self.update_oa_status_if_better(
+                record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
@@ -1143,7 +1265,9 @@ class Work(db.Model):
         self.updated_date = datetime.datetime.utcnow().isoformat()
         if override.title:
             self.original_title = override.title
-            self.paper_title = normalize_simple(self.original_title, remove_articles=False, remove_spaces=False)
+            self.paper_title = normalize_simple(self.original_title,
+                                                remove_articles=False,
+                                                remove_spaces=False)
 
         if override.venue_name:
             self.original_venue = override.venue_name
@@ -1215,7 +1339,8 @@ class Work(db.Model):
         ]
 
         for expr in paratext_exprs:
-            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+            if self.work_title and re.search(expr, self.work_title,
+                                             re.IGNORECASE):
                 return True
 
         return False
@@ -1226,7 +1351,8 @@ class Work(db.Model):
             r'^erratum',
         ]
         for expr in erratum_exprs:
-            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+            if self.work_title and re.search(expr, self.work_title,
+                                             re.IGNORECASE):
                 return "erratum"
 
         letter_exprs = [
@@ -1236,7 +1362,8 @@ class Work(db.Model):
             r'^\[letter to',
         ]
         for expr in letter_exprs:
-            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+            if self.work_title and re.search(expr, self.work_title,
+                                             re.IGNORECASE):
                 return "letter"
 
         editorial_exprs = [
@@ -1248,7 +1375,8 @@ class Work(db.Model):
             r'^editorial -'
         ]
         for expr in editorial_exprs:
-            if self.work_title and re.search(expr, self.work_title, re.IGNORECASE):
+            if self.work_title and re.search(expr, self.work_title,
+                                             re.IGNORECASE):
                 return "editorial"
 
         return None
@@ -1265,7 +1393,22 @@ class Work(db.Model):
 
     @property
     def records_merged(self):
-        return [r.with_parsed_data for r in self.records or [] if r.with_parsed_data]
+        return [r.with_parsed_data for r in self.records or [] if
+                r.with_parsed_data]
+
+    @property
+    def affiliation_records_sorted(self):
+        records_with_affiliations = [record for record in self.records_sorted if
+                                     record.has_affiliations]
+        if not records_with_affiliations:
+            records_with_affiliations = [record for record in
+                                         self.records_sorted if record.authors]
+        # make exception for HAL records (prioritize HAL records over crossref)
+        hal_records = [record for record in records_with_affiliations if
+                       record.pmh_id and 'oai:hal' in record.pmh_id.lower()]
+        others = [record for record in records_with_affiliations if
+                  not record.pmh_id or 'oai:hal' not in record.pmh_id.lower()]
+        return hal_records + others
 
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
@@ -1323,7 +1466,9 @@ class Work(db.Model):
     @cached_property
     def mesh_sorted(self):
         # sort so major topics at the top and the rest is alphabetical
-        return sorted(self.mesh, key=lambda x: (not x.is_major_topic, x.descriptor_name), reverse=False)
+        return sorted(self.mesh,
+                      key=lambda x: (not x.is_major_topic, x.descriptor_name),
+                      reverse=False)
 
     @property
     def affiliations_list(self):
@@ -1332,8 +1477,10 @@ class Work(db.Model):
             return []
 
         # it seems like sometimes there are 0s and sometimes 1st, so figure out the minimum
-        first_author_sequence_number = min([affil.author_sequence_number for affil in affiliations])
-        last_author_sequence_number = max([affil.author_sequence_number for affil in affiliations])
+        first_author_sequence_number = min(
+            [affil.author_sequence_number for affil in affiliations])
+        last_author_sequence_number = max(
+            [affil.author_sequence_number for affil in affiliations])
         affiliation_dict = defaultdict(list)
         for affil in affiliations:
             affil.author_position = "middle"
@@ -1341,45 +1488,53 @@ class Work(db.Model):
                 affil.author_position = "first"
             elif affil.author_sequence_number == last_author_sequence_number:
                 affil.author_position = "last"
-            affiliation_dict[affil.author_sequence_number] += [affil.to_dict("minimum")]
+            affiliation_dict[affil.author_sequence_number] += [
+                affil.to_dict("minimum")]
         response = []
         for seq, affil_list in affiliation_dict.items():
-            institution_list = [a["institution"] for a in affil_list if a["institution"].get("id") is not None]
+            institution_list = [a["institution"] for a in affil_list if
+                                a["institution"].get("id") is not None]
             if institution_list == [{}]:
                 institution_list = []
             if len(affiliation_dict) == 1:
                 # override - single author is always corresponding
                 is_corresponding = True
             else:
-                is_corresponding = affil_list[0].get('is_corresponding_author', False)
+                is_corresponding = affil_list[0].get('is_corresponding_author',
+                                                     False)
 
             raw_affiliation_strings = sorted(list(set([
-                                a.get("raw_affiliation_string") for a in affil_list
-                                if a.get("raw_affiliation_string")
-                             ])))
+                a.get("raw_affiliation_string") for a in affil_list
+                if a.get("raw_affiliation_string")
+            ])))
             raw_affiliation_string = '; '.join(sorted(list(set([
-                                 a.get("raw_affiliation_string") for a in affil_list
-                                 if a.get("raw_affiliation_string")
-                             ]))))
+                a.get("raw_affiliation_string") for a in affil_list
+                if a.get("raw_affiliation_string")
+            ]))))
             # add countries
             if institution_list:
-                countries_list = [a["institution"]["country_code"] for a in affil_list if a["institution"].get("country_code") is not None]
+                countries_list = [a["institution"]["country_code"] for a in
+                                  affil_list if a["institution"].get(
+                        "country_code") is not None]
                 countries = sorted(list(set(countries_list)))
             elif not institution_list and raw_affiliation_string:
-                countries = self.get_countries_from_raw_affiliation(raw_affiliation_string)
+                countries = self.get_countries_from_raw_affiliation(
+                    raw_affiliation_string)
             else:
                 countries = []
 
-            response_dict = {"author_position": affil_list[0]["author_position"],
-                             "author": affil_list[0]["author"],
-                             "institutions": institution_list,
-                             "countries": countries,
-                             "country_ids": [f"{COUNTRIES_ENDPOINT_PREFIX}/{c}" for c in countries],
-                             "is_corresponding": is_corresponding,
-                             "raw_author_name": affil_list[0]["raw_author_name"],
-                             "raw_affiliation_strings": raw_affiliation_strings,
-                             "raw_affiliation_string": raw_affiliation_string
-                     }
+            response_dict = {
+                "author_position": affil_list[0]["author_position"],
+                "author": affil_list[0]["author"],
+                "institutions": institution_list,
+                "countries": countries,
+                "country_ids": [f"{COUNTRIES_ENDPOINT_PREFIX}/{c}" for c in
+                                countries],
+                "is_corresponding": is_corresponding,
+                "raw_author_name": affil_list[0]["raw_author_name"],
+                "raw_affiliation_strings": raw_affiliation_strings,
+                "raw_affiliation_string": raw_affiliation_string
+            }
             response.append(response_dict)
         return response
 
@@ -1392,7 +1547,6 @@ class Work(db.Model):
                 if inst.get('id'):
                     institution_ids.append(inst['id'])
         return set(institution_ids)
-        
 
     @classmethod
     def author_match_names_from_record_json(cls, record_author_json):
@@ -1404,10 +1558,12 @@ class Work(db.Model):
         for author_sequence_order, author_dict in enumerate(author_dict_list):
             original_name = author_dict["raw"]
             if author_dict["family"]:
-                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                original_name = "{} {}".format(author_dict["given"],
+                                               author_dict["family"])
 
             raw_author_string = original_name if original_name else None
-            author_match_strings = models.Author.matching_author_strings(raw_author_string)
+            author_match_strings = models.Author.matching_author_strings(
+                raw_author_string)
             if author_match_strings:
                 author_match_names.extend(author_match_strings)
         return author_match_names
@@ -1425,18 +1581,24 @@ class Work(db.Model):
         if not self.affiliations:
             logger.info("no self.affiliations, so not trying to match")
             return True
-        logger.info(f"trying to match existing work {self.id} {self.doi_lower} with record authors")
+        logger.info(
+            f"trying to match existing work {self.id} {self.doi_lower} with record authors")
 
-        for original_name in [self.first_author_original_name, self.last_author_original_name]:
+        for original_name in [self.first_author_original_name,
+                              self.last_author_original_name]:
             logger.info(f"original_name: {original_name}")
             if original_name:
-                author_match_strings = models.Author.matching_author_strings(original_name)
+                author_match_strings = models.Author.matching_author_strings(
+                    original_name)
                 logger.info(f"author_match_strings: {author_match_strings}")
                 for author_match_string in author_match_strings:
                     logger.info(f"author_match_string: {author_match_string}")
-                    match_names_from_record_json = Work.author_match_names_from_record_json(record_author_json)
-                    logger.info(f"match_names_from_record_json: {match_names_from_record_json}")
-                    if author_match_string and (author_match_string in match_names_from_record_json):
+                    match_names_from_record_json = Work.author_match_names_from_record_json(
+                        record_author_json)
+                    logger.info(
+                        f"match_names_from_record_json: {match_names_from_record_json}")
+                    if author_match_string and (
+                            author_match_string in match_names_from_record_json):
                         logger.info("author match!")
                         return True
 
@@ -1458,7 +1620,7 @@ class Work(db.Model):
     @property
     def concepts_sorted(self):
         return sorted(self.concepts, key=lambda x: x.score, reverse=True)
-       
+
     # @property
     # def topics_fields_subfields_domains(self):
     #     return [topic.to_dict("minimum") for topic in self.topics_sorted] if self.topics_sorted else []
@@ -1477,21 +1639,21 @@ class Work(db.Model):
     #                                         [{'id':x['subfield']['id'], 'display_name': x['subfield']['display_name']} 
     #                                          for x in self.topics_fields_subfields_domains]}] if self.topics_sorted else []
     #     return sorted(self.subfields, key=lambda x: x['id'], reverse=False)
-    
+
     # @property
     # def fields_sorted(self):
     #     self.fields = [dict(t) for t in {tuple(d.items()) for d in 
     #                                      [{'id':x['field']['id'], 'display_name': x['field']['display_name']} 
     #                                       for x in self.topics_fields_subfields_domains]}] if self.topics_sorted else []
     #     return sorted(self.fields, key=lambda x: x['id'], reverse=False)
-    
+
     # @property
     # def domains_sorted(self):
     #     self.domains = [dict(t) for t in {tuple(d.items()) for d in 
     #                                        [{'id':x['domain']['id'], 'display_name': x['domain']['display_name']} 
     #                                         for x in self.topics_fields_subfields_domains]}] if self.topics_sorted else []
     #     return sorted(self.domains, key=lambda x: x['id'], reverse=False)
-    
+
     @property
     def locations_sorted(self):
         return sorted(self.locations, key=lambda x: x.score, reverse=True)
@@ -1516,7 +1678,8 @@ class Work(db.Model):
 
     @property
     def is_closed_springer(self):
-        publisher_str = (self.journal and self.journal.publisher) or self.publisher
+        publisher_str = (
+                                self.journal and self.journal.publisher) or self.publisher
         if publisher_str and 'springer' in publisher_str.lower():
             return not self.is_oa
         return False
@@ -1580,7 +1743,8 @@ class Work(db.Model):
             "edited-book": "book",
         }
         # return mapping from lookup if it's in there, otherwise pass-through
-        return lookup_crossref_to_openalex_type.get(self.type_crossref, self.type_crossref)
+        return lookup_crossref_to_openalex_type.get(self.type_crossref,
+                                                    self.type_crossref)
 
     @cached_property
     def language(self):
@@ -1588,12 +1752,14 @@ class Work(db.Model):
         if self.abstract and self.abstract.indexed_abstract:
             json_abstract = json.loads(self.abstract.indexed_abstract)
             abstract_words = list(json_abstract.get('InvertedIndex', {}).keys())
-        return detect_language_from_abstract_and_title(abstract_words, self.original_title)
+        return detect_language_from_abstract_and_title(abstract_words,
+                                                       self.original_title)
 
     @cached_property
     def references_list(self):
 
-        reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
+        reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id)
+                               for reference in self.references]
         return reference_paper_ids
 
         # objs = db.session.query(Work).options(
@@ -1609,7 +1775,8 @@ class Work(db.Model):
     def apc_paid(self):
         """Display OpenAPC if it exists, then fall back to DOAJ."""
         first_doaj_apc = (
-            self.journal.apc_prices_with_0[0] if self.journal and self.journal.apc_prices_with_0 else None
+            self.journal.apc_prices_with_0[
+                0] if self.journal and self.journal.apc_prices_with_0 else None
         )
         doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
 
@@ -1632,7 +1799,8 @@ class Work(db.Model):
     def apc_list(self):
         """Display first DOAJ APC."""
         first_doaj_apc = (
-            self.journal.apc_prices_with_0[0] if self.journal and self.journal.apc_prices_with_0 else None
+            self.journal.apc_prices_with_0[
+                0] if self.journal and self.journal.apc_prices_with_0 else None
         )
         doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
         if first_doaj_apc:
@@ -1656,8 +1824,10 @@ class Work(db.Model):
                     if sdg.get("id") and sdg.get("name"):
 
                         # override some names
-                        if sdg.get("name") == "Peace, Justice and strong institutions":
-                            sdg["name"] = "Peace, justice, and strong institutions"
+                        if sdg.get(
+                                "name") == "Peace, Justice and strong institutions":
+                            sdg[
+                                "name"] = "Peace, justice, and strong institutions"
                         elif sdg.get("name") == "Quality Education":
                             sdg["name"] = "Quality education"
                         elif sdg.get("name") == "Life in Land":
@@ -1671,7 +1841,7 @@ class Work(db.Model):
                             }
                         )
         return formatted_sdgs
-    
+
     @property
     def all_work_keywords(self):
         formatted_keywords = []
@@ -1698,30 +1868,36 @@ class Work(db.Model):
         base_query = models.CitationPercentilesByYear.query.filter_by(year=year)
 
         exact_row = base_query.filter_by(citation_count=citation_count).first()
-        higher_row = base_query.filter(models.CitationPercentilesByYear.citation_count > citation_count) \
+        higher_row = base_query.filter(
+            models.CitationPercentilesByYear.citation_count > citation_count) \
             .order_by(models.CitationPercentilesByYear.citation_count.asc()) \
             .first()
 
         # sometimes cited_by_count is higher than the highest row in the table. In that case return highest row in table.
         if higher_row is None:
-            higher_row = base_query.order_by(models.CitationPercentilesByYear.citation_count.desc()) \
+            higher_row = base_query.order_by(
+                models.CitationPercentilesByYear.citation_count.desc()) \
                 .first()
             if higher_row and higher_row.citation_count > citation_count:
                 higher_row = None
 
         if exact_row:
-            return self.format_percentiles(exact_row.percentile, higher_row.percentile if higher_row else exact_row.percentile)
+            return self.format_percentiles(exact_row.percentile,
+                                           higher_row.percentile if higher_row else exact_row.percentile)
 
         # try closest lower row
-        lower_row = base_query.filter(models.CitationPercentilesByYear.citation_count < citation_count) \
+        lower_row = base_query.filter(
+            models.CitationPercentilesByYear.citation_count < citation_count) \
             .order_by(models.CitationPercentilesByYear.citation_count.desc()) \
             .first()
 
         if not lower_row or not higher_row:
-            logger.info(f"no percentiles for {self.paper_id} {self.year} {citation_count}")
+            logger.info(
+                f"no percentiles for {self.paper_id} {self.year} {citation_count}")
             return None
 
-        return self.format_percentiles(lower_row.percentile, higher_row.percentile)
+        return self.format_percentiles(lower_row.percentile,
+                                       higher_row.percentile)
 
     @staticmethod
     def format_percentiles(min_perc, max_perc):
@@ -1795,7 +1971,8 @@ class Work(db.Model):
             bulk_actions.append(index_record)
             bulk_actions.append(delete_record)
         else:
-            logger.info(f"already merged into {self.merge_into_id}, not saving again")
+            logger.info(
+                f"already merged into {self.merge_into_id}, not saving again")
         self.json_entity_hash = entity_hash
         return bulk_actions
 
@@ -1809,7 +1986,8 @@ class Work(db.Model):
         my_dict['authors_count'] = len(self.affiliations_list)
         my_dict['concepts_count'] = len(self.concepts_sorted)
         my_dict['topics_count'] = len(self.topics_sorted)
-        my_dict['abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
+        my_dict[
+            'abstract_inverted_index'] = self.abstract.indexed_abstract if self.abstract else None
 
         if self.abstract and self.abstract.abstract:
             my_dict['abstract'] = self.abstract.abstract
@@ -1844,9 +2022,11 @@ class Work(db.Model):
             (work_id, failed_at)
             VALUES(:work_id, :now);
             """
-            db.session.execute(text(sq), {"work_id": self.paper_id, "now": datetime.datetime.utcnow().isoformat()})
+            db.session.execute(text(sq), {"work_id": self.paper_id,
+                                          "now": datetime.datetime.utcnow().isoformat()})
         elif entity_hash != self.json_entity_hash:
-            logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
+            logger.info(
+                f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
                 "_index": f"{WORKS_INDEX_PREFIX}-{index_suffix}",
@@ -1861,12 +2041,15 @@ class Work(db.Model):
                     try:
                         old_year = int(old_year)
                     except ValueError:
-                        logger.warning(f"year for {self.openalex_id} changed but not a valid year {old_year}")
+                        logger.warning(
+                            f"year for {self.openalex_id} changed but not a valid year {old_year}")
                         continue
-                    logger.info(f"year for {self.openalex_id} changed from {old_year} to {self.year}")
+                    logger.info(
+                        f"year for {self.openalex_id} changed from {old_year} to {self.year}")
                     old_index_suffix = elastic_index_suffix(old_year)
                     if old_index_suffix != index_suffix:
-                        logger.info(f"delete {self.openalex_id} from old index {old_index_suffix}")
+                        logger.info(
+                            f"delete {self.openalex_id} from old index {old_index_suffix}")
                         delete_record = {
                             "_op_type": "delete",
                             "_index": f"{WORKS_INDEX_PREFIX}-{old_index_suffix}",
@@ -1874,10 +2057,12 @@ class Work(db.Model):
                         }
                         bulk_actions.append(delete_record)
                     else:
-                        logger.info(f"year for {self.openalex_id} changed but still in same index {index_suffix}")
+                        logger.info(
+                            f"year for {self.openalex_id} changed but still in same index {index_suffix}")
                 self.previous_years = None
         else:
-            logger.info(f"dictionary not changed, don't save again {self.openalex_id}")
+            logger.info(
+                f"dictionary not changed, don't save again {self.openalex_id}")
 
         self.json_entity_hash = entity_hash
         self.updated_date = my_dict.get('updated_date')
@@ -1887,12 +2072,14 @@ class Work(db.Model):
     def display_counts_by_year(self):
         response_dict = {}
         for count_row in self.counts_by_year:
-            response_dict[count_row.year] = {"year": count_row.year, "cited_by_count": 0}
+            response_dict[count_row.year] = {"year": count_row.year,
+                                             "cited_by_count": 0}
         for count_row in self.counts_by_year:
             if count_row.type == "citation_count":
                 response_dict[count_row.year]["cited_by_count"] = count_row.n
 
-        my_dicts = [counts for counts in response_dict.values() if counts["year"] and counts["year"] >= 2012]
+        my_dicts = [counts for counts in response_dict.values() if
+                    counts["year"] and counts["year"] >= 2012]
         response = sorted(my_dicts, key=lambda x: x["year"], reverse=True)
         return response
 
@@ -1923,7 +2110,8 @@ class Work(db.Model):
                 doi_url = f'https://doi.org/{r.doi}'
 
                 doi_location = {
-                    'source': r.journal and r.journal.to_dict(return_level='minimum'),
+                    'source': r.journal and r.journal.to_dict(
+                        return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
@@ -1938,9 +2126,11 @@ class Work(db.Model):
 
                 if not doi_location['version']:
                     doi_location['version'] = self.guess_version()
-                
-                doi_location['is_accepted'] = is_accepted(doi_location['version'])
-                doi_location['is_published'] = is_published(doi_location['version'])
+
+                doi_location['is_accepted'] = is_accepted(
+                    doi_location['version'])
+                doi_location['is_published'] = is_published(
+                    doi_location['version'])
 
                 locations.append(doi_location)
 
@@ -1967,7 +2157,8 @@ class Work(db.Model):
                     doi_url = None
 
                 pmh_location = {
-                    'source': r.journal and r.journal.to_dict(return_level='minimum'),
+                    'source': r.journal and r.journal.to_dict(
+                        return_level='minimum'),
                     'pdf_url': r.work_pdf_url,
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
@@ -1978,13 +2169,16 @@ class Work(db.Model):
 
                 # special case for arXiv
                 if r.repository_id == "ca8f8d56758a80a4f86" and r.arxiv_id:
-                    pmh_location['doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
+                    pmh_location[
+                        'doi'] = f"https://doi.org/10.48550/{r.arxiv_id.replace(':', '.')}"
 
                 if not pmh_location['version']:
                     pmh_location['version'] = self.guess_version()
 
-                pmh_location['is_accepted'] = is_accepted(pmh_location['version'])
-                pmh_location['is_published'] = is_published(pmh_location['version'])
+                pmh_location['is_accepted'] = is_accepted(
+                    pmh_location['version'])
+                pmh_location['is_published'] = is_published(
+                    pmh_location['version'])
 
                 if pmh_location['pdf_url']:
                     seen_urls.add(pmh_location['pdf_url'])
@@ -1997,12 +2191,13 @@ class Work(db.Model):
         # then OA unpaywall locations
         for other_location in self.locations_sorted:
             if (
-                other_location.is_from_unpaywall()  # take anything from unpaywall
-                #  if we didn't already get it from the Recordthresher records
-                and other_location.url_for_landing_page not in seen_urls
-                and other_location.url_for_pdf not in seen_urls
+                    other_location.is_from_unpaywall()  # take anything from unpaywall
+                    #  if we didn't already get it from the Recordthresher records
+                    and other_location.url_for_landing_page not in seen_urls
+                    and other_location.url_for_pdf not in seen_urls
             ):
-                logger.info(f'Appending Unpaywall location to work - {self.paper_id}')
+                logger.info(
+                    f'Appending Unpaywall location to work - {self.paper_id}')
                 other_location_dict = other_location.to_locations_dict()
 
                 if other_location_dict['pdf_url']:
@@ -2027,7 +2222,8 @@ class Work(db.Model):
 
                 if not self.records_merged and self.journal:
                     # mag location, assume it came from the work's mag journal
-                    other_location_dict['source'] = self.journal.to_dict(return_level='minimum')
+                    other_location_dict['source'] = self.journal.to_dict(
+                        return_level='minimum')
 
                 locations.append(other_location_dict)
 
@@ -2047,8 +2243,10 @@ class Work(db.Model):
                     'license': None,
                     'doi': doi_url,
                 }
-                pubmed_location['is_accepted'] = is_accepted(pubmed_location['version'])
-                pubmed_location['is_published'] = is_published(pubmed_location['version'])
+                pubmed_location['is_accepted'] = is_accepted(
+                    pubmed_location['version'])
+                pubmed_location['is_published'] = is_published(
+                    pubmed_location['version'])
 
                 locations.append(pubmed_location)
                 break
@@ -2081,17 +2279,22 @@ class Work(db.Model):
                 'license': None,
                 'doi': self.doi_url,
             }
-            lastchance_location['is_accepted'] = is_accepted(lastchance_location['version'])
-            lastchance_location['is_published'] = is_published(lastchance_location['version'])
+            lastchance_location['is_accepted'] = is_accepted(
+                lastchance_location['version'])
+            lastchance_location['is_published'] = is_published(
+                lastchance_location['version'])
 
             locations.append(lastchance_location)
 
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
         # ! Note that this does name matching of sources, which is problematic. I'm too nervous to change it now because I don't know how many works it will affect, so I'm just hard-coding manual exceptions.
         source_match_exceptions = ['Zoonoses']
-        if locations and locations[0]['source'] is None and self.safety_journals:
-            source_match = self.safety_journals[0].to_dict(return_level='minimum')
-            if source_match and source_match['display_name'] not in source_match_exceptions:
+        if locations and locations[0][
+            'source'] is None and self.safety_journals:
+            source_match = self.safety_journals[0].to_dict(
+                return_level='minimum')
+            if source_match and source_match[
+                'display_name'] not in source_match_exceptions:
                 locations[0]['source'] = source_match
 
         locations = override_location_sources(locations)
@@ -2115,7 +2318,8 @@ class Work(db.Model):
     @cached_property
     def oa_url(self):
         if self.oa_locations:
-            return self.oa_locations[0].get('pdf_url') or self.oa_locations[0].get('landing_page_url')
+            return self.oa_locations[0].get('pdf_url') or self.oa_locations[
+                0].get('landing_page_url')
         return None
 
     @staticmethod
@@ -2123,24 +2327,33 @@ class Work(db.Model):
         countries_in_string = []
         # Hopeful first match
         _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
-             max([1 if re.search(fr"\b{i}\b", raw_affiliation) else 0 for i in y]) > 0]
+             max([1 if re.search(fr"\b{i}\b", raw_affiliation) else 0 for i in
+                  y]) > 0]
         if not countries_in_string:
             # Replace '.' to see if match can be found
             _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
-                 max([1 if re.search(fr"\b{i}\b", raw_affiliation.replace(".", "")) else 0 for i in y]) > 0]
+                 max([1 if re.search(fr"\b{i}\b",
+                                     raw_affiliation.replace(".", "")) else 0
+                      for i in y]) > 0]
             if not countries_in_string:
                 # Remove word boundary requirement
-                _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
-                     max([1 if re.search(fr"{i}", raw_affiliation) else 0 for i in y]) > 0]
+                _ = [countries_in_string.append(x) for x, y in COUNTRIES.items()
+                     if
+                     max([1 if re.search(fr"{i}", raw_affiliation) else 0 for i
+                          in y]) > 0]
                 if not countries_in_string:
                     # Lowercase all text to catch weird capitalizations
-                    _ = [countries_in_string.append(x) for x, y in COUNTRIES.items() if
-                         max([1 if re.search(fr"\b{i.lower()}\b", raw_affiliation.lower()) else 0 for i in y]) > 0]
+                    _ = [countries_in_string.append(x) for x, y in
+                         COUNTRIES.items() if
+                         max([1 if re.search(fr"\b{i.lower()}\b",
+                                             raw_affiliation.lower()) else 0 for
+                              i in y]) > 0]
 
         final_countries = sorted(list(set(countries_in_string)))
 
         # If we match to Georgia countries GE or GS, remove US match that came from short state string
-        if ("GE" in final_countries or "GS" in final_countries) and "US" in final_countries:
+        if (
+                "GE" in final_countries or "GS" in final_countries) and "US" in final_countries:
             final_countries.remove("US")
 
         return final_countries
@@ -2158,14 +2371,17 @@ class Work(db.Model):
         # currently this fulltext comes from parsed PDFs
         for record in self.records_merged:
             if record.record_type == "crossref_doi" and record.fulltext and record.fulltext.truncated_fulltext:
-                clean_fulltext = re.sub(r'<[^>]+>', '', record.fulltext.truncated_fulltext)
+                clean_fulltext = re.sub(r'<[^>]+>', '',
+                                        record.fulltext.truncated_fulltext)
                 clean_fulltext = ' '.join(clean_fulltext.split())
-                clean_fulltext = '\n'.join([line.strip() for line in clean_fulltext.splitlines() if line.strip()])
+                clean_fulltext = '\n'.join(
+                    [line.strip() for line in clean_fulltext.splitlines() if
+                     line.strip()])
                 return clean_fulltext
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
-        
+
         corresponding_author_ids: List[str] = []
         corresponding_institution_ids: List[str] = []
         for affil in self.affiliations_list:
@@ -2176,7 +2392,8 @@ class Work(db.Model):
                 institutions = affil.get('institutions', []) or []
                 for institution in institutions:
                     if institution.get("id"):
-                        corresponding_institution_ids.append(institution.get("id"))
+                        corresponding_institution_ids.append(
+                            institution.get("id"))
 
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
@@ -2202,12 +2419,14 @@ class Work(db.Model):
             "ids": {
                 "openalex": self.openalex_id,
                 "doi": self.doi_url,
-                "pmid": None, #filled in below (extra_ids)
+                "pmid": None,  # filled in below (extra_ids)
                 "mag": self.paper_id if self.paper_id < MAX_MAG_ID else None,
                 "arxiv_id": self.arxiv_id,
             },
-            "primary_location": self.dict_locations[0] if self.dict_locations else None,
-            "best_oa_location": self.oa_locations[0] if self.oa_locations else None,
+            "primary_location": self.dict_locations[
+                0] if self.dict_locations else None,
+            "best_oa_location": self.oa_locations[
+                0] if self.oa_locations else None,
             "type": self.display_genre,
             "type_crossref": self.type_crossref,
             "type_id": f"https://openalex.org/work-types/{self.display_genre}",
@@ -2218,7 +2437,9 @@ class Work(db.Model):
                 "oa_url": self.oa_url,
                 "any_repository_has_fulltext": any(
                     [
-                        loc.get("source") is None or (loc.get("source") or {}).get("type") == "repository"
+                        loc.get("source") is None or (
+                                loc.get("source") or {}).get(
+                            "type") == "repository"
                         for loc in self.oa_locations
                     ]
                 )
@@ -2235,7 +2456,7 @@ class Work(db.Model):
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url
 
-        updated_date = self.updated_date # backup in case full_updated_date is null waiting for update
+        updated_date = self.updated_date  # backup in case full_updated_date is null waiting for update
         if self.full_updated_date:
             if isinstance(self.full_updated_date, datetime.datetime):
                 updated_date = self.full_updated_date.isoformat()
@@ -2264,8 +2485,10 @@ class Work(db.Model):
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
                 "summary_stats": {
-                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
-                    "2yr_cited_by_count": int(self.citation_count_2year.count or 0) if self.citation_count_2year else 0
+                    "cited_by_count": int(
+                        self.counts.citation_count or 0) if self.counts else 0,
+                    "2yr_cited_by_count": int(
+                        self.citation_count_2year.count or 0) if self.citation_count_2year else 0
                 },
                 "biblio": {
                     "volume": self.volume,
@@ -2275,9 +2498,14 @@ class Work(db.Model):
                 },
                 "is_retracted": self.is_retracted,
                 "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
-                "concepts": [concept.to_dict("minimum") for concept in self.concepts_sorted],
-                "topics": [topic.to_dict("minimum") for topic in self.topics_sorted][:3] if self.topics_sorted else [],
-                "primary_topic": [topic.to_dict("minimum") for topic in self.topics_sorted[:1]][0] if self.topics_sorted else None,
+                "concepts": [concept.to_dict("minimum") for concept in
+                             self.concepts_sorted],
+                "topics": [topic.to_dict("minimum") for topic in
+                           self.topics_sorted][
+                          :3] if self.topics_sorted else [],
+                "primary_topic": [topic.to_dict("minimum") for topic in
+                                  self.topics_sorted[:1]][
+                    0] if self.topics_sorted else None,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
@@ -2289,18 +2517,24 @@ class Work(db.Model):
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
                 "cited_by_percentile_year": self.cited_by_percentile_year,
-                "related_works": [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works]
+                "related_works": [
+                    as_work_openalex_id(related.recommended_paper_id) for
+                    related in self.related_works]
             })
-            
+
             if return_level == "full":
-                response["abstract_inverted_index"] = self.abstract.to_dict("minimum") if self.abstract else None
+                response["abstract_inverted_index"] = self.abstract.to_dict(
+                    "minimum") if self.abstract else None
                 if self.is_closed_springer:
                     response["abstract_inverted_index"] = None
 
             response["counts_by_year"] = self.display_counts_by_year
             response["cited_by_api_url"] = self.cited_by_api_url
             response["updated_date"] = datetime.datetime.utcnow().isoformat()
-            response["created_date"] = self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
+            response["created_date"] = self.created_date.isoformat()[
+                                       0:10] if isinstance(self.created_date,
+                                                           datetime.datetime) else self.created_date[
+                                                                                   0:10]
 
         # only include non-null IDs
         for id_type in list(response["ids"].keys()):
@@ -2310,7 +2544,10 @@ class Work(db.Model):
         return response
 
     def __repr__(self):
-        return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url, self.id, self.doi, self.original_title[0:20] if self.original_title else None)
+        return "<Work ( {} ) {} {} '{}...'>".format(self.openalex_api_url,
+                                                    self.id, self.doi,
+                                                    self.original_title[
+                                                    0:20] if self.original_title else None)
 
 
 def on_year_change(mapper, connection, target):
@@ -2321,11 +2558,13 @@ def on_year_change(mapper, connection, target):
 
         if old_year != new_year and old_year is not None:
             if target.previous_years is None:
-                logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (setting previous_years)")
+                logger.info(
+                    f"year for {target.paper_id} changed from {old_year} to {new_year} (setting previous_years)")
                 target.previous_years = [old_year]
             else:
                 if old_year not in target.previous_years:
-                    logger.info(f"year for {target.paper_id} changed from {old_year} to {new_year} (adding to previous_years)")
+                    logger.info(
+                        f"year for {target.paper_id} changed from {old_year} to {new_year} (adding to previous_years)")
                     target.previous_years.append(old_year)
 
 
@@ -2336,9 +2575,11 @@ class WorkFulltext(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work_fulltext"
 
-    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"),
+                        primary_key=True)
     doi = db.Column(db.Text)
     fulltext = db.Column(db.Text)
 
 
-Work.fulltext = db.relationship(WorkFulltext, lazy='selectin', viewonly=True, uselist=False)
+Work.fulltext = db.relationship(WorkFulltext, lazy='selectin', viewonly=True,
+                                uselist=False)
