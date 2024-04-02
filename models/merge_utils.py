@@ -43,6 +43,9 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
                              pl_authors]
 
     crossref_authors = json.loads(cloned_crossref_record.authors or '[]')
+    if not crossref_authors and pl_authors:
+        cloned_crossref_record.authors = json.dumps(pl_authors)
+        return cloned_crossref_record
     for crossref_author_idx, crossref_author in enumerate(crossref_authors):
         best_match_idx = _match_parsed_author(
             crossref_author,
