@@ -30,15 +30,15 @@ def entity_md5(entity_repr):
         return text_md5(str(entity_repr))
     if isinstance(entity_repr, dict):
         entity_copy = entity_repr.copy()
-        entity_copy.pop('updated_date', None)
-        entity_copy.pop('updated', None)
-        entity_copy.pop('@timestamp', None)
+        entity_copy.pop("updated_date", None)
+        entity_copy.pop("updated", None)
+        entity_copy.pop("@timestamp", None)
         entity_str = json.dumps(entity_copy, sort_keys=True)
         return text_md5(entity_str)
 
 
 def text_md5(text):
-    return hashlib.md5(text.encode('utf-8')).hexdigest()
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 
 def struct_changed(before, after):
@@ -71,26 +71,35 @@ def str2bool(v):
         return False
     return v.lower() in ("yes", "true", "t", "1")
 
+
 class NoDoiException(Exception):
     pass
+
 
 class NotJournalArticleException(Exception):
     pass
 
+
 class DelayedAdapter(HTTPAdapter):
-    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
+    def send(
+        self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
+    ):
         # logger.info(u"in DelayedAdapter getting {}, sleeping for 2 seconds".format(request.url))
         # sleep(2)
         start_time = time.time()
-        response = super(DelayedAdapter, self).send(request, stream, timeout, verify, cert, proxies)
+        response = super(DelayedAdapter, self).send(
+            request, stream, timeout, verify, cert, proxies
+        )
         # logger.info(u"   HTTPAdapter.send for {} took {} seconds".format(request.url, elapsed(start_time, 2)))
         return response
+
 
 def read_csv_file(filename):
     with open(filename, "r") as csv_file:
         my_reader = csv.DictReader(csv_file)
         rows = [row for row in my_reader]
     return rows
+
 
 # from http://stackoverflow.com/a/3233356/596939
 def update_recursive_sum(d, u):
@@ -105,6 +114,7 @@ def update_recursive_sum(d, u):
                 d[k] = u[k]
     return d
 
+
 # returns dict with values that are proportion of all values
 def as_proportion(my_dict):
     if not my_dict:
@@ -112,8 +122,9 @@ def as_proportion(my_dict):
     total = sum(my_dict.values())
     resp = {}
     for k, v in my_dict.items():
-        resp[k] = round(float(v)/total, 2)
+        resp[k] = round(float(v) / total, 2)
     return resp
+
 
 def calculate_percentile(refset, value):
     if value is None:  # distinguish between that and zero
@@ -125,13 +136,15 @@ def calculate_percentile(refset, value):
 
     return percentile
 
+
 def clean_html(raw_html):
-    cleanr = re.compile('<.*?>')
+    cleanr = re.compile("<.*?>")
     try:
-        cleantext = re.sub(cleanr, '', raw_html)
+        cleantext = re.sub(cleanr, "", raw_html)
     except TypeError:
         cleantext = raw_html
     return cleantext
+
 
 # good for deduping strings.  warning: output removes spaces so isn't readable.
 def normalize(text):
@@ -158,6 +171,7 @@ def normalize_simple(text, remove_articles=True, remove_spaces=True):
         response = re.sub("\s+", "", response)
     return response
 
+
 def normalize_doi(doi, return_none_if_error=False):
     if not doi:
         if return_none_if_error:
@@ -168,7 +182,7 @@ def normalize_doi(doi, return_none_if_error=False):
     doi = doi.strip().lower()
 
     # test cases for this regex are at https://regex101.com/r/zS4hA0/4
-    p = re.compile(r'(10\.\d+/[^\s]+)')
+    p = re.compile(r"(10\.\d+/[^\s]+)")
     matches = re.findall(p, doi)
 
     if len(matches) == 0:
@@ -185,44 +199,47 @@ def normalize_doi(doi, return_none_if_error=False):
     # clean/normalize_doi takes a unicode object or utf-8 basestring or dies
     doi = to_unicode_or_bust(doi)
 
-    return doi.replace('\0', '')
+    return doi.replace("\0", "")
 
 
 def normalize_orcid(orcid):
     if not orcid:
         return None
     orcid = orcid.strip().upper()
-    p = re.compile(r'(\d{4}-\d{4}-\d{4}-\d{3}[\dX])')
+    p = re.compile(r"(\d{4}-\d{4}-\d{4}-\d{3}[\dX])")
     matches = re.findall(p, orcid)
     if len(matches) == 0:
         return None
     orcid = matches[0]
-    orcid = orcid.replace('\0', '')
+    orcid = orcid.replace("\0", "")
     return orcid
+
 
 def normalize_pmid(pmid):
     if not pmid:
         return None
     pmid = pmid.strip().lower()
-    p = re.compile('(\d+)')
+    p = re.compile("(\d+)")
     matches = re.findall(p, pmid)
     if len(matches) == 0:
         return None
     pmid = matches[0]
-    pmid = pmid.replace('\0', '')
+    pmid = pmid.replace("\0", "")
     return pmid
+
 
 def normalize_ror(ror):
     if not ror:
         return None
     ror = ror.strip().lower()
-    p = re.compile(r'([a-z\d]*$)')
+    p = re.compile(r"([a-z\d]*$)")
     matches = re.findall(p, ror)
     if len(matches) == 0:
         return None
     ror = matches[0]
-    ror = ror.replace('\0', '')
+    ror = ror.replace("\0", "")
     return ror
+
 
 def normalize_issn(issn):
     if not issn:
@@ -233,8 +250,9 @@ def normalize_issn(issn):
     if len(matches) == 0:
         return None
     issn = matches[0]
-    issn = issn.replace('\0', '')
+    issn = issn.replace("\0", "")
     return issn
+
 
 def normalize_wikidata(wikidata):
     if not wikidata:
@@ -245,8 +263,9 @@ def normalize_wikidata(wikidata):
     if len(matches) == 0:
         return None
     wikidata = matches[0]
-    wikidata = wikidata.replace('\0', '')
+    wikidata = wikidata.replace("\0", "")
     return wikidata
+
 
 def is_openalex_id(openalex_id):
     if not openalex_id:
@@ -260,6 +279,7 @@ def is_openalex_id(openalex_id):
         return True
     return False
 
+
 def normalize_openalex_id(openalex_id):
     if not openalex_id:
         return None
@@ -269,8 +289,9 @@ def normalize_openalex_id(openalex_id):
     if len(matches) == 0:
         return None
     clean_openalex_id = matches[0]
-    clean_openalex_id = clean_openalex_id.replace('\0', '')
+    clean_openalex_id = clean_openalex_id.replace("\0", "")
     return clean_openalex_id
+
 
 def remove_everything_but_alphas(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
@@ -279,6 +300,7 @@ def remove_everything_but_alphas(input_string):
         only_alphas = "".join(e for e in input_string if (e.isalpha()))
     return only_alphas
 
+
 def remove_punctuation(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
     no_punc = input_string
@@ -286,9 +308,10 @@ def remove_punctuation(input_string):
         no_punc = "".join(e for e in input_string if (e.isalnum() or e.isspace()))
     return no_punc
 
+
 # from http://stackoverflow.com/a/11066579/596939
 def replace_punctuation(text, sub):
-    punctutation_cats = set(['Pc', 'Pd', 'Ps', 'Pe', 'Pi', 'Pf', 'Po'])
+    punctutation_cats = set(["Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po"])
     chars = []
     for my_char in text:
         if unicodedata.category(my_char) in punctutation_cats:
@@ -305,7 +328,8 @@ def json_serial(obj):
     if isinstance(obj, datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError ("Type not serializable")
+    raise TypeError("Type not serializable")
+
 
 def conversational_number(number):
     words = {
@@ -334,12 +358,11 @@ def conversational_number(number):
         divided = number / 1000000.0
         unit = "million"
 
-    short_number = '{}'.format(round(divided, 2))[:-1]
+    short_number = "{}".format(round(divided, 2))[:-1]
     if short_number in words:
         short_number = words[short_number]
 
     return short_number + " " + unit
-
 
 
 def safe_commit(db):
@@ -372,6 +395,7 @@ def is_doi(text):
         return True
     return False
 
+
 def is_issn(text):
     if not text:
         return False
@@ -394,10 +418,12 @@ def is_doi_url(url):
         return True
     return False
 
+
 def is_ip(ip):
     if re.match("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip):
         return True
     return False
+
 
 def clean_doi(dirty_doi, return_none_if_error=False):
     if not dirty_doi:
@@ -410,7 +436,7 @@ def clean_doi(dirty_doi, return_none_if_error=False):
     dirty_doi = dirty_doi.lower()
 
     # test cases for this regex are at https://regex101.com/r/zS4hA0/1
-    p = re.compile(r'(10\.\d+\/[^\s]+)')
+    p = re.compile(r"(10\.\d+\/[^\s]+)")
 
     matches = re.findall(p, dirty_doi)
     if len(matches) == 0:
@@ -432,7 +458,7 @@ def clean_doi(dirty_doi, return_none_if_error=False):
         resp = resp.split("#")[0]
 
     # remove double quotes, they shouldn't be there as per http://www.doi.org/syntax.html
-    resp = resp.replace('"', '')
+    resp = resp.replace('"', "")
 
     # remove trailing period, comma -- it is likely from a sentence or citation
     if resp.endswith(",") or resp.endswith("."):
@@ -445,7 +471,7 @@ def pick_best_url(urls):
     if not urls:
         return None
 
-    #get a backup
+    # get a backup
     response = urls[0]
 
     # now go through and pick the best one
@@ -459,6 +485,7 @@ def pick_best_url(urls):
             response = url
 
     return response
+
 
 def date_as_iso_utc(datetime_object):
     if datetime_object is None:
@@ -482,7 +509,6 @@ def dict_from_dir(obj, keys_to_ignore=None, keys_to_show="all"):
             ret[key] = getattr(obj, key)
 
         return ret
-
 
     for k in dir(obj):
         value = getattr(obj, k)
@@ -514,11 +540,13 @@ def median(my_list):
     """
     my_list = sorted(my_list)
     if len(my_list) < 1:
-            return None
-    if len(my_list) %2 == 1:
-            return my_list[((len(my_list)+1)/2)-1]
-    if len(my_list) %2 == 0:
-            return float(sum(my_list[(len(my_list)/2)-1:(len(my_list)/2)+1]))/2.0
+        return None
+    if len(my_list) % 2 == 1:
+        return my_list[((len(my_list) + 1) / 2) - 1]
+    if len(my_list) % 2 == 0:
+        return (
+            float(sum(my_list[(len(my_list) / 2) - 1 : (len(my_list) / 2) + 1])) / 2.0
+        )
 
 
 def underscore_to_camelcase(value):
@@ -529,6 +557,7 @@ def underscore_to_camelcase(value):
 
     return "".join(capitalized_words)
 
+
 def chunks(l, n):
     """
     Yield successive n-sized chunks from l.
@@ -536,7 +565,8 @@ def chunks(l, n):
     from http://stackoverflow.com/a/312464
     """
     for i in range(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i : i + n]
+
 
 def page_query(q, page_size=1000):
     offset = 0
@@ -550,9 +580,9 @@ def page_query(q, page_size=1000):
         if not r:
             break
 
+
 def elapsed(since, round_places=2):
     return round(time.time() - since, round_places)
-
 
 
 def truncate(str, max=100):
@@ -570,16 +600,16 @@ def truncate_on_word_break(string, max_length):
         return string
 
     break_index = 0
-    for word_break in re.finditer(r'\b', string):
+    for word_break in re.finditer(r"\b", string):
         if word_break.start() < max_length:
             break_index = word_break.start()
         else:
             break
 
     if break_index:
-        return string[0:break_index] + '…'
+        return string[0:break_index] + "…"
     else:
-        return string[0:max_length-1] + '…'
+        return string[0 : max_length - 1] + "…"
 
 
 def str_to_bool(x):
@@ -590,17 +620,23 @@ def str_to_bool(x):
     else:
         raise ValueError("This string can't be cast to a boolean.")
 
-# from http://stackoverflow.com/a/20007730/226013
-ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n/10%10!=1)*(n%10<4)*n%10::4])
 
-#from http://farmdev.com/talks/unicode/
-def to_unicode_or_bust(obj, encoding='utf-8'):
+# from http://stackoverflow.com/a/20007730/226013
+ordinal = lambda n: "%d%s" % (
+    n,
+    "tsnrhtdd"[(n / 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4],
+)
+
+
+# from http://farmdev.com/talks/unicode/
+def to_unicode_or_bust(obj, encoding="utf-8"):
     if isinstance(obj, str):
         if not isinstance(obj, str):
             obj = str(obj, encoding)
     return obj
 
-def remove_nonprinting_characters(input, encoding='utf-8'):
+
+def remove_nonprinting_characters(input, encoding="utf-8"):
     input_was_unicode = True
     if isinstance(input, str):
         if not isinstance(input, str):
@@ -611,38 +647,37 @@ def remove_nonprinting_characters(input, encoding='utf-8'):
     # see http://www.fileformat.info/info/unicode/category/index.htm
     char_classes_to_remove = ["C", "M", "Z"]
 
-    response = ''.join(c for c in unicode_input if unicodedata.category(c)[0] not in char_classes_to_remove)
+    response = "".join(
+        c
+        for c in unicode_input
+        if unicodedata.category(c)[0] not in char_classes_to_remove
+    )
 
     if not input_was_unicode:
         response = response.encode(encoding)
 
     return response
 
+
 # getting a "decoding Unicode is not supported" error in this function?
 # might need to reinstall libaries as per
 # http://stackoverflow.com/questions/17092849/flask-login-typeerror-decoding-unicode-is-not-supported
 class HTTPMethodOverrideMiddleware(object):
-    allowed_methods = frozenset([
-        'GET',
-        'HEAD',
-        'POST',
-        'DELETE',
-        'PUT',
-        'PATCH',
-        'OPTIONS'
-    ])
-    bodyless_methods = frozenset(['GET', 'HEAD', 'OPTIONS', 'DELETE'])
+    allowed_methods = frozenset(
+        ["GET", "HEAD", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"]
+    )
+    bodyless_methods = frozenset(["GET", "HEAD", "OPTIONS", "DELETE"])
 
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
-        method = environ.get('HTTP_X_HTTP_METHOD_OVERRIDE', '').upper()
+        method = environ.get("HTTP_X_HTTP_METHOD_OVERRIDE", "").upper()
         if method in self.allowed_methods:
-            method = method.encode('ascii', 'replace')
-            environ['REQUEST_METHOD'] = method
+            method = method.encode("ascii", "replace")
+            environ["REQUEST_METHOD"] = method
         if method in self.bodyless_methods:
-            environ['CONTENT_LENGTH'] = '0'
+            environ["CONTENT_LENGTH"] = "0"
         return self.app(environ, start_response)
 
 
@@ -665,8 +700,11 @@ def get_random_dois(n, from_date=None, only_journal_articles=True):
         if from_date:
             url += ",from-pub-date:{}".format(from_date)
         print(url)
-        print("calling crossref, asking for {} dois, so far have {} of {} dois".format(
-            number_this_round, len(dois), n))
+        print(
+            "calling crossref, asking for {} dois, so far have {} of {} dois".format(
+                number_this_round, len(dois), n
+            )
+        )
         r = requests.get(url)
         items = r.json()["message"]["items"]
         dois += [item["DOI"].lower() for item in items]
@@ -691,7 +729,6 @@ def get_random_dois(n, from_date=None, only_journal_articles=True):
 #             raise elasticsearch.exceptions.SerializationError(data, e)
 
 
-
 def is_the_same_url(url1, url2):
     norm_url1 = strip_jsessionid_from_url(url1.replace("https", "http"))
     norm_url2 = strip_jsessionid_from_url(url2.replace("https", "http"))
@@ -699,9 +736,11 @@ def is_the_same_url(url1, url2):
         return True
     return False
 
+
 def strip_jsessionid_from_url(url):
     url = re.sub(r";jsessionid=\w+", "", url)
     return url
+
 
 def get_link_target(url, base_url, strip_jsessionid=True):
     if strip_jsessionid:
@@ -726,16 +765,17 @@ def run_sql(db, q):
     finally:
         con.close()
 
+
 def get_sql_answer(db, q):
     row = db.engine.execute(sql.text(q)).first()
     return row[0]
+
 
 def get_sql_answers(db, q):
     rows = db.engine.execute(sql.text(q)).fetchall()
     if not rows:
         return []
     return [row[0] for row in rows]
-
 
 
 # from https://gist.github.com/douglasmiranda/5127251
@@ -754,13 +794,14 @@ def delete_key_from_dict(dictionary, key):
 
 
 def restart_dynos(app_name, dyno_prefix):
-    heroku_conn = heroku3.from_key(os.getenv('HEROKU_API_KEY'))
+    heroku_conn = heroku3.from_key(os.getenv("HEROKU_API_KEY"))
     app = heroku_conn.apps()[app_name]
     dynos = app.dynos()
     for dyno in dynos:
         if dyno.name.startswith(dyno_prefix):
             dyno.restart()
             print("restarted {} on {}!".format(dyno.name, app_name))
+
 
 def is_same_publisher(publisher1, publisher2):
     if publisher1 and publisher2:
@@ -771,10 +812,11 @@ def is_same_publisher(publisher1, publisher2):
 from flask import current_app
 from json import dumps
 
+
 # from https://stackoverflow.com/a/50762571/596939
 def jsonify_fast(*args, **kwargs):
     if args and kwargs:
-        raise TypeError('jsonify() behavior undefined when passed both args and kwargs')
+        raise TypeError("jsonify() behavior undefined when passed both args and kwargs")
     elif len(args) == 1:  # single args are passed directly to dumps()
         data = args[0]
     else:
@@ -784,17 +826,22 @@ def jsonify_fast(*args, **kwargs):
     sort_keys = True
 
     return current_app.response_class(
-        dumps(data,
-              skipkeys=True,
-              ensure_ascii=False,
-              check_circular=False,
-              allow_nan=True,
-              cls=None,
-              indent=None,
-              # separators=None,
-              default=None,
-              sort_keys=sort_keys) + '\n', mimetype=current_app.config['JSONIFY_MIMETYPE']
+        dumps(
+            data,
+            skipkeys=True,
+            ensure_ascii=False,
+            check_circular=False,
+            allow_nan=True,
+            cls=None,
+            indent=None,
+            # separators=None,
+            default=None,
+            sort_keys=sort_keys,
+        )
+        + "\n",
+        mimetype=current_app.config["JSONIFY_MIMETYPE"],
     )
+
 
 def find_normalized_license(text):
     # TODO: delete this? I don't think it's used anywhere (it is similar to code in oadoi)
@@ -809,48 +856,50 @@ def find_normalized_license(text):
     # thanks CottageLabs!  :)
 
     license_lookups = [
-        ("koreanjpathol.org/authors/access.php", "cc-by-nc"),  # their access page says it is all cc-by-nc now
-        ("elsevier.com/openaccess/userlicense", "elsevier-specific: oa user license"),  #remove the - because is removed in normalized_text above
-        ("pubs.acs.org/page/policy/authorchoice_termsofuse.html", "acs-specific: authorchoice/editors choice usage agreement"),
-
+        (
+            "koreanjpathol.org/authors/access.php",
+            "cc-by-nc",
+        ),  # their access page says it is all cc-by-nc now
+        (
+            "elsevier.com/openaccess/userlicense",
+            "elsevier-specific: oa user license",
+        ),  # remove the - because is removed in normalized_text above
+        (
+            "pubs.acs.org/page/policy/authorchoice_termsofuse.html",
+            "acs-specific: authorchoice/editors choice usage agreement",
+        ),
         ("creativecommons.org/licenses/byncnd", "cc-by-nc-nd"),
         ("creativecommonsattributionnoncommercialnoderiv", "cc-by-nc-nd"),
         ("ccbyncnd", "cc-by-nc-nd"),
-
         ("creativecommons.org/licenses/byncsa", "cc-by-nc-sa"),
         ("creativecommonsattributionnoncommercialsharealike", "cc-by-nc-sa"),
         ("ccbyncsa", "cc-by-nc-sa"),
-
         ("creativecommons.org/licenses/bynd", "cc-by-nd"),
         ("creativecommonsattributionnoderiv", "cc-by-nd"),
         ("ccbynd", "cc-by-nd"),
-
         ("creativecommons.org/licenses/bysa", "cc-by-sa"),
         ("creativecommonsattributionsharealike", "cc-by-sa"),
         ("ccbysa", "cc-by-sa"),
-
         ("creativecommons.org/licenses/bync", "cc-by-nc"),
         ("creativecommonsattributionnoncommercial", "cc-by-nc"),
         ("ccbync", "cc-by-nc"),
-
         ("creativecommons.org/licenses/by", "cc-by"),
         ("creativecommonsattribution", "cc-by"),
         ("ccby", "cc-by"),
-
         ("creativecommons.org/publicdomain/zero", "cc0"),
         ("creativecommonszero", "cc0"),
-
         ("creativecommons.org/publicdomain/mark", "pd"),
         ("publicdomain", "pd"),
-
         # ("openaccess", "oa")
     ]
 
-    for (lookup, license) in license_lookups:
+    for lookup, license in license_lookups:
         if lookup in normalized_text:
-            if license=="pd":
+            if license == "pd":
                 try:
-                    if "worksnotinthepublicdomain" in normalized_text.decode(errors='ignore'):
+                    if "worksnotinthepublicdomain" in normalized_text.decode(
+                        errors="ignore"
+                    ):
                         return None
                 except:
                     # some kind of unicode exception
@@ -858,20 +907,24 @@ def find_normalized_license(text):
             return license
     return None
 
+
 def myconverter(o):
     if isinstance(o, datetime.datetime):
         return o.isoformat()
     raise TypeError(repr(o) + " is not JSON serializable")
 
+
 def jsonify_fast_no_sort(*args, **kwargs):
     dumps_response = jsonify_fast_no_sort_raw(*args, **kwargs)
-    return current_app.response_class(dumps_response + '\n', mimetype=current_app.config['JSONIFY_MIMETYPE'])
+    return current_app.response_class(
+        dumps_response + "\n", mimetype=current_app.config["JSONIFY_MIMETYPE"]
+    )
 
 
 # from https://stackoverflow.com/a/50762571/596939
 def jsonify_fast_no_sort_raw(*args, **kwargs):
     if args and kwargs:
-        raise TypeError('jsonify() behavior undefined when passed both args and kwargs')
+        raise TypeError("jsonify() behavior undefined when passed both args and kwargs")
     elif len(args) == 1:  # single args are passed directly to dumps()
         data = args[0]
     else:
@@ -880,16 +933,18 @@ def jsonify_fast_no_sort_raw(*args, **kwargs):
     # turn this to False to be even faster, but warning then responses may not cache
     sort_keys = False
 
-    return dumps(data,
-              skipkeys=True,
-              ensure_ascii=False,
-              check_circular=False,
-              allow_nan=True,
-              cls=None,
-              default=myconverter,
-              indent=None,
-              # separators=None,
-              sort_keys=sort_keys)
+    return dumps(
+        data,
+        skipkeys=True,
+        ensure_ascii=False,
+        check_circular=False,
+        allow_nan=True,
+        cls=None,
+        default=myconverter,
+        indent=None,
+        # separators=None,
+        sort_keys=sort_keys,
+    )
 
 
 class TimingMessages(object):
@@ -913,6 +968,7 @@ class TimingMessages(object):
         self.messages.append(self.format_timing_message("TOTAL", use_start_time=True))
         return self.messages
 
+
 # like the one below but similar to what we used in redshift
 def normalize_title_like_sql(title, remove_stop_words=True):
     import re
@@ -920,7 +976,7 @@ def normalize_title_like_sql(title, remove_stop_words=True):
     response = title
 
     if not response:
-        return u""
+        return ""
 
     # just first n characters
     response = response[0:500]
@@ -930,11 +986,13 @@ def normalize_title_like_sql(title, remove_stop_words=True):
 
     # has to be before remove_punctuation
     # the kind in titles are simple <i> etc, so this is simple
-    response = re.sub(u'<.*?>', u'', response)
+    response = re.sub("<.*?>", "", response)
 
     # remove articles and common prepositions
     if remove_stop_words:
-        response = re.sub(r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response)
+        response = re.sub(
+            r"\b(the|a|an|of|to|in|for|on|by|with|at|from)\b", "", response
+        )
 
     # remove everything except alphas
     response = "".join(e for e in response if (e.isalpha()))
@@ -949,13 +1007,13 @@ def f_generate_inverted_index(abstract_string):
     from collections import OrderedDict
 
     # remove jat tags and unnecessary tags and problematic white space
-    abstract_string = re.sub('\b', ' ', abstract_string)
-    abstract_string = re.sub('\n', ' ', abstract_string)
-    abstract_string = re.sub('\t', ' ', abstract_string)
-    abstract_string = re.sub('<jats:[^<]+>', ' ', abstract_string)
-    abstract_string = re.sub('</jats:[^<]+>', ' ', abstract_string)
-    abstract_string = re.sub('<p>', ' ', abstract_string)
-    abstract_string = re.sub('</p>', ' ', abstract_string)
+    abstract_string = re.sub("\b", " ", abstract_string)
+    abstract_string = re.sub("\n", " ", abstract_string)
+    abstract_string = re.sub("\t", " ", abstract_string)
+    abstract_string = re.sub("<jats:[^<]+>", " ", abstract_string)
+    abstract_string = re.sub("</jats:[^<]+>", " ", abstract_string)
+    abstract_string = re.sub("<p>", " ", abstract_string)
+    abstract_string = re.sub("</p>", " ", abstract_string)
     abstract_string = " ".join(re.split("\s+", abstract_string))
 
     # build inverted index
@@ -966,8 +1024,8 @@ def f_generate_inverted_index(abstract_string):
             invertedIndex[words[i]] = []
         invertedIndex[words[i]].append(i)
     result = {
-        'IndexLength': len(words),
-        'InvertedIndex': invertedIndex,
+        "IndexLength": len(words),
+        "InvertedIndex": invertedIndex,
     }
 
     return json.dumps(result, ensure_ascii=False)
@@ -981,12 +1039,20 @@ def matching_author_strings(author):
     first_name = clean_author_name(author_name.first)
     last_name = clean_author_name(author_name.last)
     first_initial = first_name[0] if first_name else ""
-    return [f"{last_name};{first_initial}", f"{first_name};{last_name}", f"{last_name};{first_name}"]
+    return [
+        f"{last_name};{first_initial}",
+        f"{first_name};{last_name}",
+        f"{last_name};{first_name}",
+    ]
 
 
 def remove_latin_characters(author):
-    if any('\u0080' <= c <= '\u02AF' for c in author):
-        author = unicodedata.normalize('NFKD', author).encode('ascii', 'ignore').decode('ascii')
+    if any("\u0080" <= c <= "\u02AF" for c in author):
+        author = (
+            unicodedata.normalize("NFKD", author)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
     return author
 
 
@@ -1004,7 +1070,9 @@ def clean_author_name(author_name):
 
 def work_has_null_author_ids(w):
     if isinstance(w, dict):
-        author_ids = list({a.get('author', {}).get('id') for a in w.get('authorships', [])})
+        author_ids = list(
+            {a.get("author", {}).get("id") for a in w.get("authorships", [])}
+        )
         return any(not author_id for author_id in author_ids)
     # work object, use relationships
     author_ids = list({a.author_id for a in w.affiliations})
@@ -1015,8 +1083,49 @@ def majority_ascii(s, threshold=0.5):
     return sum([char.isascii() for char in s]) / len(s) > threshold
 
 
+def majority_uppercase(s, threshold=0.5):
+    return sum([char.isupper() for char in s]) / len(s) > threshold
+
+
 def punctuation_density(words):
     return sum([word[-1] in string.punctuation for word in words if word]) / len(words)
+
+
+def detect_language_abstract(
+    abstract_words, probability_threshold=0.7, punctuation_density_threshold=0.5
+):
+    DetectorFactory.seed = 0
+    if abstract_words:
+        abstract = " ".join(abstract_words)
+        if majority_uppercase(abstract):
+            # langdetect does poorly if input is in all caps
+            abstract = abstract.lower()
+        abstract_language = detect_langs(abstract)
+        if abstract_language and abstract_language[0]:
+            if (
+                (len(abstract) > 20 or not majority_ascii(abstract))
+                and abstract_language[0].prob >= probability_threshold
+                and punctuation_density(abstract_words) < punctuation_density_threshold
+            ):
+                return abstract_language
+    return None
+
+
+def detect_language_title(
+    title, probability_threshold=0.7, punctuation_density_threshold=0.5
+):
+    DetectorFactory.seed = 0
+    if title:
+        if majority_uppercase(title):
+            # langdetect does poorly if input is in all caps
+            title = title.lower()
+        title_language = detect_langs(title)
+        if title_language and title_language[0]:
+            if (len(title) > 15 or not majority_ascii(title)) and (
+                title_language[0].prob >= probability_threshold
+            ):
+                return title_language
+    return None
 
 
 def detect_language_from_abstract_and_title(
@@ -1031,24 +1140,18 @@ def detect_language_from_abstract_and_title(
 
     try:
         if abstract_words:
-            abstract = " ".join(abstract_words)
-            abstract_language = detect_langs(abstract)
+            abstract_language = detect_language_abstract(
+                abstract_words, probability_threshold, punctuation_density_threshold
+            )
             if abstract_language and abstract_language[0]:
-                if (
-                    (len(abstract) > 20 or not majority_ascii(abstract))
-                    and abstract_language[0].prob >= probability_threshold
-                    and punctuation_density(abstract_words)
-                    < punctuation_density_threshold
-                ):
-                    return abstract_language[0].lang
+                return abstract_language[0].lang
 
         if title:
-            title_language = detect_langs(title)
+            title_language = detect_language_title(
+                title, probability_threshold, punctuation_density_threshold
+            )
             if title_language and title_language[0]:
-                if (len(title) > 15 or not majority_ascii(title)) and title_language[
-                    0
-                ].prob >= probability_threshold:
-                    return title_language[0].lang
+                return title_language[0].lang
     except LangDetectException:
         pass
 

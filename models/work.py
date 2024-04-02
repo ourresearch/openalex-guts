@@ -1748,6 +1748,10 @@ class Work(db.Model):
 
     @cached_property
     def language(self):
+        # override language for selected journals
+        if self.journal and self.journal.language_override:
+            return self.journal.language_override.language
+
         abstract_words = []
         if self.abstract and self.abstract.indexed_abstract:
             json_abstract = json.loads(self.abstract.indexed_abstract)
@@ -2269,6 +2273,7 @@ class Work(db.Model):
                 break
 
         # last chance, make a location if there is a DOI but no locations yet
+        # TODO: also add a location if there is a DOI but it isn't in location yet (and maybe make it the primary location)
         if self.doi_url and not locations:
             lastchance_location = {
                 'source': None,
