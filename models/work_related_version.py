@@ -8,3 +8,4 @@ class WorkRelatedVersion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
     version_work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"))
+    type = db.Column(db.Text, nullable=False)
