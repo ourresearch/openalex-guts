@@ -763,35 +763,38 @@ class Work(db.Model):
 
     def add_related_versions(self):
         """
-        Take in DOIs in record.record_related_version, convert them to work ids and save them in mid.work_related_version table.
+        Take in DOIs and their types from self.records_sorted.record_related_version,
+        convert them to work ids, and save them along with their types in the
+        mid.work_related_version table.
         """
-        all_dois = set()
+        dois_with_types = {}
         for r in self.records_sorted:
             if r.related_version_dois:
-                all_dois.update(
-                    [relation.related_version_doi.lower() for relation in
-                     r.related_version_dois])
+                for relation in r.related_version_dois:
+                    doi_lower = relation.related_version_doi.lower()
+                    dois_with_types[doi_lower] = relation.type
 
         related_works = models.Work.query.with_entities(
-            models.Work.paper_id).filter(
-            models.Work.doi_lower.in_(all_dois)).all()
+            models.Work.paper_id,
+            models.Work.doi_lower
+        ).filter(models.Work.doi_lower.in_(dois_with_types.keys())).all()
 
         versions_already_saved = models.WorkRelatedVersion.query.filter(
-            models.WorkRelatedVersion.work_id == self.paper_id).all()
-        versions_pairs_already_saved = set(
-            [(v.work_id, v.version_work_id) for v in versions_already_saved])
+            models.WorkRelatedVersion.work_id == self.paper_id
+        ).all()
+        versions_pairs_already_saved = set([(v.work_id, v.version_work_id) for v in versions_already_saved])
 
-        logger.info(f"related_works: {related_works}")
+        logger.info(f"Related works: {related_works}")
         for related_work in related_works:
-            if (self.paper_id, related_work[0]) in versions_pairs_already_saved:
-                logger.info(
-                    f"Skipping adding related version {related_work[0]} to {self.paper_id} because it's already there")
+            work_id, doi_lower = related_work
+            if (self.paper_id, work_id) in versions_pairs_already_saved:
+                logger.info(f"Skipping adding related version {work_id} to {self.paper_id} because it's already there")
             else:
-                logger.info(
-                    f"Adding related version {related_work[0]} to {self.paper_id}")
+                logger.info(f"Adding related version {work_id} to {self.paper_id}")
                 self.related_versions.append(models.WorkRelatedVersion(
                     work_id=self.work_id,
-                    version_work_id=related_work[0],
+                    version_work_id=work_id,
+                    type=dois_with_types[doi_lower],
                 ))
 
     def add_related_works(self):
@@ -1209,8 +1212,13 @@ class Work(db.Model):
         """
         Points to other versions of the work, currently found in DataCite.
         """
-        return [version.related_work.openalex_id for version in
-                self.related_versions]
+        return [version.related_work.openalex_id for version in self.related_versions if version.type == 'version']
+
+    def work_datasets(self):
+        """
+        Points to datasets related to a work.
+        """
+        return [dataset.related_dataset.openalex_id for dataset in self.datasets if dataset.type == 'supplement']
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
@@ -2455,8 +2463,8 @@ class Work(db.Model):
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
             "versions": self.work_versions(),
+            "datasets": self.work_datasets(),
         }
-
         if self.extra_ids:
             for extra_id in self.extra_ids:
                 response["ids"][extra_id.id_type] = extra_id.url

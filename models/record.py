@@ -393,6 +393,7 @@ class RecordRelatedVersion(db.Model):
 
     doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"), primary_key=True)
     related_version_doi = db.Column(db.Text, primary_key=True)
+    type = db.Column(db.Text, nullable=False)
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
