@@ -260,6 +260,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.institution).raiseload('*'),
+            selectinload(models.Work.journal).selectinload(models.Source.language_override).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
             selectinload(models.Work.openapc),
             selectinload(models.Work.embeddings),

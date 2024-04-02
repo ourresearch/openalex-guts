@@ -39,6 +39,7 @@ from models.record import Record
 from models.retraction_watch import RetractionWatch
 from models.ror import Ror
 from models.source import Source
+from models.source_language_override import SourceLanguageOverride
 from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index, AuthorI10Index2Year, AuthorHIndex2Year
 from models.summary_stats import ConceptImpactFactor, ConceptHIndex, ConceptI10Index, ConceptI10Index2Year, ConceptHIndex2Year
 from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Index, FunderI10Index2Year, FunderHIndex2Year
@@ -158,6 +159,8 @@ Publisher.sources_count = db.relationship("PublisherSources", uselist=False, laz
 # TODO: rename Source.publisher to Source.publisher_name to free up Source.publisher for this relationship
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
+
+Source.language_override = db.relationship("SourceLanguageOverride", lazy='selectin', uselist=False)
 
 Institution.ancestors = db.relationship("InstitutionAncestors", uselist=True, lazy='selectin', viewonly=True)
 Institution.repositories = db.relationship(
