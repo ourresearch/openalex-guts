@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+UPCOMING RELEASE
+- language detection was often incorrect for titles/abstracts in all-uppercase letters; addressed this by applying lowercasing
+- override language assignment for some major English-language journals
+
 RELEASE 2024-03-27
 - set up automatic updates for Retraction Watch (see https://doi.org/10.13003/c23rw1d9 for info about Retraction Watch)
 - marked ~2k additional works as retracted, and corrected 1-2k works that were incorrectly labeled is_retracted
