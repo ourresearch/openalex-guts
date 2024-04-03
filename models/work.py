@@ -1210,15 +1210,15 @@ class Work(db.Model):
 
     def work_versions(self):
         """
-        Points to other versions of the work, currently found in DataCite.
+        Up to 100 other versions of the work, currently found in DataCite.
         """
-        return [version.related_work.openalex_id for version in self.related_versions if version.type == 'version']
+        return [version.related_work.openalex_id for version in self.related_versions if version.type == 'version'][:100]
 
     def work_datasets(self):
         """
-        Points to datasets related to a work.
+        First 100 datasets related to a work.
         """
-        return [dataset.related_dataset.openalex_id for dataset in self.datasets if dataset.type == 'supplement']
+        return [dataset.related_dataset.openalex_id for dataset in self.datasets if dataset.type == 'supplement'][:100]
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
