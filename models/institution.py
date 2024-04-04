@@ -422,6 +422,22 @@ class Institution(db.Model):
         for row in response:
             row["id"] = as_concept_openalex_id(row["id"])
         return response
+    
+    @cached_property
+    def topics(self):
+        if not self.institution_topics:
+            return []
+        response = [institution_topic.to_dict('count') for institution_topic in self.institution_topics]
+        response = sorted(response, key=lambda x: x["count"], reverse=True)
+        return response[:25]
+    
+    @cached_property
+    def topic_share(self):
+        if not self.institution_topics:
+            return []
+        response = [institution_topic.to_dict('share') for institution_topic in self.institution_topics]
+        response = sorted(response, key=lambda x: x["value"], reverse=True)
+        return response[:25]
 
     @cached_property
     def display_counts_by_year(self):
@@ -570,6 +586,7 @@ class Institution(db.Model):
         return self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None
 
     def to_dict(self, return_level="full"):
+        
         response = {
             "id": self.openalex_id,
             "ror": self.ror_url,
@@ -630,6 +647,8 @@ class Institution(db.Model):
                 # "ids": self.external_ids,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
+                "topics": self.topics[:25],
+                "topic_share": self.topic_share[:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=institutions.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
