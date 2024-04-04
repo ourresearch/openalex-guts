@@ -9,3 +9,4 @@ class WorkKeyword(db.Model):
     keywords = db.Column(db.JSON)
     created = db.Column(db.DateTime)
     updated = db.Column(db.DateTime)
+    keywords_input_hash = db.Column(db.Text)
