@@ -174,6 +174,22 @@ class Source(db.Model):
             for row in response:
                 row["id"] = as_concept_openalex_id(row["id"])
         return response
+    
+    @cached_property
+    def topics(self):
+        if not self.source_topics:
+            return []
+        response = [source_topic.to_dict('count') for source_topic in self.source_topics]
+        response = sorted(response, key=lambda x: x["count"], reverse=True)
+        return response[:25]
+    
+    @cached_property
+    def topic_share(self):
+        if not self.source_topics:
+            return []
+        response = [source_topic.to_dict('share') for source_topic in self.source_topics]
+        response = sorted(response, key=lambda x: x["value"], reverse=True)
+        return response[:25]
 
     @classmethod
     def to_dict_null_minimum(self):
@@ -309,6 +325,8 @@ class Source(db.Model):
                 "societies": self.societies,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
+                "topics": self.topics[:25],
+                "topic_share": self.topic_share[:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=primary_location.source.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]

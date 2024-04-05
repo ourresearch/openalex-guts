@@ -205,6 +205,22 @@ class Author(db.Model):
         return response
 
     @cached_property
+    def topics(self):
+        if not self.author_topics:
+            return []
+        response = [author_topic.to_dict('count') for author_topic in self.author_topics]
+        response = sorted(response, key=lambda x: x["count"], reverse=True)
+        return response
+    
+    @cached_property
+    def topic_share(self):
+        if not self.author_topics:
+            return []
+        response = [author_topic.to_dict('share') for author_topic in self.author_topics]
+        response = sorted(response, key=lambda x: x["value"], reverse=True)
+        return response
+
+    @cached_property
     def display_counts_by_year(self):
         response_dict = {}
         all_rows = self.counts_by_year_papers + self.counts_by_year_oa_papers + self.counts_by_year_citations
@@ -344,6 +360,7 @@ class Author(db.Model):
                 "orcid": self.orcid_url,
                 "display_name": truncate_on_word_break(self.display_name, 100),
               }
+        
         if return_level == "full":
             self.last_known_affiliation_override()
             response.update({
@@ -376,6 +393,8 @@ class Author(db.Model):
                 "last_known_institutions": self.last_known_institutions,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
+                "topics": self.topics[:25],
+                "topic_share": self.topic_share[:25],
                 "works_api_url": f"https://api.openalex.org/works?filter=author.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
