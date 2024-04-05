@@ -9,6 +9,7 @@ from models.affiliation import Affiliation
 from models.author import Author
 from models.author_alternative_name import AuthorAlternativeName
 from models.author_concept import AuthorConcept
+from models.author_topic import AuthorTopic
 from models.author_orcid import AuthorOrcid
 from models.citation import Citation, CitationUnmatched
 from models.concept import Concept
@@ -25,6 +26,7 @@ from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
 from models.institution import Institution
 from models.institution import InstitutionAncestors
+from models.institution_topic import InstitutionTopic
 from models.institution_type import InstitutionType
 from models.issn_to_issnl import ISSNtoISSNL
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
@@ -53,6 +55,7 @@ from models.field import Field
 from models.domain import Domain
 from models.sdg import SDG
 from models.source_type import SourceType
+from models.source_topic import SourceTopic
 from models.work_type import WorkType
 from models.work_related_version import WorkRelatedVersion
 from models.unpaywall import Unpaywall
@@ -79,7 +82,6 @@ WorkFunder.funder = db.relationship("Funder", lazy='selectin', uselist=False)
 Work.openapc = db.relationship("WorkOpenAPC", uselist=False)
 Work.embeddings = db.relationship("WorkEmbedding", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
-Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
 Work.related_versions = db.relationship(
@@ -100,10 +102,13 @@ Work.datasets = db.relationship(
 )
 WorkRelatedVersion.related_dataset = db.relationship("Work", foreign_keys=[WorkRelatedVersion.work_id], lazy='selectin', uselist=False, viewonly=True)
 
+
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.topics = db.relationship("WorkTopic", lazy='selectin', backref="work", cascade="all, delete-orphan")
+Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False, backref="work", 
+                                     cascade="all, delete-orphan")
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
@@ -118,6 +123,11 @@ AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
 Author.last_known_institution = db.relationship("Institution")
 Author.alternative_names = db.relationship("AuthorAlternativeName", cascade="all, delete-orphan")
 Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-orphan")
+
+
+Author.author_topics = db.relationship("AuthorTopic", cascade="all, delete-orphan")
+Institution.institution_topics = db.relationship("InstitutionTopic", lazy='selectin', cascade="all, delete-orphan")
+Source.source_topics = db.relationship("SourceTopic", cascade="all, delete-orphan")
 
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)

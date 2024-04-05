@@ -10,6 +10,7 @@ class WorkTopic(db.Model):
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
     topic_id = db.Column(db.Integer, db.ForeignKey("mid.topic.topic_id"), primary_key=True)
     score = db.Column(db.Float)
+    topic_rank = db.Column(db.Integer)
     algorithm_version = db.Column(db.Integer)
     updated_date = db.Column(db.DateTime)
 
