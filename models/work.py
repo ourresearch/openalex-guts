@@ -467,7 +467,6 @@ class Work(db.Model):
             json.dumps(self.topic_api_input_data(), sort_keys=True).encode(
                 'utf-8')
         ).hexdigest()
-<<<<<<< HEAD
    
     def get_keywords_input_hash(self):
         return hashlib.md5(
@@ -560,8 +559,6 @@ class Work(db.Model):
                             "score": score
                         }
                     )
-=======
->>>>>>> upstream/main
 
     def add_work_topics(self):
         current_topics_input_hash = self.get_topics_input_hash()
