@@ -125,6 +125,7 @@ class QueueWorkAddEverything:
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.related_version_dois).raiseload('*'),
             selectinload(models.Work.records).raiseload('*'),
             selectinload(models.Work.locations).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
@@ -137,6 +138,7 @@ class QueueWorkAddEverything:
             selectinload(models.Work.abstract),
             selectinload(models.Work.extra_ids).raiseload('*'),
             selectinload(models.Work.related_works).raiseload('*'),
+            selectinload(models.Work.related_versions).raiseload('*'),
             selectinload(
                 models.Work.affiliations
             ).selectinload(

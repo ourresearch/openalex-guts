@@ -225,7 +225,13 @@ class Record(db.Model):
         return
 
     def is_primary_record(self):
-        return self.record_type and self.record_type in {'crossref_doi', 'pubmed_record', 'pmh_record', 'override'}
+        return self.record_type and self.record_type in {
+            "crossref_doi",
+            "datacite_doi",
+            "pubmed_record",
+            "pmh_record",
+            "override",
+        }
 
     def mint_work(self):
         from models import Work
@@ -376,6 +382,18 @@ class RecordthresherParentRecord(db.Model):
 
     record_id = db.Column(db.Text, primary_key=True)
     parent_record_id = db.Column(db.Text, primary_key=True)
+
+
+class RecordRelatedVersion(db.Model):
+    __tablename__ = 'record_related_version'
+    __table_args__ = (
+        db.UniqueConstraint('doi', 'related_version_doi', name='doi_related_unique'),
+        {'schema': 'ins'}
+    )
+
+    doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"), primary_key=True)
+    related_version_doi = db.Column(db.Text, primary_key=True)
+    type = db.Column(db.Text, nullable=False)
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)

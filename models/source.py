@@ -212,7 +212,7 @@ class Source(db.Model):
 
     @property
     def host_organization(self):
-        if self.type == "repository" and self.institution:
+        if (self.type == "repository" or self.type == "metadata") and self.institution:
             return self.institution
         elif self.publisher_entity:
             return self.publisher_entity
@@ -231,7 +231,7 @@ class Source(db.Model):
             return None
 
     def host_organization_lineage(self):
-        if self.type == "repository" and self.institution:
+        if (self.type == "repository" or self.type == "metadata") and self.institution:
             return [self.institution.openalex_id]
         elif self.publisher_entity:
             return self.publisher_entity.lineage()
@@ -239,7 +239,7 @@ class Source(db.Model):
             return []
 
     def host_organization_lineage_names(self):
-        if self.type == "repository" and self.institution:
+        if (self.type == "repository" or self.type == "metadata") and self.institution:
             return [self.institution.display_name]
         elif self.publisher_entity:
             return self.publisher_entity.lineage_names()
