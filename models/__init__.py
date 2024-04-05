@@ -41,6 +41,7 @@ from models.record import Record
 from models.retraction_watch import RetractionWatch
 from models.ror import Ror
 from models.source import Source
+from models.source_language_override import SourceLanguageOverride
 from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index, AuthorI10Index2Year, AuthorHIndex2Year
 from models.summary_stats import ConceptImpactFactor, ConceptHIndex, ConceptI10Index, ConceptI10Index2Year, ConceptHIndex2Year
 from models.summary_stats import FunderImpactFactor, FunderHIndex, FunderI10Index, FunderI10Index2Year, FunderHIndex2Year
@@ -55,6 +56,7 @@ from models.sdg import SDG
 from models.source_type import SourceType
 from models.source_topic import SourceTopic
 from models.work_type import WorkType
+from models.work_related_version import WorkRelatedVersion
 from models.unpaywall import Unpaywall
 from models.work import Work
 from models.work_keyword import WorkKeyword
@@ -81,6 +83,23 @@ Work.embeddings = db.relationship("WorkEmbedding", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
+Work.related_versions = db.relationship(
+    "WorkRelatedVersion",
+    lazy="selectin",
+    primaryjoin="Work.paper_id==WorkRelatedVersion.work_id",
+    uselist=True,
+)
+WorkRelatedVersion.related_work = db.relationship("Work", foreign_keys=[WorkRelatedVersion.version_work_id], lazy='selectin', uselist=False)
+
+Work.datasets = db.relationship(
+    "WorkRelatedVersion",
+    lazy="selectin",
+    backref="work",
+    primaryjoin="Work.paper_id==WorkRelatedVersion.version_work_id",
+    uselist=True,
+    viewonly=True
+)
+WorkRelatedVersion.related_dataset = db.relationship("Work", foreign_keys=[WorkRelatedVersion.work_id], lazy='selectin', uselist=False, viewonly=True)
 
 
 # relationships with association tables
@@ -160,6 +179,8 @@ Publisher.sources_count = db.relationship("PublisherSources", uselist=False, laz
 # TODO: rename Source.publisher to Source.publisher_name to free up Source.publisher for this relationship
 Source.publisher_entity = db.relationship("Publisher", lazy='selectin', viewonly=True, uselist=False)
 Source.institution = db.relationship("Institution", lazy='selectin', viewonly=True, uselist=False)
+
+Source.language_override = db.relationship("SourceLanguageOverride", lazy='selectin', uselist=False)
 
 Institution.ancestors = db.relationship("InstitutionAncestors", uselist=True, lazy='selectin', viewonly=True)
 Institution.repositories = db.relationship(
@@ -274,6 +295,14 @@ Record.work_matches_by_arxiv_id = db.relationship(
         uselist=True,
         primaryjoin="and_(foreign(Record.arxiv_id) != None, foreign(Record.arxiv_id) == remote(Work.arxiv_id))"
     )
+
+
+Record.related_version_dois = db.relationship(
+    'RecordRelatedVersion',
+    lazy='selectin',
+    uselist='true',
+    primaryjoin="Record.doi == remote(RecordRelatedVersion.doi)",
+)
 
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
 

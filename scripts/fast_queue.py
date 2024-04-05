@@ -260,6 +260,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.publisher_entity).raiseload('*'),
             selectinload(models.Work.journal).selectinload(models.Source.institution).raiseload('*'),
+            selectinload(models.Work.journal).selectinload(models.Source.language_override).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
             selectinload(models.Work.openapc),
             selectinload(models.Work.embeddings),
@@ -299,6 +300,8 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
+            selectinload(models.Work.related_versions).selectinload(models.WorkRelatedVersion.related_work).raiseload('*'),
+            selectinload(models.Work.datasets).selectinload(models.WorkRelatedVersion.related_dataset).raiseload('*'),
             selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()
