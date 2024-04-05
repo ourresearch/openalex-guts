@@ -320,6 +320,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.i10_index_2year),
             selectinload(models.Author.alternative_names),
             selectinload(models.Author.author_concepts),
+            selectinload(models.Author.author_topics),
             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ancestors).raiseload('*'),
             selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
@@ -343,6 +344,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Source.counts_by_year_citations),
             selectinload(models.Source.impact_factor),
             selectinload(models.Source.h_index),
+            selectinload(models.Source.source_topics),
             selectinload(models.Source.h_index_2year),
             selectinload(models.Source.i10_index),
             selectinload(models.Source.i10_index_2year),
@@ -360,10 +362,13 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Institution.repositories).selectinload(models.Source.merged_into_source).raiseload('*'),
             selectinload(models.Institution.repositories).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Institution.repositories).selectinload(models.Source.publisher_entity).raiseload('*'),
+            selectinload(models.Institution.institution_topics),
             selectinload(models.Institution.repositories).selectinload(models.Source.institution).selectinload(models.Institution.ror).raiseload('*'),
             selectinload(models.Institution.repositories).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Institution.repositories).raiseload('*'),
         ).filter(models.Institution.affiliation_id.in_(object_ids)).all()
+
+        # 
     elif entity_type == "concept":
         objects = db.session.query(models.Concept).filter(models.Concept.field_of_study_id.in_(object_ids)).all()
     elif entity_type == "publisher":
