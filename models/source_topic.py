@@ -18,7 +18,7 @@ class SourceTopic(db.Model):
         if return_level == "count":
             response["count"] = self.topic_count
         elif return_level == "share":
-            response["value"] = self.topic_share
+            response["value"] = round(self.topic_share, 7)
         return response
 
     def __repr__(self):
