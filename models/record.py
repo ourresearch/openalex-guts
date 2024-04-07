@@ -385,15 +385,12 @@ class RecordthresherParentRecord(db.Model):
 
 
 class RecordRelatedVersion(db.Model):
+    __table_args__ = {'schema': 'ins'}
     __tablename__ = 'record_related_version'
-    __table_args__ = (
-        db.UniqueConstraint('doi', 'related_version_doi', name='doi_related_unique'),
-        {'schema': 'ins'}
-    )
 
     doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"), primary_key=True)
     related_version_doi = db.Column(db.Text, primary_key=True)
-    type = db.Column(db.Text, nullable=False)
+    type = db.Column(db.Text, primary_key=True)
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
