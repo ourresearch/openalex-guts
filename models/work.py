@@ -872,7 +872,7 @@ class Work(db.Model):
     def add_related_versions(self):
         """
         Take in DOIs and their types from self.records_sorted.record_related_version,
-        convert them to work ids, and save them along with their types in the
+        convert them to work ids, and save them along with their corresponding types in the
         mid.work_related_version table.
         """
         dois_with_types = {}
@@ -885,25 +885,30 @@ class Work(db.Model):
         related_works = models.Work.query.with_entities(
             models.Work.paper_id,
             models.Work.doi_lower
-        ).filter(models.Work.doi_lower.in_(dois_with_types.keys())).all()
+        ).filter(models.Work.doi_lower.in_(list(dois_with_types.keys()))).all()
 
-        versions_already_saved = models.WorkRelatedVersion.query.filter(
-            models.WorkRelatedVersion.work_id == self.paper_id
-        ).all()
-        versions_pairs_already_saved = set([(v.work_id, v.version_work_id) for v in versions_already_saved])
+        versions_already_saved = models.WorkRelatedVersion.query.with_entities(
+            models.WorkRelatedVersion.work_id,
+            models.WorkRelatedVersion.version_work_id,
+            models.WorkRelatedVersion.type
+        ).filter(models.WorkRelatedVersion.work_id == self.paper_id).all()
+
+        versions_pairs_already_saved = set([(v.work_id, v.version_work_id, v.type) for v in versions_already_saved])
 
         logger.info(f"Related works: {related_works}")
         for related_work in related_works:
             work_id, doi_lower = related_work
-            if (self.paper_id, work_id) in versions_pairs_already_saved:
-                logger.info(f"Skipping adding related version {work_id} to {self.paper_id} because it's already there")
-            else:
-                logger.info(f"Adding related version {work_id} to {self.paper_id}")
-                self.related_versions.append(models.WorkRelatedVersion(
-                    work_id=self.work_id,
-                    version_work_id=work_id,
-                    type=dois_with_types[doi_lower],
-                ))
+            if doi_lower in dois_with_types:
+                relation_type = dois_with_types[doi_lower]
+
+                # check if this combination of paper_id, work_id, and type has already been saved
+                if (self.paper_id, work_id, relation_type) not in versions_pairs_already_saved:
+                    logger.info(f"adding related version {work_id} to {self.paper_id} with type {relation_type}")
+                    self.related_versions.append(models.WorkRelatedVersion(
+                        work_id=self.work_id,
+                        version_work_id=work_id,
+                        type=relation_type,
+                    ))
 
     def add_related_works(self):
         if not hasattr(self, "concepts_for_related_works"):
