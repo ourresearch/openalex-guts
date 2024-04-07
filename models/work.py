@@ -1141,12 +1141,13 @@ class Work(db.Model):
                     citation_dict_list = json.loads(record.citations)
                     for citation_dict in citation_dict_list:
                         reference_source_num += 1
-                        if "doi" in citation_dict:
+                        if citation_dict.get('doi'):
                             my_clean_doi = clean_doi(citation_dict["doi"],
                                                      return_none_if_error=True)
                             if my_clean_doi:
                                 citation_dois += [my_clean_doi]
-                        elif "pmid" in citation_dict:
+                                continue
+                        if "pmid" in citation_dict:
                             my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
                                 citation_pmids += [my_clean_pmid]
