@@ -12,7 +12,8 @@ from typing import List
 
 import requests
 from cached_property import cached_property
-from sqlalchemy import event, orm, text
+from humanfriendly import format_timespan
+from sqlalchemy import event, orm, text, and_, desc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.types import ARRAY
@@ -29,7 +30,8 @@ from app import logger
 from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.work_sdg import get_and_save_sdgs
-from util import clean_doi, entity_md5
+from util import clean_doi, entity_md5, normalize_title_like_sql, \
+    matching_author_strings
 from util import clean_html
 from util import detect_language_from_abstract_and_title
 from util import elapsed
@@ -39,6 +41,7 @@ from util import normalize_simple
 from util import struct_changed
 from util import truncate_on_word_break
 from util import work_has_null_author_ids
+from timeit import default_timer as timer
 
 DELETED_WORK_ID = 4285719527
 
@@ -443,6 +446,7 @@ class Work(db.Model):
             "referenced_works": self.references_list,
             "inverted": False,
         }
+
     def keyword_api_input_data(self):
         abstract = self.abstract.abstract if self.abstract else ""
         abstract = "" if not abstract else abstract
@@ -455,7 +459,7 @@ class Work(db.Model):
             "inverted": False,
             "topics": topic_ids
         }
-    
+
     def get_concepts_input_hash(self):
         return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode(
@@ -467,10 +471,11 @@ class Work(db.Model):
             json.dumps(self.topic_api_input_data(), sort_keys=True).encode(
                 'utf-8')
         ).hexdigest()
-   
+
     def get_keywords_input_hash(self):
         return hashlib.md5(
-            json.dumps(self.keyword_api_input_data(), sort_keys=True).encode('utf-8')
+            json.dumps(self.keyword_api_input_data(), sort_keys=True).encode(
+                'utf-8')
         ).hexdigest()
 
     def add_work_keywords(self):
@@ -481,18 +486,20 @@ class Work(db.Model):
                 keywords_input_hash=None,
                 created=datetime.datetime.utcnow().isoformat(),
                 updated=datetime.datetime.utcnow().isoformat()
-                )
-            
+            )
+
         current_keywords_input_hash = self.get_keywords_input_hash()
 
         if self.work_keywords.keywords_input_hash == '-1':
-            logger.info('skipping keyword matching because keywords have already been gathered. Set input hash to current.')
+            logger.info(
+                'skipping keyword matching because keywords have already been gathered. Set input hash to current.')
             self.work_keywords.keywords_input_hash = current_keywords_input_hash
             return
         elif self.work_keywords.keywords_input_hash == current_keywords_input_hash:
-            logger.info('skipping keyword matching because inputs are unchanged')
+            logger.info(
+                'skipping keyword matching because inputs are unchanged')
             return
-        
+
         api_key = os.getenv("SAGEMAKER_API_KEY")
 
         headers = {"X-API-Key": api_key}
@@ -505,10 +512,12 @@ class Work(db.Model):
             self.work_keywords.keywords = []
             logger.info('skipping keyword matching because there are no topics')
             return
-        elif (keyword_inputs['title'] == '') & (keyword_inputs['abstract_inverted_index'] is None):
+        elif (keyword_inputs['title'] == '') & (
+                keyword_inputs['abstract_inverted_index'] is None):
             self.work_keywords.keywords_input_hash = current_keywords_input_hash
             self.work_keywords.keywords = []
-            logger.info('skipping keyword matching because there is no title or abstract')
+            logger.info(
+                'skipping keyword matching because there is no title or abstract')
             return
 
         number_tries = 0
@@ -518,7 +527,9 @@ class Work(db.Model):
         r = None
 
         while keep_calling:
-            r = requests.post(api_url, json=json.dumps([keyword_inputs], sort_keys=True), headers=headers)
+            r = requests.post(api_url,
+                              json=json.dumps([keyword_inputs], sort_keys=True),
+                              headers=headers)
 
             if r.status_code == 200:
                 try:
@@ -527,19 +538,22 @@ class Work(db.Model):
                     all_keywords = [i for i in resp_data]
                     keep_calling = False
                 except Exception as e:
-                    logger.error(f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {data}")
+                    logger.error(
+                        f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {data}")
                     all_keywords = None
                     keep_calling = False
 
             elif r.status_code == 500:
-                logger.error(f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+                logger.error(
+                    f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
                 sleep(0.5)
                 number_tries += 1
                 if number_tries > 60:
                     keep_calling = False
 
             else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
+                logger.error(
+                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
                 all_keywords = None
                 keep_calling = False
 
@@ -893,7 +907,9 @@ class Work(db.Model):
             models.WorkRelatedVersion.type
         ).filter(models.WorkRelatedVersion.work_id == self.paper_id).all()
 
-        versions_pairs_already_saved = set([(v.work_id, v.version_work_id, v.type) for v in versions_already_saved])
+        versions_pairs_already_saved = set(
+            [(v.work_id, v.version_work_id, v.type) for v in
+             versions_already_saved])
 
         logger.info(f"Related works: {related_works}")
         for related_work in related_works:
@@ -902,8 +918,10 @@ class Work(db.Model):
                 relation_type = dois_with_types[doi_lower]
 
                 # check if this combination of paper_id, work_id, and type has already been saved
-                if (self.paper_id, work_id, relation_type) not in versions_pairs_already_saved:
-                    logger.info(f"adding related version {work_id} to {self.paper_id} with type {relation_type}")
+                if (self.paper_id, work_id,
+                    relation_type) not in versions_pairs_already_saved:
+                    logger.info(
+                        f"adding related version {work_id} to {self.paper_id} with type {relation_type}")
                     self.related_versions.append(models.WorkRelatedVersion(
                         work_id=self.work_id,
                         version_work_id=work_id,
@@ -1123,6 +1141,46 @@ class Work(db.Model):
                 self.locations = new_locations
                 logger.info(f'Updated {len(new_locs)} locations')
 
+    @staticmethod
+    def _try_match_reference(reference_json):
+        def find_key(j, partial_key):
+            for key in j.keys():
+                if partial_key in key.lower():
+                    return key
+
+        title_key = find_key(reference_json, 'title')
+        author_key = find_key(reference_json, 'author')
+        if not title_key or not author_key:
+            return None
+        title_normalized = normalize_title_like_sql(reference_json[title_key])
+        work_matches_by_title = db.session.query(Work).options(
+            orm.Load(Work).joinedload(Work.affiliations).raiseload('*'),
+            orm.Load(Work).raiseload('*')
+        ).filter(
+            and_(
+                len(title_normalized) > 19,
+                Work.unpaywall_normalize_title == title_normalized
+            )
+        ).order_by(
+            desc(Work.full_updated_date)
+        ).limit(50).all()
+        if not work_matches_by_title:
+            return None
+        ref_author = reference_json[author_key].split(',')[0]
+        ref_author_strings = matching_author_strings(ref_author)
+        ref_pub_yr = reference_json.get('year', 0)
+        ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
+        scores = {}
+        for i, w in enumerate(work_matches_by_title):
+            scores[i] = 0
+            for aff in w.affiliations:
+                if aff.match_author in ref_author_strings:
+                    scores[i] += 1
+            pub_year = int(w.publication_date.split('-')[0])
+            if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
+                scores[i] += 1
+        return work_matches_by_title[max(scores, key=lambda k: scores[k])]
+
     def add_references(self):
         from models import WorkExtraIds
         citation_dois = []
@@ -1151,6 +1209,9 @@ class Work(db.Model):
                             my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
                                 citation_pmids += [my_clean_pmid]
+                        elif work_match := self._try_match_reference(
+                                citation_dict):
+                            citation_paper_ids.append(work_match.merge_into_id or work_match.paper_id)
                         else:
                             new_references_unmatched += [
                                 models.CitationUnmatched(
@@ -1326,13 +1387,15 @@ class Work(db.Model):
         """
         Up to 100 other versions of the work, currently found in DataCite.
         """
-        return [version.related_work.openalex_id for version in self.related_versions if version.type == 'version'][:100]
+        return [version.related_work.openalex_id for version in
+                self.related_versions if version.type == 'version'][:100]
 
     def work_datasets(self):
         """
         First 100 datasets related to a work.
         """
-        return [dataset.related_dataset.openalex_id for dataset in self.datasets if dataset.type == 'supplement'][:100]
+        return [dataset.related_dataset.openalex_id for dataset in self.datasets
+                if dataset.type == 'supplement'][:100]
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
@@ -2607,7 +2670,7 @@ class Work(db.Model):
                         "funder_display_name": fd.get("display_name"),
                         "award_id": None
                     })
-                    
+
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
