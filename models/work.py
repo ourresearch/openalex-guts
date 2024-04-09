@@ -185,16 +185,18 @@ class OAStatusEnum(IntEnum):
     gold = 5
 
 
-def oa_status_from_location(loc):
+def oa_status_from_location(loc, type_crossref):
     if not loc.get('is_oa'):
         return 'closed'
     source = loc.get('source')
     if source is not None:
         if source['is_in_doaj']:
             return 'gold'
-        if source['type'] == 'repository':
+        elif source['type'] == 'repository' and type_crossref and type_crossref == 'dataset':
+            return 'gold'
+        elif source['type'] == 'repository':
             return 'green'
-        if loc.get('license') and loc['license'] not in ['unknown',
+        elif loc.get('license') and loc['license'] not in ['unknown',
                                                          'unspecified-oa',
                                                          'implied-oa']:
             return 'hybrid'
@@ -2593,7 +2595,7 @@ class Work(db.Model):
             is_oa = True
         elif is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
-                this_loc_oa_status = oa_status_from_location(loc)
+                this_loc_oa_status = oa_status_from_location(loc, self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
         response = {
