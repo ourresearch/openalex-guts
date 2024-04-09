@@ -170,7 +170,6 @@ class Record(db.Model):
 
         # by title
         if not matching_work:
-            start = timer()
             # don't use self.work_matches_by_title because sometimes there are many matches and
             # setting lazy='dynamic' to enable a limit here causes all properties of works to be loaded
             work_matches_by_title = db.session.query(Work).options(
@@ -185,8 +184,6 @@ class Record(db.Model):
             ).order_by(
                 desc(Work.full_updated_date)
             ).limit(50).all()
-            end = timer()
-            print(f'Title work match query took {format_timespan(end - start)}')
 
             if matching_works := [w for w in work_matches_by_title if not w.merge_into_id]:
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
