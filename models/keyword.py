@@ -6,7 +6,7 @@ from sqlalchemy import orm
 from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
-from app import KEYWORDS_INDEX
+# from app import KEYWORDS_INDEX
 import models
 from util import entity_md5
 
@@ -71,7 +71,7 @@ class Keyword(db.Model):
             logger.info(f"dictionary for {self.openalex_id} new or changed, so save again")
             index_record = {
                 "_op_type": "index",
-                "_index": KEYWORDS_INDEX,
+                # "_index": KEYWORDS_INDEX,
                 "_id": self.openalex_id,
                 "_source": my_dict
             }
@@ -84,7 +84,8 @@ class Keyword(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "display_name": self.display_name
+            "display_name": self.display_name,
+            "keyword": self.display_name
         }
         if return_level == "full":
             response.update({
