@@ -540,12 +540,7 @@ class Work(db.Model):
                     all_keywords = [i for i in resp_data]
                     keep_calling = False
                 except Exception as e:
-<<<<<<< HEAD
                     logger.error(f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {keyword_inputs}")
-=======
-                    logger.error(
-                        f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {data}")
->>>>>>> 71b8dc8afc7d043f0a2c97429e2df5f3f1d562a7
                     all_keywords = None
                     keep_calling = False
 
@@ -558,12 +553,7 @@ class Work(db.Model):
                     keep_calling = False
 
             else:
-<<<<<<< HEAD
                 logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {keyword_inputs}")
-=======
-                logger.error(
-                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
->>>>>>> 71b8dc8afc7d043f0a2c97429e2df5f3f1d562a7
                 all_keywords = None
                 keep_calling = False
 
