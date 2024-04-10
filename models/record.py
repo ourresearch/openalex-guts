@@ -7,7 +7,6 @@ from sqlalchemy.orm import raiseload
 
 from app import db
 from models.merge_utils import merge_crossref_with_parsed, has_affs
-from models.record import RecordRelatedVersion
 
 from util import normalize_title_like_sql
 
