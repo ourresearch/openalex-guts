@@ -482,13 +482,14 @@ class Work(db.Model):
 
     def add_work_keywords(self):
         if not self.work_keywords:
-            self.work_keywords = models.WorkKeyword(
-                work_id=self.paper_id,
-                keywords=[],
-                keywords_input_hash=None,
-                created=datetime.datetime.utcnow().isoformat(),
-                updated=datetime.datetime.utcnow().isoformat()
-            )
+            return
+            # self.work_keywords = models.WorkKeyword(
+            #     work_id=self.paper_id,
+            #     keywords=[],
+            #     keywords_input_hash=None,
+            #     created=datetime.datetime.utcnow().isoformat(),
+            #     updated=datetime.datetime.utcnow().isoformat()
+            # )
 
         current_keywords_input_hash = self.get_keywords_input_hash()
 
@@ -501,80 +502,80 @@ class Work(db.Model):
             logger.info(
                 'skipping keyword matching because inputs are unchanged')
             return
-
-        api_key = os.getenv("SAGEMAKER_API_KEY")
-
-        headers = {"X-API-Key": api_key}
-        api_url = "https://qapir74yac.execute-api.us-east-1.amazonaws.com/api/"
-
-        keyword_inputs = self.keyword_api_input_data()
-
-        if not keyword_inputs['topics']:
-            self.work_keywords.keywords_input_hash = current_keywords_input_hash
-            self.work_keywords.keywords = []
-            logger.info('skipping keyword matching because there are no topics')
-            return
-        elif (keyword_inputs['title'] == '') & (
-                keyword_inputs['abstract_inverted_index'] is None):
-            self.work_keywords.keywords_input_hash = current_keywords_input_hash
-            self.work_keywords.keywords = []
-            logger.info(
-                'skipping keyword matching because there is no title or abstract')
+        else:
             return
 
-        number_tries = 0
-        keep_calling = True
-        all_keywords = None
-        response_json = None
-        r = None
+        # api_key = os.getenv("SAGEMAKER_API_KEY")
 
-        while keep_calling:
-            r = requests.post(api_url,
-                              json=json.dumps([keyword_inputs], sort_keys=True),
-                              headers=headers)
+        # headers = {"X-API-Key": api_key}
+        # api_url = "https://qapir74yac.execute-api.us-east-1.amazonaws.com/api/"
 
-            if r.status_code == 200:
-                try:
-                    response_json = r.json()
-                    resp_data = response_json[0]
-                    all_keywords = [i for i in resp_data]
-                    keep_calling = False
-                except Exception as e:
-                    logger.error(
-                        f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {data}")
-                    all_keywords = None
-                    keep_calling = False
+        # keyword_inputs = self.keyword_api_input_data()
 
-            elif r.status_code == 500:
-                logger.error(
-                    f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
-                sleep(0.5)
-                number_tries += 1
-                if number_tries > 60:
-                    keep_calling = False
+        # if not keyword_inputs['topics']:
+        #     self.work_keywords.keywords_input_hash = current_keywords_input_hash
+        #     self.work_keywords.keywords = []
+        #     logger.info('skipping keyword matching because there are no topics')
+        #     return
+        # elif (keyword_inputs['title'] == '') & (
+        #         keyword_inputs['abstract_inverted_index'] is None):
+        #     self.work_keywords.keywords_input_hash = current_keywords_input_hash
+        #     self.work_keywords.keywords = []
+        #     logger.info(
+        #         'skipping keyword matching because there is no title or abstract')
+        #     return
 
-            else:
-                logger.error(
-                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {data}")
-                all_keywords = None
-                keep_calling = False
+        # number_tries = 0
+        # keep_calling = True
+        # all_keywords = None
+        # response_json = None
+        # r = None
 
-        self.work_keywords.keywords = []
+        # while keep_calling:
+        #     r = requests.post(api_url,
+        #                       json=json.dumps([keyword_inputs], sort_keys=True),
+        #                       headers=headers)
 
-        if r.status_code == 200:
-            self.work_keywords.keywords = []
-            self.work_keywords.updated = datetime.datetime.utcnow().isoformat()
-            self.work_keywords.keywords_input_hash = current_keywords_input_hash
-            if all_keywords:
-                for one_keyword in all_keywords:
-                    score = one_keyword.get("score")
-                    keyword = one_keyword.get("keyword")
-                    self.work_keywords.keywords.append(
-                        {
-                            "keyword": keyword.lower() if keyword else None,
-                            "score": score
-                        }
-                    )
+        #     if r.status_code == 200:
+        #         try:
+        #             response_json = r.json()
+        #             resp_data = response_json[0]
+        #             all_keywords = [i for i in resp_data]
+        #             keep_calling = False
+        #         except Exception as e:
+        #             logger.error(f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {keyword_inputs}")
+        #             all_keywords = None
+        #             keep_calling = False
+
+        #     elif r.status_code == 500:
+        #         logger.error(
+        #             f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
+        #         sleep(0.5)
+        #         number_tries += 1
+        #         if number_tries > 60:
+        #             keep_calling = False
+
+        #     else:
+        #         logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {keyword_inputs}")
+        #         all_keywords = None
+        #         keep_calling = False
+
+        # self.work_keywords.keywords = []
+
+        # if r.status_code == 200:
+        #     self.work_keywords.keywords = []
+        #     self.work_keywords.updated = datetime.datetime.utcnow().isoformat()
+        #     self.work_keywords.keywords_input_hash = current_keywords_input_hash
+        #     if all_keywords:
+        #         for one_keyword in all_keywords:
+        #             score = one_keyword.get("score")
+        #             keyword = one_keyword.get("keyword")
+        #             self.work_keywords.keywords.append(
+        #                 {
+        #                     "keyword": keyword.lower() if keyword else None,
+        #                     "score": score
+        #                 }
+        #             )
 
     def add_work_topics(self):
         current_topics_input_hash = self.get_topics_input_hash()
@@ -796,14 +797,19 @@ class Work(db.Model):
             logger.info(
                 f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
-            # start_time = time()
-            # self.add_work_keywords()
-            # logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
+            start_time = time()
+            self.add_work_keywords()
+            logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
+        
+        # only run this for add_most_things for catching up the keywords
+        # start_time = time()
+        # self.add_work_keywords()
+        # logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -1815,6 +1821,10 @@ class Work(db.Model):
     @property
     def topics_sorted(self):
         return sorted(self.topics, key=lambda x: x.score, reverse=True)
+    
+    @property
+    def keywords_sorted(self):
+        return sorted(self.keywords, key=lambda x: x.score, reverse=True)
 
     # @property
     # def primary_topic(self):
@@ -2673,6 +2683,8 @@ class Work(db.Model):
                         "award_id": None
                     })
 
+            print()
+
             response.update({
                 # "doc_type": self.doc_type,
                 "cited_by_count": self.counts.citation_count if self.counts else 0,
@@ -2704,7 +2716,8 @@ class Work(db.Model):
                 "referenced_works": self.references_list,
                 "referenced_works_count": len(self.references_list),
                 "sustainable_development_goals": self.sustainable_development_goals,
-                "keywords": self.all_work_keywords,
+                "keywords": [keyword.to_dict("minimum") for keyword in
+                           self.keywords_sorted] if self.keywords_sorted else [],
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
