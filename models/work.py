@@ -1170,7 +1170,7 @@ class Work(db.Model):
             return None
         ref_author = reference_json[author_key].split(',')[0]
         ref_author_strings = matching_author_strings(ref_author)
-        ref_pub_yr = reference_json.get('year', 0)
+        ref_pub_yr = str(reference_json.get('year', 0))
         ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
         scores = {}
         for i, w in enumerate(work_matches_by_title):
