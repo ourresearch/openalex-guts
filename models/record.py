@@ -164,16 +164,17 @@ class Record(db.Model):
             related_version = db.session.query(RecordRelatedVersion).filter(
                 RecordRelatedVersion.doi == self.doi,
             ).first()
-            print(f"trying to match by related_version_doi {related_version.related_version_doi}")
+            if related_version:
+                print(f"trying to match by related_version_doi {related_version.related_version_doi}")
 
-            match = db.session.query(Work).options(raiseload('*')).filter(
-                Work.doi_lower == related_version.related_version_doi,
-                Work.merge_into_id.is_(None)
-            ).first()
+                match = db.session.query(Work).options(raiseload('*')).filter(
+                    Work.doi_lower == related_version.related_version_doi,
+                    Work.merge_into_id.is_(None)
+                ).first()
 
-            if match:
-                matching_work = match
-                print(f"found by related_version_doi {related_version.related_version_doi}")
+                if match:
+                    matching_work = match
+                    print(f"found by related_version_doi {related_version.related_version_doi}")
 
         # by title
         if not matching_work:
