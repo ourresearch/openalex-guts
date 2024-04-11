@@ -798,7 +798,7 @@ class Work(db.Model):
                 f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
-            self.add_work_keywords()
+            # self.add_work_keywords()
             logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
