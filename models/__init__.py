@@ -30,6 +30,7 @@ from models.institution_topic import InstitutionTopic
 from models.institution_type import InstitutionType
 from models.issn_to_issnl import ISSNtoISSNL
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
+from models.keyword import Keyword
 from models.language import Language
 from models.location import Location
 from models.mesh import Mesh
@@ -107,8 +108,7 @@ WorkRelatedVersion.related_dataset = db.relationship("Work", foreign_keys=[WorkR
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.concepts = db.relationship("WorkConcept", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.topics = db.relationship("WorkTopic", lazy='selectin', backref="work", cascade="all, delete-orphan")
-Work.work_keywords = db.relationship("WorkKeyword", lazy='selectin', uselist=False, backref="work", 
-                                     cascade="all, delete-orphan")
+Work.keywords = db.relationship("WorkKeyword", lazy='selectin', backref="work", cascade="all, delete-orphan")
 Work.funders = db.relationship("WorkFunder", lazy='selectin', cascade="all, delete-orphan")
 
 Affiliation.author = db.relationship("Author", lazy='selectin', backref='affiliations') # don't delete orphan
@@ -132,6 +132,7 @@ Source.source_topics = db.relationship("SourceTopic", cascade="all, delete-orpha
 # Concept.works = db.relationship("WorkConcept", lazy='selectin', backref="concept", uselist=False)
 WorkConcept.concept = db.relationship("Concept", lazy='selectin', backref="work_concept", uselist=False)
 WorkTopic.topic = db.relationship("Topic", lazy='selectin', backref="work_topic", uselist=False)
+WorkKeyword.keyword = db.relationship("Keyword", lazy='selectin', backref="work_keyword", uselist=False)
 
 Country.continent = db.relationship("Continent", lazy='selectin', backref="countries", uselist=False)
 

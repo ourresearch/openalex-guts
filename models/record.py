@@ -1,18 +1,13 @@
 from cached_property import cached_property
-from sqlalchemy import text
 from sqlalchemy import orm, event, and_, desc, text
-from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
-from sqlalchemy.orm import deferred
-from sqlalchemy.orm import foreign, remote
-from collections import defaultdict
-from time import sleep
 import datetime
 import json
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import raiseload
 
 from app import db
 from models.merge_utils import merge_crossref_with_parsed, has_affs
+
 from util import normalize_title_like_sql
 
 
@@ -164,7 +159,22 @@ class Record(db.Model):
                 sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
                 matching_work = sorted_matching_works[0]
 
-        # by pmc_id later. match by id before match by title.
+        # arxiv preprint from datacite, with associated doi
+        if not matching_works and self.record_type == "datacite_doi" and self.arxiv_id:
+            related_version = db.session.query(RecordRelatedVersion).filter(
+                RecordRelatedVersion.doi == self.doi,
+            ).first()
+            if related_version:
+                print(f"trying to match by related_version_doi {related_version.related_version_doi}")
+
+                match = db.session.query(Work).options(raiseload('*')).filter(
+                    Work.doi_lower == related_version.related_version_doi,
+                    Work.merge_into_id.is_(None)
+                ).first()
+
+                if match:
+                    matching_work = match
+                    print(f"found by related_version_doi {related_version.related_version_doi}")
 
         # by title
         if not matching_work:
@@ -385,15 +395,12 @@ class RecordthresherParentRecord(db.Model):
 
 
 class RecordRelatedVersion(db.Model):
+    __table_args__ = {'schema': 'ins'}
     __tablename__ = 'record_related_version'
-    __table_args__ = (
-        db.UniqueConstraint('doi', 'related_version_doi', name='doi_related_unique'),
-        {'schema': 'ins'}
-    )
 
     doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"), primary_key=True)
     related_version_doi = db.Column(db.Text, primary_key=True)
-    type = db.Column(db.Text, nullable=False)
+    type = db.Column(db.Text, primary_key=True)
 
 
 Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)

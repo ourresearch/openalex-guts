@@ -167,7 +167,9 @@ class QueueWorkAddEverything:
                 models.Work.sdg
             ).raiseload('*'),
             selectinload(
-                models.Work.work_keywords
+                models.Work.keywords
+            ).selectinload(
+                models.WorkKeyword.keyword
             ).raiseload('*'),
             selectinload(
                 models.Work.concepts
@@ -203,7 +205,7 @@ class QueueWorkAddEverything:
                 models.Work.paper_id.in_(object_ids)
             ).all()
         except Exception as e:
-            logger.exception(f'exception getting records for {object_ids} so trying individually')
+            logger.exception(f'exception getting records for {object_ids} due to {e} so trying individually')
             objects = []
             for object_id in object_ids:
                 try:
@@ -211,7 +213,7 @@ class QueueWorkAddEverything:
                         models.Work.paper_id == object_id
                     ).all()
                 except Exception as e:
-                    logger.exception(f'failed to load object {object_id}')
+                    logger.exception(f'failed to load object {object_id} due to {e}')
 
         logger.info(f'got {len(objects)} Works, took {elapsed(job_time)} seconds')
 
