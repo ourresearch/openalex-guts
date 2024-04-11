@@ -214,6 +214,7 @@ class QueueWorkAddEverything:
                     ).all()
                 except Exception as e:
                     logger.exception(f'failed to load object {object_id} due to {e}')
+                    raise
 
         logger.info(f'got {len(objects)} Works, took {elapsed(job_time)} seconds')
 
