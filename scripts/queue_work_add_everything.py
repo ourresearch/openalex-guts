@@ -168,6 +168,8 @@ class QueueWorkAddEverything:
             ).raiseload('*'),
             selectinload(
                 models.Work.keywords
+            ).selectinload(
+                models.WorkKeyword.keyword
             ).raiseload('*'),
             selectinload(
                 models.Work.concepts
