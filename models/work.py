@@ -481,24 +481,25 @@ class Work(db.Model):
         ).hexdigest()
 
     def add_work_keywords(self):
-        if not self.work_keywords:
+        if not self.keywords:
             return
-            # self.work_keywords = models.WorkKeyword(
-            #     work_id=self.paper_id,
-            #     keywords=[],
+            # self.keywords = models.WorkKeyword(
+            #     paper_id=self.paper_id,
+            #     keyword_id=None,
+            #     score=None,
             #     keywords_input_hash=None,
-            #     created=datetime.datetime.utcnow().isoformat(),
+            #     algorithm_version=2,
             #     updated=datetime.datetime.utcnow().isoformat()
             # )
 
         current_keywords_input_hash = self.get_keywords_input_hash()
 
-        if self.work_keywords.keywords_input_hash == '-1':
+        if self.keywords.keywords_input_hash == '-1':
             logger.info(
                 'skipping keyword matching because keywords have already been gathered. Set input hash to current.')
-            self.work_keywords.keywords_input_hash = current_keywords_input_hash
+            self.keywords.keywords_input_hash = current_keywords_input_hash
             return
-        elif self.work_keywords.keywords_input_hash == current_keywords_input_hash:
+        elif self.keywords.keywords_input_hash == current_keywords_input_hash:
             logger.info(
                 'skipping keyword matching because inputs are unchanged')
             return
@@ -797,9 +798,9 @@ class Work(db.Model):
             logger.info(
                 f'add_work_topics took {elapsed(start_time, 2)} seconds')
 
-            start_time = time()
+            # start_time = time()
             # self.add_work_keywords()
-            logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
+            # logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
