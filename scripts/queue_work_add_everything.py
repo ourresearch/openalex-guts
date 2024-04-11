@@ -167,7 +167,7 @@ class QueueWorkAddEverything:
                 models.Work.sdg
             ).raiseload('*'),
             selectinload(
-                models.Work.work_keywords
+                models.Work.keywords
             ).raiseload('*'),
             selectinload(
                 models.Work.concepts
