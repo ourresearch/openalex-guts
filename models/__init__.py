@@ -32,6 +32,7 @@ from models.issn_to_issnl import ISSNtoISSNL
 from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.keyword import Keyword
 from models.language import Language
+from models.license import License
 from models.location import Location
 from models.mesh import Mesh
 from models.work_openapc import WorkOpenAPC
