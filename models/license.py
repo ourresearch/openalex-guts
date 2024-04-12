@@ -58,6 +58,8 @@ class License(db.Model):
         if return_level == "full":
             response.update(
                 {
+                    "url": self.url,
+                    "description": self.description,
                     "works_count": works_count_from_elastic(
                         "locations.license", self.openalex_id
                     ),
