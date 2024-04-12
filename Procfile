@@ -30,6 +30,7 @@ fast_store_languages: python -m scripts.fast_queue --entity=language --method=st
 fast_store_institution_types: python -m scripts.fast_queue --entity=institution_type --method=store --chunk=1
 fast_store_source_types: python -m scripts.fast_queue --entity=source_type --method=store --chunk=1
 fast_store_work_types: python -m scripts.fast_queue --entity=work_type --method=store --chunk=1
+fast_store_work_types: python -m scripts.fast_queue --entity=license --method=store --chunk=1
 
 fast_update_once_update_institutions: python -m scripts.fast_queue --entity=work --method=update_once_update_institutions --chunk=100
 fast_update_once_add_work_concepts: python -m scripts.fast_queue --entity=work --method=update_once_add_work_concepts --chunk=100
