@@ -1929,6 +1929,8 @@ class Work(db.Model):
             return "paratext"
         if 'supplementary table' in self.original_title.lower():
             return 'supplementary-materials'
+        if self.is_review:
+            return 'review'
         if self.is_preprint:
             return 'preprint'
 
@@ -2717,7 +2719,6 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
-                "is_review": self.is_review,
                 "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in
                              self.concepts_sorted],
