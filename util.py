@@ -17,12 +17,16 @@ import copy
 from nameparser import HumanName
 import string
 from unidecode import unidecode
-from sqlalchemy import sql
+from sqlalchemy import sql, text
 from sqlalchemy import exc
 from subprocess import call
 from requests.adapters import HTTPAdapter
 import csv
 from langdetect import detect_langs, DetectorFactory, LangDetectException
+
+from app import unpaywall_db_engine
+
+UNPAYWALL_DB_CONN = None
 
 
 def entity_md5(entity_repr):
@@ -1156,3 +1160,13 @@ def detect_language_from_abstract_and_title(
         pass
 
     return None
+
+
+def get_crossref_json_from_unpaywall(doi: str):
+    global UNPAYWALL_DB_CONN
+    if not UNPAYWALL_DB_CONN:
+        UNPAYWALL_DB_CONN = unpaywall_db_engine.connect()
+    rows = UNPAYWALL_DB_CONN.execute(text('SELECT crossref_api_raw_new FROM pub WHERE id = :doi'), {'doi': doi}).fetchall()
+    if not rows:
+        return None
+    return rows[0][0]
