@@ -1920,7 +1920,7 @@ class Work(db.Model):
 
     @property
     def is_review(self):
-        return self.journal_id in REVIEW_JOURNAL_IDS or 'a review' in self.original_title.lower()
+        return self.journal_id in REVIEW_JOURNAL_IDS or (self.original_title and 'a review' in self.original_title.lower())
 
     @cached_property
     def display_genre(self):
