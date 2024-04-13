@@ -27,12 +27,13 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
+from const import PREPRINT_JOURNAL_IDS, REVIEW_JOURNAL_IDS
 from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
-    matching_author_strings
+    matching_author_strings, get_crossref_json_from_unpaywall
 from util import clean_html
 from util import detect_language_from_abstract_and_title
 from util import elapsed
@@ -1904,11 +1905,33 @@ class Work(db.Model):
             return 'book-chapter'
         return 'journal-article'
 
+    def get_record(self, record_type):
+        for record in self.records_sorted:
+            if record.record_type == record_type:
+                return record
+
+    @cached_property
+    def is_preprint(self):
+        if r := self.get_record('crossref_doi'):
+            crossref_json = get_crossref_json_from_unpaywall(r.doi)
+            if crossref_json and crossref_json.get('subtype', '') == 'preprint':
+                return True
+        return self.journal_id in PREPRINT_JOURNAL_IDS
+
+    @property
+    def is_review(self):
+        return self.journal_id in REVIEW_JOURNAL_IDS or 'a review' in self.original_title.lower()
+
     @cached_property
     def display_genre(self):
         # this is what goes into the `Work.type` attribute
         if self.looks_like_paratext:
             return "paratext"
+        if 'supplementary table' in self.original_title.lower():
+            return 'supplementary-materials'
+        if self.is_preprint:
+            return 'preprint'
+
         # infer "erratum", "editorial", "letter" types:
         try:
             if self.guess_type_from_title:
@@ -2694,6 +2717,7 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
+                "is_review": self.is_review,
                 "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in
                              self.concepts_sorted],

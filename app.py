@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 import datetime
 import shortuuid
 
-from sqlalchemy import exc
+from sqlalchemy import exc, create_engine
 from sqlalchemy import event
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
@@ -20,15 +20,11 @@ import random
 import warnings
 from urllib.parse import urlparse
 import psycopg2
-import psycopg2.extras # needed though you wouldn't guess it
+import psycopg2.extras  # needed though you wouldn't guess it
 from psycopg2.pool import ThreadedConnectionPool
 from contextlib import contextmanager
 import re
 from collections import defaultdict
-
-from util import safe_commit
-from util import elapsed
-from util import HTTPMethodOverrideMiddleware
 
 HEROKU_APP_NAME = "openalex-guts"
 USER_AGENT = "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"
@@ -88,7 +84,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 app = Flask(__name__)
 
 # database stuff
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppress warning
+app.config[
+    "SQLALCHEMY_TRACK_MODIFICATIONS"] = True  # as instructed, to suppress warning
 
 app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 # app.config['SQLALCHEMY_ECHO'] = True
@@ -96,24 +93,27 @@ app.config['SQLALCHEMY_ECHO'] = (os.getenv("SQLALCHEMY_ECHO", False) == "True")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("POSTGRES_URL")
 
 database_url = urlparse(os.getenv("POSTGRES_URL"))
+unpaywall_db_url = os.getenv('UNPAYWALL_DATABASE_URL')
+unpaywall_db_engine = create_engine(unpaywall_db_url.replace('postgres://', 'postgresql://'))
 # database_url = urlparse(os.getenv("POSTGRES_URL))
 app.config['postgreSQL_pool'] = ThreadedConnectionPool(2, 5,
-                                  database=database_url.path[1:],
-                                  user=database_url.username,
-                                  password=database_url.password,
-                                  host=database_url.hostname,
-                                  port=database_url.port)
+                                                       database=database_url.path[
+                                                                1:],
+                                                       user=database_url.username,
+                                                       password=database_url.password,
+                                                       host=database_url.hostname,
+                                                       port=database_url.port)
 
 # see https://stackoverflow.com/questions/43594310/redshift-sqlalchemy-long-query-hangs
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_pre_ping": True,
-                                            "pool_recycle": 300,
-                                            "connect_args": {
-                                                "keepalives": 1,
-                                                "keepalives_idle": 10,
-                                                "keepalives_interval": 2,
-                                                "keepalives_count": 5
-                                            }
-            }
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True,
+                                           "pool_recycle": 300,
+                                           "connect_args": {
+                                               "keepalives": 1,
+                                               "keepalives_idle": 10,
+                                               "keepalives_interval": 2,
+                                               "keepalives_count": 5
+                                           }
+                                           }
 
 # from http://stackoverflow.com/a/12417346/596939
 # class NullPoolSQLAlchemy(SQLAlchemy):
@@ -130,8 +130,7 @@ db = SQLAlchemy(app, session_options={"autoflush": False, "autocommit": False})
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # do compression.  has to be above flask debug toolbar so it can override this.
-compress_json = os.getenv("COMPRESS_DEBUG", "True")=="True"
-
+compress_json = os.getenv("COMPRESS_DEBUG", "True") == "True"
 
 # set up Flask-DebugToolbar
 if (os.getenv("FLASK_DEBUG", False) == "True"):
@@ -205,7 +204,8 @@ COUNTRIES = {
     "BM": ["Bermuda"],
     "BN": ["Brunei"],
     "BO": ["Bolivia (Plurinational State of)", "Bolivia"],
-    "BQ": ["Bonaire, Sint Eustatius and Saba", "Bonaire, Saint Eustatius and Saba "],
+    "BQ": ["Bonaire, Sint Eustatius and Saba",
+           "Bonaire, Saint Eustatius and Saba "],
     "BR": ["Brazil", "Brasil"],
     "BS": ["Bahamas"],
     "BT": ["Bhutan"],
@@ -507,8 +507,10 @@ def new_db_connection(readonly=True):
     connection.set_session(readonly=readonly, autocommit=True)
     return connection
 
+
 readonly_connection = new_db_connection(readonly=True)
 readwrite_connection = new_db_connection(readonly=False)
+
 
 @contextmanager
 def get_db_cursor(readonly=True):
@@ -517,12 +519,14 @@ def get_db_cursor(readonly=True):
         connection = readonly_connection
     cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-      yield cursor
+        yield cursor
     finally:
-      cursor.close()
-      pass
+        cursor.close()
+        pass
+
 
 def get_apiurl_from_openalex_url(openalex_url):
     if not openalex_url:
         return None
-    return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})", "http://localhost:5007/\g<id>?apiurls", openalex_url)
+    return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})",
+                  "http://localhost:5007/\g<id>?apiurls", openalex_url)
