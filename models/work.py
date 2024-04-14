@@ -1202,6 +1202,8 @@ class Work(db.Model):
             for aff in w.affiliations:
                 if aff.match_author in ref_author_strings:
                     scores[i] += 1
+            if not w.publication_date:
+                continue
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
@@ -1927,7 +1929,7 @@ class Work(db.Model):
         # this is what goes into the `Work.type` attribute
         if self.looks_like_paratext:
             return "paratext"
-        if 'supplementary table' in self.original_title.lower():
+        if self.original_title and 'supplementary table' in self.original_title.lower():
             return 'supplementary-materials'
         if self.is_review:
             return 'review'
