@@ -1,4 +1,5 @@
 import argparse
+import re
 from time import sleep, time, mktime, gmtime
 
 from redis import Redis
@@ -7,11 +8,11 @@ from sqlalchemy import text
 from sqlalchemy.orm import selectinload
 
 import models
-from app import REDIS_QUEUE_URL
-from app import db
-from app import logger
+from app import REDIS_QUEUE_URL, db, logger
 from models import REDIS_WORK_QUEUE
 from util import elapsed, work_has_null_author_ids
+from timeit import default_timer as timer
+from humanfriendly import format_timespan
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -45,18 +46,17 @@ class QueueWorkAddEverything:
             while num_updated < limit:
                 start_time = time()
 
-                work_ids = self.fetch_queue_chunk(chunk_size, partial_update=partial_update)
+                rows = self.fetch_queue_chunk(chunk_size, partial_update=partial_update)
+                work_ids = [row[0] for row in rows]
 
-                if not work_ids:
+                if not rows:
                     logger.info('no queued Works ready to add_everything. waiting...')
                     sleep(60)
                     continue
 
                 works = QueueWorkAddEverything.fetch_works(work_ids)
 
-                for work in works:
-                    logger.info(f'running add_everything on {work}')
-                    work.add_everything(skip_concepts_and_related_works=partial_update)
+                self.add_everything_works(works, rows, partial_update)
 
                 db.session.execute(
                     text(f'''
@@ -81,7 +81,30 @@ class QueueWorkAddEverything:
                 logger.info(f'enqueueing works in redis work_store took {elapsed(redis_queue_time, 2)} seconds')
 
                 num_updated += chunk_size
-                logger.info(f'processed {len(work_ids)} Works in {elapsed(start_time, 2)} seconds')
+                logger.info(f'processed {len(rows)} Works in {elapsed(start_time, 2)} seconds')
+
+    @staticmethod
+    def add_everything_works(works, rows, partial_update):
+        for i, work in enumerate(works):
+            logger.info(f'running add_everything on {work}')
+            if partial_update and (methods_str := rows[i][1]):
+                method_names = re.split('\W', methods_str)
+                for method_name in method_names:
+                    if not method_name:
+                        continue
+                    method = getattr(work, method_name, None)
+                    if not method:
+                        logger.warning(
+                            f'method {method_name} does not exist in Work')
+                        continue
+                    start_time = timer()
+                    method()
+                    end_time = timer()
+                    logger.info(
+                        f'finished Work.{method_name} for Work {work.paper_id} in {format_timespan(end_time - start_time)}')
+            else:
+                work.add_everything(
+                    skip_concepts_and_related_works=partial_update)
 
     @staticmethod
     def queue_name(partial_update):
@@ -93,10 +116,12 @@ class QueueWorkAddEverything:
 
         queue_name = QueueWorkAddEverything.queue_name(partial_update)
         update_sort_order = 'desc' if partial_update else 'asc'
+        fields = 'work_id, methods' if partial_update else 'work_id'
+        return_fields = 'q.work_id, q.methods' if partial_update else 'q.work_id'
 
         queue_query = text(f"""
             with queue_chunk as (
-                select work_id
+                select {fields}
                 from queue.{queue_name}
                 where started is null
                 order by work_updated {update_sort_order} nulls last, rand
@@ -107,14 +132,14 @@ class QueueWorkAddEverything:
             set started = now()
             from queue_chunk
             where q.work_id = queue_chunk.work_id
-            returning q.work_id;
+            returning {return_fields};
         """).bindparams(chunk=chunk_size)
 
         job_time = time()
-        id_list = [row[0] for row in db.engine.execute(queue_query.execution_options(autocommit=True)).all()]
-        logger.info(f'got {len(id_list)} IDs, took {elapsed(job_time)} seconds')
+        rows = db.engine.execute(queue_query.execution_options(autocommit=True)).all()
+        logger.info(f'got {len(rows)} IDs, took {elapsed(job_time)} seconds')
 
-        return id_list
+        return rows
 
     @staticmethod
     def base_works_query():
