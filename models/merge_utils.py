@@ -10,10 +10,9 @@ from util import normalize
 PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
 
-def has_affs(parsed_record):
-    authors = json.loads(parsed_record.authors)
-    return any(
-        [bool(author.get('affiliations')) for author in authors])
+def affiliations_probably_invalid(parsed_record):
+    return max(
+        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > 30 and parsed_record.record_type == 'parsed_pdf'
 
 
 def merge_crossref_with_parsed(crossref_record, parsed_record):
@@ -25,6 +24,7 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
     if not (
             crossref_record and crossref_record.record_type == 'crossref_doi'
             and parsed_record and parsed_record.record_type in PARSED_RECORD_TYPES
+            and not affiliations_probably_invalid(parsed_record)
     ):
         return crossref_record
 
@@ -66,7 +66,9 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
     cloned_crossref_record.abstract = crossref_record.abstract or parsed_dict.get(
         'abstract')
     cloned_crossref_record.authors = json.dumps(crossref_authors)
-    cloned_crossref_record.citations = crossref_record.citations if len(crossref_record.citations or '[]') > 3 else json.dumps(parsed_dict.get('citations'))
+    cloned_crossref_record.citations = crossref_record.citations if len(
+        crossref_record.citations or '[]') > 3 else json.dumps(
+        parsed_dict.get('citations'))
 
     return cloned_crossref_record
 

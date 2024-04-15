@@ -1,13 +1,13 @@
-from cached_property import cached_property
-from sqlalchemy import orm, event, and_, desc, text
-from sqlalchemy.sql.expression import func
 import datetime
 import json
+
+from cached_property import cached_property
+from sqlalchemy import orm, and_, desc
 from sqlalchemy.orm import raiseload
+from sqlalchemy.sql.expression import func
 
 from app import db
-from models.merge_utils import merge_crossref_with_parsed, has_affs
-
+from models.merge_utils import merge_crossref_with_parsed
 from util import normalize_title_like_sql
 
 
@@ -84,9 +84,9 @@ class Record(db.Model):
 
     @cached_property
     def with_parsed_data(self):
-        if self.parseland_record and has_affs(self.parseland_record):
+        if self.parseland_record and self.parseland_record.has_affiliations:
             return merge_crossref_with_parsed(self, self.parseland_record)
-        elif self.pdf_record and has_affs(self.pdf_record):
+        elif self.pdf_record and self.pdf_record.has_affiliations:
             return merge_crossref_with_parsed(self, self.pdf_record)
         elif self.parseland_record or self.pdf_record:
             return merge_crossref_with_parsed(self,
