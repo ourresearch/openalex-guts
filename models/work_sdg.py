@@ -76,5 +76,3 @@ def save_sdgs_to_db(paper_id, result_sorted):
     else:
         new_record = WorkSDG(paper_id=paper_id, predictions=result_sorted)
         db.session.add(new_record)
-
-    db.session.commit()
