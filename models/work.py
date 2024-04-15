@@ -657,7 +657,7 @@ class Work(db.Model):
             self.topics = []
             if topic_ids and topic_scores:
                 new_topic_ids = [x for y,x in sorted(zip(topic_scores,topic_ids))]
-                new_topic_scores = [x for y,x in sorted(zip(topic_scores,topic_ids))]
+                new_topic_scores = [y for y,x in sorted(zip(topic_scores,topic_ids))]
                 top_rank = 1
                 for i, (topic_id, topic_score) in enumerate(zip(new_topic_ids,
                                                                 new_topic_scores)):
