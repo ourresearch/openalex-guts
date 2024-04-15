@@ -1,4 +1,5 @@
 import requests
+from requests.exceptions import Timeout
 from app import db, logger, SDG_CLASSIFIER_URL
 
 
@@ -24,7 +25,12 @@ def get_and_save_sdgs(work):
     # call the API
     url = SDG_CLASSIFIER_URL
     data = {"text": text_to_process}
-    response = requests.post(url, json=data)
+
+    try:
+        response = requests.post(url, json=data, timeout=10)
+    except Timeout:
+        logger.warn(f"error processing sdgs for {work.id} - timeout from classifier")
+        return None
 
     if response.status_code == 200:
         result = response.json()
