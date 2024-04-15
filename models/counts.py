@@ -654,8 +654,7 @@ def citation_count_from_elastic(key, id):
 def fetch_works_count(key, id):
     es = Elasticsearch([ELASTIC_URL], timeout=30)
     s = Search(using=es, index=WORKS_INDEX).query("term", **{key: id})
-    response = s.execute()
-    return response.hits.total.value
+    return s.count()
 
 
 def works_count_from_elastic(key, id):
@@ -663,10 +662,10 @@ def works_count_from_elastic(key, id):
     cache_key = f"{key}_{id}_works_count"
 
     # try to retrieve the cached value
-    cached_citation_count = redis.get(cache_key)
-    if cached_citation_count is not None:
-        cached_works_count = cached_citation_count.decode("utf-8")
-        return int(float(cached_works_count))
+    # cached_citation_count = redis.get(cache_key)
+    # if cached_citation_count is not None:
+    #     cached_works_count = cached_citation_count.decode("utf-8")
+    #     return int(float(cached_works_count))
 
     # if not cached, compute the value
     works_count = fetch_works_count(key, id)
