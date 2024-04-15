@@ -24,6 +24,7 @@ class QueueWorkAddEverything:
         limit = kwargs.get("limit", None)
         partial_update = kwargs.get("partial", False)
         queue_name = self.queue_name(partial_update)
+        skip_redis_queue = kwargs.get("skip_redis_queue", False)
 
         if limit is None:
             limit = float("inf")
@@ -39,7 +40,11 @@ class QueueWorkAddEverything:
                 ''').bindparams(work_id=single_id)
             )
             db.session.commit()
-            _redis.zadd(REDIS_WORK_QUEUE, {single_id: mktime(gmtime(0))})
+            if skip_redis_queue:
+                logger.info(f"skipping redis fast queue priority for {single_id}")
+            else:
+                _redis.zadd(REDIS_WORK_QUEUE, {single_id: mktime(gmtime(0))})
+                logger.info(f"enqueued {single_id} in redis work_store")
         else:
             num_updated = 0
 
@@ -70,18 +75,24 @@ class QueueWorkAddEverything:
                 db.session.commit()
                 logger.info(f'commit took {elapsed(commit_start_time, 2)} seconds')
 
-                redis_queue_time = time()
-                redis_queue_mapping = {
-                    work.paper_id: mktime(gmtime(0))
-                    for work in works if not work_has_null_author_ids(work)
-                }
-
-                if redis_queue_mapping:
-                    _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
-                logger.info(f'enqueueing works in redis work_store took {elapsed(redis_queue_time, 2)} seconds')
+                if skip_redis_queue:
+                    logger.info('skipping redis fast queue priority')
+                else:
+                    self.prioritize_in_redis_fast_queue(works)
 
                 num_updated += chunk_size
                 logger.info(f'processed {len(rows)} Works in {elapsed(start_time, 2)} seconds')
+
+    @staticmethod
+    def prioritize_in_redis_fast_queue(works):
+        redis_queue_time = time()
+        redis_queue_mapping = {
+            work.paper_id: mktime(gmtime(0))
+            for work in works if not work_has_null_author_ids(work)
+        }
+        if redis_queue_mapping:
+            _redis.zadd(REDIS_WORK_QUEUE, redis_queue_mapping)
+        logger.info(f'enqueueing works in redis work_store took {elapsed(redis_queue_time, 2)} seconds')
 
     @staticmethod
     def add_everything_works(works, rows, partial_update):
@@ -255,6 +266,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--partial', dest='partial', default=False, action='store_true',
         help="skip concept tagging and related work assignment"
+    )
+    parser.add_argument(
+        '--skip-redis-queue', action='store_true',
+        help="if set, will skip the step that prioritizes the work in the redis fast queue"
     )
 
     parsed_args = parser.parse_args()
