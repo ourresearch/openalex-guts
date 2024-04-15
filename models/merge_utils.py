@@ -12,7 +12,7 @@ PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
 def affiliations_probably_invalid(parsed_record):
     return max(
-        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > 30 and parsed_record.record_type == 'parsed_pdf'
+        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > 10 and parsed_record.record_type == 'parsed_pdf'
 
 
 def merge_crossref_with_parsed(crossref_record, parsed_record):
