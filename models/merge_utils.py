@@ -11,6 +11,8 @@ PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
 
 def affiliations_probably_invalid(parsed_record):
+    if not parsed_record.authors_json:
+        return False
     return max(
         [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > 5 and parsed_record.record_type == 'parsed_pdf'
 
