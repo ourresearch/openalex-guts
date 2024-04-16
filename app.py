@@ -530,24 +530,3 @@ def get_apiurl_from_openalex_url(openalex_url):
         return None
     return re.sub("https://openalex.org/(?P<id>[A-Za-z\d]{3,})",
                   "http://localhost:5007/\g<id>?apiurls", openalex_url)
-
-
-import time
-from sqlalchemy import event
-
-# Dictionary to store start times of queries
-query_start_times = {}
-
-@event.listens_for(db.engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    # Store the start time of the query using the statement as a key
-    query_start_times[statement] = time.time()
-
-
-@event.listens_for(db.engine, "after_cursor_execute")
-def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    start_time = query_start_times.pop(statement, None)
-    if start_time:
-        duration = time.time() - start_time
-        if duration > 1.0:
-            logger.info(f"Query executed: {statement} \nParameters: {parameters} \nDuration: {duration:.6f} seconds")

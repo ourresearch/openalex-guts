@@ -801,7 +801,7 @@ class Work(db.Model):
         logger.info(f'add_locations took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
-        # self.add_references()  # must be before affiliations temp skip references
+        self.add_references()  # must be before affiliations
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
         if not skip_concepts_and_related_works:
             start_time = time()
@@ -1267,8 +1267,9 @@ class Work(db.Model):
             works = db.session.query(Work).options(
                 orm.Load(Work).raiseload('*')).filter(
                 Work.doi_lower.in_(citation_dois)).all()
-            for my_work in works:
-                my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            # skip for now
+            # for my_work in works:
+            #     my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [work.merge_into_id or work.paper_id for work
                                    in works if work.paper_id]
         if citation_pmids:
@@ -1277,9 +1278,10 @@ class Work(db.Model):
                     models.WorkExtraIds.work).raiseload('*')).filter(
                 WorkExtraIds.attribute_type == 2,
                 WorkExtraIds.attribute_value.in_(citation_pmids)).all()
-            for my_work_id in work_ids:
-                if my_work_id.work:
-                    my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
+            # skip for now
+            # for my_work_id in work_ids:
+            #     if my_work_id.work:
+            #         my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [
                 work_id.work.merge_into_id or work_id.work.paper_id
                 for work_id in work_ids if work_id and work_id.work
