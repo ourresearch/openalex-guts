@@ -129,7 +129,7 @@ class QueueWorkAddEverything:
         update_sort_order = 'desc' if partial_update else 'asc'
         fields = 'work_id, methods' if partial_update else 'work_id'
         return_fields = 'q.work_id, q.methods' if partial_update else 'q.work_id'
-        order = f'order by work_updated {update_sort_order} nulls last, rand' if not partial_update else ''
+        order = f'order by work_updated {update_sort_order} nulls last, rand'
 
         queue_query = text(f"""
             with queue_chunk as (
