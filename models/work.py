@@ -801,7 +801,7 @@ class Work(db.Model):
         logger.info(f'add_locations took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
-        self.add_references()  # must be before affiliations
+        # self.add_references()  # must be before affiliations temp skip references
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
         if not skip_concepts_and_related_works:
             start_time = time()
