@@ -805,7 +805,7 @@ class Work(db.Model):
         logger.info(f'add_references took {elapsed(start_time, 2)} seconds')
         if not skip_concepts_and_related_works:
             start_time = time()
-            # self.add_work_concepts()  # temp skip concepts
+            self.add_work_concepts()
             logger.info(
                 f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
@@ -820,7 +820,7 @@ class Work(db.Model):
             logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
-            # self.add_related_works()  # must be after work_concepts  TEMP skip related works
+            self.add_related_works()  # must be after work_concepts
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
         
