@@ -549,5 +549,5 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
     start_time = query_start_times.pop(statement, None)
     if start_time:
         duration = time.time() - start_time
-        if duration > 5.0:
+        if duration > 1.0:
             logger.info(f"Query executed: {statement} \nParameters: {parameters} \nDuration: {duration:.6f} seconds")
