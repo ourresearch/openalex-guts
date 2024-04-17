@@ -26,6 +26,9 @@ from contextlib import contextmanager
 import re
 from collections import defaultdict
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
 HEROKU_APP_NAME = "openalex-guts"
 USER_AGENT = "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"
 GUTS_API_KEY = os.getenv("GUTS_API_KEY")
@@ -146,6 +149,9 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 # gzip responses
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
+
+# testing out sentry (after setting a project-wide rate limite of 100/hour)
+sentry_sdk.init(dsn=os.environ.get("SENTRY_DSN"), integrations=[FlaskIntegration()])
 
 # indexes
 AUTHORS_INDEX = "authors-v13"
