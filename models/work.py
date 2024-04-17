@@ -1267,9 +1267,6 @@ class Work(db.Model):
             works = db.session.query(Work).options(
                 orm.Load(Work).raiseload('*')).filter(
                 Work.doi_lower.in_(citation_dois)).all()
-            # skip for now
-            # for my_work in works:
-            #     my_work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [work.merge_into_id or work.paper_id for work
                                    in works if work.paper_id]
         if citation_pmids:
@@ -1278,10 +1275,6 @@ class Work(db.Model):
                     models.WorkExtraIds.work).raiseload('*')).filter(
                 WorkExtraIds.attribute_type == 2,
                 WorkExtraIds.attribute_value.in_(citation_pmids)).all()
-            # skip for now
-            # for my_work_id in work_ids:
-            #     if my_work_id.work:
-            #         my_work_id.work.full_updated_date = datetime.datetime.utcnow().isoformat()
             citation_paper_ids += [
                 work_id.work.merge_into_id or work_id.work.paper_id
                 for work_id in work_ids if work_id and work_id.work
@@ -1349,27 +1342,7 @@ class Work(db.Model):
                         my_institutions.append(my_institution)
                         seen_institution_ids.add(my_institution.affiliation_id)
 
-                # comment this out for now because it is too slow for some reason, but later comment it back in
-                # if my_institution:
-                #     my_institution.full_updated_date = datetime.datetime.utcnow().isoformat()  # citations and fields
-
                 my_institutions = my_institutions or [None]
-
-                # TODO: set last known affiliation from AND v3
-                # if any(my_institutions) and my_author:
-                #     author_last_known_affiliation_date = None
-                #
-                #     if my_author.last_known_affiliation_id_date:
-                #         author_last_known_affiliation_date = my_author.last_known_affiliation_id_date
-                #         if isinstance(author_last_known_affiliation_date, datetime.datetime):
-                #             author_last_known_affiliation_date = author_last_known_affiliation_date.isoformat()[0:10]
-                #     if (
-                #         not my_author.last_known_affiliation_id
-                #         or not author_last_known_affiliation_date
-                #         or (self.publication_date and self.publication_date >= author_last_known_affiliation_date)
-                #     ):
-                #         my_author.last_known_affiliation_id = [m for m in my_institutions if m][0].affiliation_id
-                #         my_author.last_known_affiliation_id_date = self.publication_date
 
                 if raw_author_string or raw_affiliation_string:
                     for my_institution in my_institutions:
@@ -1490,9 +1463,6 @@ class Work(db.Model):
             self.journal_id = override.journal.journal_id
             self.original_venue = override.journal.display_name  # overwrite override.venue_name if have a normalized name
             self.publisher = override.journal.publisher
-
-            # don't include line below, it makes sqlalchemy errors, handle another way
-            # self.journal.full_updated_date = datetime.datetime.utcnow().isoformat() # because its citation count has changed
 
         if override.doi:
             self.doi = normalize_doi(override.doi, return_none_if_error=True)
