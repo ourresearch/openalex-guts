@@ -5,8 +5,8 @@ from models.topic import Topic
 
 
 class SourceTopic(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "source_topic_for_api_full_mv"
+    __table_args__ = {'schema': 'counts'}
+    __tablename__ = "source_topic_for_api_full"
 
     journal_id = db.Column(db.BigInteger, db.ForeignKey("mid.journal.journal_id"), primary_key=True)
     topic_id = db.Column(db.Integer, db.ForeignKey("mid.topic.topic_id"), primary_key=True)

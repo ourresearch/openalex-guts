@@ -5,8 +5,8 @@ from models.topic import Topic
 
 
 class InstitutionTopic(db.Model):
-    __table_args__ = {'schema': 'mid'}
-    __tablename__ = "institution_topic_for_api_full_mv"
+    __table_args__ = {'schema': 'counts'}
+    __tablename__ = "institution_topic_for_api_full"
 
     affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     topic_id = db.Column(db.Integer, db.ForeignKey("mid.topic.topic_id"), primary_key=True)
