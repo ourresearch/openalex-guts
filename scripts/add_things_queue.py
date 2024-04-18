@@ -84,7 +84,7 @@ def main():
         enqueue_fast_queue(works)
         hrs_diff = (now - start).total_seconds() / (60 * 60)
         rate = round(total_processed / hrs_diff, 2)
-        logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr')
+        logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr | Last work processed: {works[-1].paper_id}')
 
 
 if __name__ == '__main__':
