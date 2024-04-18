@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from time import mktime, gmtime, time
+from time import mktime, gmtime, time, sleep
 
 from redis.client import Redis
 
@@ -57,6 +57,10 @@ def main():
             logger.info('Exception during dequeue, exiting...')
             logger.exception(e)
             break
+        if not jobs:
+            logger.info(f'No jobs found in {REDIS_ADD_THINGS_QUEUE}, sleeping and then checking again')
+            sleep(10)
+            continue
         jobs_map = {job['work_id']: job for job in jobs}
         works = base_works_query().filter(
             models.Work.paper_id.in_([job['work_id'] for job in jobs])
