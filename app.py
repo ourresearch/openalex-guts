@@ -28,6 +28,7 @@ from collections import defaultdict
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 HEROKU_APP_NAME = "openalex-guts"
 USER_AGENT = "OpenAlex/0.1 (https://openalex.org; team@ourresearch.org)"
@@ -150,8 +151,29 @@ if (os.getenv("FLASK_DEBUG", False) == "True"):
 Compress(app)
 app.config["COMPRESS_DEBUG"] = compress_json
 
-# testing out sentry (after setting a project-wide rate limite of 100/hour)
-sentry_sdk.init(dsn=os.environ.get("SENTRY_DSN"), integrations=[FlaskIntegration()])
+# testing out sentry (after setting a project-wide rate limit of 100/hour)
+# def sentry_before_send(event, hint):
+#     print('sentrybeforesend')
+#     exceptions = event['exception']
+#     if exceptions:
+#         exc = exceptions[-1]
+#         mechanism = exc.get('mechanism')
+#         if mechanism:
+#             if mechanism.get('handled'):
+#                 return None
+
+#     return event
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN"), 
+    integrations=[
+        FlaskIntegration(),
+        LoggingIntegration(
+            level=logging.INFO,
+            event_level=logging.FATAL,
+        )
+    ],
+    # before_send=sentry_before_send,
+)
 
 # indexes
 AUTHORS_INDEX = "authors-v13"
