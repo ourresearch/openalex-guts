@@ -69,6 +69,7 @@ from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
 
 REDIS_WORK_QUEUE = 'queue:work_store'
+REDIS_ADD_THINGS_QUEUE = 'queue:add_things'
 
 # relationships without association tables
 Work.mesh = db.relationship("Mesh", lazy='selectin', backref="work", cascade="all, delete-orphan")
