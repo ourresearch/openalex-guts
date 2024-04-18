@@ -5,9 +5,10 @@ from time import mktime, gmtime
 from redis.client import Redis
 
 import models
-from app import REDIS_QUEUE_URL, logger
+from app import REDIS_QUEUE_URL, logger, db
 from models import REDIS_ADD_THINGS_QUEUE
 from scripts.works_query import base_works_query
+
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -66,6 +67,7 @@ def main():
                     enqueue_job(work.paper_title, 1e9, job['methods'])
             total_processed += 1
         now = datetime.now()
+        db.session.commit()
         hrs_diff = (now - start).total_seconds() / (60 * 60)
         rate = round(total_processed / hrs_diff, 2)
         logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr')
