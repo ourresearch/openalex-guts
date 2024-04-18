@@ -1,18 +1,17 @@
 import argparse
 import re
 from time import sleep, time, mktime, gmtime
+from timeit import default_timer as timer
 
+from humanfriendly import format_timespan
 from redis import Redis
-from sqlalchemy import orm
 from sqlalchemy import text
-from sqlalchemy.orm import selectinload
 
 import models
 from app import REDIS_QUEUE_URL, db, logger
 from models import REDIS_WORK_QUEUE
+from scripts.works_query import base_works_query
 from util import elapsed, work_has_null_author_ids
-from timeit import default_timer as timer
-from humanfriendly import format_timespan
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -154,91 +153,11 @@ class QueueWorkAddEverything:
         return rows
 
     @staticmethod
-    def base_works_query():
-        return db.session.query(models.Work).options(
-            selectinload(models.Work.records).selectinload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.journals).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.unpaywall).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
-            selectinload(models.Work.records).selectinload(models.Record.related_version_dois).raiseload('*'),
-            selectinload(models.Work.records).raiseload('*'),
-            selectinload(models.Work.locations).raiseload('*'),
-            selectinload(models.Work.journal).raiseload('*'),
-            selectinload(models.Work.references).raiseload('*'),
-            selectinload(models.Work.references_unmatched).raiseload('*'),
-            selectinload(models.Work.mesh),
-            selectinload(models.Work.funders).selectinload(models.WorkFunder.funder).raiseload('*'),
-            selectinload(models.Work.funders).raiseload('*'),
-            selectinload(models.Work.counts_by_year).raiseload('*'),
-            selectinload(models.Work.abstract),
-            selectinload(models.Work.extra_ids).raiseload('*'),
-            selectinload(models.Work.related_works).raiseload('*'),
-            selectinload(models.Work.related_versions).raiseload('*'),
-            selectinload(
-                models.Work.affiliations
-            ).selectinload(
-                models.Affiliation.author
-            ).selectinload(
-                models.Author.orcids
-            ).raiseload('*'),
-            selectinload(
-                models.Work.affiliations
-            ).selectinload(
-                models.Affiliation.author
-            ).raiseload('*'),
-            selectinload(
-                models.Work.affiliations
-            ).selectinload(
-                models.Affiliation.institution
-            ).selectinload(
-                models.Institution.ror
-            ).raiseload('*'),
-            selectinload(
-                models.Work.affiliations
-            ).selectinload(
-                models.Affiliation.institution
-            ).raiseload('*'),
-            selectinload(
-                models.Work.sdg
-            ).raiseload('*'),
-            selectinload(
-                models.Work.keywords
-            ).selectinload(
-                models.WorkKeyword.keyword
-            ).raiseload('*'),
-            selectinload(
-                models.Work.concepts
-            ).selectinload(
-                models.WorkConcept.concept
-            ).raiseload('*'),
-            selectinload(
-                models.Work.topics
-            ).selectinload(
-                models.WorkTopic.topic
-            ).raiseload('*'),
-            selectinload(
-                models.Work.topics).selectinload(models.WorkTopic.topic
-            ).raiseload('*'),
-            selectinload(
-                models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.subfield
-            ).raiseload('*'),
-            selectinload(
-                models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.field
-            ).raiseload('*'),
-            selectinload(
-                models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.domain
-            ).raiseload('*'),
-            orm.Load(models.Work).raiseload('*')
-        )
-
-    @staticmethod
     def fetch_works(object_ids):
         job_time = time()
 
         try:
-            objects = QueueWorkAddEverything.base_works_query().filter(
+            objects = base_works_query().filter(
                 models.Work.paper_id.in_(object_ids)
             ).all()
         except Exception as e:
