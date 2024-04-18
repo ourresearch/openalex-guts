@@ -48,6 +48,7 @@ def enqueue_fast_queue(works):
 
 def main():
     total_processed = 0
+    errors_count = 0
     start = datetime.now()
     while True:
         try:
@@ -78,13 +79,14 @@ def main():
                     logger.exception(e)
                     # Re-queue job
                     enqueue_job(work.paper_title, 1e9, job['methods'])
+                    errors_count += 1
             total_processed += 1
         now = datetime.now()
         db.session.commit()
         enqueue_fast_queue(works)
         hrs_diff = (now - start).total_seconds() / (60 * 60)
         rate = round(total_processed / hrs_diff, 2)
-        logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr | Last work processed: {works[-1].paper_id}')
+        logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr | Errors: {errors_count} | Last work processed: {works[-1].paper_id}')
 
 
 if __name__ == '__main__':
