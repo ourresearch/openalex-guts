@@ -5,6 +5,7 @@ run_queue_record: python -m scripts.queue_record_assign_work --chunk=$RT_RECORD_
 # run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=work_add_everything$DYNO
 run_once_work_add_everything: python -m scripts.queue_work_add_everything --chunk=$WORK_ADD_EVERYTHING_CHUNK_SIZE
 run_once_work_add_most_things: python -m scripts.queue_work_add_everything --partial --chunk=$WORK_ADD_MOST_THINGS_CHUNK_SIZE
+run_once_work_add_some_things: python -m scripts.add_things_queue
 run_once_work_update_authors: python -m scripts.queue_work_update_authors --chunk=$WORK_ADD_EVERYTHING_CHUNK_SIZE
 run_once_work_process_embeddings_bash: bash scripts/run_process_embeddings_worker.sh
 run_once_work_store_vectors_bash: bash scripts/run_store_vectors_worker.sh
