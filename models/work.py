@@ -656,8 +656,8 @@ class Work(db.Model):
         if r.status_code == 200:
             self.topics = []
             if topic_ids and topic_scores:
-                new_topic_ids = [x for y,x in sorted(zip(topic_scores,topic_ids))]
-                new_topic_scores = [y for y,x in sorted(zip(topic_scores,topic_ids))]
+                new_topic_ids = [x for y,x in sorted(zip(topic_scores,topic_ids), reverse=True)]
+                new_topic_scores = [y for y,x in sorted(zip(topic_scores,topic_ids), reverse=True)]
                 top_rank = 1
                 for i, (topic_id, topic_score) in enumerate(zip(new_topic_ids,
                                                                 new_topic_scores)):
