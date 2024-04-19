@@ -13,6 +13,7 @@ from typing import List
 import requests
 from cached_property import cached_property
 from humanfriendly import format_timespan
+from sentry_sdk import capture_message
 from sqlalchemy import event, orm, text, and_, desc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import get_history
@@ -2492,6 +2493,7 @@ class Work(db.Model):
             if source_match and source_match[
                 'display_name'] not in source_match_exceptions:
                 locations[0]['source'] = source_match
+                capture_message(f'using safety_journals to assign source {source_match} to work {self}')
 
         locations = override_location_sources(locations)
         for loc in locations:
