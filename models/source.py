@@ -14,6 +14,7 @@ from app import logger
 from util import entity_md5
 from util import truncate_on_word_break
 
+DELETED_SOURCE_ID = 4317411217
 
 def as_source_openalex_id(id):
     from app import API_HOST
