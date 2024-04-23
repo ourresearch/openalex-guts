@@ -1314,21 +1314,18 @@ class Work(db.Model):
         for author_dict in record.authors_json:
             original_name = author_dict["raw"]
             if author_dict["family"]:
-                original_name = "{} {}".format(author_dict["given"],
-                                               author_dict["family"])
+                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
 
             raw_author_string = original_name if original_name else None
-            original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                author_dict["orcid"] else None
+            original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
 
             seen_institution_ids = set()
 
             affiliation_sequence_order = 1
             for affiliation_dict in author_dict["affiliation"]:
-                raw_affiliation_string = affiliation_dict["name"] if \
-                    affiliation_dict["name"] else None
+                raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
                 raw_affiliation_string = clean_html(raw_affiliation_string)
                 my_institutions = []
 
@@ -1337,9 +1334,7 @@ class Work(db.Model):
                         [raw_affiliation_string],
                         retry_attempts=affiliation_retry_attempts
                     )
-                    for institution_id_match in [m for m in
-                                                 institution_id_matches[0] if
-                                                 m]:
+                    for institution_id_match in [m for m in institution_id_matches[0] if m]:
                         my_institution = models.Institution.query.options(
                             orm.Load(models.Institution).raiseload('*')
                         ).get(institution_id_match)
@@ -1360,13 +1355,10 @@ class Work(db.Model):
                             author_sequence_number=author_sequence_order,
                             affiliation_sequence_number=affiliation_sequence_order,
                             original_author=raw_author_string,
-                            original_affiliation=raw_affiliation_string[
-                                                 :2500] if raw_affiliation_string else None,
+                            original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
                             original_orcid=original_orcid,
-                            match_institution_name=models.Institution.matching_institution_name(
-                                raw_affiliation_string),
-                            is_corresponding_author=author_dict.get(
-                                'is_corresponding'),
+                            match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
+                            is_corresponding_author=author_dict.get('is_corresponding'),
                             updated_date=datetime.datetime.utcnow().isoformat()
                         )
                         my_affiliation.institution = my_institution
