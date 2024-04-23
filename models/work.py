@@ -2218,6 +2218,7 @@ class Work(db.Model):
             my_dict["abstract_inverted_index"] = None
 
         entity_hash = entity_md5(my_dict)
+        print(my_dict)
 
         if work_has_null_author_ids(my_dict):
             logger.info('not saving work because some authors have null IDs')
@@ -2321,7 +2322,8 @@ class Work(db.Model):
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
                     'version': r.open_version,
-                    'license': r.open_license,
+                    'license': r.display_open_license,
+                    'license_id': r.display_open_license_id,
                     'doi': doi_url,
                 }
 
@@ -2368,7 +2370,8 @@ class Work(db.Model):
                     'landing_page_url': r.record_webpage_url,
                     'is_oa': r.is_oa,
                     'version': r.open_version,
-                    'license': r.open_license,
+                    'license': r.display_open_license,
+                    'license_id': r.display_open_license_id,
                     'doi': doi_url,
                 }
 
@@ -2446,6 +2449,7 @@ class Work(db.Model):
                     'is_oa': False,
                     'version': self.guess_version(),
                     'license': None,
+                    'license_id': None,
                     'doi': doi_url,
                 }
                 pubmed_location['is_accepted'] = is_accepted(
@@ -2467,6 +2471,7 @@ class Work(db.Model):
                     'is_oa': None,
                     'version': None,
                     'license': None,
+                    'license_id': None,
                     'doi': r.doi,
                 }
 
@@ -2483,6 +2488,7 @@ class Work(db.Model):
                 'is_oa': False,
                 'version': self.guess_version(),
                 'license': None,
+                'license_id': None,
                 'doi': self.doi_url,
             }
             lastchance_location['is_accepted'] = is_accepted(
