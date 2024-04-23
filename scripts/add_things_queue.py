@@ -1,3 +1,4 @@
+import argparse
 import json
 from datetime import datetime
 from time import mktime, gmtime, time, sleep
@@ -13,6 +14,12 @@ from util import work_has_null_author_ids, elapsed
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
 CHUNK_SIZE = 50
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--skip_fast_enqueue', '-s', action='store_true', help='Skip enqueue to fast queue')
+    return parser.parse_args()
 
 
 def enqueue_jobs(work_ids, priority=None, methods=None):
@@ -47,6 +54,7 @@ def enqueue_fast_queue(works):
 
 
 def main():
+    args = parse_args()
     total_processed = 0
     errors_count = 0
     start = datetime.now()
@@ -58,7 +66,8 @@ def main():
             logger.exception(e)
             break
         if not jobs:
-            logger.info(f'No jobs found in {REDIS_ADD_THINGS_QUEUE}, sleeping and then checking again')
+            logger.info(
+                f'No jobs found in {REDIS_ADD_THINGS_QUEUE}, sleeping and then checking again')
             sleep(10)
             continue
         jobs_map = {job['work_id']: job for job in jobs}
@@ -87,11 +96,15 @@ def main():
             total_processed += 1
         now = datetime.now()
         db.session.commit()
-        enqueue_fast_queue(works)
+        if not args.skip_fast_enqueue:
+            enqueue_fast_queue(works)
+        else:
+            logger.info(f'Skipping priority enqueue to fast queue')
         hrs_diff = (now - start).total_seconds() / (60 * 60)
         rate = round(total_processed / hrs_diff, 2)
         count_in_queue = _redis.zcard(REDIS_ADD_THINGS_QUEUE)
-        logger.info(f'Total processed: {total_processed} | Rate: {rate}/hr | Errors: {errors_count} | Count in queue: {count_in_queue} | Last work processed: {works[-1].paper_id}')
+        logger.info(
+            f'Total processed: {total_processed} | Rate: {rate}/hr | Errors: {errors_count} | Count in queue: {count_in_queue} | Last work processed: {works[-1].paper_id}')
 
 
 if __name__ == '__main__':
