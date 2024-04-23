@@ -2209,7 +2209,6 @@ class Work(db.Model):
             my_dict["abstract_inverted_index"] = None
 
         entity_hash = entity_md5(my_dict)
-        print(my_dict)
 
         if work_has_null_author_ids(my_dict):
             logger.info('not saving work because some authors have null IDs')
