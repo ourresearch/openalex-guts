@@ -66,7 +66,7 @@ def log_memory_usage():
 
 
 def main():
-    fargs = parse_args()
+    args = parse_args()
     total_processed = 0
     errors_count = 0
     start = datetime.now()
@@ -109,7 +109,7 @@ def main():
             total_processed += 1
         now = datetime.now()
         db.session.commit()
-        if not fargs.skip_fast_enqueue:
+        if not args.skip_fast_enqueue:
             enqueue_fast_queue(works)
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
