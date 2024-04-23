@@ -847,7 +847,7 @@ class Work(db.Model):
 
         # for now, only add/update affiliations if they aren't there, or if too many affiliations per author (probably bad data)
         author_affs = self._author_affs(self.affiliations)
-        max_author_affs = max([len(affs) for affs in author_affs.values()])
+        max_author_affs = max([len(affs) for affs in author_affs.values()]) if author_affs.values() else 0
         start_time = time()
         if not self.affiliations or max_author_affs > 10:
             logger.info("adding affiliations because work didn't have any yet")
