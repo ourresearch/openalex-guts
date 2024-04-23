@@ -108,7 +108,12 @@ def main():
                     errors_count += 1
             total_processed += 1
         now = datetime.now()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            logger.info(f'Exception while committing db changes, rolling back')
+            logger.exception(e)
+            db.session.rollback()
         if not args.skip_fast_enqueue:
             enqueue_fast_queue(works)
         else:
