@@ -99,6 +99,8 @@ class Record(db.Model):
 
     @property
     def display_open_license(self):
+        if not self.open_license:
+            return None
         if 'unspecified-oa' in self.open_license.lower():
             # override into other-oa
             return 'other-oa'
