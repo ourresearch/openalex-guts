@@ -60,3 +60,4 @@ unicodecsv==0.14.1
 Unidecode==1.2.0
 verboselogs==1.7
 Werkzeug==2.0.1
+psutil~=5.9.8
