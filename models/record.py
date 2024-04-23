@@ -98,6 +98,20 @@ class Record(db.Model):
         super(Record, self).__init__(**kwargs)
 
     @property
+    def display_open_license(self):
+        if 'unspecified-oa' in self.open_license.lower():
+            # override into other-oa
+            return 'other-oa'
+        else:
+            return self.open_license
+
+    @property
+    def display_open_license_id(self):
+        if self.display_open_license:
+            return f"https://openalex.org/licenses/{self.display_open_license}"
+        return None
+
+    @property
     def score(self):
         if self.record_type == "override":
             return 500

@@ -3,19 +3,6 @@ import json
 from app import db
 
 
-# truncate mid.location
-# insert into mid.location (select * from legacy.mag_main_paper_urls)
-
-# update mid.location set source_url=replace(source_url, '\ten', ''), language_code='en' where source_url ~ '\ten';
-# update mid.location set source_url=replace(source_url, '\tes', ''), language_code='es' where source_url ~ '\tes';
-# update mid.location set source_url=replace(source_url, '\tfr', ''), language_code='fr' where source_url ~ '\tfr';
-# update mid.location set source_url=replace(source_url, '\tsv', ''), language_code='sv' where source_url ~ '\tsv';
-# update mid.location set source_url=replace(source_url, '\tko', ''), language_code='ko' where source_url ~ '\tko';
-# update mid.location set source_url=replace(source_url, '\tpt', ''), language_code='pt' where source_url ~ '\tpt';
-# update mid.location set source_url=replace(source_url, '\tfi', ''), language_code='fi' where source_url ~ '\tfi';
-# update mid.location set source_url=replace(source_url, '\t', '') where source_url ~ '\t';
-
-
 def get_repository_institution_from_source_url(source_url):
     lookup = {"europepmc.org": "Europe PMC",
               "ncbi.nlm.nih.gov/pmc": "PMC",
@@ -30,6 +17,7 @@ def get_repository_institution_from_source_url(source_url):
             return value
     return None
 
+
 def is_accepted(version):
     if version:
         if version == 'submittedVersion':
@@ -37,6 +25,7 @@ def is_accepted(version):
         elif version in ['acceptedVersion', 'publishedVersion']:
             return True
     return False
+
 
 def is_published(version):
     if version:
@@ -75,30 +64,26 @@ class Location(db.Model):
         return self.version is not None
 
     @property
-    def source_description(self):
-        # from https://docs.microsoft.com/en-us/academic-services/graph/reference-data-schema#paper-urls
-        lookup = {1: "Html", 2: "Text", 3: "Pdf", 4: "Doc", 5: "Ppt", 6: "Xls", 8: "Rtf", 12: "Xml", 13: "Rss", 20: "Swf", 27: "Ics", 31: "Pub", 33: "Ods", 34: "Odp", 35: "Odt", 36: "Zip", 40: "Mp3"}
-        if not self.source_type:
-            if self.url_for_pdf:
-                return lookup[4]
-            return "unknown"
-        return lookup.get(self.source_type, "unknown").lower()
-
-    @property
     def display_license(self):
         if not self.license:
             return None
-        if 'publisher-specific, author manuscript' in self.license.lower():
+        elif 'publisher-specific, author manuscript' in self.license.lower():
             # manual override; this should affect only a few works, and this whole table should be deprecated soon
             return 'publisher-specific-oa'
+        elif 'unspecified-oa' in self.license.lower():
+            return 'other-oa'
         return self.license.lower().split(":", 1)[0]
+
+    @property
+    def display_license_id(self):
+        displayed_license = self.display_license
+        return f"https://openalex.org/licenses/{displayed_license}"
 
     @property
     def display_host_type(self):
         if self.host_type == "publisher":
             return "journal"
         return self.host_type
-
 
     @property
     def score(self):
@@ -120,19 +105,6 @@ class Location(db.Model):
         if ("europepmc" in self.source_url) or ("ncbi.nlm.nih.gov" in self.source_url):
             score += 25
         return score
-
-    @property
-    def include_in_alternative(self):
-        if self.is_oa:
-            return True
-        if self.host_type == "publisher":
-            return True
-        if self.journal:
-            return True
-        if self.source_url and "doi" in self.source_url:
-            if self.version:
-                return True  # else is probably a component or stub record
-        return False
 
     @property
     def doi_url(self):
@@ -177,7 +149,7 @@ class Location(db.Model):
             "is_oa": self.is_oa,
             "version": self.version,
             "license": self.display_license,
-            # "repository_institution": self.repository_institution,
+            "license_id": self.display_license_id,
             "doi": self.doi_url,
         }
 
@@ -193,6 +165,7 @@ class Location(db.Model):
             'is_accepted': is_accepted(self.version),
             'is_published': is_published(self.version),
             'license': self.display_license,
+            'license_id': self.display_license_id,
             'doi': self.doi_url,
         }
 
