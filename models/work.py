@@ -277,6 +277,13 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
+    @staticmethod
+    def _author_affs(affs):
+        author_affs = defaultdict(list)
+        for aff in affs:
+            author_affs[aff.author_id].append(aff)
+        return author_affs
+
     def update_institutions(self, affiliation_retry_attempts=30):
         if not self.affiliations:
             return
@@ -838,9 +845,11 @@ class Work(db.Model):
         self.add_sdgs()
         logger.info(f'add_sdgs took {elapsed(start_time, 2)} seconds')
 
-        # for now, only add/update affiliations if they aren't there
+        # for now, only add/update affiliations if they aren't there, or if too many affiliations per author (probably bad data)
+        author_affs = self._author_affs(self.affiliations)
+        max_author_affs = max([len(affs) for affs in author_affs.values()])
         start_time = time()
-        if not self.affiliations:
+        if not self.affiliations or max_author_affs > 10:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
             logger.info(
