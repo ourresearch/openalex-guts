@@ -1,5 +1,4 @@
 import datetime
-import json
 
 from cached_property import cached_property
 from sqlalchemy import text
@@ -8,8 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from app import PUBLISHERS_INDEX
 from app import db
 from app import logger
-from util import dictionary_nested_diff, entity_md5
-from util import jsonify_fast_no_sort_raw
+from util import entity_md5
 
 
 def as_publisher_openalex_id(id):
