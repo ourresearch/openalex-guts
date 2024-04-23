@@ -1,8 +1,10 @@
 import argparse
 import json
+import os
 from datetime import datetime
 from time import mktime, gmtime, time, sleep
 
+import psutil
 from redis.client import Redis
 
 import models
@@ -18,7 +20,8 @@ CHUNK_SIZE = 50
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--skip_fast_enqueue', '-s', action='store_true', help='Skip enqueue to fast queue')
+    parser.add_argument('--skip_fast_enqueue', '-s', action='store_true',
+                        help='Skip enqueue to fast queue')
     return parser.parse_args()
 
 
@@ -53,8 +56,17 @@ def enqueue_fast_queue(works):
         f'enqueueing works in redis work_store took {elapsed(redis_queue_time, 2)} seconds')
 
 
+def log_memory_usage():
+    process = psutil.Process(os.getpid())
+    memory_info = process.memory_info()
+    memory_mb = memory_info.rss / (1024 ** 2)
+
+    # Print the memory usage of the current Python process in MB
+    logger.info(f"Memory usage (MB): {round(memory_mb, 2)}")
+
+
 def main():
-    args = parse_args()
+    fargs = parse_args()
     total_processed = 0
     errors_count = 0
     start = datetime.now()
@@ -81,11 +93,12 @@ def main():
                 job['methods'] = ['add_everything']
             for method_name in job['methods']:
                 method = getattr(work, method_name)
-                args = []
+                fargs = []
                 if method_name == 'add_everything':
-                    args = [True]
+                    fargs = [True]
                 try:
-                    method(*args)
+                    method(*fargs)
+                    log_memory_usage()
                 except Exception as e:
                     logger.info(
                         f'Exception calling {method_name}() on work {work.paper_id}')
@@ -96,7 +109,7 @@ def main():
             total_processed += 1
         now = datetime.now()
         db.session.commit()
-        if not args.skip_fast_enqueue:
+        if not fargs.skip_fast_enqueue:
             enqueue_fast_queue(works)
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
