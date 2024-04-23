@@ -1310,8 +1310,8 @@ class Work(db.Model):
 
         record = self.affiliation_records_sorted[0]
 
-        for author_sequence_order, author_dict in enumerate(
-                record.authors_json):
+        author_sequence_order = 1
+        for author_dict in record.authors_json:
             original_name = author_dict["raw"]
             if author_dict["family"]:
                 original_name = "{} {}".format(author_dict["given"],
@@ -1357,7 +1357,7 @@ class Work(db.Model):
                 if raw_author_string or raw_affiliation_string:
                     for my_institution in my_institutions:
                         my_affiliation = models.Affiliation(
-                            author_sequence_number=author_sequence_order + 1,
+                            author_sequence_number=author_sequence_order,
                             affiliation_sequence_number=affiliation_sequence_order,
                             original_author=raw_author_string,
                             original_affiliation=raw_affiliation_string[
@@ -1372,8 +1372,7 @@ class Work(db.Model):
                         my_affiliation.institution = my_institution
                         self.affiliations.append(my_affiliation)
                         affiliation_sequence_order += 1
-
-        return
+                    author_sequence_order += 1
 
     def update_oa_status_if_better(self, new_oa_status):
         # update oa_status, only if it's better than the oa_status we already have
