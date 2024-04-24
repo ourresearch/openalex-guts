@@ -7,6 +7,7 @@ from sqlalchemy.orm import raiseload
 from sqlalchemy.sql.expression import func
 
 from app import db
+from models.location import normalize_license_id
 from models.merge_utils import merge_crossref_with_parsed
 from util import normalize_title_like_sql
 
@@ -110,7 +111,8 @@ class Record(db.Model):
     @property
     def display_open_license_id(self):
         if self.display_open_license:
-            return f"https://openalex.org/licenses/{self.display_open_license}"
+            license_id = normalize_license_id(self.display_open_license)
+            return f"https://openalex.org/licenses/{license_id}" if license_id else None
         return None
 
     @property
