@@ -281,7 +281,7 @@ class Work(db.Model):
     def _author_affs(affs):
         author_affs = defaultdict(list)
         for aff in affs:
-            author_affs[aff.author_id].append(aff)
+            author_affs[aff.original_author].append(aff)
         return author_affs
 
     def update_institutions(self, affiliation_retry_attempts=30):
@@ -409,8 +409,7 @@ class Work(db.Model):
 
         if self.affiliation_records_sorted:
             try:
-                record_author_dict_list = json.loads(
-                    self.affiliation_records_sorted[0].authors)
+                record_author_dict_list = self.affiliation_records_sorted[0].authors_json
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON authors for {self.id}: {e}")
                 return
@@ -849,7 +848,7 @@ class Work(db.Model):
         author_affs = self._author_affs(self.affiliations)
         max_author_affs = max([len(affs) for affs in author_affs.values()]) if author_affs.values() else 0
         start_time = time()
-        if not self.affiliations or max_author_affs > 10:
+        if not self.affiliations:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
             logger.info(
