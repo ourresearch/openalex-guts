@@ -28,7 +28,8 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
-from const import PREPRINT_JOURNAL_IDS, REVIEW_JOURNAL_IDS
+from const import PREPRINT_JOURNAL_IDS, REVIEW_JOURNAL_IDS, \
+    MAX_AFFILIATIONS_PER_AUTHOR
 from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
@@ -848,7 +849,7 @@ class Work(db.Model):
         author_affs = self._author_affs(self.affiliations)
         max_author_affs = max([len(affs) for affs in author_affs.values()]) if author_affs.values() else 0
         start_time = time()
-        if not self.affiliations or max_author_affs > 10:
+        if not self.affiliations or max_author_affs > MAX_AFFILIATIONS_PER_AUTHOR:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
             logger.info(
