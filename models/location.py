@@ -36,6 +36,52 @@ def is_published(version):
     return False
 
 
+def normalize_license_id(license):
+    valid_license_ids = [
+        'apache-2-0',
+        'cc-by',
+        'cc-by-nc',
+        'cc-by-nc-nd',
+        'cc-by-nc-sa',
+        'cc-by-nd',
+        'cc-by-sa',
+        'gpl-v3',
+        'isc',
+        'mit',
+        'public-domain',
+        'publisher-specific-oa',
+        'other-oa'
+    ]
+    closed_licenses = [
+        'none',
+        'closed'
+    ]
+    if not license or license.lower() in closed_licenses:
+        return None
+
+    license_truncated = (
+        license.lower()
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("1.0", "")
+        .replace("2.0", "")
+        .replace("3.0", "")
+        .replace("4.0", "")
+    )
+
+    for valid_license in valid_license_ids:
+        if valid_license.replace('-', '') == license_truncated:
+            return valid_license
+
+    if license_truncated.startswith('cc0'):
+        return 'public-domain'
+    elif license_truncated.startswith('apache'):
+        return 'apache-2-0'
+    elif license_truncated.startswith('gpl'):
+        return 'gpl-v3'
+    return 'other-oa'
+
+
 class Location(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "location"
@@ -77,7 +123,8 @@ class Location(db.Model):
     @property
     def display_license_id(self):
         displayed_license = self.display_license
-        return f"https://openalex.org/licenses/{displayed_license}"
+        license_id = normalize_license_id(displayed_license)
+        return f"https://openalex.org/licenses/{license_id}" if license_id else None
 
     @property
     def display_host_type(self):
