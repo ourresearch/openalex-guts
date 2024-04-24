@@ -5,6 +5,7 @@ from copy import deepcopy
 import math
 
 from app import logger
+from const import MAX_AFFILIATIONS_PER_AUTHOR
 from util import normalize
 
 PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
@@ -14,7 +15,7 @@ def affiliations_probably_invalid(parsed_record):
     if not parsed_record.authors_json:
         return False
     return max(
-        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > 5
+        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > MAX_AFFILIATIONS_PER_AUTHOR
 
 
 def merge_crossref_with_parsed(crossref_record, parsed_record):
