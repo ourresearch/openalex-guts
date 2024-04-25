@@ -26,8 +26,6 @@ class Author(db.Model):
 
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
-    last_known_affiliation_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"))
-    last_known_affiliation_id_date = db.Column(db.DateTime)
     match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
@@ -49,10 +47,6 @@ class Author(db.Model):
         return matching_author_strings(raw_author_string)
 
     @property
-    def last_known_institution_id(self):
-        return self.last_known_affiliation_id
-
-    @property
     def openalex_id(self):
         return as_author_openalex_id(self.author_id)
 
@@ -64,12 +58,6 @@ class Author(db.Model):
     @property
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
-
-    @property
-    def last_known_institution_api_url(self):
-        if not self.last_known_affiliation_id:
-            return None
-        return f"http://localhost:5007/institution/id/{self.last_known_affiliation_id}"
 
     @property
     def orcid_object(self):
@@ -125,7 +113,6 @@ class Author(db.Model):
                     if identifier["url-name"] == 'twitter':
                         return identifier["url"]["value"]
         return None
-
 
     @cached_property
     def wikipedia_url(self):
@@ -271,24 +258,6 @@ class Author(db.Model):
 
         return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
 
-    def last_known_affiliation_override(self):
-        # quick fix implemented for Sorbonne University
-        # checks most recent paper's affiliations, and if Sorbonne is one of them, force it to be the last known institution
-        override_affiliation_ids = [39804081]  # just sorbonne for now, but more can be added
-        affils = sorted(
-            self.affiliations,
-            key=lambda x: x.work.publication_date if x.work.publication_date is not None else '1800-01-01',  # set null date as old
-            reverse=True
-        )
-        affils_most_recent_work = [af.affiliation_id for af in affils if af.paper_id == affils[0].paper_id]
-        for affiliation_id in override_affiliation_ids:
-            if affiliation_id in affils_most_recent_work:
-                print(f"setting last_known_affiliation_id to {affiliation_id}")
-                self.last_known_affiliation_id = affiliation_id
-                db.session.add(self)
-                db.session.commit()
-                return
-
     @cached_property
     def last_known_institutions(self):
         """
@@ -362,7 +331,6 @@ class Author(db.Model):
               }
         
         if return_level == "full":
-            self.last_known_affiliation_override()
             response.update({
                 "display_name_alternatives": [truncate_on_word_break(n, 100) for n in self.all_alternative_names],
                 "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
@@ -389,7 +357,6 @@ class Author(db.Model):
                     "wikipedia": self.wikipedia_url,
                     "mag": self.author_id if self.author_id < MAX_MAG_ID else None
                 },
-                "last_known_institution": self.last_known_institution.to_dict("minimum") if self.last_known_institution else None,  # we will deprecate this in favor of last_known_institutions
                 "last_known_institutions": self.last_known_institutions,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
