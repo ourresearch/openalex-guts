@@ -122,7 +122,6 @@ Topic.domain = db.relationship("Domain", lazy='selectin', backref="topics", usel
 Institution.ror = db.relationship("Ror", uselist=False)
 Author.orcids = db.relationship("AuthorOrcid", backref="author", cascade="all, delete-orphan")
 AuthorOrcid.orcid_data = db.relationship("Orcid", uselist=False)
-Author.last_known_institution = db.relationship("Institution")
 Author.alternative_names = db.relationship("AuthorAlternativeName", cascade="all, delete-orphan")
 Author.author_concepts = db.relationship("AuthorConcept", cascade="all, delete-orphan")
 

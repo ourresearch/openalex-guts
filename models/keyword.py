@@ -53,8 +53,7 @@ class Keyword(db.Model):
     def to_dict(self, return_level="full"):
         response = {
             "id": self.openalex_id,
-            "display_name": self.display_name,
-            "keyword": self.display_name,
+            "display_name": self.display_name
         }
         if return_level == "full":
             response.update(
