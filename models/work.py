@@ -1719,7 +1719,6 @@ class Work(db.Model):
                 "is_corresponding": is_corresponding,
                 "raw_author_name": affil_list[0]["raw_author_name"],
                 "raw_affiliation_strings": raw_affiliation_strings,
-                "raw_affiliation_string": raw_affiliation_string
             }
             response.append(response_dict)
         return response
