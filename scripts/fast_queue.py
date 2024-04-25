@@ -322,9 +322,6 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Author.author_concepts),
             selectinload(models.Author.author_topics),
             selectinload(models.Author.orcids).selectinload(models.AuthorOrcid.orcid_data),
-            selectinload(models.Author.last_known_institution).selectinload(models.Institution.ancestors).raiseload('*'),
-            selectinload(models.Author.last_known_institution).selectinload(models.Institution.ror).raiseload('*'),
-            selectinload(models.Author.last_known_institution).raiseload('*'),
             selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).selectinload(models.Work.counts),
             selectinload(models.Author.affiliations).selectinload(models.Affiliation.work).raiseload('*'),
             selectinload(models.Author.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ancestors).raiseload(
