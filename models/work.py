@@ -831,11 +831,6 @@ class Work(db.Model):
             self.add_related_works()  # must be after work_concepts
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
-        
-        # only run this for add_most_things for catching up the keywords
-        # start_time = time()
-        # self.add_work_keywords()
-        # logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -2036,21 +2031,6 @@ class Work(db.Model):
                             }
                         )
         return formatted_sdgs
-
-    @property
-    def all_work_keywords(self):
-        formatted_keywords = []
-        if self.work_keywords and self.work_keywords.keywords:
-            for keyword in self.work_keywords.keywords:
-                score = keyword.get("score")
-                keyword = keyword.get("keyword")
-                formatted_keywords.append(
-                    {
-                        "keyword": keyword.lower() if keyword else None,
-                        "score": score
-                    }
-                )
-        return formatted_keywords
 
     @property
     def cited_by_percentile_year(self):
