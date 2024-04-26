@@ -1359,7 +1359,7 @@ class Work(db.Model):
                         my_affiliation.institution = my_institution
                         self.affiliations.append(my_affiliation)
                         affiliation_sequence_order += 1
-                    author_sequence_order += 1
+            author_sequence_order += 1
 
     def update_oa_status_if_better(self, new_oa_status):
         # update oa_status, only if it's better than the oa_status we already have
