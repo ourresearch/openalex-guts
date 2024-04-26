@@ -1,8 +1,12 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-UPCOMING RELEASE
-- language detection was often incorrect for titles/abstracts in all-uppercase letters; addressed this by applying lowercasing
+RELEASE 2024-04-25
+- added affiliations to ~2.5M works using open access PDFs parsed by grobid
+- ingested 3.4M works from DataCite, primarily from Zenodo, Arxiv, and Figshare
+- fixed language detection bug that occurred when title and abstract all uppercase
 - override language assignment for some major English-language journals
+- remove Author.last_known_institution in favor of Author.last_known_institution (in progress)
+- remove Work.authorships.raw_affiliation_string in favor of Work.authorships.raw_affiliation_strings (in progress)
 
 RELEASE 2024-03-27
 - set up automatic updates for Retraction Watch (see https://doi.org/10.13003/c23rw1d9 for info about Retraction Watch)
