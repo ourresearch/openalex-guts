@@ -841,10 +841,8 @@ class Work(db.Model):
         logger.info(f'add_sdgs took {elapsed(start_time, 2)} seconds')
 
         # for now, only add/update affiliations if they aren't there, or if too many affiliations per author (probably bad data)
-        author_affs = self._author_affs(self.affiliations)
-        max_author_affs = max([len(affs) for affs in author_affs.values()]) if author_affs.values() else 0
         start_time = time()
-        if not self.affiliations or max_author_affs > MAX_AFFILIATIONS_PER_AUTHOR:
+        if not self.affiliations:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
             logger.info(
