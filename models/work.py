@@ -278,13 +278,6 @@ class Work(db.Model):
     def openalex_api_url(self):
         return get_apiurl_from_openalex_url(self.openalex_id)
 
-    @staticmethod
-    def _author_affs(affs):
-        author_affs = defaultdict(list)
-        for aff in affs:
-            author_affs[aff.original_author].append(aff)
-        return author_affs
-
     def update_institutions(self, affiliation_retry_attempts=30):
         if not self.affiliations:
             return
