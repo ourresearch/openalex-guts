@@ -35,7 +35,6 @@ def base_works_query():
         selectinload(models.Work.abstract),
         selectinload(models.Work.extra_ids).raiseload('*'),
         selectinload(models.Work.related_works).raiseload('*'),
-        selectinload(models.Work.related_versions).raiseload('*'),
         selectinload(
             models.Work.affiliations
         ).selectinload(
