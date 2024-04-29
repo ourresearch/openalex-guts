@@ -825,8 +825,9 @@ class Work(db.Model):
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
         else:
-            print("IN AFFILIATIONS")
-            # self.add_affiliations()
+            start_time = time()
+            self.add_affiliations()
+            logger.info(f'updating affiliations (for authorships) took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
