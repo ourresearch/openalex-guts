@@ -1203,7 +1203,9 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        return work_matches_by_title[max(scores, key=lambda k: scores[k])]
+        match = work_matches_by_title[max(scores, key=lambda k: scores[k])]
+        logger.info(f'Reference match - Title: {reference_json[title_key]} | Matches: {work_matches_by_title} | Matched ID, Title: {match.paper_id}, {match.original_title}')
+        return match
 
     def add_references(self):
         from models import WorkExtraIds
