@@ -1188,7 +1188,7 @@ class Work(db.Model):
         ).limit(50).all()
         if not work_matches_by_title:
             return None
-        ref_author = reference_json[author_key].split(',')[0]
+        ref_author = reference_json.get(author_key, '').split(',')[0]
         ref_author_strings = matching_author_strings(ref_author)
         ref_pub_yr = str(reference_json.get('year', 0))
         ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
@@ -1204,7 +1204,8 @@ class Work(db.Model):
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
         match = work_matches_by_title[max(scores, key=lambda k: scores[k])]
-        logger.info(f'Reference match - Title: {reference_json[title_key]} | Matches: {work_matches_by_title} | Matched ID, Title: {match.paper_id}, {match.original_title}')
+        titles_ids_scores = [{'title': w.original_title, 'id': w.paper_id, 'score': score} for w, score in zip(work_matches_by_title, scores)]
+        logger.info(f'Reference match - Title: {reference_json[title_key]} | Matches: {titles_ids_scores} | Matched ID, Title: {match.paper_id}, {match.original_title}')
         return match
 
     def add_references(self):
