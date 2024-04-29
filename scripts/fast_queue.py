@@ -8,6 +8,8 @@ from redis import Redis
 from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
 
+from memory_profiler import profile
+
 import models
 from app import ELASTIC_URL
 from app import REDIS_QUEUE_URL
@@ -167,6 +169,7 @@ def fetch_queue_chunk_ids_from_redis(queue_table, chunk_size):
     logger.info(f'popped ids from the queue in {elapsed(overall_start_time, 4)}s')
 
     chunk = [int(t[0]) for t in zpop_result] if zpop_result else []
+    logger.info(f"popped ids: {chunk}")
     if chunk:
         zadd_start_time = time()
         _redis.zadd(REDIS_WORK_QUEUE, {work_id: time() for work_id in chunk})
