@@ -8,8 +8,6 @@ from redis import Redis
 from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
 
-from memory_profiler import profile
-
 import models
 from app import ELASTIC_URL
 from app import REDIS_QUEUE_URL
