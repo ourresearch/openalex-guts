@@ -87,24 +87,6 @@ Work.embeddings = db.relationship("WorkEmbedding", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
-Work.related_versions = db.relationship(
-    "WorkRelatedVersion",
-    lazy="selectin",
-    primaryjoin="Work.paper_id==WorkRelatedVersion.work_id",
-    uselist=True,
-)
-WorkRelatedVersion.related_work = db.relationship("Work", foreign_keys=[WorkRelatedVersion.version_work_id], lazy='selectin', uselist=False)
-
-Work.datasets = db.relationship(
-    "WorkRelatedVersion",
-    lazy="selectin",
-    backref="work",
-    primaryjoin="Work.paper_id==WorkRelatedVersion.version_work_id",
-    uselist=True,
-    viewonly=True
-)
-WorkRelatedVersion.related_dataset = db.relationship("Work", foreign_keys=[WorkRelatedVersion.work_id], lazy='selectin', uselist=False, viewonly=True)
-
 
 # relationships with association tables
 Work.affiliations = db.relationship("Affiliation", lazy='selectin', backref="work", cascade="all, delete-orphan")

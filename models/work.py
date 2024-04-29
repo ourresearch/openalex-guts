@@ -1376,20 +1376,6 @@ class Work(db.Model):
         # if we didn't update above, return the existing oa_status
         return self.oa_status
 
-    def work_versions(self):
-        """
-        Up to 100 other versions of the work, currently found in DataCite.
-        """
-        return [version.related_work.openalex_id for version in
-                self.related_versions if version.type == 'version'][:100]
-
-    def work_datasets(self):
-        """
-        First 100 datasets related to a work.
-        """
-        return [dataset.related_dataset.openalex_id for dataset in self.datasets
-                if dataset.type == 'supplement'][:100]
-
     def set_fields_from_record(self, record):
         from util import normalize_doi
 
@@ -2629,8 +2615,6 @@ class Work(db.Model):
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
-            "versions": self.work_versions(),
-            "datasets": self.work_datasets(),
         }
         if self.extra_ids:
             for extra_id in self.extra_ids:
