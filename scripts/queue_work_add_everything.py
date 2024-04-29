@@ -165,7 +165,7 @@ class QueueWorkAddEverything:
             objects = []
             for object_id in object_ids:
                 try:
-                    objects += QueueWorkAddEverything.base_works_query().filter(
+                    objects += base_works_query().filter(
                         models.Work.paper_id == object_id
                     ).all()
                 except Exception as e:
