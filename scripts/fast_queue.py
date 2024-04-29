@@ -167,6 +167,7 @@ def fetch_queue_chunk_ids_from_redis(queue_table, chunk_size):
     logger.info(f'popped ids from the queue in {elapsed(overall_start_time, 4)}s')
 
     chunk = [int(t[0]) for t in zpop_result] if zpop_result else []
+    logger.info(f"popped ids: {chunk}")
     if chunk:
         zadd_start_time = time()
         _redis.zadd(REDIS_WORK_QUEUE, {work_id: time() for work_id in chunk})
@@ -300,8 +301,6 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
-            selectinload(models.Work.related_versions).selectinload(models.WorkRelatedVersion.related_work).raiseload('*'),
-            selectinload(models.Work.datasets).selectinload(models.WorkRelatedVersion.related_dataset).raiseload('*'),
             selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()

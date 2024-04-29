@@ -1192,7 +1192,7 @@ class Work(db.Model):
         ).limit(50).all()
         if not work_matches_by_title:
             return None
-        ref_author = reference_json[author_key].split(',')[0]
+        ref_author = reference_json.get(author_key, '').split(',')[0]
         ref_author_strings = matching_author_strings(ref_author)
         ref_pub_yr = str(reference_json.get('year', 0))
         ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
@@ -1207,7 +1207,10 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        return work_matches_by_title[max(scores, key=lambda k: scores[k])]
+        match = work_matches_by_title[max(scores, key=lambda k: scores[k])]
+        titles_ids_scores = [{'title': w.original_title, 'id': w.paper_id, 'score': score} for w, score in zip(work_matches_by_title, scores)]
+        logger.info(f'Reference match - Title: {reference_json[title_key]} | Matches: {titles_ids_scores} | Matched ID, Title: {match.paper_id}, {match.original_title}')
+        return match
 
     def add_references(self):
         from models import WorkExtraIds
@@ -1377,20 +1380,6 @@ class Work(db.Model):
                 f"invalid new_oa_status for {self.paper_id}. old: {self.oa_status} new: {new_oa_status}")
         # if we didn't update above, return the existing oa_status
         return self.oa_status
-
-    def work_versions(self):
-        """
-        Up to 100 other versions of the work, currently found in DataCite.
-        """
-        return [version.related_work.openalex_id for version in
-                self.related_versions if version.type == 'version'][:100]
-
-    def work_datasets(self):
-        """
-        First 100 datasets related to a work.
-        """
-        return [dataset.related_dataset.openalex_id for dataset in self.datasets
-                if dataset.type == 'supplement'][:100]
 
     def set_fields_from_record(self, record):
         from util import normalize_doi
@@ -2631,8 +2620,6 @@ class Work(db.Model):
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
             "corresponding_institution_ids": corresponding_institution_ids,
-            "versions": self.work_versions(),
-            "datasets": self.work_datasets(),
         }
         if self.extra_ids:
             for extra_id in self.extra_ids:
