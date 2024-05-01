@@ -1228,6 +1228,7 @@ class Work(db.Model):
                         reference_source_num += 1
                         if isinstance(citation_dict, str) and (doi := clean_doi(citation_dict, return_none_if_error=True)):
                             citation_dois.append(doi)
+                            continue
                         if citation_dict.get('doi'):
                             my_clean_doi = clean_doi(citation_dict["doi"],
                                                      return_none_if_error=True)
