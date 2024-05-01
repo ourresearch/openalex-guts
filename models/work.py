@@ -824,10 +824,6 @@ class Work(db.Model):
             self.add_related_works()  # must be after work_concepts
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
-        else:
-            start_time = time()
-            self.add_affiliations()
-            logger.info(f'updating affiliations (for authorships) took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
@@ -1295,6 +1291,85 @@ class Work(db.Model):
                 self.references = new_references
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
+
+    def update_affiliations(self, affiliation_retry_attempts=30):
+        """
+        This function will be used to update affiliations for a work for the following reasons:
+            * Crossref data has changed
+            * Authorships are missing
+            * Author sequence numbers are incorrect
+        """
+        if self.affiliations:
+            old_affiliations = self.affiliations
+            self.affiliations = []
+
+            if not self.affiliation_records_sorted:
+                logger.info(
+                    "no affiliation data found in any of the records")
+                return
+            
+            record = self.affiliation_records_sorted[0]
+            author_sequence_order = 1
+            for author_dict in record.authors_json:
+                original_name = author_dict["raw"]
+                if author_dict["family"]:
+                    original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                if not author_dict["affiliation"]:
+                    author_dict["affiliation"] = [defaultdict(str)]
+
+                raw_author_string = original_name if original_name else None
+                original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+
+                seen_institution_ids = set()
+
+                if raw_author_string:
+                    affiliation_sequence_order = 1
+                    for affiliation_dict in author_dict["affiliation"]:
+                        raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                        raw_affiliation_string = clean_html(raw_affiliation_string)
+                        my_institutions = []
+
+                        if raw_affiliation_string:
+                            institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                                [raw_affiliation_string],
+                                retry_attempts=affiliation_retry_attempts
+                            )
+                            for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                                my_institution = models.Institution.query.options(
+                                    orm.Load(models.Institution).raiseload('*')
+                                ).get(institution_id_match)
+
+                                if (
+                                        my_institution and my_institution.affiliation_id
+                                        and my_institution.affiliation_id in seen_institution_ids
+                                ):
+                                    continue
+                                my_institutions.append(my_institution)
+                                seen_institution_ids.add(my_institution.affiliation_id)
+
+                        my_institutions = my_institutions or [None]
+
+                        if raw_author_string or raw_affiliation_string:
+                            for my_institution in my_institutions:
+                                my_affiliation = models.Affiliation(
+                                    author_sequence_number=author_sequence_order,
+                                    affiliation_sequence_number=affiliation_sequence_order,
+                                    original_author=raw_author_string,
+                                    original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                                    original_orcid=original_orcid,
+                                    match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
+                                    is_corresponding_author=author_dict.get('is_corresponding'),
+                                    updated_date=datetime.datetime.utcnow().isoformat()
+                                )
+                                my_affiliation.institution = my_institution
+                                self.affiliations.append(my_affiliation)
+                                affiliation_sequence_order += 1
+                    author_sequence_order += 1
+        else:
+            logger.info(
+                    "no affiliations found for this work, going through the normal add_affiliation process")
+            self.add_affiliations(affiliation_retry_attempts)
+            return
 
     def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
