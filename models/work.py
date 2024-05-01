@@ -1634,7 +1634,7 @@ class Work(db.Model):
                       key=lambda x: (not x.is_major_topic, x.descriptor_name),
                       reverse=False)
 
-    @property
+    @cached_property
     def affiliations_list(self):
         affiliations = [affiliation for affiliation in self.affiliations_sorted]
         if not affiliations:
