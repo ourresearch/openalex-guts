@@ -1226,16 +1226,18 @@ class Work(db.Model):
                     citation_dict_list = json.loads(record.citations)
                     for citation_dict in citation_dict_list:
                         reference_source_num += 1
+                        if isinstance(citation_dict, str) and (doi := clean_doi(citation_dict, return_none_if_error=True)):
+                            citation_dois.append(doi)
                         if citation_dict.get('doi'):
                             my_clean_doi = clean_doi(citation_dict["doi"],
                                                      return_none_if_error=True)
                             if my_clean_doi:
-                                citation_dois += [my_clean_doi]
+                                citation_dois.append(my_clean_doi)
                                 continue
                         if "pmid" in citation_dict:
                             my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
-                                citation_pmids += [my_clean_pmid]
+                                citation_pmids.append(my_clean_pmid)
                         elif work_match := self._try_match_reference(
                                 citation_dict):
                             citation_paper_ids.append(work_match.merge_into_id or work_match.paper_id)
