@@ -76,7 +76,7 @@ class AuthorCountsByYearOAPapers(db.Model):
 
 class AuthorCountsByYearCitations(db.Model):
     __table_args__ = {"schema": "mid"}
-    __tablename__ = "citation_authors_by_year_citation_count_view"
+    __tablename__ = "citation_authors_by_year_citation_count_mv"
 
     author_id = db.Column(
         db.BigInteger, db.ForeignKey("mid.author.author_id"), primary_key=True
