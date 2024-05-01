@@ -252,12 +252,6 @@ class Author(db.Model):
 
         return title_str
 
-    def oa_percent(self):
-        if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
-            return 0
-
-        return min(round(100.0 * float(self.counts.oa_paper_count) / float(self.counts.paper_count), 2), 100)
-
     @cached_property
     def last_known_institutions(self):
         """
@@ -323,6 +317,14 @@ class Author(db.Model):
 
         return formatted_affiliations
 
+    @cached_property
+    def paper_count(self):
+        return int(self.counts.paper_count or 0) if self.counts else 0
+
+    @cached_property
+    def citation_count(self):
+        return int(self.counts.citation_count or 0) if self.counts else 0
+
     def to_dict(self, return_level="full"):
         response = {
                 "id": self.openalex_id,
@@ -333,16 +335,15 @@ class Author(db.Model):
         if return_level == "full":
             response.update({
                 "display_name_alternatives": [truncate_on_word_break(n, 100) for n in self.all_alternative_names],
-                "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-                "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                "works_count": self.paper_count,
+                "cited_by_count": self.citation_count,
                 "most_cited_work": self.most_cited_work_string,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
                     "i10_index": (self.i10_index and self.i10_index.i10_index) or 0,
-                    "oa_percent": self.oa_percent(),
-                    "works_count": int(self.counts.paper_count or 0) if self.counts else 0,
-                    "cited_by_count": int(self.counts.citation_count or 0) if self.counts else 0,
+                    "works_count": self.paper_count,
+                    "cited_by_count": self.citation_count,
                     "2yr_works_count": int(self.counts_2year.paper_count or 0) if self.counts_2year else 0,
                     "2yr_cited_by_count": int(self.counts_2year.citation_count or 0) if self.counts_2year else 0,
                     "2yr_i10_index": int(self.i10_index_2year.i10_index or 0) if self.i10_index_2year else 0,

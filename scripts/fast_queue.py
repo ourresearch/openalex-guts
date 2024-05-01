@@ -305,7 +305,6 @@ def get_objects(entity_type, object_ids):
         ).filter(models.Work.paper_id.in_(object_ids)).all()
     elif entity_type == "author":
         objects = db.session.query(models.Author).options(
-            selectinload(models.Author.stored),
             selectinload(models.Author.counts),
             selectinload(models.Author.counts_2year),
             selectinload(models.Author.counts_by_year_papers),
