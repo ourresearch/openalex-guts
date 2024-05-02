@@ -851,8 +851,8 @@ class Work(db.Model):
             logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
-        self.add_related_versions()
-        logger.info(f'add_versions took {elapsed(start_time, 2)} seconds')
+        # self.add_related_versions()
+        # logger.info(f'add_versions took {elapsed(start_time, 2)} seconds')
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -1198,6 +1198,8 @@ class Work(db.Model):
             for aff in w.affiliations:
                 if aff.match_author in ref_author_strings:
                     scores[i] += 1
+            if not w.merge_into_id:
+                scores[i] += 1
             if not w.publication_date:
                 continue
             pub_year = int(w.publication_date.split('-')[0])
@@ -1241,7 +1243,8 @@ class Work(db.Model):
                                 citation_pmids.append(my_clean_pmid)
                         elif work_match := self._try_match_reference(
                                 citation_dict):
-                            citation_paper_ids.append(work_match.merge_into_id or work_match.paper_id)
+                            if work_match.paper_id:
+                                citation_paper_ids.append(work_match.paper_id)
                         else:
                             new_references_unmatched += [
                                 models.CitationUnmatched(
@@ -1269,7 +1272,7 @@ class Work(db.Model):
             works = db.session.query(Work).options(
                 orm.Load(Work).raiseload('*')).filter(
                 Work.doi_lower.in_(citation_dois)).all()
-            citation_paper_ids += [work.merge_into_id or work.paper_id for work
+            citation_paper_ids += [work.paper_id for work
                                    in works if work.paper_id]
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(
@@ -1278,7 +1281,7 @@ class Work(db.Model):
                 WorkExtraIds.attribute_type == 2,
                 WorkExtraIds.attribute_value.in_(citation_pmids)).all()
             citation_paper_ids += [
-                work_id.work.merge_into_id or work_id.work.paper_id
+                work_id.work.paper_id
                 for work_id in work_ids if work_id and work_id.work
             ]
 
@@ -2806,6 +2809,17 @@ class Work(db.Model):
         for id_type in list(response["ids"].keys()):
             if response["ids"][id_type] == None:
                 del response["ids"][id_type]
+
+        # temp fix to set "deleted work" citation counts to 0
+        if self.paper_id and self.paper_id == DELETED_WORK_ID:
+            logger.info(f"setting cited_by_count to 0 for {DELETED_WORK_ID}")
+            response["cited_by_count"] = 0
+            response["summary_stats"]["cited_by_count"] = 0
+            response["summary_stats"]["2yr_cited_by_count"] = 0
+            response["cited_by_percentile_year"]["max"] = 0
+            response["cited_by_percentile_year"]["min"] = 0
+            for year in response["counts_by_year"]:
+                year["cited_by_count"] = 0
 
         return response
 
