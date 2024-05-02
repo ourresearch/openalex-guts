@@ -1292,6 +1292,105 @@ class Work(db.Model):
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
+    def update_affiliations(self, affiliation_retry_attempts=30):
+        """
+        This function will be used to update affiliations for a work for the following reasons:
+            * Crossref data has changed
+            * Authorships are missing
+            * Author sequence numbers are incorrect
+        """
+        if self.affiliations:
+            old_affiliations = {}
+            for author_aff in self.affiliations:
+                norm_name = str(author_aff.original_author).strip().lower().replace(" ", "").replace("-", "").replace(".", "")
+                if f"{author_aff.author_sequence_number}_{norm_name}" not in old_affiliations:
+                    old_affiliations[f"{author_aff.author_sequence_number}_{norm_name}"] = \
+                        {'author_id': author_aff.author_id}
+
+            print(old_affiliations)
+            self.affiliations = []
+
+            if not self.affiliation_records_sorted:
+                logger.info(
+                    "no affiliation data found in any of the records")
+                return
+            
+            record = self.affiliation_records_sorted[0]
+            author_sequence_order = 1
+            for author_dict in record.authors_json:
+                original_name = author_dict["raw"]
+                if author_dict["family"]:
+                    original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                if not author_dict["affiliation"]:
+                    author_dict["affiliation"] = [defaultdict(str)]
+
+                raw_author_string = original_name if original_name else None
+                original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+
+                seen_institution_ids = set()
+
+                if raw_author_string:
+                    curr_norm_name = str(raw_author_string).strip().lower().replace(" ", "").replace("-", "").replace(".", "")
+                    affiliation_sequence_order = 1
+                    old_author_id =  old_affiliations[f"{author_sequence_order}_{curr_norm_name}"]["author_id"] \
+                        if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else None
+                    for affiliation_dict in author_dict["affiliation"]:
+                        raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                        raw_affiliation_string = clean_html(raw_affiliation_string)
+                        my_institutions = []
+
+                        if raw_affiliation_string:
+                            institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                                [raw_affiliation_string],
+                                retry_attempts=affiliation_retry_attempts
+                            )
+                            for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                                my_institution = models.Institution.query.options(
+                                    orm.Load(models.Institution).raiseload('*')
+                                ).get(institution_id_match)
+
+                                if (
+                                        my_institution and my_institution.affiliation_id
+                                        and my_institution.affiliation_id in seen_institution_ids
+                                ):
+                                    continue
+                                my_institutions.append(my_institution)
+                                seen_institution_ids.add(my_institution.affiliation_id)
+
+                        my_institutions = my_institutions or [None]
+
+                        if raw_author_string or raw_affiliation_string:
+                            for my_institution in my_institutions:
+                                print("------ ", author_sequence_order, ' - ', affiliation_sequence_order, " ------")
+                                print(raw_author_string)
+                                print(original_orcid)
+                                print(raw_affiliation_string)
+                                print(old_author_id)
+                                test_bool = True if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else False
+                                print("___ AND complete? ", test_bool)
+                                print("")
+                                my_affiliation = models.Affiliation(
+                                    author_sequence_number=author_sequence_order,
+                                    affiliation_sequence_number=affiliation_sequence_order,
+                                    original_author=raw_author_string,
+                                    original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                                    original_orcid=original_orcid,
+                                    author_id=old_author_id,
+                                    match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
+                                    is_corresponding_author=author_dict.get('is_corresponding'),
+                                    updated_date=datetime.datetime.utcnow().isoformat()
+                                )
+                                my_affiliation.institution = my_institution
+                                self.affiliations.append(my_affiliation)
+                                affiliation_sequence_order += 1
+                    author_sequence_order += 1
+                    print("         ----------------------         ")
+        else:
+            logger.info(
+                    "no affiliations found for this work, going through the normal add_affiliation process")
+            # self.add_affiliations(affiliation_retry_attempts)
+            return
+
     def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -1315,48 +1414,49 @@ class Work(db.Model):
 
             seen_institution_ids = set()
 
-            affiliation_sequence_order = 1
-            for affiliation_dict in author_dict["affiliation"]:
-                raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
-                raw_affiliation_string = clean_html(raw_affiliation_string)
-                my_institutions = []
+            if raw_author_string:
+                affiliation_sequence_order = 1
+                for affiliation_dict in author_dict["affiliation"]:
+                    raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                    raw_affiliation_string = clean_html(raw_affiliation_string)
+                    my_institutions = []
 
-                if raw_affiliation_string:
-                    institution_id_matches = models.Institution.get_institution_ids_from_strings(
-                        [raw_affiliation_string],
-                        retry_attempts=affiliation_retry_attempts
-                    )
-                    for institution_id_match in [m for m in institution_id_matches[0] if m]:
-                        my_institution = models.Institution.query.options(
-                            orm.Load(models.Institution).raiseload('*')
-                        ).get(institution_id_match)
-
-                        if (
-                                my_institution and my_institution.affiliation_id
-                                and my_institution.affiliation_id in seen_institution_ids
-                        ):
-                            continue
-                        my_institutions.append(my_institution)
-                        seen_institution_ids.add(my_institution.affiliation_id)
-
-                my_institutions = my_institutions or [None]
-
-                if raw_author_string or raw_affiliation_string:
-                    for my_institution in my_institutions:
-                        my_affiliation = models.Affiliation(
-                            author_sequence_number=author_sequence_order,
-                            affiliation_sequence_number=affiliation_sequence_order,
-                            original_author=raw_author_string,
-                            original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
-                            original_orcid=original_orcid,
-                            match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
-                            is_corresponding_author=author_dict.get('is_corresponding'),
-                            updated_date=datetime.datetime.utcnow().isoformat()
+                    if raw_affiliation_string:
+                        institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                            [raw_affiliation_string],
+                            retry_attempts=affiliation_retry_attempts
                         )
-                        my_affiliation.institution = my_institution
-                        self.affiliations.append(my_affiliation)
-                        affiliation_sequence_order += 1
-            author_sequence_order += 1
+                        for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                            my_institution = models.Institution.query.options(
+                                orm.Load(models.Institution).raiseload('*')
+                            ).get(institution_id_match)
+
+                            if (
+                                    my_institution and my_institution.affiliation_id
+                                    and my_institution.affiliation_id in seen_institution_ids
+                            ):
+                                continue
+                            my_institutions.append(my_institution)
+                            seen_institution_ids.add(my_institution.affiliation_id)
+
+                    my_institutions = my_institutions or [None]
+
+                    if raw_author_string or raw_affiliation_string:
+                        for my_institution in my_institutions:
+                            my_affiliation = models.Affiliation(
+                                author_sequence_number=author_sequence_order,
+                                affiliation_sequence_number=affiliation_sequence_order,
+                                original_author=raw_author_string,
+                                original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                                original_orcid=original_orcid,
+                                match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
+                                is_corresponding_author=author_dict.get('is_corresponding'),
+                                updated_date=datetime.datetime.utcnow().isoformat()
+                            )
+                            my_affiliation.institution = my_institution
+                            self.affiliations.append(my_affiliation)
+                            affiliation_sequence_order += 1
+                author_sequence_order += 1
 
     def update_oa_status_if_better(self, new_oa_status):
         # update oa_status, only if it's better than the oa_status we already have
