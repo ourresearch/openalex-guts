@@ -1,5 +1,4 @@
-from sqlalchemy import and_, cast, or_, orm
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import and_, or_, orm
 from sqlalchemy.orm import foreign, remote, selectinload
 from sqlalchemy.sql.expression import func
 
@@ -29,7 +28,6 @@ from models.institution import InstitutionAncestors
 from models.institution_topic import InstitutionTopic
 from models.institution_type import InstitutionType
 from models.issn_to_issnl import ISSNtoISSNL
-from models.json_store import JsonWorks, JsonAuthors, JsonConcepts, JsonInstitutions, JsonSources
 from models.keyword import Keyword
 from models.language import Language
 from models.license import License
@@ -290,14 +288,6 @@ Record.related_version_dois = db.relationship(
 )
 
 Location.journal = db.relationship('Source', lazy='subquery', viewonly=True, uselist=False)
-
-Concept.stored = db.relationship("JsonConcepts", lazy='selectin', uselist=False, viewonly=True)
-Source.stored = db.relationship("JsonSources", lazy='selectin', uselist=False, viewonly=True)
-Institution.stored = db.relationship("JsonInstitutions", lazy='selectin', uselist=False, viewonly=True)
-Author.stored = db.relationship("JsonAuthors", lazy='selectin', uselist=False, viewonly=True)
-Work.stored = db.relationship("JsonWorks", lazy='selectin', uselist=False, viewonly=True)
-Publisher.stored = db.relationship("JsonPublishers", lazy='selectin', uselist=False, viewonly=True)
-Funder.stored = db.relationship("JsonFunders", lazy='selectin', uselist=False, viewonly=True)
 
 Author.impact_factor = db.relationship("AuthorImpactFactor", uselist=False, lazy='selectin', viewonly=True)
 Source.impact_factor = db.relationship("SourceImpactFactor", uselist=False, lazy='selectin', viewonly=True)
