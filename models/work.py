@@ -366,6 +366,9 @@ class Work(db.Model):
                     if affiliation_id and affiliation_id in seen_ids:
                         logger.info(f'seen id {affiliation_id}, continue')
                         continue
+                    elif original_affiliation and len(original_affiliation) > 2000:
+                        logger.info(f"original affiliation too long: {len(original_affiliation)} characters")
+                        continue
 
                     self.affiliations.append(
                         models.Affiliation(
