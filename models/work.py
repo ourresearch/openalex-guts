@@ -2809,6 +2809,17 @@ class Work(db.Model):
             if response["ids"][id_type] == None:
                 del response["ids"][id_type]
 
+        # temp fix to set "deleted work" citation counts to 0
+        if self.paper_id and self.paper_id == DELETED_WORK_ID:
+            logger.info(f"setting cited_by_count to 0 for {DELETED_WORK_ID}")
+            response["cited_by_count"] = 0
+            response["summary_stats"]["cited_by_count"] = 0
+            response["summary_stats"]["2yr_cited_by_count"] = 0
+            response["cited_by_percentile_year"]["max"] = 0
+            response["cited_by_percentile_year"]["min"] = 0
+            for year in response["counts_by_year"]:
+                year["cited_by_count"] = 0
+
         return response
 
     def __repr__(self):
