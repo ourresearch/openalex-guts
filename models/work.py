@@ -851,8 +851,8 @@ class Work(db.Model):
             logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
-        self.add_related_versions()
-        logger.info(f'add_versions took {elapsed(start_time, 2)} seconds')
+        # self.add_related_versions()
+        # logger.info(f'add_versions took {elapsed(start_time, 2)} seconds')
 
     def add_funders(self):
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
