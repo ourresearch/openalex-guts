@@ -1322,9 +1322,6 @@ class Work(db.Model):
                     affil.updated_date = datetime.datetime.utcnow().isoformat()
                     affil.author_id = None
                 return
-            else:
-                print("affiliation data found in records")
-                print(self.affiliation_records_sorted[0].authors_json)
 
             self.affiliations = []
             
