@@ -263,10 +263,12 @@ class Author(db.Model):
             [
                 (datetime.datetime.fromisoformat(affil.work.publication_date), affil)
                 for affil in self.affiliations
-                if affil.affiliation_id is not None and affil.work.merge_into_id is None
+                if (affil.affiliation_id is not None and
+                    affil.work.publication_date is not None and
+                    affil.work.merge_into_id is None)
             ],
             key=lambda x: x[0],
-            reverse=True,
+            reverse=True
         )
         if not sorted_affiliations:
             return []
