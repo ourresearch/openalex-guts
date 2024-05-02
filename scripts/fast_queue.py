@@ -123,33 +123,6 @@ def index_and_merge_object_records(bulk_actions):
                 logger.warn(f"bulk index error occurred: {error}")
 
 
-def store_json_objects(objects):
-    delete_dict_all_objects = defaultdict(list)
-    insert_dict_all_objects = defaultdict(list)
-    for count, obj in enumerate(objects):
-        obj.delete_dict = defaultdict(list)
-        for row in obj.insert_dicts:
-            for table_name, insert_dict in row.items():
-                insert_dict_all_objects[table_name] += [insert_dict]
-                obj.delete_dict[table_name] += [insert_dict["id"]]
-        for table_name, ids in obj.delete_dict.items():
-            delete_dict_all_objects[table_name] += ids
-
-    start_time = time()
-    for table_name, delete_ids in delete_dict_all_objects.items():
-        my_table = globals()[table_name]
-        db.session.remove()
-        db.session.execute(delete(my_table).where(my_table.id.in_(delete_ids)))
-        db.session.commit()
-        print("delete done")
-    for table_name, all_insert_strings in insert_dict_all_objects.items():
-        my_table = globals()[table_name]
-        db.session.remove()
-        db.session.execute(insert(my_table).values(all_insert_strings))
-        db.session.commit()
-    print("insert and commit took {} seconds".format(elapsed(start_time, 2)))
-
-
 def fetch_queue_chunk_ids(queue_table, chunk_size):
     if 'work_store' in queue_table:
         return fetch_queue_chunk_ids_from_redis(queue_table, chunk_size)
@@ -330,7 +303,6 @@ def get_objects(entity_type, object_ids):
     elif entity_type == "source":
         objects = db.session.query(models.Source).options(
             selectinload(models.Source.merged_into_source).raiseload('*'),
-            selectinload(models.Source.stored),
             selectinload(models.Source.counts),
             selectinload(models.Source.counts_2year),
             selectinload(models.Source.counts_by_year_papers),
