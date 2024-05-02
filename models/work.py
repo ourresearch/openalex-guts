@@ -824,11 +824,6 @@ class Work(db.Model):
             self.add_related_works()  # must be after work_concepts
             logger.info(
                 f'add_related_works took {elapsed(start_time, 2)} seconds')
-        else:
-            start_time = time()
-            self.update_affiliations()
-            logger.info(
-                f'update_affiliations took {elapsed(start_time, 2)} seconds')
 
         start_time = time()
         self.add_funders()
