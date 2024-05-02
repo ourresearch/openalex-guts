@@ -1309,14 +1309,21 @@ class Work(db.Model):
                 if f"{author_aff.author_sequence_number}_{norm_name}" not in old_affiliations:
                     old_affiliations[f"{author_aff.author_sequence_number}_{norm_name}"] = \
                         {'author_id': author_aff.author_id}
-
-            print(old_affiliations)
-            self.affiliations = []
-
+                    
             if not self.affiliation_records_sorted:
                 logger.info(
-                    "no affiliation data found in any of the records")
+                    "no affiliation data found in any of the records, making sure author sequence numbers are correct")
+                author_sequence_numbers = sorted(list(set([aff.author_sequence_number for aff in self.affiliations])))
+                true_sequence_numbers = list(range(1, len(author_sequence_numbers) + 1))
+
+                new_author_sequence_dict = dict(zip(author_sequence_numbers, true_sequence_numbers))
+                for affil in self.affiliations:
+                    affil.author_sequence_number = new_author_sequence_dict[affil.author_sequence_number]
+                    affil.updated_date = datetime.datetime.utcnow().isoformat()
+                    affil.author_id = None
                 return
+
+            self.affiliations = []
             
             record = self.affiliation_records_sorted[0]
             author_sequence_order = 1
@@ -1364,14 +1371,6 @@ class Work(db.Model):
 
                         if raw_author_string or raw_affiliation_string:
                             for my_institution in my_institutions:
-                                print("------ ", author_sequence_order, ' - ', affiliation_sequence_order, " ------")
-                                print(raw_author_string)
-                                print(original_orcid)
-                                print(raw_affiliation_string)
-                                print(old_author_id)
-                                test_bool = True if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else False
-                                print("___ AND complete? ", test_bool)
-                                print("")
                                 my_affiliation = models.Affiliation(
                                     author_sequence_number=author_sequence_order,
                                     affiliation_sequence_number=affiliation_sequence_order,
@@ -1387,11 +1386,10 @@ class Work(db.Model):
                                 self.affiliations.append(my_affiliation)
                                 affiliation_sequence_order += 1
                     author_sequence_order += 1
-                    print("         ----------------------         ")
         else:
             logger.info(
                     "no affiliations found for this work, going through the normal add_affiliation process")
-            # self.add_affiliations(affiliation_retry_attempts)
+            self.add_affiliations(affiliation_retry_attempts)
             return
 
     def add_affiliations(self, affiliation_retry_attempts=30):
