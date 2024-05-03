@@ -7,7 +7,7 @@ from sqlalchemy.orm import raiseload
 from sqlalchemy.sql.expression import func
 
 from app import db
-from models.location import normalize_license_id
+from models.location import normalize_license
 from models.merge_utils import merge_crossref_with_parsed
 from util import normalize_title_like_sql
 
@@ -100,20 +100,12 @@ class Record(db.Model):
 
     @property
     def display_open_license(self):
-        if not self.open_license:
-            return None
-        if 'unspecified-oa' in self.open_license.lower():
-            # override into other-oa
-            return 'other-oa'
-        else:
-            return self.open_license
+        return normalize_license(self.open_license)
 
     @property
     def display_open_license_id(self):
-        if self.display_open_license:
-            license_id = normalize_license_id(self.display_open_license)
-            return f"https://openalex.org/licenses/{license_id}" if license_id else None
-        return None
+        open_license = normalize_license(self.open_license)
+        return f"https://openalex.org/licenses/{open_license}" if open_license else None
 
     @property
     def score(self):

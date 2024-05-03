@@ -36,8 +36,18 @@ def is_published(version):
     return False
 
 
-def normalize_license_id(license):
-    valid_license_ids = [
+def normalize_license(open_license):
+    # overrides and setup
+    if not open_license:
+        return None
+    elif 'publisher-specific, author manuscript' in open_license.lower():
+        open_license = 'publisher-specific-oa'
+    elif 'unspecified-oa' in open_license.lower():
+        open_license = 'other-oa'
+    else:
+        open_license = open_license.lower().split(":", 1)[0]
+
+    valid_licenses = [
         'apache-2-0',
         'cc-by',
         'cc-by-nc',
@@ -56,11 +66,11 @@ def normalize_license_id(license):
         'none',
         'closed'
     ]
-    if not license or license.lower() in closed_licenses:
+    if open_license.lower() in closed_licenses:
         return None
 
     license_truncated = (
-        license.lower()
+        open_license.lower()
         .replace(" ", "")
         .replace("-", "")
         .replace("1.0", "")
@@ -69,7 +79,7 @@ def normalize_license_id(license):
         .replace("4.0", "")
     )
 
-    for valid_license in valid_license_ids:
+    for valid_license in valid_licenses:
         if valid_license.replace('-', '') == license_truncated:
             return valid_license
 
@@ -111,20 +121,12 @@ class Location(db.Model):
 
     @property
     def display_license(self):
-        if not self.license:
-            return None
-        elif 'publisher-specific, author manuscript' in self.license.lower():
-            # manual override; this should affect only a few works, and this whole table should be deprecated soon
-            return 'publisher-specific-oa'
-        elif 'unspecified-oa' in self.license.lower():
-            return 'other-oa'
-        return self.license.lower().split(":", 1)[0]
+        return normalize_license(self.license)
 
     @property
     def display_license_id(self):
-        displayed_license = self.display_license
-        license_id = normalize_license_id(displayed_license)
-        return f"https://openalex.org/licenses/{license_id}" if license_id else None
+        license = normalize_license(self.license)
+        return f"https://openalex.org/licenses/{license}" if license else None
 
     @property
     def display_host_type(self):
