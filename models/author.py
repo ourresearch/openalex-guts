@@ -231,28 +231,6 @@ class Author(db.Model):
         return response
 
     @cached_property
-    def most_cited_work_string(self):
-        my_works = [a.work for a in self.affiliations if a.work and a.work.counts]
-        if my_works:
-            most_cited_work = sorted(my_works, key=lambda w: w.counts.citation_count, reverse=True)[0]
-        else:
-            return None
-
-        if not most_cited_work.work_title:
-            return None
-
-        title_words = re.split(r'\s+', most_cited_work.work_title)
-        if len(title_words) < 20:
-            title_str = most_cited_work.work_title
-        else:
-            title_str = ' '.join(title_words[0:20]) + ' ...'
-
-        if most_cited_work.year:
-            title_str += f' ({most_cited_work.year})'
-
-        return title_str
-
-    @cached_property
     def last_known_institutions(self):
         """
         last_known_institutions will be a list of institutions, to handle the cases where the last work has multiple affiliations
@@ -339,7 +317,6 @@ class Author(db.Model):
                 "display_name_alternatives": [truncate_on_word_break(n, 100) for n in self.all_alternative_names],
                 "works_count": self.paper_count,
                 "cited_by_count": self.citation_count,
-                "most_cited_work": self.most_cited_work_string,
                 "summary_stats": {
                     "2yr_mean_citedness": (self.impact_factor and self.impact_factor.impact_factor) or 0,
                     "h_index": (self.h_index and self.h_index.h_index) or 0,
