@@ -1166,8 +1166,7 @@ class Work(db.Model):
                 self.locations = new_locations
                 logger.info(f'Updated {len(new_locs)} locations')
 
-    @staticmethod
-    def _try_match_reference(reference_json):
+    def _try_match_reference(self, reference_json):
         def find_key(j, partial_key):
             for key in j.keys():
                 if partial_key in key.lower():
@@ -1210,7 +1209,7 @@ class Work(db.Model):
                 scores[i] += 1
         match = work_matches_by_title[max(scores, key=lambda k: scores[k])]
         titles_ids_scores = [{'title': w.original_title, 'id': w.paper_id, 'score': score} for w, score in zip(work_matches_by_title, scores)]
-        logger.info(f'Reference match - Title: {reference_json[title_key]} | Matches: {titles_ids_scores} | Matched ID, Title: {match.paper_id}, {match.original_title}')
+        logger.info(f'Reference match ({self.paper_id}) - Title: {reference_json[title_key]} | Matches: {titles_ids_scores} | Matched ID, Title: {match.paper_id}, {match.original_title}')
         return match
 
     def add_references(self):
