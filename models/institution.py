@@ -88,12 +88,6 @@ class Institution(db.Model):
         return self.affiliation_id
 
     @property
-    def institution_display_name(self):
-        if self.ror:
-            return self.ror.name
-        return self.display_name
-
-    @property
     def ror_url(self):
         if self.ror_id:
             return "https://ror.org/{}".format(self.ror_id)
@@ -112,14 +106,6 @@ class Institution(db.Model):
         aliases = self.aliases
         labels = [item['label'] for item in self.labels]
         return list(set(aliases + labels))
-
-    # @cached_property
-    # def wikipedia_data_url(self):
-    #     if self.wiki_page:
-    #         page_title = self.wiki_page.rsplit("/", 1)[-1]
-    #         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages|pageterms&piprop=original|thumbnail&titles={page_title}&pithumbsize=100"
-    #         return url
-    #     return None
 
     @cached_property
     def acronyms(self):
@@ -154,7 +140,6 @@ class Institution(db.Model):
         response = [{"type": row[0], "id": row[1]} for row in rows]
         return response
 
-
     @cached_property
     def labels(self):
         q = """
@@ -164,17 +149,6 @@ class Institution(db.Model):
         """
         rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
         response = [dict(row) for row in rows]
-        return response
-
-    @cached_property
-    def links(self):
-        q = """
-        select link
-        from ins.ror_links
-        WHERE ror_id = :ror_id
-        """
-        rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
-        response = [row[0] for row in rows]
         return response
 
     @cached_property
@@ -235,12 +209,6 @@ class Institution(db.Model):
             response = [e for e in response if e['id'] == id_to_keep or e['role'] != 'funder']
         return response
 
-    # FOR image_url AND image_thumbnail_url:
-    # We used to get these live from the wikipedia data
-    # but instead we are now just using bulk data loaded in from a Wikidata pull
-    # and these fields are just normal properties, defined above
-    # todo: document the wikidata pull better, or include code for api calls in this repo
-
     def get_image_url(self):
         # fallback in case the field isn't populated in the db (see to_dict)
         if not self.wikipedia_data:
@@ -276,16 +244,6 @@ class Institution(db.Model):
         except KeyError:
             return None
 
-    # @cached_property
-    # def wikidata_id(self):
-    #     if not self.wikipedia_data:
-    #         return None
-    #     data = self.wikipedia_data
-    #     try:
-    #         page_id = data["query"]["pages"][0]["pageprops"]["wikibase_item"]
-    #     except KeyError:
-    #         return None
-    #     return page_id
 
     @cached_property
     def wikipedia_data(self):
@@ -472,17 +430,6 @@ class Institution(db.Model):
         remove_stop_words = False
         return normalize_title_like_sql(raw_string, remove_stop_words)
 
-
-        # sql_for_match = f"""
-        #     select f_matching_string(%s) as match_string;
-        #     """
-        # with get_db_cursor() as cur:
-        #     cur.execute(sql_for_match, (raw_string, ))
-        #     rows = cur.fetchall()
-        #     if rows:
-        #         return rows[0]["match_string"]
-        # return None
-
     @classmethod
     def get_institution_ids_from_strings(cls, institution_names, retry_attempts=30):
         if not institution_names:
@@ -641,10 +588,7 @@ class Institution(db.Model):
                     "longitude": self.longitude,
                 },
                 "international": {"display_name": self.display_name_international},
-                # "labels": self.labels,
-                # "links": self.links,
                 "associated_institutions": self.relationship_dicts,
-                # "ids": self.external_ids,
                 "counts_by_year": self.display_counts_by_year,
                 "x_concepts": self.concepts[0:25],
                 "topics": self.topics[:25],
