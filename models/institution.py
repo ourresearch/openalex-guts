@@ -19,6 +19,7 @@ from app import USER_AGENT
 from app import db
 from app import get_apiurl_from_openalex_url
 from app import logger
+from const import SUPER_SYSTEM_INSTITUTIONS
 from util import entity_md5
 
 DELETED_INSTITUTION_ID = 4389424196
@@ -310,6 +311,10 @@ class Institution(db.Model):
             # print(response)
         return data
 
+    @property
+    def is_super_system(self):
+        return self.affiliation_id in SUPER_SYSTEM_INSTITUTIONS
+
     def store(self):
         bulk_actions = []
 
@@ -526,7 +531,8 @@ class Institution(db.Model):
 
     @cached_property
     def lineage(self):
-        return sorted([self.openalex_id] + [f"https://openalex.org/I{i.ancestor_id}" for i in self.ancestors])
+        filtered_ancestors = [i for i in self.ancestors if i.ancestor_id not in SUPER_SYSTEM_INSTITUTIONS]
+        return sorted([self.openalex_id] + [f"https://openalex.org/I{i.ancestor_id}" for i in filtered_ancestors])
 
     @property
     def type(self):
@@ -593,6 +599,7 @@ class Institution(db.Model):
                 "x_concepts": self.concepts[0:25],
                 "topics": self.topics[:25],
                 "topic_share": self.topic_share[:25],
+                "is_super_system": self.is_super_system,
                 "works_api_url": f"https://api.openalex.org/works?filter=institutions.id:{self.openalex_id_short}",
                 "updated_date": datetime.datetime.utcnow().isoformat(),
                 "created_date": self.created_date.isoformat()[0:10] if isinstance(self.created_date, datetime.datetime) else self.created_date[0:10]
