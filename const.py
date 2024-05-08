@@ -30,3 +30,36 @@ REVIEW_JOURNAL_IDS = {206848516, 120397320, 111502347, 163102221, 316438,
                       4210219483, 173474783, 105347553}
 
 MAX_AFFILIATIONS_PER_AUTHOR = 10
+
+
+# large orgs that will be removed from lineage
+SUPER_SYSTEM_INSTITUTIONS = {
+    2800421839,  # Government of the United States of America
+    2803209242,  # University of California System
+    16452829,    # The University of Texas System
+    2802096936,  # University System of Ohio
+    2801649442,  # State University System of Florida
+    4210158053,  # University of North Carolina System
+    2801919071,  # University of Illinois System
+    1289702989,  # University System of Georgia
+    1304256225,  # University of Wisconsin System
+    1317227900,  # University System of Maryland
+    2800403580,  # University of Minnesota System
+    2801333002,  # Purdue University System
+    2802236040,  # University of Colorado System
+    127339247,   # California State University System
+    173268674,   # Texas A&M University System
+    2801365484,  # Utah System of Higher Education
+    2802841742,  # University of Massachusetts System
+    2800507078,  # University of Alabama System
+    2802348453,  # University System of Taiwan
+    4777552,     # University of Missouri System
+    2799495847,  # University of Tennessee System
+    107341208,   # Louisiana State University System
+    2799691083,  # University of Arkansas System
+    2802450327,  # University of Nebraska System
+    1331384533,  # University of Hawaii System
+    4210131357,  # Colorado State University System
+    2801525821,  # University of Houston System
+    2887101046,  # University of South Carolina System
+}
