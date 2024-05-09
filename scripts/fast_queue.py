@@ -399,23 +399,23 @@ def show_difference(bulk_actions):
 
 
 def compare_records(new_record, old_record):
-    # remove updated_date, updated, @timestamp, and @version from the comparison
+    new_record_copy = new_record.copy()
+    old_record_copy = old_record.copy()
     for key in ["updated_date", "updated", "@timestamp", "@version"]:
-        if key in new_record:
-            del new_record[key]
-        if key in old_record:
-            del old_record[key]
+        if key in new_record_copy:
+            del new_record_copy[key]
+        if key in old_record_copy:
+            del old_record_copy[key]
 
     diff = defaultdict(dict)
-    for key, value in new_record.items():
-        if key not in old_record:
+    for key, value in new_record_copy.items():
+        if key not in old_record_copy:
             diff[key]["old"] = None
             diff[key]["new"] = value
-        elif value != old_record[key]:
-            diff[key]["old"] = old_record[key]
+        elif value != old_record_copy[key]:
+            diff[key]["old"] = old_record_copy[key]
             diff[key]["new"] = value
     return diff
-
 
 
 if __name__ == "__main__":
