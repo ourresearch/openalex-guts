@@ -2047,19 +2047,16 @@ class Work(db.Model):
 
     @cached_property
     def references_list(self):
-
         reference_paper_ids = [as_work_openalex_id(reference.paper_reference_id)
                                for reference in self.references]
         return reference_paper_ids
 
-        # objs = db.session.query(Work).options(
-        #      selectinload(Work.journal),
-        #      selectinload(Work.extra_ids),
-        #      selectinload(Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids),
-        #      selectinload(Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror),
-        #      orm.Load(Work).raiseload('*')).filter(Work.paper_id.in_(reference_paper_ids)).all()
-        # response = [obj.to_dict("minimum") for obj in objs]
-        # return response
+    @cached_property
+    def references_list_sorted(self):
+        reference_paper_ids = sorted(
+            [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
+        )
+        return reference_paper_ids
 
     @property
     def apc_paid(self):
@@ -2795,8 +2792,8 @@ class Work(db.Model):
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
-                "referenced_works": self.references_list,
-                "referenced_works_count": len(self.references_list),
+                "referenced_works": self.references_list_sorted,
+                "referenced_works_count": len(self.references_list_sorted),
                 "sustainable_development_goals": self.sustainable_development_goals,
                 "keywords": [keyword.to_dict("minimum") for keyword in
                            self.keywords_sorted if keyword.keyword_id != ""] if self.keywords_sorted else [],
@@ -2804,9 +2801,10 @@ class Work(db.Model):
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
                 "cited_by_percentile_year": self.cited_by_percentile_year,
-                "related_works": [
-                    as_work_openalex_id(related.recommended_paper_id) for
-                    related in self.related_works]
+                "related_works": sorted(
+                    [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
+                    reverse=True
+                ),
             })
 
             if return_level == "full":
