@@ -34,32 +34,84 @@ MAX_AFFILIATIONS_PER_AUTHOR = 10
 
 # large orgs that will be removed from lineage
 SUPER_SYSTEM_INSTITUTIONS = {
-    2800421839,  # Government of the United States of America
-    2803209242,  # University of California System
-    16452829,    # The University of Texas System
-    2802096936,  # University System of Ohio
-    2801649442,  # State University System of Florida
-    4210158053,  # University of North Carolina System
-    2801919071,  # University of Illinois System
-    1289702989,  # University System of Georgia
-    1304256225,  # University of Wisconsin System
-    1317227900,  # University System of Maryland
-    2800403580,  # University of Minnesota System
-    2801333002,  # Purdue University System
-    2802236040,  # University of Colorado System
+    2802694670,  # Academic Center for Education, Culture and Research
+    4210123452,  # Anahuac University Network
+    2800507078,  # University of Alabama System
+    2802090665,  # University of Alaska System
+    4210147594,  # Universidade do Estado do Amazonas
+    3132585960,  # Arizona's Public Universities
+    3211005485,  # Arkansas State University System
+    2799691083,  # University of Arkansas System
+    4210151215,  # Auburn University System
+    919953467,   # California Community Colleges System
     127339247,   # California State University System
-    173268674,   # Texas A&M University System
+    2803209242,  # University of California System
+    174216632,   # City University of New York
+    872248612,   # Claremont Colleges
+    92446798,    # Colorado State University
+    2802236040,  # University of Colorado System
+    5996616,     # De La Salle University
+    40372098,    # DeVry University
+    64728393,    # Farhangian University
+    1283613182,  # Universidade Tecnológica Federal do Paraná
+    17866349,    # Université de Toulouse
+    3132770690,  # Florida College System
+    4210095101,  # Hue University
+    154851008,   # Indian Institute of Technology Roorkee
+    185665358,   # InterAmerican University of Puerto Rico
+    110525433,   # Islamic Azad University, Tehran
+    1293386609,  # Ivy Tech Community College of Indiana
+    2802646605,  # Kentucky Community and Technical College System
+    2799601127,  # Louisiana Community and Technical College System
+    107341208,   # Louisiana State University System
+    4210128516,  # Maine Community College System
+    2802089280,  # Maricopa County Community College District
+    4210106167,  # Marine Corps University
+    2801213986,  # Montana University System
+    181231927,   # National University of Ireland
+    4210151660,  # Nebraska State College System
+    68260882,    # Nevada System of Higher Education
+    4210127926,  # North Dakota University System
+    2800216316,  # Oklahoma State University System
+    2800918300,  # Oregon University System
+    2746051580,  # Université Paris Sciences et Lettres
+    277688954,   # University of Paris-Saclay
+    55547365,    # Payame Noor University
+    29957033,    # Pennsylvania State System of Higher Education
+    111350863,   # Pontifical Catholic University of Puerto Rico
+    2801333002,  # Purdue University System
+    4210163361,  # Rajabhat University System
+    4210147856,  # Saint Mary's University of Minnesota
+    4210159985,  # Sakon Nakhon Rajabhat University
+    2800204061,  # Southern University System
+    2801649442,  # State University System of Florida
+    1327163397,  # State University of New York
+    193876067,   # Universidade Estadual do Oeste do Paraná
+    3132885913,  # Taiwan Comprehensive University System
+    2800756461,  # Technical College System of Georgia
+    4210089766,  # Technical and Vocational University
+    2801273398,  # Texas State University System
+    4210088475,  # Texas Tech University System
+    4210115718,  # Thai Nguyen University
+    4210138650,  # Universiti Teknologi MARA System
+    1289702989,  # University System of Georgia
+    1317227900,  # University System of Maryland
+    2800453862,  # University System of New Hampshire
+    2802096936,  # University System of Ohio
+    2802348453,  # University System of Taiwan
     2801365484,  # Utah System of Higher Education
     2802841742,  # University of Massachusetts System
-    2800507078,  # University of Alabama System
-    2802348453,  # University System of Taiwan
-    4777552,     # University of Missouri System
-    2799495847,  # University of Tennessee System
-    107341208,   # Louisiana State University System
-    2799691083,  # University of Arkansas System
     2802450327,  # University of Nebraska System
+    4210158053,  # University of North Carolina System
+    2802090120,  # University of North Texas System
     1331384533,  # University of Hawaii System
-    4210131357,  # Colorado State University System
     2801525821,  # University of Houston System
+    1304256225,  # University of Wisconsin System
+    2799495847,  # University of Tennessee System
     2887101046,  # University of South Carolina System
+    2800421839,  # Government of the United States of America
+    177233841,   # Vietnam National University, Hanoi
+    123565023,   # Vietnam National University Ho Chi Minh City
+    184840846,   # Virginia Commonwealth University
+    56066814,    # Virginia Community College System
 }
