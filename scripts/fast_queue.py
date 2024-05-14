@@ -9,7 +9,7 @@ from sqlalchemy import orm, text, insert, delete
 from sqlalchemy.orm import selectinload
 
 import models
-from app import ELASTIC_URL
+from app import ELASTIC_URL, logger
 from app import REDIS_QUEUE_URL
 from app import db
 from app import logger
@@ -40,6 +40,8 @@ def run(**kwargs):
             for o in objects:
                 record_actions = o.store()
                 bulk_actions += [bulk_action for bulk_action in record_actions if bulk_action]
+            if kwargs.get('show_difference'):
+                show_difference(bulk_actions)
             index_and_merge_object_records(bulk_actions)
             db.session.commit()
         else:
@@ -70,6 +72,9 @@ def run(**kwargs):
                             bulk_actions.append(bulk_action)
 
                     logger.info(f">>> finished {obj}.{method_name}(). took {elapsed(method_start_time, 4)} seconds")
+
+                if kwargs.get('show_difference'):
+                    show_difference(bulk_actions)
 
                 logger.info('committing')
                 start_time = time()
@@ -273,6 +278,9 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
+            selectinload(models.Work.related_versions).selectinload(models.WorkRelatedVersion.related_work).raiseload(
+                '*'),
+            selectinload(models.Work.datasets).selectinload(models.WorkRelatedVersion.related_dataset).raiseload('*'),
             selectinload(models.Work.fulltext),
             orm.Load(models.Work).raiseload('*')
         ).filter(models.Work.paper_id.in_(object_ids)).all()
@@ -373,6 +381,43 @@ def get_objects(entity_type, object_ids):
     return objects
 
 
+def show_difference(bulk_actions):
+    es = Elasticsearch([ELASTIC_URL], timeout=30)
+    for action in bulk_actions:
+        if action.get("op_type") == "delete":
+            continue
+        # get current record from elasticsearch
+        es_record = es.get(index=action["_index"], id=action["_id"], ignore=[404])
+        if es_record.get("found"):
+            es_record = es_record["_source"]
+            # compare the new and old
+            diff = compare_records(action["_source"], es_record)
+            if diff:
+                logger.info(f"diff for id {action['_id']}: {diff}")
+            else:
+                logger.info(f"no differences found for {action['_id']}")
+
+
+def compare_records(new_record, old_record):
+    new_record_copy = new_record.copy()
+    old_record_copy = old_record.copy()
+    for key in ["updated_date", "updated", "@timestamp", "@version"]:
+        if key in new_record_copy:
+            del new_record_copy[key]
+        if key in old_record_copy:
+            del old_record_copy[key]
+
+    diff = defaultdict(dict)
+    for key, value in new_record_copy.items():
+        if key not in old_record_copy:
+            diff[key]["old"] = None
+            diff[key]["new"] = value
+        elif value != old_record_copy[key]:
+            diff[key]["old"] = old_record_copy[key]
+            diff[key]["new"] = value
+    return diff
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run fast queue.")
     parser.add_argument('--entity', type=str, help="the entity type to run")
@@ -382,6 +427,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--chunk', "-ch", nargs="?", default=100, type=int, help="how many objects to take off the queue at once"
     )
+    parser.add_argument('--show-difference', "-sd", action="store_true", help="show the difference between the old and new records")
 
     parsed_args = parser.parse_args()
     run(**vars(parsed_args))
