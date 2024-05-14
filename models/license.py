@@ -61,12 +61,12 @@ class License(db.Model):
                     "url": self.url,
                     "description": self.description,
                     "works_count": works_count_from_elastic(
-                        "locations.license", self.openalex_id
+                        "locations.license_id.keyword", self.openalex_id
                     ),
                     "cited_by_count": citation_count_from_elastic(
-                        "locations.license", self.openalex_id
+                        "locations.license_id.keyword", self.openalex_id
                     ),
-                    "works_api_url": f"https://api.openalex.org/works?filter=locations.license:{self.openalex_id_short}",
+                    "works_api_url": f"https://api.openalex.org/works?filter=locations.license_id:{self.openalex_id_short}",
                     "updated_date": datetime.datetime.utcnow().isoformat(),
                     "created_date": self.created_date.isoformat()[0:10]
                     if isinstance(self.created_date, datetime.datetime)
