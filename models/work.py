@@ -221,6 +221,7 @@ class Work(db.Model):
     paper_title = db.Column(db.Text)
     original_title = db.Column(db.Text)
     year = db.Column(db.Numeric)
+    citation_count = db.Column(db.Numeric)
     publication_date = db.Column(db.DateTime)
     online_date = db.Column(db.DateTime)
     publisher = db.Column(db.Text)
@@ -1194,9 +1195,8 @@ class Work(db.Model):
         ref_author_strings = matching_author_strings(ref_author)
         ref_pub_yr = str(reference_json.get('year', 0))
         ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
-        scores = {}
+        scores = [0 for _ in range(len(work_matches_by_title))]
         for i, w in enumerate(work_matches_by_title):
-            scores[i] = 0
             for aff in w.affiliations:
                 if aff.match_author in ref_author_strings:
                     scores[i] += 1
@@ -1207,7 +1207,7 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        match = work_matches_by_title[max(scores, key=lambda k: scores[k])]
+        match = work_matches_by_title[scores.index(max(scores))]
         titles_ids_scores = [{'title': w.original_title, 'id': w.paper_id, 'score': score} for w, score in zip(work_matches_by_title, scores)]
         logger.info(f'Reference match ({self.paper_id}) - Title: {reference_json[title_key]} | Matches: {titles_ids_scores} | Matched ID, Title: {match.paper_id}, {match.original_title}')
         return match
@@ -1274,8 +1274,18 @@ class Work(db.Model):
             works = db.session.query(Work).options(
                 orm.Load(Work).raiseload('*')).filter(
                 Work.doi_lower.in_(citation_dois)).all()
+            grouped_works = {doi: [work for work in works if work.doi_lower == doi.lower()] for doi in citation_dois}
+            final_doi_works = []
+            for group in grouped_works.values():
+                scores = [0 for _ in range(len(group))]
+                for i, work in enumerate(group):
+                    if not work.merge_into_id:
+                        scores[i] += 1
+                    scores[i] += work.citation_count
+                final_doi_works.append(group[scores.index(max(scores))])
             citation_paper_ids += [work.paper_id for work
-                                   in works if work.paper_id]
+                                   in final_doi_works if work.paper_id]
+
         if citation_pmids:
             work_ids = db.session.query(WorkExtraIds).options(
                 orm.Load(WorkExtraIds).selectinload(
