@@ -1281,7 +1281,7 @@ class Work(db.Model):
                 for i, work in enumerate(group):
                     if not work.merge_into_id:
                         scores[i] += 1
-                    scores[i] += work.citation_count
+                    scores[i] += work.citation_count if work.citation_count else 0
                 final_doi_works.append(group[scores.index(max(scores))])
             citation_paper_ids += [work.paper_id for work
                                    in final_doi_works if work.paper_id]
