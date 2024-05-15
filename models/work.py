@@ -50,6 +50,14 @@ from timeit import default_timer as timer
 DELETED_WORK_ID = 4285719527
 
 
+def get_libguides_ids():
+    ids = db.session.execute('SELECT * FROM libguides_paper_ids;').fetchall()
+    return set([_id[0] for _id in ids])
+
+
+LIBGUIDES_IDS = get_libguides_ids()
+
+
 def elastic_index_suffix(publication_year):
     if not publication_year or not isinstance(publication_year, int):
         return "invalid-data"
@@ -196,13 +204,14 @@ def oa_status_from_location(loc, type_crossref):
     if source is not None:
         if source['is_in_doaj']:
             return 'gold'
-        elif source['type'] == 'repository' and type_crossref and type_crossref == 'dataset':
+        elif source[
+            'type'] == 'repository' and type_crossref and type_crossref == 'dataset':
             return 'gold'
         elif source['type'] == 'repository':
             return 'green'
         elif loc.get('license') and loc['license'] not in ['unknown',
-                                                         'unspecified-oa',
-                                                         'implied-oa']:
+                                                           'unspecified-oa',
+                                                           'implied-oa']:
             return 'hybrid'
         else:
             return 'bronze'
@@ -367,8 +376,10 @@ class Work(db.Model):
                     if affiliation_id and affiliation_id in seen_ids:
                         logger.info(f'seen id {affiliation_id}, continue')
                         continue
-                    elif original_affiliation and len(original_affiliation) > 2000:
-                        logger.info(f"original affiliation too long: {len(original_affiliation)} characters")
+                    elif original_affiliation and len(
+                            original_affiliation) > 2000:
+                        logger.info(
+                            f"original affiliation too long: {len(original_affiliation)} characters")
                         continue
 
                     self.affiliations.append(
@@ -407,7 +418,8 @@ class Work(db.Model):
 
         if self.affiliation_records_sorted:
             try:
-                record_author_dict_list = self.affiliation_records_sorted[0].authors_json
+                record_author_dict_list = self.affiliation_records_sorted[
+                    0].authors_json
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON authors for {self.id}: {e}")
                 return
@@ -504,9 +516,11 @@ class Work(db.Model):
             logger.info(
                 'skipping keyword matching because keywords have already been gathered. Set input hash to current.')
             for i in range(len(self.keywords)):
-                self.keywords[i].keywords_input_hash = current_keywords_input_hash
+                self.keywords[
+                    i].keywords_input_hash = current_keywords_input_hash
             return
-        elif self.keywords[0].keywords_input_hash == current_keywords_input_hash:
+        elif self.keywords[
+            0].keywords_input_hash == current_keywords_input_hash:
             logger.info(
                 'skipping keyword matching because inputs are unchanged')
             return
@@ -563,7 +577,8 @@ class Work(db.Model):
                     all_keywords = [i for i in resp_data]
                     keep_calling = False
                 except Exception as e:
-                    logger.error(f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {keyword_inputs}")
+                    logger.error(
+                        f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {keyword_inputs}")
                     all_keywords = None
                     keep_calling = False
 
@@ -576,7 +591,8 @@ class Work(db.Model):
                     keep_calling = False
 
             else:
-                logger.error(f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {keyword_inputs}")
+                logger.error(
+                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {keyword_inputs}")
                 all_keywords = None
                 keep_calling = False
 
@@ -661,8 +677,12 @@ class Work(db.Model):
         if r.status_code == 200:
             self.topics = []
             if topic_ids and topic_scores:
-                new_topic_ids = [x for y,x in sorted(zip(topic_scores,topic_ids), reverse=True)]
-                new_topic_scores = [y for y,x in sorted(zip(topic_scores,topic_ids), reverse=True)]
+                new_topic_ids = [x for y, x in
+                                 sorted(zip(topic_scores, topic_ids),
+                                        reverse=True)]
+                new_topic_scores = [y for y, x in
+                                    sorted(zip(topic_scores, topic_ids),
+                                           reverse=True)]
                 top_rank = 1
                 for i, (topic_id, topic_score) in enumerate(zip(new_topic_ids,
                                                                 new_topic_scores)):
@@ -822,7 +842,8 @@ class Work(db.Model):
 
             start_time = time()
             self.add_work_keywords()
-            logger.info(f'add_work_keywords took {elapsed(start_time, 2)} seconds')
+            logger.info(
+                f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
@@ -1208,8 +1229,11 @@ class Work(db.Model):
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
         match = work_matches_by_title[scores.index(max(scores))]
-        titles_ids_scores = [{'title': w.original_title, 'id': w.paper_id, 'score': score} for w, score in zip(work_matches_by_title, scores)]
-        logger.info(f'Reference match ({self.paper_id}) - Title: {reference_json[title_key]} | Matches: {json.dumps(titles_ids_scores, indent=4)} | Matched ID, Title: {match.paper_id}, {match.original_title}')
+        titles_ids_scores = [
+            {'title': w.original_title, 'id': w.paper_id, 'score': score} for
+            w, score in zip(work_matches_by_title, scores)]
+        logger.info(
+            f'Reference match ({self.paper_id}) - Title: {reference_json[title_key]} | Matches: {json.dumps(titles_ids_scores, indent=4)} | Matched ID, Title: {match.paper_id}, {match.original_title}')
         return match
 
     def add_references(self):
@@ -1230,7 +1254,9 @@ class Work(db.Model):
                     citation_dict_list = json.loads(record.citations)
                     for citation_dict in citation_dict_list:
                         reference_source_num += 1
-                        if isinstance(citation_dict, str) and (doi := clean_doi(citation_dict, return_none_if_error=True)):
+                        if isinstance(citation_dict, str) and (
+                        doi := clean_doi(citation_dict,
+                                         return_none_if_error=True)):
                             citation_dois.append(doi)
                             continue
                         if citation_dict.get('doi'):
@@ -1274,14 +1300,17 @@ class Work(db.Model):
             works = db.session.query(Work).options(
                 orm.Load(Work).raiseload('*')).filter(
                 Work.doi_lower.in_(citation_dois)).all()
-            grouped_works = {doi: [work for work in works if work.doi_lower == doi.lower()] for doi in citation_dois}
+            grouped_works = {
+                doi: [work for work in works if work.doi_lower == doi.lower()]
+                for doi in citation_dois}
             final_doi_works = []
             for group in grouped_works.values():
                 scores = [0 for _ in range(len(group))]
                 for i, work in enumerate(group):
                     if not work.merge_into_id:
                         scores[i] += 1
-                    scores[i] += work.citation_count if work.citation_count else 0
+                    scores[
+                        i] += work.citation_count if work.citation_count else 0
                 final_doi_works.append(group[scores.index(max(scores))])
             citation_paper_ids += [work.paper_id for work
                                    in final_doi_works if work.paper_id]
@@ -1317,48 +1346,66 @@ class Work(db.Model):
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
-                norm_name = str(author_aff.original_author).strip().lower().replace(" ", "").replace("-", "").replace(".", "")
+                norm_name = str(
+                    author_aff.original_author).strip().lower().replace(" ",
+                                                                        "").replace(
+                    "-", "").replace(".", "")
                 if f"{author_aff.author_sequence_number}_{norm_name}" not in old_affiliations:
-                    old_affiliations[f"{author_aff.author_sequence_number}_{norm_name}"] = \
+                    old_affiliations[
+                        f"{author_aff.author_sequence_number}_{norm_name}"] = \
                         {'author_id': author_aff.author_id}
-                    
+
             if not self.affiliation_records_sorted:
                 logger.info(
                     "no affiliation data found in any of the records, making sure author sequence numbers are correct")
-                author_sequence_numbers = sorted(list(set([aff.author_sequence_number for aff in self.affiliations])))
-                true_sequence_numbers = list(range(1, len(author_sequence_numbers) + 1))
+                author_sequence_numbers = sorted(list(
+                    set([aff.author_sequence_number for aff in
+                         self.affiliations])))
+                true_sequence_numbers = list(
+                    range(1, len(author_sequence_numbers) + 1))
 
-                new_author_sequence_dict = dict(zip(author_sequence_numbers, true_sequence_numbers))
+                new_author_sequence_dict = dict(
+                    zip(author_sequence_numbers, true_sequence_numbers))
                 for affil in self.affiliations:
-                    affil.author_sequence_number = new_author_sequence_dict[affil.author_sequence_number]
+                    affil.author_sequence_number = new_author_sequence_dict[
+                        affil.author_sequence_number]
                     affil.updated_date = datetime.datetime.utcnow().isoformat()
                     affil.author_id = None
                 return
 
             self.affiliations = []
-            
+
             record = self.affiliation_records_sorted[0]
             author_sequence_order = 1
             for author_dict in record.authors_json:
                 original_name = author_dict["raw"]
                 if author_dict["family"]:
-                    original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                    original_name = "{} {}".format(author_dict["given"],
+                                                   author_dict["family"])
                 if not author_dict["affiliation"]:
                     author_dict["affiliation"] = [defaultdict(str)]
 
                 raw_author_string = original_name if original_name else None
-                original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+                original_orcid = normalize_orcid(author_dict["orcid"]) if \
+                author_dict["orcid"] else None
 
                 seen_institution_ids = set()
 
                 if raw_author_string:
-                    curr_norm_name = str(raw_author_string).strip().lower().replace(" ", "").replace("-", "").replace(".", "")
+                    curr_norm_name = str(
+                        raw_author_string).strip().lower().replace(" ",
+                                                                   "").replace(
+                        "-", "").replace(".", "")
                     affiliation_sequence_order = 1
-                    old_author_id =  old_affiliations[f"{author_sequence_order}_{curr_norm_name}"]["author_id"] \
+                    old_author_id = old_affiliations[
+                        f"{author_sequence_order}_{curr_norm_name}"][
+                        "author_id"] \
                         if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else None
                     for affiliation_dict in author_dict["affiliation"]:
-                        raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
-                        raw_affiliation_string = clean_html(raw_affiliation_string)
+                        raw_affiliation_string = affiliation_dict["name"] if \
+                        affiliation_dict["name"] else None
+                        raw_affiliation_string = clean_html(
+                            raw_affiliation_string)
                         my_institutions = []
 
                         if raw_affiliation_string:
@@ -1366,7 +1413,9 @@ class Work(db.Model):
                                 [raw_affiliation_string],
                                 retry_attempts=affiliation_retry_attempts
                             )
-                            for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                            for institution_id_match in [m for m in
+                                                         institution_id_matches[
+                                                             0] if m]:
                                 my_institution = models.Institution.query.options(
                                     orm.Load(models.Institution).raiseload('*')
                                 ).get(institution_id_match)
@@ -1377,7 +1426,8 @@ class Work(db.Model):
                                 ):
                                     continue
                                 my_institutions.append(my_institution)
-                                seen_institution_ids.add(my_institution.affiliation_id)
+                                seen_institution_ids.add(
+                                    my_institution.affiliation_id)
 
                         my_institutions = my_institutions or [None]
 
@@ -1387,11 +1437,14 @@ class Work(db.Model):
                                     author_sequence_number=author_sequence_order,
                                     affiliation_sequence_number=affiliation_sequence_order,
                                     original_author=raw_author_string,
-                                    original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                                    original_affiliation=raw_affiliation_string[
+                                                         :2500] if raw_affiliation_string else None,
                                     original_orcid=original_orcid,
                                     author_id=old_author_id,
-                                    match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
-                                    is_corresponding_author=author_dict.get('is_corresponding'),
+                                    match_institution_name=models.Institution.matching_institution_name(
+                                        raw_affiliation_string),
+                                    is_corresponding_author=author_dict.get(
+                                        'is_corresponding'),
                                     updated_date=datetime.datetime.utcnow().isoformat()
                                 )
                                 my_affiliation.institution = my_institution
@@ -1400,7 +1453,7 @@ class Work(db.Model):
                     author_sequence_order += 1
         else:
             logger.info(
-                    "no affiliations found for this work, going through the normal add_affiliation process")
+                "no affiliations found for this work, going through the normal add_affiliation process")
             self.add_affiliations(affiliation_retry_attempts)
             return
 
@@ -1418,19 +1471,22 @@ class Work(db.Model):
         for author_dict in record.authors_json:
             original_name = author_dict["raw"]
             if author_dict["family"]:
-                original_name = "{} {}".format(author_dict["given"], author_dict["family"])
+                original_name = "{} {}".format(author_dict["given"],
+                                               author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
 
             raw_author_string = original_name if original_name else None
-            original_orcid = normalize_orcid(author_dict["orcid"]) if author_dict["orcid"] else None
+            original_orcid = normalize_orcid(author_dict["orcid"]) if \
+            author_dict["orcid"] else None
 
             seen_institution_ids = set()
 
             if raw_author_string:
                 affiliation_sequence_order = 1
                 for affiliation_dict in author_dict["affiliation"]:
-                    raw_affiliation_string = affiliation_dict["name"] if affiliation_dict["name"] else None
+                    raw_affiliation_string = affiliation_dict["name"] if \
+                    affiliation_dict["name"] else None
                     raw_affiliation_string = clean_html(raw_affiliation_string)
                     my_institutions = []
 
@@ -1439,7 +1495,9 @@ class Work(db.Model):
                             [raw_affiliation_string],
                             retry_attempts=affiliation_retry_attempts
                         )
-                        for institution_id_match in [m for m in institution_id_matches[0] if m]:
+                        for institution_id_match in [m for m in
+                                                     institution_id_matches[0]
+                                                     if m]:
                             my_institution = models.Institution.query.options(
                                 orm.Load(models.Institution).raiseload('*')
                             ).get(institution_id_match)
@@ -1450,7 +1508,8 @@ class Work(db.Model):
                             ):
                                 continue
                             my_institutions.append(my_institution)
-                            seen_institution_ids.add(my_institution.affiliation_id)
+                            seen_institution_ids.add(
+                                my_institution.affiliation_id)
 
                     my_institutions = my_institutions or [None]
 
@@ -1460,10 +1519,13 @@ class Work(db.Model):
                                 author_sequence_number=author_sequence_order,
                                 affiliation_sequence_number=affiliation_sequence_order,
                                 original_author=raw_author_string,
-                                original_affiliation=raw_affiliation_string[:2500] if raw_affiliation_string else None,
+                                original_affiliation=raw_affiliation_string[
+                                                     :2500] if raw_affiliation_string else None,
                                 original_orcid=original_orcid,
-                                match_institution_name=models.Institution.matching_institution_name(raw_affiliation_string),
-                                is_corresponding_author=author_dict.get('is_corresponding'),
+                                match_institution_name=models.Institution.matching_institution_name(
+                                    raw_affiliation_string),
+                                is_corresponding_author=author_dict.get(
+                                    'is_corresponding'),
                                 updated_date=datetime.datetime.utcnow().isoformat()
                             )
                             my_affiliation.institution = my_institution
@@ -1914,14 +1976,16 @@ class Work(db.Model):
     @property
     def topics_sorted(self):
         try:
-            sorted_topics = sorted(self.topics, key=lambda x: x.topic_rank) if self.topics else self.topics
+            sorted_topics = sorted(self.topics, key=lambda
+                x: x.topic_rank) if self.topics else self.topics
         except:
-            sorted_topics = sorted(self.topics, key=lambda x: x.score, reverse=True) if self.topics else self.topics
+            sorted_topics = sorted(self.topics, key=lambda x: x.score,
+                                   reverse=True) if self.topics else self.topics
             for i in range(len(sorted_topics)):
                 sorted_topics[i].topic_rank = i + 1
 
         return sorted_topics
-    
+
     @property
     def keywords_sorted(self):
         return sorted(self.keywords, key=lambda x: x.score, reverse=True)
@@ -1999,7 +2063,8 @@ class Work(db.Model):
 
     @property
     def is_review(self):
-        return self.journal_id in REVIEW_JOURNAL_IDS or (self.original_title and 'a review' in self.original_title.lower())
+        return self.journal_id in REVIEW_JOURNAL_IDS or (
+                    self.original_title and 'a review' in self.original_title.lower())
 
     @cached_property
     def display_genre(self):
@@ -2012,6 +2077,8 @@ class Work(db.Model):
             return 'review'
         if self.is_preprint:
             return 'preprint'
+        if self.paper_id in LIBGUIDES_IDS:
+            return 'libguides'
 
         # infer "erratum", "editorial", "letter" types:
         try:
@@ -2064,7 +2131,8 @@ class Work(db.Model):
     @cached_property
     def references_list_sorted(self):
         reference_paper_ids = sorted(
-            [as_work_openalex_id(reference.paper_reference_id) for reference in self.references]
+            [as_work_openalex_id(reference.paper_reference_id) for reference in
+             self.references]
         )
         return reference_paper_ids
 
@@ -2588,7 +2656,8 @@ class Work(db.Model):
                 with sentry_sdk.push_scope() as scope:
                     scope.set_extra("source_match", source_match)
                     scope.set_extra("work", self)
-                    sentry_sdk.capture_message('using safety_journals to assign source to work')
+                    sentry_sdk.capture_message(
+                        'using safety_journals to assign source to work')
 
         locations = override_location_sources(locations)
         for loc in locations:
@@ -2696,7 +2765,8 @@ class Work(db.Model):
             is_oa = True
         elif is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
-                this_loc_oa_status = oa_status_from_location(loc, self.type_crossref)
+                this_loc_oa_status = oa_status_from_location(loc,
+                                                             self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
         response = {
@@ -2806,13 +2876,15 @@ class Work(db.Model):
                 "referenced_works_count": len(self.references_list_sorted),
                 "sustainable_development_goals": self.sustainable_development_goals,
                 "keywords": [keyword.to_dict("minimum") for keyword in
-                           self.keywords_sorted if keyword.keyword_id != ""] if self.keywords_sorted else [],
+                             self.keywords_sorted if
+                             keyword.keyword_id != ""] if self.keywords_sorted else [],
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
                 "cited_by_percentile_year": self.cited_by_percentile_year,
                 "related_works": sorted(
-                    [as_work_openalex_id(related.recommended_paper_id) for related in self.related_works],
+                    [as_work_openalex_id(related.recommended_paper_id) for
+                     related in self.related_works],
                     reverse=True
                 ),
             })
