@@ -1228,8 +1228,6 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        if not scores:
-            return None
         match = work_matches_by_title[scores.index(max(scores))]
         titles_ids_scores = [
             {'title': w.original_title, 'id': w.paper_id, 'score': score} for
@@ -1313,7 +1311,8 @@ class Work(db.Model):
                         scores[i] += 1
                     scores[
                         i] += work.citation_count if work.citation_count else 0
-                final_doi_works.append(group[scores.index(max(scores))])
+                if scores:
+                    final_doi_works.append(group[scores.index(max(scores))])
             citation_paper_ids += [work.paper_id for work
                                    in final_doi_works if work.paper_id]
 
