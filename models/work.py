@@ -1228,6 +1228,8 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
+        if not scores:
+            return None
         match = work_matches_by_title[scores.index(max(scores))]
         titles_ids_scores = [
             {'title': w.original_title, 'id': w.paper_id, 'score': score} for
