@@ -47,7 +47,7 @@ logging.basicConfig(
 logger = logging.getLogger("oadoi")
 
 REDIS_URL = os.getenv("REDISCLOUD_URL")
-REDIS_QUEUE_URL = os.getenv("REDISCLOUD_CRIMSON_URL")
+REDIS_QUEUE_URL = os.getenv("REDIS_DO_FAST_QUEUE_URL")
 API_HOST = os.getenv("API_HOST")
 ELASTIC_URL = os.getenv("ELASTIC_URL")
 ELASTIC_EMBEDDINGS_URL = os.getenv("ELASTIC_EMBEDDINGS_URL")
