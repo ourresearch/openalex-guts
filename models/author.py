@@ -26,7 +26,6 @@ class Author(db.Model):
 
     author_id = db.Column(db.BigInteger, primary_key=True)
     display_name = db.Column(db.Text)
-    match_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
