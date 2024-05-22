@@ -114,4 +114,10 @@ SUPER_SYSTEM_INSTITUTIONS = {
     123565023,   # Vietnam National University Ho Chi Minh City
     184840846,   # Virginia Commonwealth University
     56066814,    # Virginia Community College System
+    16452829,    # The University of Texas System
+    2801919071,  # University of Illinois System
+    2800403580,  # University of Minnesota System
+    173268674,   # Texas A&M University System
+    4390039267,  # Tokai National Higher Education and Research System
+    4777552,     # University of Missouri System
 }
