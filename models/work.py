@@ -867,10 +867,14 @@ class Work(db.Model):
                 f'add_affiliations took {elapsed(start_time, 2)} seconds')
         else:
             logger.info(
-                "not adding affiliations because work already has some set, but updating institutions")
+                "updating affiliations because work already has some set, and updating institutions")
             self.update_institutions()
             logger.info(
                 f'update_institutions took {elapsed(start_time, 2)} seconds')
+            start_time = time()
+            self.update_affiliations()
+            logger.info(
+                f'update_affiliations took {elapsed(start_time, 2)} seconds')
             logger.info("updating orcid")
             self.update_orcid()
             logger.info(f'update_orcid took {elapsed(start_time, 2)} seconds')
@@ -1337,6 +1341,7 @@ class Work(db.Model):
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
+
     def update_affiliations(self, affiliation_retry_attempts=30):
         """
         This function will be used to update affiliations for a work for the following reasons:
@@ -1354,29 +1359,31 @@ class Work(db.Model):
                 if f"{author_aff.author_sequence_number}_{norm_name}" not in old_affiliations:
                     old_affiliations[
                         f"{author_aff.author_sequence_number}_{norm_name}"] = \
-                        {'author_id': author_aff.author_id}
+                        {'author_id': author_aff.author_id, 
+                         'orcid': author_aff.original_orcid if author_aff.original_orcid else ""}
 
-            if not self.affiliation_records_sorted:
-                logger.info(
-                    "no affiliation data found in any of the records, making sure author sequence numbers are correct")
-                author_sequence_numbers = sorted(list(
-                    set([aff.author_sequence_number for aff in
-                         self.affiliations])))
-                true_sequence_numbers = list(
-                    range(1, len(author_sequence_numbers) + 1))
+            # if not self.affiliation_records_sorted:
+            #     logger.info(
+            #         "no affiliation data found in any of the records, making sure author sequence numbers are correct")
+            #     author_sequence_numbers = sorted(list(
+            #         set([aff.author_sequence_number for aff in
+            #              self.affiliations])))
+            #     true_sequence_numbers = list(
+            #         range(1, len(author_sequence_numbers) + 1))
 
-                new_author_sequence_dict = dict(
-                    zip(author_sequence_numbers, true_sequence_numbers))
-                for affil in self.affiliations:
-                    affil.author_sequence_number = new_author_sequence_dict[
-                        affil.author_sequence_number]
-                    affil.updated_date = datetime.datetime.utcnow().isoformat()
-                    affil.author_id = None
-                return
+            #     new_author_sequence_dict = dict(
+            #         zip(author_sequence_numbers, true_sequence_numbers))
+            #     for affil in self.affiliations:
+            #         affil.author_sequence_number = new_author_sequence_dict[
+            #             affil.author_sequence_number]
+            #         affil.updated_date = datetime.datetime.utcnow().isoformat()
+            #         affil.author_id = None
+            #     return
 
             self.affiliations = []
 
             record = self.affiliation_records_sorted[0]
+
             author_sequence_order = 1
             for author_dict in record.authors_json:
                 original_name = author_dict["raw"]
@@ -1393,15 +1400,35 @@ class Work(db.Model):
                 seen_institution_ids = set()
 
                 if raw_author_string:
+                    # Get normalized author string to check against
                     curr_norm_name = str(
                         raw_author_string).strip().lower().replace(" ",
                                                                    "").replace(
                         "-", "").replace(".", "")
                     affiliation_sequence_order = 1
+
+                    # Look in old affiliations to see if we have an author_id
                     old_author_id = old_affiliations[
                         f"{author_sequence_order}_{curr_norm_name}"][
                         "author_id"] \
                         if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else None
+                    
+                    ##### commenting this out until ORCID is fixed (can probably remove "update_orcid" as well ######
+                    # Look in old affiliations to see if we have an orcid (only if there is an author_id)
+                    # if old_author_id:
+                    #     old_orcid = old_affiliations[
+                    #         f"{author_sequence_order}_{curr_norm_name}"][
+                    #             "orcid"]
+                        
+                        # If we have a different orcid, need to run through AND again
+                        # if old_orcid and original_orcid and (original_orcid != old_orcid):
+                        #     old_author_id = None
+                        # elif not old_orcid and original_orcid:
+                        #     old_author_id = None
+                        # elif old_orcid and not original_orcid:
+                        #     old_author_id = None
+                    ######################################################
+
                     for affiliation_dict in author_dict["affiliation"]:
                         raw_affiliation_string = affiliation_dict["name"] if \
                         affiliation_dict["name"] else None
