@@ -1362,23 +1362,23 @@ class Work(db.Model):
                         {'author_id': author_aff.author_id, 
                          'orcid': author_aff.original_orcid if author_aff.original_orcid else ""}
 
-            # if not self.affiliation_records_sorted:
-            #     logger.info(
-            #         "no affiliation data found in any of the records, making sure author sequence numbers are correct")
-            #     author_sequence_numbers = sorted(list(
-            #         set([aff.author_sequence_number for aff in
-            #              self.affiliations])))
-            #     true_sequence_numbers = list(
-            #         range(1, len(author_sequence_numbers) + 1))
+            if not self.affiliation_records_sorted:
+                logger.info(
+                    "no affiliation data found in any of the records, skipping this update")
+                # author_sequence_numbers = sorted(list(
+                #     set([aff.author_sequence_number for aff in
+                #          self.affiliations])))
+                # true_sequence_numbers = list(
+                #     range(1, len(author_sequence_numbers) + 1))
 
-            #     new_author_sequence_dict = dict(
-            #         zip(author_sequence_numbers, true_sequence_numbers))
-            #     for affil in self.affiliations:
-            #         affil.author_sequence_number = new_author_sequence_dict[
-            #             affil.author_sequence_number]
-            #         affil.updated_date = datetime.datetime.utcnow().isoformat()
-            #         affil.author_id = None
-            #     return
+                # new_author_sequence_dict = dict(
+                #     zip(author_sequence_numbers, true_sequence_numbers))
+                # for affil in self.affiliations:
+                #     affil.author_sequence_number = new_author_sequence_dict[
+                #         affil.author_sequence_number]
+                #     affil.updated_date = datetime.datetime.utcnow().isoformat()
+                #     affil.author_id = None
+                return
 
             self.affiliations = []
 
