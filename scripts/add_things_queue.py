@@ -85,13 +85,13 @@ def enqueue_from_api(oa_filters):
                 j = get_openalex_json('https://api.openalex.org/works',
                                           params=params, s=s)
                 cursor = j['meta'].get('next_cursor')
-                ids = [work['id'] for work in j['results']]
+                ids = [work['id'] for work in j.get('results', [])]
+                if not ids:
+                    break
                 enqueue_jobs(ids)
                 count += len(ids)
                 logger.info(
                     f'[*] Inserted {count} into add_things queue from filter - {oa_filter}')
-            except StopIteration:
-                break
             except Exception as e:
                 logger.warn(f'[!] Error fetching page for filter - {oa_filter}')
                 logger.exception(traceback.format_exception())
