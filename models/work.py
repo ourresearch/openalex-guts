@@ -1638,8 +1638,13 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            self.oa_status = self.update_oa_status_if_better(
-                record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
+            if all(('elsevier' in self.publisher.lower(),
+                   self.oa_status == 'hybrid',
+                   record.unpaywall.best_oa_location_license == 'publisher-specific-oa')): # https://openalex.zendesk.com/agent/tickets/1747
+                self.oa_status = record.unpaywall.oa_status
+            else:
+                self.oa_status = self.update_oa_status_if_better(
+                    record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
