@@ -16,6 +16,8 @@ import json
 import copy
 from nameparser import HumanName
 import string
+
+from tenacity import retry, stop_after_attempt, wait_exponential
 from unidecode import unidecode
 from sqlalchemy import sql, text
 from sqlalchemy import exc
@@ -65,7 +67,8 @@ class NotJournalArticleException(Exception):
 
 class DelayedAdapter(HTTPAdapter):
     def send(
-        self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
+            self, request, stream=False, timeout=None, verify=True, cert=None,
+            proxies=None
     ):
         # logger.info(u"in DelayedAdapter getting {}, sleeping for 2 seconds".format(request.url))
         # sleep(2)
@@ -281,7 +284,8 @@ def remove_punctuation(input_string):
     # from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
     no_punc = input_string
     if input_string:
-        no_punc = "".join(e for e in input_string if (e.isalnum() or e.isspace()))
+        no_punc = "".join(
+            e for e in input_string if (e.isalnum() or e.isspace()))
     return no_punc
 
 
@@ -472,7 +476,6 @@ def date_as_iso_utc(datetime_object):
 
 
 def dict_from_dir(obj, keys_to_ignore=None, keys_to_show="all"):
-
     if keys_to_ignore is None:
         keys_to_ignore = []
     elif isinstance(keys_to_ignore, str):
@@ -521,7 +524,8 @@ def median(my_list):
         return my_list[((len(my_list) + 1) / 2) - 1]
     if len(my_list) % 2 == 0:
         return (
-            float(sum(my_list[(len(my_list) / 2) - 1 : (len(my_list) / 2) + 1])) / 2.0
+                float(sum(my_list[(len(my_list) / 2) - 1: (
+                                                                  len(my_list) / 2) + 1])) / 2.0
         )
 
 
@@ -541,7 +545,7 @@ def chunks(l, n):
     from http://stackoverflow.com/a/312464
     """
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 def page_query(q, page_size=1000):
@@ -585,7 +589,7 @@ def truncate_on_word_break(string, max_length):
     if break_index:
         return string[0:break_index] + "…"
     else:
-        return string[0 : max_length - 1] + "…"
+        return string[0: max_length - 1] + "…"
 
 
 def str_to_bool(x):
@@ -600,7 +604,7 @@ def str_to_bool(x):
 # from http://stackoverflow.com/a/20007730/226013
 ordinal = lambda n: "%d%s" % (
     n,
-    "tsnrhtdd"[(n / 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4],
+    "tsnrhtdd"[(n / 10 % 10 != 1) * (n % 10 < 4) * n % 10:: 4],
 )
 
 
@@ -775,11 +779,13 @@ def majority_uppercase(s, threshold=0.5):
 
 
 def punctuation_density(words):
-    return sum([word[-1] in string.punctuation for word in words if word]) / len(words)
+    return sum(
+        [word[-1] in string.punctuation for word in words if word]) / len(words)
 
 
 def detect_language_abstract(
-    abstract_words, probability_threshold=0.7, punctuation_density_threshold=0.5
+        abstract_words, probability_threshold=0.7,
+        punctuation_density_threshold=0.5
 ):
     DetectorFactory.seed = 0
     if abstract_words:
@@ -790,16 +796,17 @@ def detect_language_abstract(
         abstract_language = detect_langs(abstract)
         if abstract_language and abstract_language[0]:
             if (
-                (len(abstract) > 20 or not majority_ascii(abstract))
-                and abstract_language[0].prob >= probability_threshold
-                and punctuation_density(abstract_words) < punctuation_density_threshold
+                    (len(abstract) > 20 or not majority_ascii(abstract))
+                    and abstract_language[0].prob >= probability_threshold
+                    and punctuation_density(
+                abstract_words) < punctuation_density_threshold
             ):
                 return abstract_language
     return None
 
 
 def detect_language_title(
-    title, probability_threshold=0.7, punctuation_density_threshold=0.5
+        title, probability_threshold=0.7, punctuation_density_threshold=0.5
 ):
     DetectorFactory.seed = 0
     if title:
@@ -809,14 +816,15 @@ def detect_language_title(
         title_language = detect_langs(title)
         if title_language and title_language[0]:
             if (len(title) > 15 or not majority_ascii(title)) and (
-                title_language[0].prob >= probability_threshold
+                    title_language[0].prob >= probability_threshold
             ):
                 return title_language
     return None
 
 
 def detect_language_from_abstract_and_title(
-    abstract_words, title, probability_threshold=0.7, punctuation_density_threshold=0.5
+        abstract_words, title, probability_threshold=0.7,
+        punctuation_density_threshold=0.5
 ):
     # use some heuristics to catch some edge cases:
     # - detect language from abstract if probability is high and abstract isn't too short (for abstracts with ascii/latin characters)
@@ -828,7 +836,8 @@ def detect_language_from_abstract_and_title(
     try:
         if abstract_words:
             abstract_language = detect_language_abstract(
-                abstract_words, probability_threshold, punctuation_density_threshold
+                abstract_words, probability_threshold,
+                punctuation_density_threshold
             )
             if abstract_language and abstract_language[0]:
                 return abstract_language[0].lang
@@ -849,7 +858,27 @@ def get_crossref_json_from_unpaywall(doi: str):
     global UNPAYWALL_DB_CONN
     if not UNPAYWALL_DB_CONN:
         UNPAYWALL_DB_CONN = unpaywall_db_engine.connect()
-    rows = UNPAYWALL_DB_CONN.execute(text('SELECT crossref_api_raw_new FROM pub WHERE id = :doi'), {'doi': doi}).fetchall()
+    rows = UNPAYWALL_DB_CONN.execute(
+        text('SELECT crossref_api_raw_new FROM pub WHERE id = :doi'),
+        {'doi': doi}).fetchall()
     if not rows:
         return None
     return rows[0][0]
+
+
+def print_openalex_error(retry_state):
+    if retry_state.outcome.failed:
+        print(
+            f'[!] Error making OpenAlex API call (attempt #{retry_state.attempt_number}): {retry_state.outcome.exception()}')
+
+
+@retry(stop=stop_after_attempt(5),
+       wait=wait_exponential(multiplier=1, min=4, max=256),
+       retry_error_callback=print_openalex_error)
+def get_openalex_json(url, params, s=None):
+    if not s:
+        s = requests
+    r = s.get(url, params=params,
+              verify=False)
+    r.raise_for_status()
+    return r.json()
