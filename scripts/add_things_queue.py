@@ -1,17 +1,19 @@
 import argparse
 import json
 import os
+import traceback
 from datetime import datetime
 from time import mktime, gmtime, time, sleep
 
 import psutil
+import requests
 from redis.client import Redis
 
 import models
 from app import REDIS_QUEUE_URL, logger, db
 from models import REDIS_ADD_THINGS_QUEUE
 from scripts.works_query import base_works_query
-from util import work_has_null_author_ids, elapsed
+from util import work_has_null_author_ids, elapsed, get_openalex_json
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -22,6 +24,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--skip_fast_enqueue', '-s', action='store_true',
                         help='Skip enqueue to fast queue')
+    parser.add_argument('--filter', '-f',
+                        type=str,
+                        action='append',
+                        help='OpenAlex API filter(s) to enqueue')
     return parser.parse_args()
 
 
@@ -65,8 +71,37 @@ def log_memory_usage():
     logger.info(f"Memory usage (MB): {round(memory_mb, 2)}")
 
 
+def enqueue_from_api(oa_filters):
+    for oa_filter in oa_filters:
+        logger.info(f'[*] Starting to enqueue using OA filter: {oa_filter}')
+        cursor = '*'
+        s = requests.session()
+        count = 0
+        while True:
+            try:
+                params = {'cursor': cursor,
+                          'filter': oa_filter,
+                          'per-page': 200}
+                j = get_openalex_json('https://api.openalex.org/works',
+                                          params=params, s=s)
+                cursor = j['meta'].get('next_cursor')
+                ids = [work['id'] for work in j['results']]
+                enqueue_jobs(ids)
+                count += len(ids)
+                logger.info(
+                    f'[*] Inserted {count} into add_things queue from filter - {oa_filter}')
+            except StopIteration:
+                break
+            except Exception as e:
+                logger.warn(f'[!] Error fetching page for filter - {oa_filter}')
+                logger.exception(traceback.format_exception())
+
+
 def main():
     args = parse_args()
+    if args.filter:
+        enqueue_from_api(args.filter)
+        return
     total_processed = 0
     errors_count = 0
     start = datetime.now()
