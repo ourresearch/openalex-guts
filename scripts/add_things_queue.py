@@ -85,7 +85,7 @@ def enqueue_from_api(oa_filters):
                 j = get_openalex_json('https://api.openalex.org/works',
                                           params=params, s=s)
                 cursor = j['meta'].get('next_cursor')
-                ids = [work['id'] for work in j.get('results', [])]
+                ids = [int(work['id'].split('/W')[-1]) for work in j.get('results', [])]
                 if not ids:
                     break
                 enqueue_jobs(ids)
