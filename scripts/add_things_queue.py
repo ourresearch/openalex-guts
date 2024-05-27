@@ -81,7 +81,8 @@ def enqueue_from_api(oa_filters):
             try:
                 params = {'cursor': cursor,
                           'filter': oa_filter,
-                          'per-page': 200}
+                          'per-page': 200,
+                          'select': 'id'}
                 j = get_openalex_json('https://api.openalex.org/works',
                                           params=params, s=s)
                 cursor = j['meta'].get('next_cursor')
