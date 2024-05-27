@@ -49,7 +49,7 @@ if __name__ == '__main__':
             hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
             rate = round(count / hrs_running, 2)
             q_size = redis.scard(REDIS_UNPAYWALL_REFRESH_QUEUE)
-            print(f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size}')
+            print(f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
 
 
 
