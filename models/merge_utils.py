@@ -34,8 +34,7 @@ def merge_crossref_with_parsed(crossref_record, parsed_record):
     logger.info(
         f"merging record {crossref_record.id} with parsed record {parsed_record.id}")
 
-    exclude_attrs = {'unpaywall', 'parseland_record', '_sa_instance_state',
-                     'insert_dict'}
+    exclude_attrs = {'parseland_record', '_sa_instance_state', 'insert_dict'}
     crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if
                          k not in exclude_attrs}
     cloned_crossref_record = Record(**crossref_record_d)
