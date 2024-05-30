@@ -1,7 +1,7 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
 RELEASE 2024-05-30
-- added 141M new references to works (7.06% increase) by matching references without DOIs using title/author/publication year
+- added 151M new references to works (7.61% increase) by matching references without DOIs using title/author/publication year
 - updated authorship information for 17.9M works by syncing Crossref changes
 - added 4 new work types, reclassifying existing works: “preprint” (5.7M), “libguides” (1.8M), “review” (820k), and “supplementary-materials” (50k)
 - "super system" institutions such as University of California System are removed from institution lineage
