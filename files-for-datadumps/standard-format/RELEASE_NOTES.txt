@@ -1,5 +1,12 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-05-30
+- added 141M new references to works (7.06% increase) by matching references without DOIs using title/author/publication year
+- updated authorship information for 17.9M works by syncing Crossref changes
+- added 4 new work types, reclassifying existing works: “preprint” (5.7M), “libguides” (1.8M), “review” (820k), and “supplementary-materials” (50k)
+- "super system" institutions such as University of California System are removed from institution lineage
+- added datasets from DataCite: 1.07M from Cambridge Structural Database and 709k from Harvard Dataverse
+
 RELEASE 2024-04-25
 - added affiliations to ~2.5M works using open access PDFs parsed by grobid
 - ingested 3.4M works from DataCite, primarily from Zenodo, Arxiv, and Figshare
