@@ -203,7 +203,7 @@ class RorLabels(db.Model):
         for label_obj in item['labels']:
             yield cls(
                 ror_id=ror_short_id(item['id']),
-                iso639=label_obj['iso639'],
+                iso639=label_obj['iso639'] or '',
                 label=label_obj['label']
             )
 
