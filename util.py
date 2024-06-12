@@ -1,6 +1,7 @@
 import datetime
 import time
 import unicodedata
+
 import sqlalchemy
 import logging
 import math
@@ -17,7 +18,7 @@ import copy
 from nameparser import HumanName
 import string
 
-from pyalex import Works
+from pyalex import Works, config
 from tenacity import retry, stop_after_attempt, wait_exponential
 from unidecode import unidecode
 from sqlalchemy import sql, text
@@ -895,6 +896,7 @@ def filter_string_to_dict(oax_filter_str):
 
 
 def openalex_works_paginate(oax_filter, select=None):
+    config.email = 'team@ourresearch.org'
     d = filter_string_to_dict(oax_filter)
     query = Works().filter(**d)
     if select:
