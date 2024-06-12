@@ -37,6 +37,8 @@ def enqueue_oa_filter(oax_filter):
     for page in openalex_works_paginate(oax_filter, select='doi'):
         count += len(page)
         dois = tuple([normalize_doi(work['doi']) for work in page if work.get('doi')])
+        if not dois:
+            continue
         recordthresher_ids = db.session.execute(text(
             'SELECT id FROM ins.recordthresher_record WHERE doi IN :dois'), params={'dois': dois}).fetchall()
         recordthresher_ids = [r[0] for r in recordthresher_ids]
