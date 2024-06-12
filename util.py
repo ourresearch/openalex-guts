@@ -17,6 +17,7 @@ import copy
 from nameparser import HumanName
 import string
 
+from pyalex import Works
 from tenacity import retry, stop_after_attempt, wait_exponential
 from unidecode import unidecode
 from sqlalchemy import sql, text
@@ -882,3 +883,25 @@ def get_openalex_json(url, params, s=None):
               verify=False)
     r.raise_for_status()
     return r.json()
+
+
+def filter_string_to_dict(oax_filter_str):
+    items = oax_filter_str.split(',')
+    d = {}
+    for item in items:
+        k, v = item.split(':', maxsplit=1)
+        d[k] = v
+    return d
+
+
+def openalex_works_paginate(oax_filter, select=None):
+    d = filter_string_to_dict(oax_filter)
+    query = Works().filter(**d)
+    if select:
+        query.select(select)
+    pager = iter(query.paginate(per_page=200, n_max=None))
+    while True:
+        try:
+            yield next(pager)
+        except StopIteration:
+            break
