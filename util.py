@@ -907,5 +907,6 @@ def openalex_works_paginate(oax_filter, select=None):
             page = next(pager)
             if not page:
                 break
+            yield page
         except StopIteration:
             break
