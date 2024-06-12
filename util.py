@@ -904,6 +904,8 @@ def openalex_works_paginate(oax_filter, select=None):
     pager = iter(query.paginate(per_page=200, n_max=None))
     while True:
         try:
-            yield next(pager)
+            page = next(pager)
+            if not page:
+                break
         except StopIteration:
             break
