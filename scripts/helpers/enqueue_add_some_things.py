@@ -36,7 +36,7 @@ def enqueue_oa_filter(oax_filter, methods=None):
     count = 0
     for page in openalex_works_paginate(oax_filter, select='id'):
         count += len(page)
-        work_ids = [work.get('id') for work in page if work.get('id')]
+        work_ids = [int(work.get['id'].split('.org/W')[-1]) for work in page if work.get('id')]
         if not work_ids:
             continue
         enqueue_works(work_ids, methods=methods)
