@@ -18,7 +18,6 @@ import copy
 from nameparser import HumanName
 import string
 
-from pyalex import Works, config
 from tenacity import retry, stop_after_attempt, wait_exponential
 from unidecode import unidecode
 from sqlalchemy import sql, text
@@ -886,27 +885,21 @@ def get_openalex_json(url, params, s=None):
     return r.json()
 
 
-def filter_string_to_dict(oax_filter_str):
-    items = oax_filter_str.split(',')
-    d = {}
-    for item in items:
-        k, v = item.split(':', maxsplit=1)
-        d[k] = v
-    return d
-
-
 def openalex_works_paginate(oax_filter, select=None):
-    config.email = 'team@ourresearch.org'
-    d = filter_string_to_dict(oax_filter)
-    query = Works().filter(**d)
+    params = {'mailto': 'team@ourresearch.org',
+              'filter': oax_filter,
+              'per-page': '200',
+              'cursor': '*'}
     if select:
-        query.select(select)
-    pager = iter(query.paginate(per_page=200, n_max=None))
+        params['select'] = select
+    s = requests.session()
     while True:
-        try:
-            page = next(pager)
-            if not page:
-                break
-            yield page
-        except StopIteration:
+        j = get_openalex_json('https://api.openalex.org/works', params, s)
+        page = j['results']
+        if next_cursor := j['meta'].get('next_cursor'):
+            params['cursor'] = next_cursor
+        else:
             break
+        if not page:
+            break
+        yield page
