@@ -1238,8 +1238,6 @@ class Work(db.Model):
         titles_ids_scores = [
             {'title': w.original_title, 'id': w.paper_id, 'score': score} for
             w, score in zip(work_matches_by_title, scores)]
-        logger.info(
-            f'Reference match ({self.paper_id}) - Title: {reference_json[title_key]} | Matches: {json.dumps(titles_ids_scores, indent=4)} | Matched ID, Title: {match.paper_id}, {match.original_title}')
         return match
 
     def add_references(self):
