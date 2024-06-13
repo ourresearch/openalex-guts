@@ -7,6 +7,7 @@ from redis import Redis
 from sqlalchemy import text
 
 from app import REDIS_QUEUE_URL, db
+from scripts.add_things_queue import enqueue_jobs
 from util import openalex_works_paginate, normalize_doi
 
 REDIS_UNPAYWALL_REFRESH_QUEUE = 'queue:unpaywall_refresh'
@@ -40,7 +41,7 @@ def enqueue_oa_filter(oax_filter):
         if not dois:
             continue
         recordthresher_ids = db.session.execute(text(
-            'SELECT id FROM ins.recordthresher_record WHERE doi IN :dois'), params={'dois': dois}).fetchall()
+            'SELECT id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'), params={'dois': dois}).fetchall()
         recordthresher_ids = [r[0] for r in recordthresher_ids]
         redis.sadd(REDIS_UNPAYWALL_REFRESH_QUEUE, *recordthresher_ids)
         print(f'[*] Enqueued {count} works from filter: {oax_filter}')
@@ -49,17 +50,18 @@ def enqueue_oa_filter(oax_filter):
 def refresh_from_queue():
     count = 0
     start = datetime.now()
+    work_ids_batch = []
     while True:
         recordthresher_id = redis.spop(REDIS_UNPAYWALL_REFRESH_QUEUE)
         if recordthresher_id is None:
             break
-        doi = db.session.execute(
-            'SELECT doi FROM ins.recordthresher_record WHERE id = :id',
+        doi, work_id = db.session.execute(
+            'SELECT doi, work_id FROM ins.recordthresher_record WHERE id = :id',
             {'id': recordthresher_id.decode()}).fetchone()
-        if not doi:
-            print(f'No DOI for recordthresher id: {recordthresher_id.decode()}')
+        if not doi or work_id < 0:
+            print(f'Work ID or DOI missing for recordthresher id: {recordthresher_id.decode()}, skipping')
             continue
-        upw_response = get_upw_response(doi[0])
+        upw_response = get_upw_response(doi)
         best_oa_location = (upw_response.get('best_oa_location', {}) or {})
         params = {'now': datetime.now(),
                   'oa_status': upw_response.get('oa_status'),
@@ -77,11 +79,13 @@ def refresh_from_queue():
             'best_oa_location_license = :best_oa_license, issn_l = :issn_l, oa_locations_json = :oa_locations_json WHERE recordthresher_id = :id',
             params)
         count += 1
+        work_ids_batch.append(work_id)
         if count % 50 == 0:
             db.session.commit()
             hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
             rate = round(count / hrs_running, 2)
             q_size = redis.scard(REDIS_UNPAYWALL_REFRESH_QUEUE)
+            enqueue_jobs(work_ids_batch)
             print(
                 f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
 
