@@ -1798,6 +1798,13 @@ class Work(db.Model):
                   not record.pmh_id or 'oai:hal' not in record.pmh_id.lower()]
         return hal_records + others
 
+    @property
+    def only_mag_records(self):
+        if self.records_merged:
+            return all(r.record_type == 'mag_location' for r in self.records_merged)
+        else:
+            return False
+
     def set_fields_from_all_records(self):
         self.updated_date = datetime.datetime.utcnow().isoformat()
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
@@ -2606,7 +2613,7 @@ class Work(db.Model):
                 if other_location_dict['landing_page_url']:
                     seen_urls.add(other_location_dict['landing_page_url'])
 
-                if not self.records_merged and self.journal:
+                if (not self.records_merged or self.only_mag_records) and self.journal:
                     # mag location, assume it came from the work's mag journal
                     other_location_dict['source'] = self.journal.to_dict(
                         return_level='minimum')
