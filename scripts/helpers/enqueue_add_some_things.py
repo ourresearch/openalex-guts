@@ -31,7 +31,7 @@ def dequeue_chunk(chunk_size):
     return [json.loads(item) for item in items]
 
 
-def enqueue_oa_filter(oax_filter):
+def enqueue_oa_filter(oax_filter, methods=None):
     print(f'[*] Enqueueing API filter: {oax_filter}')
     count = 0
     for page in openalex_works_paginate(oax_filter, select='id'):
@@ -39,29 +39,35 @@ def enqueue_oa_filter(oax_filter):
         work_ids = [work.get('id') for work in page if work.get('id')]
         if not work_ids:
             continue
-        enqueue_works(work_ids)
+        enqueue_works(work_ids, methods=methods)
         print(f'[*] Enqueued {count} works from filter: {oax_filter}')
 
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--oax_filter', action='append', required=False)
+    parser.add_argument('--oax_filter', '-oaxf', action='append')
     parser.add_argument('--file', '-f', type=str)
-    parser.add_argument('--methods', '-m', nargs='+', type=str)
+    parser.add_argument('--methods', '-m', nargs='+', type=str, default=None)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    f = open(args.file)
-    reader = csv.DictReader(f)
-    work_ids = []
-    for i, line in enumerate(reader):
-        work_ids.append(int(line['work_id']))
-        if i % 1000 == 0:
-            enqueue_works(work_ids, methods=args.methods)
-            print(f'Enqueued {len(work_ids)} works')
-            work_ids = []
+    if not args.file and not args.oax_filter:
+        raise Exception('Either --file or --oax_filter is required')
+    if args.file:
+        f = open(args.file)
+        reader = csv.DictReader(f)
+        work_ids = []
+        for i, line in enumerate(reader):
+            work_ids.append(int(line['work_id']))
+            if i % 1000 == 0:
+                enqueue_works(work_ids, methods=args.methods)
+                print(f'Enqueued {len(work_ids)} works')
+                work_ids = []
+    elif args.oax_filter:
+        for _filter in args.oax_filter:
+            enqueue_oa_filter(_filter, methods=args.methods)
 
 
 if __name__ == '__main__':
