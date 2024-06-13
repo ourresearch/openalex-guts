@@ -7,6 +7,8 @@ from app import REDIS_QUEUE_URL
 
 from redis.client import Redis
 
+from util import openalex_works_paginate, normalize_doi
+
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
 
@@ -29,9 +31,22 @@ def dequeue_chunk(chunk_size):
     return [json.loads(item) for item in items]
 
 
+def enqueue_oa_filter(oax_filter):
+    print(f'[*] Enqueueing API filter: {oax_filter}')
+    count = 0
+    for page in openalex_works_paginate(oax_filter, select='id'):
+        count += len(page)
+        work_ids = [work.get('id') for work in page if work.get('id')]
+        if not work_ids:
+            continue
+        enqueue_works(work_ids)
+        print(f'[*] Enqueued {count} works from filter: {oax_filter}')
+
+
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--file', '-f', required=True, type=str)
+    parser.add_argument('--oax_filter', action='append', required=False)
+    parser.add_argument('--file', '-f', type=str)
     parser.add_argument('--methods', '-m', nargs='+', type=str)
     return parser.parse_args()
 
