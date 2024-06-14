@@ -1926,9 +1926,46 @@ class Work(db.Model):
                 "is_corresponding": is_corresponding,
                 "raw_author_name": affil_list[0]["raw_author_name"],
                 "raw_affiliation_strings": raw_affiliation_strings,
+                "affiliations": self.affiliations_displayed(affil_list),
             }
             response.append(response_dict)
         return response
+
+    @staticmethod
+    def affiliations_displayed(affil_list):
+        """
+        Affiliations that are displayed within authorships in to_dict().
+        """
+        affiliations = []
+
+        for affil in affil_list:
+            author_position = affil.get("author_position")
+            institution_id = affil.get("institution", {}).get("id")
+            raw_affiliation_string = affil.get("raw_affiliation_string")
+
+            # find an existing entry with the same author_position and raw_affiliation_string
+            found = False
+            for affiliation in affiliations:
+                if (affiliation["author_position"] == author_position and
+                        affiliation["raw_affiliation_string"] == raw_affiliation_string):
+                    if institution_id:
+                        affiliation["institution_ids"].append(institution_id)
+                    found = True
+                    break
+
+            # if no such entry exists, create a new one
+            if not found and raw_affiliation_string:
+                affiliations.append({
+                    "author_position": author_position,
+                    "raw_affiliation_string": raw_affiliation_string,
+                    "institution_ids": [institution_id] if institution_id else []
+                })
+
+        # remove author_position, no longer needed
+        for affiliation in affiliations:
+            del affiliation["author_position"]
+
+        return affiliations
 
     @cached_property
     def institutions_distinct(self):
