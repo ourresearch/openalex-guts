@@ -1128,7 +1128,6 @@ class Work(db.Model):
             record for record in self.records_sorted
             if hasattr(record, "unpaywall") and record.unpaywall
         ]
-        logger.info(f'{len(records_with_unpaywall)} - records_with_unpaywall')
 
         if not records_with_unpaywall:
             return
