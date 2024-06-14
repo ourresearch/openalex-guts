@@ -1,7 +1,7 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
 UPCOMING RELEASE (June, 2024)
-- fixed bug: APC estimates (apc_list and apc_paid) no longer given for works with OA status of closed, bronze, or green
+- fixed bug: APC estimates (apc_paid) no longer given for works with OA status of closed, bronze, or green
 
 RELEASE 2024-05-30
 - added 151M new references to works (7.61% increase) by matching references without DOIs using title/author/publication year

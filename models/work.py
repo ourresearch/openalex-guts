@@ -2223,14 +2223,8 @@ class Work(db.Model):
                 "value_usd": self.openapc.apc_in_usd,
                 "provenance": "openapc",
             }
-        elif self.apc_list:
-            return self.apc_list
 
-    @property
-    def apc_list(self):
-        """Display first APC we have listed (usually from DOAJ, but can be manually entered)."""
-
-        # apc_list is only relevant if this work is open access gold or hybrid
+        # apc_paid is only relevant if this work is open access gold or hybrid
         # first, we need to make sure the OA status is correct
         oa_status = self.oa_status or "closed"
         if self.is_oa is True and oa_status == 'closed':
@@ -2239,19 +2233,25 @@ class Work(db.Model):
                                                              self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
         
-        if oa_status in ['gold', 'hybrid']:
-            first_doaj_apc = (
-                self.journal.apc_prices_with_0[
-                    0] if self.journal and self.journal.apc_prices_with_0 else None
-            )
-            doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
-            if first_doaj_apc:
-                return {
-                    "value": first_doaj_apc.get("price", None),
-                    "currency": first_doaj_apc.get("currency", None),
-                    "value_usd": doaj_apc_in_usd,
-                    "provenance": "doaj",
-                }
+        if oa_status in ['gold', 'hybrid'] and self.apc_list:
+            return self.apc_list
+
+    @property
+    def apc_list(self):
+        """Display first APC we have listed (usually from DOAJ, but can be manually entered)."""
+
+        first_doaj_apc = (
+            self.journal.apc_prices_with_0[
+                0] if self.journal and self.journal.apc_prices_with_0 else None
+        )
+        doaj_apc_in_usd = self.journal.apc_usd_with_0 if self.journal else None
+        if first_doaj_apc:
+            return {
+                "value": first_doaj_apc.get("price", None),
+                "currency": first_doaj_apc.get("currency", None),
+                "value_usd": doaj_apc_in_usd,
+                "provenance": "doaj",  # we need to change this
+            }
 
     @property
     def sustainable_development_goals(self):
