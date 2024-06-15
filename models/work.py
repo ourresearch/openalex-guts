@@ -1268,6 +1268,10 @@ class Work(db.Model):
                             if my_clean_doi:
                                 citation_dois.append(my_clean_doi)
                                 continue
+                        # Lots of DOIs like 10.1016/j.sna.2016.04.032_bib0005 in citation_unmatched table, splitting on _ matches to correct DOI
+                        if citation_dict.get('key') and (doi := clean_doi(citation_dict['key'].split('_')[0], return_none_if_error=True)):
+                            citation_dois.append(doi)
+                            continue
                         if "pmid" in citation_dict:
                             my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
