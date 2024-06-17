@@ -327,7 +327,7 @@ def main(args):
     finally:
         logger.info("refreshing materialized view mid.institution_ancestors_mv")
         refresh_ancestors_mv()
-        db.session.add(ror_update_log_db)
+        db.session.merge(ror_update_log_db)
         db.session.commit()
 
 
