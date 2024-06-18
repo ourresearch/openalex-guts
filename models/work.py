@@ -1637,7 +1637,7 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            if all((self.publisher and 'elsevier' in self.publisher.lower() or self.journal.publisher_id == 4310320990,
+            if all((self.publisher and 'elsevier' in self.publisher.lower() or (self.journal and self.journal.publisher_id == 4310320990),
                    self.oa_status == 'hybrid',
                    record.unpaywall.best_oa_location_license == 'publisher-specific-oa')): # https://openalex.zendesk.com/agent/tickets/1747
                 self.oa_status = record.unpaywall.oa_status
