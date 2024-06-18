@@ -2363,22 +2363,9 @@ class Work(db.Model):
                     sources.append("doaj")
         return sorted(list(set(sources)))
 
-    @property
-    def is_deleted_in_crossref(self):
-        crossref_delete_message = 'crossref listing of deleted dois'
-        for record in self.records_sorted:
-            if record.record_type == "crossref_doi":
-                return ((record.venue_name and record.venue_name.lower() == crossref_delete_message) or
-                        (record.title and record.title.lower() == crossref_delete_message))
-        return False
-
     def store(self):
         if not self.full_updated_date:
             return []
-
-        if self.is_deleted_in_crossref and self.merge_into_id is None:
-            logger.info(f"merging {self.openalex_id} into deleted work ID due to crossref deletion.")
-            self.merge_into_id = DELETED_WORK_ID
 
         index_suffix = elastic_index_suffix(self.year)
 
