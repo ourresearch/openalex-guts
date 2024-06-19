@@ -27,11 +27,12 @@ _redis = Redis.from_url(REDIS_QUEUE_URL)
 def run(**kwargs):
     entity_type = kwargs.get("entity")
     method_name = kwargs.get("method")
+    queue_table_override = kwargs.get("queue_table")
 
-    if method_name == "store":
-        queue_table = f"queue.{entity_type.lower()}_store"
+    if queue_table_override:
+        queue_table = queue_table_override
     else:
-        queue_table = f"queue.{method_name.lower()}"
+        queue_table = f"queue.{entity_type.lower()}_store"
 
     if single_id := kwargs.get('id'):
         if objects := get_objects(entity_type, [single_id]):
@@ -87,10 +88,12 @@ def run(**kwargs):
                     index_and_merge_object_records(bulk_actions)
                     logger.info(f'indexing took {elapsed(start_time, 4)}s')
 
-                if entity_type == 'work' and method_name == 'store':
+                if entity_type == 'work' and method_name == 'store' and not queue_table_override:
                     log_work_store_time(loop_start, time(), chunk)
+                elif queue_table == 'queue.work_authors_changed_store':
+                    remove_object_ids_from_queue(queue_table, object_ids)
                 else:
-                    finish_object_ids(queue_table, object_ids)
+                    update_object_ids_in_queue(queue_table, object_ids)
 
                 objects_updated += len(objects)
 
@@ -188,19 +191,24 @@ def fetch_queue_chunk_ids_from_pg(queue_table, chunk_size):
 
     return ids
 
-def finish_object_ids(queue_table, object_ids):
-    # logger.info(f'finishing queue chunk')
-    start_time = time()
 
+def update_object_ids_in_queue(queue_table, object_ids):
     query_text = f'''
         update {queue_table}
         set finished = now(), started=null
         where id = any(:ids)
     '''
-
     db.session.execute(text(query_text).bindparams(ids=object_ids))
     db.session.commit()
-    # logger.info(f'finished saving finish_objects in {elapsed(start_time, 4)}s')
+
+
+def remove_object_ids_from_queue(queue_table, object_ids):
+    query_text = f'''
+        delete from {queue_table}
+        where id = any(:ids)
+    '''
+    db.session.execute(text(query_text).bindparams(ids=object_ids))
+    db.session.commit()
 
 
 def get_objects(entity_type, object_ids):
@@ -425,6 +433,7 @@ if __name__ == "__main__":
     parser.add_argument('--method', type=str, help="the method to run")
     parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many objects to work on")
+    parser.add_argument('--queue_table', type=str, nargs="?", help="the queue table to use, optional")
     parser.add_argument(
         '--chunk', "-ch", nargs="?", default=100, type=int, help="how many objects to take off the queue at once"
     )
