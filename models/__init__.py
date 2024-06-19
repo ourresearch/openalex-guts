@@ -65,6 +65,7 @@ from models.work_concept import WorkConcept
 from models.work_topic import WorkTopic
 from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
+from models.work_fwci import WorkFWCI
 
 REDIS_WORK_QUEUE = 'queue:work_store'
 REDIS_ADD_THINGS_QUEUE = 'queue:add_things'
@@ -85,6 +86,7 @@ Work.embeddings = db.relationship("WorkEmbedding", uselist=False)
 Work.sdg = db.relationship("WorkSDG", uselist=False)
 Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=False)
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
+Work.work_fwci = db.relationship("WorkFWCI", lazy='selectin', uselist=False)
 
 Work.related_versions = db.relationship(
     "WorkRelatedVersion",
