@@ -1,5 +1,6 @@
 import argparse
 import json
+import traceback
 from datetime import datetime
 
 import requests
@@ -61,7 +62,12 @@ def refresh_from_queue():
         if not doi or work_id < 0:
             print(f'Work ID or DOI missing for recordthresher id: {recordthresher_id.decode()}, skipping')
             continue
-        upw_response = get_upw_response(doi)
+        try:
+            upw_response = get_upw_response(doi)
+        except Exception as e:
+            print(f"Error fetching Unpaywall response for DOI: {doi}")
+            print(traceback.format_exc())
+            continue
         best_oa_location = (upw_response.get('best_oa_location', {}) or {})
         params = {'now': datetime.now(),
                   'oa_status': upw_response.get('oa_status'),
