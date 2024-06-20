@@ -19,7 +19,7 @@ UPW_SESSION = requests.session()
 
 
 def get_upw_response(doi):
-    url = f'https://api.unpaywall.org/v2/{doi}?email=team@ourrsearch.org'
+    url = f'https://api.unpaywall.org/v2/{doi}?email=team@ourresearch.org'
     r = UPW_SESSION.get(url)
     r.raise_for_status()
     return r.json()
