@@ -1639,7 +1639,7 @@ class Work(db.Model):
             self.is_paratext = record.unpaywall.is_paratext
             if all((self.publisher and 'elsevier' in self.publisher.lower() or (self.journal and self.journal.publisher_id == 4310320990),
                    self.oa_status == 'hybrid',
-                   record.unpaywall.best_oa_location_license == 'publisher-specific-oa')): # https://openalex.zendesk.com/agent/tickets/1747
+                   any([loc['license'] == 'publisher-specific-oa' for loc in record.unpaywall.oa_locations]))) or self.is_springer_ebook: # https://openalex.zendesk.com/agent/tickets/1747
                 self.oa_status = record.unpaywall.oa_status
             else:
                 self.oa_status = self.update_oa_status_if_better(
@@ -2096,6 +2096,10 @@ class Work(db.Model):
             return not self.is_oa
         return False
 
+    @property
+    def is_springer_ebook(self):
+        return self.journal_id == 4306463937
+
     @cached_property
     def is_oa(self):
         return True if self.oa_locations else False
@@ -2418,17 +2422,16 @@ class Work(db.Model):
 
         if self.abstract and self.abstract.abstract:
             my_dict['abstract'] = self.abstract.abstract
-
-        if self.record_fulltext:
-            my_dict['fulltext'] = self.record_fulltext
-            my_dict['has_fulltext'] = True
-            my_dict['fulltext_origin'] = 'pdf'
-        elif self.fulltext and self.fulltext.fulltext:
-            my_dict['fulltext'] = self.fulltext.fulltext
-            my_dict['has_fulltext'] = True
-            my_dict['fulltext_origin'] = 'ngrams'
-        else:
-            my_dict['has_fulltext'] = False
+        my_dict['has_fulltext'] = False
+        if not self.is_springer_ebook:
+            if self.record_fulltext:
+                my_dict['fulltext'] = self.record_fulltext
+                my_dict['has_fulltext'] = True
+                my_dict['fulltext_origin'] = 'pdf'
+            elif self.fulltext and self.fulltext.fulltext:
+                my_dict['fulltext'] = self.fulltext.fulltext
+                my_dict['has_fulltext'] = True
+                my_dict['fulltext_origin'] = 'ngrams'
 
         if len(my_dict.get('authorships', [])) > 100:
             my_dict['authorships_full'] = my_dict.get('authorships', [])
@@ -2530,6 +2533,8 @@ class Work(db.Model):
         from models.location import is_accepted, is_published
         locations = []
         seen_urls = set()
+        override_all_oa_false = False
+        doi_location = None
 
         # make sure to add doi location first
         for r in self.records_sorted:
@@ -2547,6 +2552,8 @@ class Work(db.Model):
                     'doi': doi_url,
                 }
 
+                if self.is_springer_ebook and hasattr(r, 'unpaywall') and r.unpaywall.oa_status == 'closed':
+                    override_all_oa_false = True
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
                     doi_location['landing_page_url'] = doi_url
@@ -2744,6 +2751,10 @@ class Work(db.Model):
             locations[0]['is_accepted'] = is_accepted(locations[0]['version'])
             locations[0]['is_published'] = is_published(locations[0]['version'])
 
+        if override_all_oa_false:
+            locations = [loc for loc in locations if loc == doi_location] if doi_location else []
+            for loc in locations:
+                loc['is_oa'] = False
         return locations
 
     @cached_property
@@ -2835,8 +2846,12 @@ class Work(db.Model):
 
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
+        # Springer e-book exception
+        if self.is_springer_ebook and oa_status == 'closed':
+            self.oa_status = 'closed'
+            oa_status = 'closed'
         # if is_oa and oa_status are inconsistent, we need to fix
-        if is_oa is False and oa_status != 'closed':
+        elif is_oa is False and oa_status != 'closed':
             # on inspection, a lot of these seem to be open, so let's mark them OA
             is_oa = True
         elif is_oa is True and oa_status == 'closed':
