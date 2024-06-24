@@ -1217,7 +1217,7 @@ class Work(db.Model):
         ).limit(50).all()
         if not work_matches_by_title:
             return None
-        ref_author = reference_json.get(author_key, '').split(',')[0]
+        ref_author = (reference_json.get(author_key, '') or '').split(',')[0]
         ref_author_strings = matching_author_strings(ref_author)
         ref_pub_yr = str(reference_json.get('year', 0))
         ref_pub_yr = int(ref_pub_yr) if ref_pub_yr.isnumeric() else 0
@@ -2847,7 +2847,7 @@ class Work(db.Model):
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
         # Springer e-book exception
-        if self.is_springer_ebook and oa_status == 'closed':
+        if self.is_springer_ebook and (oa_status == 'closed' or not self.is_oa):
             self.oa_status = 'closed'
             oa_status = 'closed'
         # if is_oa and oa_status are inconsistent, we need to fix
