@@ -44,6 +44,7 @@ class Source(db.Model):
     apc_prices = db.Column(JSONB)
     apc_usd = db.Column(db.Integer)
     is_society_journal = db.Column(db.Boolean)
+    is_core = db.Column(db.Boolean)
     societies = db.Column(JSONB)
     alternate_titles = db.Column(JSONB)
     abbreviated_title = db.Column(db.Text)
@@ -289,6 +290,7 @@ class Source(db.Model):
             "host_organization_lineage_names": self.host_organization_lineage_names(),
             "is_oa": self.is_oa or False,
             "is_in_doaj": self.is_in_doaj or False,
+            "is_core": self.is_core or False,
             "type": self.type,
             "type_id": f"https://openalex.org/source-types/{self.type}".replace(" ", "%20") if self.type else None,
         }
