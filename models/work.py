@@ -2552,7 +2552,7 @@ class Work(db.Model):
                     'doi': doi_url,
                 }
 
-                if self.is_springer_ebook and hasattr(r, 'unpaywall') and r.unpaywall.oa_status == 'closed':
+                if self.is_springer_ebook and self.oa_status == 'closed':
                     override_all_oa_false = True
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
