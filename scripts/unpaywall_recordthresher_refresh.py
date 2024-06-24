@@ -111,6 +111,7 @@ def refresh_from_queue():
                 continue
             update_in_db(upw_response, recordthresher_id.decode())
             work_ids_batch.append(work_id)
+            count += 1
         db.session.commit()
         hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
         rate = round(count / hrs_running, 2)
