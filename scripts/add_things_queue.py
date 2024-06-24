@@ -3,7 +3,7 @@ import json
 import os
 import traceback
 from datetime import datetime
-from time import mktime, gmtime, time, sleep
+from time import time, sleep
 
 import psutil
 import requests
@@ -35,7 +35,7 @@ def enqueue_jobs(work_ids, priority=None, methods=None):
     if methods is None:
         methods = []
     if not priority:
-        priority = mktime(gmtime(0))
+        priority = time()
     mapping = {json.dumps({'work_id': work_id, 'methods': methods}): priority
                for work_id in work_ids}
     _redis.zadd(REDIS_ADD_THINGS_QUEUE, mapping)
@@ -53,7 +53,7 @@ def dequeue_chunk(chunk_size):
 def enqueue_fast_queue(works):
     redis_queue_time = time()
     redis_queue_mapping = {
-        work.paper_id: mktime(gmtime(0))
+        work.paper_id: time()
         for work in works if not work_has_null_author_ids(work)
     }
     if redis_queue_mapping:
