@@ -13,6 +13,7 @@ class Unpaywall(db.Model):
     doi = db.Column(db.Text)
     updated = db.Column(db.DateTime)
     oa_status = db.Column(db.Text)
+    issn_l = db.Column(db.Text)
     is_paratext = db.Column(db.Boolean)
     best_oa_location_url = db.Column(db.Text)
     best_oa_location_version = db.Column(db.Text)
