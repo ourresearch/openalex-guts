@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 import traceback
 from datetime import datetime
 
@@ -44,7 +45,10 @@ def enqueue_oa_filter(oax_filter):
         recordthresher_ids = db.session.execute(text(
             'SELECT id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'), params={'dois': dois}).fetchall()
         recordthresher_ids = [r[0] for r in recordthresher_ids]
-        redis.sadd(REDIS_UNPAYWALL_REFRESH_QUEUE, *recordthresher_ids)
+        redis_queue_mapping = {
+            recordthresher_id: time.time() for recordthresher_id in recordthresher_ids
+        }
+        redis.zadd(REDIS_UNPAYWALL_REFRESH_QUEUE, redis_queue_mapping)
         print(f'[*] Enqueued {count} works from filter: {oax_filter}')
 
 
@@ -52,48 +56,48 @@ def refresh_from_queue():
     count = 0
     start = datetime.now()
     work_ids_batch = []
+    chunk_size = 50
     while True:
-        recordthresher_id = redis.spop(REDIS_UNPAYWALL_REFRESH_QUEUE)
-        if recordthresher_id is None:
-            break
-        doi, work_id = db.session.execute(
-            'SELECT doi, work_id FROM ins.recordthresher_record WHERE id = :id',
-            {'id': recordthresher_id.decode()}).fetchone()
-        if not doi or work_id < 0:
-            print(f'Work ID or DOI missing for recordthresher id: {recordthresher_id.decode()}, skipping')
-            continue
-        try:
-            upw_response = get_upw_response(doi)
-        except Exception as e:
-            print(f"Error fetching Unpaywall response for DOI: {doi}")
-            print(traceback.format_exc())
-            continue
-        best_oa_location = (upw_response.get('best_oa_location', {}) or {})
-        params = {'now': datetime.now(),
-                  'oa_status': upw_response.get('oa_status'),
-                  'is_paratext': upw_response.get('is_paratext'),
-                  'best_oa_url': best_oa_location.get('url'),
-                  'best_oa_version': best_oa_location.get('version'),
-                  'best_oa_license': best_oa_location.get('license'),
-                  'issn_l': upw_response.get('journal_issn_l'),
-                  'oa_locations_json': json.dumps(
-                      upw_response.get('oa_locations')),
-                  'id': recordthresher_id.decode()}
-        db.session.execute(
-            'UPDATE ins.unpaywall_recordthresher_fields SET updated = :now, oa_status = :oa_status, is_paratext = :is_paratext, '
-            'best_oa_location_url = :best_oa_url, best_oa_location_version = :best_oa_version,  '
-            'best_oa_location_license = :best_oa_license, issn_l = :issn_l, oa_locations_json = :oa_locations_json WHERE recordthresher_id = :id',
-            params)
-        count += 1
-        work_ids_batch.append(work_id)
-        if count % 50 == 0:
-            db.session.commit()
-            hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
-            rate = round(count / hrs_running, 2)
-            q_size = redis.scard(REDIS_UNPAYWALL_REFRESH_QUEUE)
-            enqueue_jobs(work_ids_batch)
-            print(
-                f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
+        recordthresher_ids = redis.zpopmin(REDIS_UNPAYWALL_REFRESH_QUEUE, chunk_size)
+        for recordthresher_id in recordthresher_ids:
+            if recordthresher_id is None:
+                break
+            doi, work_id = db.session.execute(
+                'SELECT doi, work_id FROM ins.recordthresher_record WHERE id = :id',
+                {'id': recordthresher_id.decode()}).fetchone()
+            if not doi or work_id < 0:
+                print(f'Work ID or DOI missing for recordthresher id: {recordthresher_id.decode()}, skipping')
+                continue
+            try:
+                upw_response = get_upw_response(doi)
+            except Exception as e:
+                print(f"Error fetching Unpaywall response for DOI: {doi}")
+                print(traceback.format_exc())
+                continue
+            best_oa_location = (upw_response.get('best_oa_location', {}) or {})
+            params = {'now': datetime.now(),
+                      'oa_status': upw_response.get('oa_status'),
+                      'is_paratext': upw_response.get('is_paratext'),
+                      'best_oa_url': best_oa_location.get('url'),
+                      'best_oa_version': best_oa_location.get('version'),
+                      'best_oa_license': best_oa_location.get('license'),
+                      'issn_l': upw_response.get('journal_issn_l'),
+                      'oa_locations_json': json.dumps(
+                          upw_response.get('oa_locations')),
+                      'id': recordthresher_id.decode()}
+            db.session.execute(
+                'UPDATE ins.unpaywall_recordthresher_fields SET updated = :now, oa_status = :oa_status, is_paratext = :is_paratext, '
+                'best_oa_location_url = :best_oa_url, best_oa_location_version = :best_oa_version,  '
+                'best_oa_location_license = :best_oa_license, issn_l = :issn_l, oa_locations_json = :oa_locations_json WHERE recordthresher_id = :id',
+                params)
+            work_ids_batch.append(work_id)
+        db.session.commit()
+        hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
+        rate = round(count / hrs_running, 2)
+        q_size = redis.scard(REDIS_UNPAYWALL_REFRESH_QUEUE)
+        enqueue_jobs(work_ids_batch)
+        print(
+            f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
 
 
 if __name__ == '__main__':
