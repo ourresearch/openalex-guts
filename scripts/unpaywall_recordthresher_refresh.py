@@ -49,7 +49,7 @@ def enqueue_oa_filter(oax_filter):
             params={'dois': dois}).fetchall()
         recordthresher_ids = [r[0] for r in recordthresher_ids]
         redis_queue_mapping = {
-            recordthresher_id: time.time() for recordthresher_id in
+            recordthresher_id: 0 for recordthresher_id in
             recordthresher_ids
         }
         redis.zadd(REDIS_UNPAYWALL_REFRESH_QUEUE, redis_queue_mapping)
