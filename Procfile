@@ -1,5 +1,3 @@
-web: gunicorn views:app
-
 #run_queue_record: python -m scripts.queue --run --table=record --method=process_record --chunk=$RT_RECORD_CHUNK_SIZE --name=queue_record$DYNO
 run_queue_record: python -m scripts.queue_record_assign_work --chunk=$RT_RECORD_CHUNK_SIZE
 # run_queue_work_add_everything: python -m scripts.queue --run --table=work --method=add_everything --chunk=10 --name=work_add_everything$DYNO
