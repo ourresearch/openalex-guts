@@ -1,6 +1,7 @@
 import os
 
 import requests
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from elasticsearch import Elasticsearch, helpers
 
 from app import db, logger, ELASTIC_EMBEDDINGS_URL
@@ -24,6 +25,8 @@ def get_and_save_embeddings(work):
         text_to_process = f"Title: {title}"
     else:
         text_to_process = None
+
+    print(f"Text to process: {text_to_process}")
 
     if not text_to_process:
         logger.info(f"error processing title embeddings for {work.id} - no text to process")
@@ -57,9 +60,23 @@ def clean_text(text):
     # remove extra whitespace
     text = ' '.join(text.split())
 
+    # remove brackets around title []
+    text = text.strip()
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1]
+
     return text
 
 
+class APIError(Exception):
+    pass
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    stop=stop_after_attempt(5),
+    retry=retry_if_exception_type(APIError)
+)
 def call_embeddings_api(text):
     api_key = os.getenv('OPENAI_API_KEY')
 
@@ -76,6 +93,11 @@ def call_embeddings_api(text):
     }
 
     response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code != 200:
+        error_message = f"API request failed with status code {response.status_code}: {response.text}"
+        print(error_message)
+        raise APIError(error_message)
     return response
 
 
