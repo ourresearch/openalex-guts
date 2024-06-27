@@ -1,11 +1,10 @@
 import argparse
-from time import sleep
-from time import time
+from time import sleep, time
 import random
 
-from sqlalchemy import orm
-from sqlalchemy import text
+from sqlalchemy import orm, text
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import SQLAlchemyError
 
 import models
 from models.work_embedding import get_and_save_embeddings
@@ -13,7 +12,7 @@ from app import db, logger
 from util import elapsed
 
 """
-Run with: heroku local:run python -m scripts.queue_work_process_embeddings --chunk=10
+Run with: heroku local:run python -m -- scripts.queue_work_process_embeddings --chunk=10
 """
 
 
@@ -21,10 +20,10 @@ def process_embeddings(work):
     print(f"Processing {work.id}")
     get_and_save_embeddings(work)
     db.session.execute('''
-                    UPDATE queue.run_once_work_process_vector_embeddings 
-                    SET finished = NOW() 
-                    WHERE work_id = :work_id
-                ''', {'work_id': work.id})
+        UPDATE queue.run_once_work_store_embeddings
+        SET finished = NOW()
+        WHERE work_id = :work_id
+    ''', {'work_id': work.id})
     db.session.commit()
     print(f"Processed {work.id}")
 
@@ -41,8 +40,8 @@ class QueueWorkProcessEmbeddings:
         if single_id:
             work = QueueWorkProcessEmbeddings.fetch_works([single_id])[0]
             db.session.execute('''
-                UPDATE queue.run_once_work_process_vector_embeddings
-                SET started = NOW() 
+                UPDATE queue.run_once_work_store_embeddings
+                SET started = NOW()
                 WHERE work_id = :work_id
             ''', {'work_id': single_id})
             db.session.commit()
@@ -67,31 +66,25 @@ class QueueWorkProcessEmbeddings:
                     try:
                         process_embeddings(work)
                     except Exception as e:
-                        logger.error(f'error processing {work} - {e}')
+                        logger.error(f'Error processing {work} - {e}')
+                        db.session.rollback()
                         continue
-
-                db.session.execute('''
-                    UPDATE queue.run_once_work_process_vector_embeddings
-                    SET finished = NOW() 
-                    WHERE work_id = any(:work_ids)
-                ''', {'work_ids': work_ids})
-                db.session.commit()
 
                 commit_start_time = time()
                 db.session.commit()
-                logger.info(f'commit took {elapsed(commit_start_time, 2)} seconds')
+                logger.info(f'Commit took {elapsed(commit_start_time, 2)} seconds')
 
-                num_updated += chunk_size
-                logger.info(f'processed {len(work_ids)} Works in {elapsed(start_time, 2)} seconds')
+                num_updated += len(work_ids)
+                logger.info(f'Processed {len(work_ids)} works in {elapsed(start_time, 2)} seconds')
 
     @staticmethod
     def fetch_and_lock_queue_chunk(chunk_size):
-        logger.info("looking for works to update embeddings on")
+        logger.info("Looking for works to update embeddings on")
 
         with db.engine.begin() as connection:
             queue_query = text(f"""
                 SELECT work_id
-                FROM queue.run_once_work_process_vector_embeddings
+                FROM queue.run_once_work_store_embeddings
                 WHERE started IS NULL
                 LIMIT :chunk
                 FOR UPDATE SKIP LOCKED
@@ -101,9 +94,9 @@ class QueueWorkProcessEmbeddings:
 
             # Immediately mark the fetched IDs as started within the same transaction
             connection.execute("""
-                UPDATE queue.run_once_work_process_vector_embeddings
+                UPDATE queue.run_once_work_store_embeddings
                 SET started = NOW() 
-                WHERE work_id = ANY(%(id_list)s)
+                WHERE work_id = ANY(:id_list)
             """, {'id_list': id_list})
 
         logger.info(f'got {len(id_list)} IDs to process')
@@ -125,7 +118,7 @@ class QueueWorkProcessEmbeddings:
             objects = QueueWorkProcessEmbeddings.base_works_query().filter(
                 models.Work.paper_id.in_(object_ids)
             ).all()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.exception(f'exception getting records for {object_ids} so trying individually')
             objects = []
             for object_id in object_ids:
@@ -133,7 +126,7 @@ class QueueWorkProcessEmbeddings:
                     objects += QueueWorkProcessEmbeddings.base_works_query().filter(
                         models.Work.paper_id == object_id
                     ).all()
-                except Exception as e:
+                except SQLAlchemyError as e:
                     logger.exception(f'failed to load object {object_id}')
 
         logger.info(f'got {len(objects)} Works, took {elapsed(job_time)} seconds')
