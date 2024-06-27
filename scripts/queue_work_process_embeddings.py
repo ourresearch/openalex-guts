@@ -13,7 +13,7 @@ from app import db, logger
 from util import elapsed
 
 """
-Run with: heroku local:run python -m scripts.queue_work_process_embeddings --chunk=100
+Run with: heroku local:run python -m scripts.queue_work_process_embeddings --chunk=10
 """
 
 

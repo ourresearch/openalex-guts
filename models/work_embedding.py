@@ -1,23 +1,27 @@
+import os
+
 import requests
 from elasticsearch import Elasticsearch, helpers
 
-from app import db, logger, ELASTIC_URL, ELASTIC_EMBEDDINGS_URL
+from app import db, logger, ELASTIC_EMBEDDINGS_URL
 
 
 class WorkEmbedding(db.Model):
-    """
-    This model stores the dense vector embeddings that power semantic search.
-    """
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "work_embedding"
 
-    paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    embeddings = db.Column(db.JSON)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    embedding = db.Column(db.ARRAY(db.Float), nullable=False)
 
 
 def get_and_save_embeddings(work):
-    logger.info(f"adding title embeddings for {work.id}")
-    text_to_process = work.work_title
+    logger.info(f"adding embeddings for {work.id}")
+    if work.work_title and work.abstract:
+        text_to_process = f"title: {work.work_title} abstract: {work.abstract}"
+    elif work.work_title:
+        text_to_process = f"title: {work.work_title}"
+    else:
+        text_to_process = None
 
     if not text_to_process:
         logger.info(f"error processing title embeddings for {work.id} - no text to process")
@@ -45,30 +49,32 @@ def text_too_short(text):
 
 
 def call_embeddings_api(text):
-    """
-    Use the minilm-l12-v2 model to create embeddings.
-    """
-    url = f"{ELASTIC_URL}/_ml/trained_models/sentence-transformers__all-minilm-l12-v2/_infer"
-    data = {"docs": [{"text_field": text}]}
-    response = requests.post(url, json=data)
+    api_key = os.getenv('OPENAI_API_KEY')
+
+    url = "https://api.openai.com/v1/embeddings"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    data = {
+        "input": text,
+        "model": "text-embedding-3-large",
+        "dimensions": 256
+    }
+
+    response = requests.post(url, headers=headers, json=data)
     return response
 
 
 def get_embeddings_from_response(response):
-    result = response.json()["inference_results"][0]["predicted_value"]
+    result = response.json()["data"][0]["embedding"]
     return result
 
 
-def save_embeddings_to_db(paper_id, result):
-    existing_record = WorkEmbedding.query.filter_by(paper_id=paper_id).first()
-
-    if existing_record:
-        existing_record.embeddings = result
-    else:
-        new_record = WorkEmbedding(paper_id=paper_id, embedding=result)
-        db.session.add(new_record)
-
-    db.session.commit()
+def save_embeddings_to_db(work_id, result):
+    new_record = WorkEmbedding(work_id=work_id, embedding=result)
+    db.session.add(new_record)
 
 
 def generate_actions(works):
