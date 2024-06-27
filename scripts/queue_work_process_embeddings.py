@@ -96,7 +96,7 @@ class QueueWorkProcessEmbeddings:
             connection.execute("""
                 UPDATE queue.run_once_work_store_embeddings
                 SET started = NOW() 
-                WHERE work_id = ANY(:id_list)
+                WHERE work_id = ANY(%(id_list)s)
             """, {'id_list': id_list})
 
         logger.info(f'got {len(id_list)} IDs to process')

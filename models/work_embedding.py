@@ -16,10 +16,12 @@ class WorkEmbedding(db.Model):
 
 def get_and_save_embeddings(work):
     logger.info(f"adding embeddings for {work.id}")
-    if work.work_title and work.abstract:
-        text_to_process = f"title: {work.work_title} abstract: {work.abstract}"
+    abstract = clean_text(work.abstract.abstract) if work.abstract else None
+    title = clean_text(work.work_title)
+    if title and abstract:
+        text_to_process = f"Title: {title}\nAbstract: {abstract}"
     elif work.work_title:
-        text_to_process = f"title: {work.work_title}"
+        text_to_process = f"Title: {title}"
     else:
         text_to_process = None
 
@@ -46,6 +48,16 @@ def text_too_short(text):
         return True
     else:
         return False
+
+
+def clean_text(text):
+    if not text:
+        return text
+
+    # remove extra whitespace
+    text = ' '.join(text.split())
+
+    return text
 
 
 def call_embeddings_api(text):
