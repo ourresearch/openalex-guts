@@ -26,8 +26,6 @@ def get_and_save_embeddings(work):
     else:
         text_to_process = None
 
-    print(f"Text to process: {text_to_process}")
-
     if not text_to_process:
         logger.info(f"error processing title embeddings for {work.id} - no text to process")
         return None
