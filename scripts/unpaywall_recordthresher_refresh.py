@@ -16,8 +16,6 @@ REDIS_UNPAYWALL_REFRESH_QUEUE = 'queue:unpaywall_refresh'
 
 redis = Redis.from_url(REDIS_QUEUE_URL)
 
-UPW_SESSION = requests.session()
-
 DB_CONN = unpaywall_db_engine.engine.connect()
 
 
@@ -97,7 +95,7 @@ def enqueue_dois_txt_file(fname):
         print(f'[*] Enqueued {len(dois)} works from {fname}')
 
 
-def upsert_in_db(upw_response, recordthresher_id: str, doi: str):
+def upsert_in_db(upw_response, recordthresher_id: bytes, doi: str):
     best_oa_location = (upw_response.get('best_oa_location', {}) or {})
     params = {'now': datetime.now(),
               'doi': doi,
@@ -109,7 +107,7 @@ def upsert_in_db(upw_response, recordthresher_id: str, doi: str):
               'issn_l': upw_response.get('journal_issn_l'),
               'oa_locations_json': json.dumps(
                   upw_response.get('oa_locations')),
-              'id': recordthresher_id}
+              'id': recordthresher_id.decode()}
     sql = text('''
         INSERT INTO ins.unpaywall_recordthresher_fields (recordthresher_id, doi, updated, oa_status, is_paratext,
                                                          best_oa_location_url, best_oa_location_version,
