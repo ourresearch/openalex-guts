@@ -8,6 +8,7 @@ from time import time, sleep
 import psutil
 import requests
 from redis.client import Redis
+from sqlalchemy import text
 
 import models
 from app import REDIS_QUEUE_URL, logger, db
@@ -28,6 +29,7 @@ def parse_args():
                         type=str,
                         action='append',
                         help='OpenAlex API filter(s) to enqueue')
+    parser.add_argument('-fname', '--filename', type=str, help='Filename containing DOIs from which to enqueue with priority into add_things queue')
     return parser.parse_args()
 
 
@@ -50,10 +52,10 @@ def dequeue_chunk(chunk_size):
     return [json.loads(item[0]) for item in items]
 
 
-def enqueue_fast_queue(works):
-    redis_queue_time = time()
+def enqueue_fast_queue(works, priority=None):
+    redis_queue_time = time() if not priority else priority
     redis_queue_mapping = {
-        work.paper_id: time()
+        work.paper_id: time() if not priority else priority
         for work in works if not work_has_null_author_ids(work)
     }
     if redis_queue_mapping:
@@ -98,9 +100,21 @@ def enqueue_from_api(oa_filters):
                 logger.exception(traceback.format_exception())
 
 
+def enqueue_dois_txt_file(fname):
+    with open(fname) as f:
+        dois = tuple([line.strip() for line in f.readlines() if line.strip()])
+        work_ids = db.session.execute(text('SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
+                                                params={'dois': dois}).fetchall()
+        work_ids = [r[0] for r in work_ids]
+        enqueue_jobs(work_ids, priority=0)
+
+
 def main():
     args = parse_args()
-    if args.filter:
+    if args.filename:
+        enqueue_dois_txt_file(args.filename)
+        return
+    elif args.filter:
         enqueue_from_api(args.filter)
         return
     total_processed = 0
@@ -151,7 +165,7 @@ def main():
             logger.exception(e)
             db.session.rollback()
         if not args.skip_fast_enqueue:
-            enqueue_fast_queue(works)
+            enqueue_fast_queue(works, priority=0)
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
         hrs_diff = (now - start).total_seconds() / (60 * 60)
