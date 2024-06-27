@@ -8,7 +8,7 @@ import requests
 from redis import Redis
 from sqlalchemy import text
 
-from app import REDIS_QUEUE_URL, db
+from app import REDIS_QUEUE_URL, db, unpaywall_db_engine
 from scripts.add_things_queue import enqueue_jobs
 from util import openalex_works_paginate, normalize_doi
 
@@ -18,12 +18,36 @@ redis = Redis.from_url(REDIS_QUEUE_URL)
 
 UPW_SESSION = requests.session()
 
+DB_CONN = unpaywall_db_engine.engine.connect()
 
-def get_upw_response(doi):
-    url = f'https://api.unpaywall.org/v2/{doi}?email=team@ourresearch.org'
-    r = UPW_SESSION.get(url)
-    r.raise_for_status()
-    return r.json()
+
+def get_upw_responses(dois):
+    placeholders = ', '.join(['(:doi{})'.format(i) for i in range(len(dois))])
+
+    # SQL query with CTE and LEFT JOIN
+    query = text("""
+    WITH input_dois AS (
+        SELECT * FROM (VALUES {}) AS v(doi)
+    )
+    SELECT
+        input_dois.doi,
+        pub.response_jsonb
+    FROM
+        input_dois
+    LEFT JOIN
+        pub
+    ON
+        input_dois.doi = pub.id;
+    """.format(placeholders))
+
+    # Creating a dictionary of parameters
+    params = {'doi{}'.format(i): doi for i, doi in enumerate(dois)}
+
+    # Assuming DB_CONN is your SQLAlchemy connection
+    rows = DB_CONN.execute(query, params)
+
+    # Fetch all results
+    return rows.mappings().all()
 
 
 def parse_args():
@@ -31,7 +55,9 @@ def parse_args():
     parser.add_argument('-f', '--filter',
                         help='Filter to add to unpaywall recordthresher fields refresh queue',
                         action='append')
-    parser.add_argument('-doi', help='Single DOI to refresh for debugging purposes', type=str)
+    parser.add_argument('-doi',
+                        help='Single DOI to refresh for debugging purposes',
+                        type=str)
     return parser.parse_args()
 
 
@@ -56,7 +82,7 @@ def enqueue_oa_filter(oax_filter):
         print(f'[*] Enqueued {count} works from filter: {oax_filter}')
 
 
-def update_in_db(upw_response, recordthresher_id: str):
+def upsert_in_db(upw_response, recordthresher_id: str):
     best_oa_location = (upw_response.get('best_oa_location', {}) or {})
     params = {'now': datetime.now(),
               'oa_status': upw_response.get('oa_status'),
@@ -68,19 +94,32 @@ def update_in_db(upw_response, recordthresher_id: str):
               'oa_locations_json': json.dumps(
                   upw_response.get('oa_locations')),
               'id': recordthresher_id}
-    db.session.execute(
-        'UPDATE ins.unpaywall_recordthresher_fields SET updated = :now, oa_status = :oa_status, is_paratext = :is_paratext, '
-        'best_oa_location_url = :best_oa_url, best_oa_location_version = :best_oa_version,  '
-        'best_oa_location_license = :best_oa_license, issn_l = :issn_l, oa_locations_json = :oa_locations_json WHERE recordthresher_id = :id',
-        params)
+    sql = text('''
+        INSERT INTO ins.unpaywall_recordthresher_fields (recordthresher_id, updated, oa_status, is_paratext,
+                                                         best_oa_location_url, best_oa_location_version,
+                                                         best_oa_location_license, issn_l, oa_locations_json)
+        VALUES (:id, :now, :oa_status, :is_paratext, :best_oa_url, :best_oa_version,
+                :best_oa_license, :issn_l, :oa_locations_json)
+        ON CONFLICT (recordthresher_id)
+        DO UPDATE SET updated = :now,
+                      oa_status = :oa_status,
+                      is_paratext = :is_paratext,
+                      best_oa_location_url = :best_oa_url,
+                      best_oa_location_version = :best_oa_version,
+                      best_oa_location_license = :best_oa_license,
+                      issn_l = :issn_l,
+                      oa_locations_json = :oa_locations_json;
+    ''')
+
+    db.session.execute(sql, params)
 
 
 def refresh_single(doi):
     recordthresher_id = db.session.execute(
         'SELECT id FROM ins.recordthresher_record WHERE doi = :doi AND record_type = :record_type',
         {'doi': doi, 'record_type': 'crossref_doi'}).fetchone()[0]
-    upw_response = get_upw_response(doi)
-    update_in_db(upw_response, recordthresher_id)
+    upw_responses = get_upw_responses([doi])
+    upsert_in_db(upw_responses[0], recordthresher_id)
     db.session.commit()
 
 
@@ -88,11 +127,17 @@ def refresh_from_queue():
     count = 0
     start = datetime.now()
     work_ids_batch = []
+    dois_batch = {}
     chunk_size = 50
     while True:
         recordthresher_ids = redis.zpopmin(REDIS_UNPAYWALL_REFRESH_QUEUE,
                                            chunk_size)
-        recordthresher_ids = [recordthresher_id[0] for recordthresher_id in recordthresher_ids]
+        if not recordthresher_ids:
+            print('Queue is empty, trying again shortly...')
+            time.sleep(10)
+            continue
+        recordthresher_ids = [recordthresher_id[0] for recordthresher_id in
+                              recordthresher_ids]
         for recordthresher_id in recordthresher_ids:
             if recordthresher_id is None:
                 break
@@ -103,22 +148,25 @@ def refresh_from_queue():
                 print(
                     f'Work ID or DOI missing for recordthresher id: {recordthresher_id.decode()}, skipping')
                 continue
-            try:
-                upw_response = get_upw_response(doi)
-            except Exception as e:
-                print(f"Error fetching Unpaywall response for DOI: {doi}")
-                print(traceback.format_exc())
+            if not doi or not doi.strip():
                 continue
-            update_in_db(upw_response, recordthresher_id.decode())
+            dois_batch[doi] = recordthresher_id
+            # update_in_db(upw_response, recordthresher_id.decode())
             work_ids_batch.append(work_id)
             count += 1
+        upw_responses = get_upw_responses(list(dois_batch.keys()))
+        for upw_response in upw_responses:
+            if upw_response['response_jsonb']:
+                upsert_in_db(upw_response['response_jsonb'], upw_response['doi'])
         db.session.commit()
         hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
         rate = round(count / hrs_running, 2)
         q_size = redis.zcard(REDIS_UNPAYWALL_REFRESH_QUEUE)
         enqueue_jobs(work_ids_batch)
+        work_ids_batch.clear()
+        dois_batch.clear()
         print(
-            f'Updated count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
+            f'Upserted count: {count} | Rate: {rate}/hr | Queue size: {q_size} | Last DOI: {doi}')
 
 
 if __name__ == '__main__':
