@@ -53,9 +53,9 @@ def dequeue_chunk(chunk_size):
 
 
 def enqueue_fast_queue(works, priority=None):
-    redis_queue_time = time() if not priority else priority
+    redis_queue_time = time() if priority is None else priority
     redis_queue_mapping = {
-        work.paper_id: time() if not priority else priority
+        work.paper_id: time() if priority is None else priority
         for work in works if not work_has_null_author_ids(work)
     }
     if redis_queue_mapping:
