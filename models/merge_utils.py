@@ -3,6 +3,7 @@ import re
 from copy import deepcopy
 
 import math
+from enum import Enum
 
 from app import logger
 from const import MAX_AFFILIATIONS_PER_AUTHOR
@@ -15,64 +16,101 @@ def affiliations_probably_invalid(parsed_record):
     if not parsed_record.authors_json:
         return False
     return max(
-        [len(author.get('affiliations', [])) for author in parsed_record.authors_json]) > MAX_AFFILIATIONS_PER_AUTHOR
+        [len(author.get('affiliations', [])) for author in
+         parsed_record.authors_json]) > MAX_AFFILIATIONS_PER_AUTHOR
 
 
-def merge_crossref_with_parsed(crossref_record, parsed_record):
+def clone_record(record):
     from models import Record
+    exclude_attrs = {'parseland_record',
+                     '_sa_instance_state',
+                     'insert_dict'}
+    crossref_record_d = {k: v for k, v in record.__dict__.items() if
+                         k not in exclude_attrs}
+    cloned = Record(**crossref_record_d)
+    return cloned
 
-    if not crossref_record:
-        return None
 
-    if not (
-            crossref_record and crossref_record.record_type == 'crossref_doi'
-            and parsed_record and parsed_record.record_type in PARSED_RECORD_TYPES
-            and not affiliations_probably_invalid(parsed_record)
-    ):
+def merge_crossref_with_parsed(crossref_record, **parsed_records):
+    if not crossref_record or crossref_record.record_type != 'crossref_doi':
+        return crossref_record
+    pl_record, pdf_record = parsed_records['parseland_record'], parsed_records[
+        'pdf_record']
+    if pl_record is None and pdf_record is None:
         return crossref_record
 
     logger.info(
-        f"merging record {crossref_record.id} with parsed record {parsed_record.id}")
+        f"merging record {crossref_record.id} with parsed records {pl_record.id if pl_record else None} (parseland), {pdf_record.id if pdf_record else None} (pdf)")
 
-    exclude_attrs = {'parseland_record', '_sa_instance_state', 'insert_dict'}
-    crossref_record_d = {k: v for k, v in crossref_record.__dict__.items() if
-                         k not in exclude_attrs}
-    cloned_crossref_record = Record(**crossref_record_d)
+    cloned_crossref_record = clone_record(crossref_record)
 
-    parsed_dict = _parsed_record_dict(parsed_record)
-    pl_authors = parsed_dict.get('authors', [])
-    normalized_pl_authors = [normalize(author.get('raw', '')) for author in
-                             pl_authors]
+    cloned_crossref_record = merge_authors(cloned_crossref_record,
+                                           crossref_record, **parsed_records)
+    cloned_crossref_record = merge_citations(cloned_crossref_record,
+                                             crossref_record, **parsed_records)
+    cloned_crossref_record = merge_abstract(cloned_crossref_record,
+                                            crossref_record, **parsed_records)
+    return cloned_crossref_record
 
-    crossref_authors = json.loads(cloned_crossref_record.authors or '[]')
-    if not crossref_authors and pl_authors:
-        cloned_crossref_record.authors = json.dumps(pl_authors)
-        return cloned_crossref_record
+
+def merge_abstract(cloned_crossref_record, crossref_record, **parsed_records):
+    pl_record, pdf_record = parsed_records.get('parseland_record'), parsed_records.get('pdf_record')
+    abstract_record = pl_record
+    if (not pl_record or not pl_record.abstract) and pdf_record and pdf_record.abstract:
+        abstract_record = pdf_record
+    cloned_crossref_record.abstract = crossref_record.abstract if crossref_record.abstract else abstract_record.abstract
+    return cloned_crossref_record
+
+
+def merge_citations(cloned_crossref_record, crossref_record, **parsed_records):
+    records_sorted = [parsed_records.get('parseland_record'), parsed_records.get('pdf_record')]
+    citation_record = None
+    for record in records_sorted:
+        if record and record.has_citations:
+            citation_record = record
+    cloned_crossref_record.citations = crossref_record.citations if len(
+        crossref_record.citations or '[]') > 3 else citation_record.citations
+    return cloned_crossref_record
+
+
+def merge_authors(cloned_crossref_record, crossref_record, **parsed_records):
+    pl_record, pdf_record = parsed_records.get('parseland_record'), parsed_records.get('pdf_record')
+    parsed_pl_record, parsed_pdf_record = _parsed_record_dict(
+        pl_record), _parsed_record_dict(pdf_record)
+    parsed_authors_record = parsed_pl_record
+    if (not pl_record or not pl_record.has_affiliations) and pdf_record and pdf_record.has_affiliations:
+        parsed_authors_record = parsed_pdf_record
+    parsed_authors = parsed_authors_record.get('authors', [])
+    crossref_authors = crossref_record.authors_json
+    if not crossref_authors and parsed_authors:
+        cloned_crossref_record.authors = json.dumps(parsed_authors)
+    else:
+        cloned_crossref_record.authors = json.dumps(
+            merge_affiliations(crossref_record, parsed_authors))
+    return cloned_crossref_record
+
+
+def merge_affiliations(crossref_record, parsed_authors):
+    crossref_authors = crossref_record.authors_json
+    normalized_parsed_authors = [normalize(author.get('raw', '')) for author in
+                                 parsed_authors]
     for crossref_author_idx, crossref_author in enumerate(crossref_authors):
         best_match_idx = _match_parsed_author(
             crossref_author,
             crossref_author_idx,
-            normalized_pl_authors
+            normalized_parsed_authors
         )
 
         if best_match_idx > -1:
-            pl_author = pl_authors[best_match_idx]
-            crossref_author['is_corresponding'] = pl_author.get(
+            parsed_author = parsed_authors[best_match_idx]
+            crossref_author['is_corresponding'] = parsed_author.get(
                 'is_corresponding', '')
             crossref_author['affiliation'] = _reconcile_affiliations(
                 crossref_author,
-                pl_author,
+                parsed_author,
                 crossref_record.doi
             )
-
-    cloned_crossref_record.abstract = crossref_record.abstract or parsed_dict.get(
-        'abstract')
-    cloned_crossref_record.authors = json.dumps(crossref_authors)
-    cloned_crossref_record.citations = crossref_record.citations if len(
-        crossref_record.citations or '[]') > 3 else json.dumps(
-        parsed_dict.get('citations'))
-
-    return cloned_crossref_record
+    return crossref_authors
 
 
 def _reconcile_affiliations(crossref_author, pl_author, doi):
@@ -180,22 +218,24 @@ def _parsed_record_dict(parsed_record):
         'abstract': None,
         'citations': []
     }
+    if not parsed_record:
+        return parsed_dict
 
-    pl_authors = json.loads(parsed_record.authors or '[]') or []
+    parsed_authors = parsed_record.authors_json
 
-    for pl_author in pl_authors:
+    for parsed_author in parsed_authors:
         author = {
-            'raw': pl_author.get('name'),
+            'raw': parsed_author.get('name'),
             'affiliation': [],
-            'is_corresponding': pl_author.get('is_corresponding')
+            'is_corresponding': parsed_author.get('is_corresponding')
         }
-        pl_affiliations = pl_author.get('affiliations')
+        parsed_affiliations = parsed_author.get('affiliations')
 
-        if isinstance(pl_affiliations, list):
-            for pl_affiliation in pl_affiliations:
-                author['affiliation'].append({'name': pl_affiliation})
+        if isinstance(parsed_affiliations, list):
+            for parsed_affiliation in parsed_affiliations:
+                author['affiliation'].append({'name': parsed_affiliation})
 
-        if orcid := pl_author.get('orcid'):
+        if orcid := parsed_author.get('orcid'):
             author['orcid'] = orcid
 
         parsed_dict['authors'].append(_normalize_author(author))
@@ -203,7 +243,7 @@ def _parsed_record_dict(parsed_record):
     parsed_dict['published_date'] = parsed_record.published_date
     parsed_dict['genre'] = parsed_record.genre
     parsed_dict['abstract'] = parsed_record.abstract
-    parsed_dict['citations'] = json.loads(parsed_record.citations or '[]') or []
+    parsed_dict['citations'] = parsed_record.citations_json
 
     return parsed_dict
 
