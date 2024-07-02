@@ -64,12 +64,15 @@ def merge_abstract(cloned_crossref_record, crossref_record, **parsed_records):
 
 def merge_citations(cloned_crossref_record, crossref_record, **parsed_records):
     records_sorted = [parsed_records.get('parseland_record'), parsed_records.get('pdf_record')]
+    records_sorted = [record for record in records_sorted if record]
     citation_record = None
     for record in records_sorted:
         if record and record.has_citations:
             citation_record = record
-    cloned_crossref_record.citations = crossref_record.citations if len(
-        crossref_record.citations or '[]') > 3 else citation_record.citations
+    if len(crossref_record.citations or '[]') > 3:
+        cloned_crossref_record.citations = crossref_record.citations
+    elif citation_record:
+        cloned_crossref_record.citations = citation_record.citations
     return cloned_crossref_record
 
 
