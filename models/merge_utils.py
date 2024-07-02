@@ -61,7 +61,7 @@ def merge_abstract(cloned_crossref_record, crossref_record, **parsed_records):
     if crossref_record.abstract:
         cloned_crossref_record.abstract = crossref_record.abstract
     elif abstract_record and abstract_record.abstract:
-        cloned_crossref_record.citations = abstract_record.citations
+        cloned_crossref_record.abstract = abstract_record.abstract
     return cloned_crossref_record
 
 
