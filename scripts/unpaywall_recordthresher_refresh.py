@@ -91,8 +91,11 @@ def enqueue_dois_txt_file(fname):
             recordthresher_id: 0 for recordthresher_id in
             recordthresher_ids
         }
-        redis.zadd(REDIS_UNPAYWALL_REFRESH_QUEUE, redis_queue_mapping)
-        print(f'[*] Enqueued {len(dois)} works from {fname}')
+        if redis_queue_mapping:
+            redis.zadd(REDIS_UNPAYWALL_REFRESH_QUEUE, redis_queue_mapping)
+            print(f'[*] Enqueued {len(dois)} works from {fname}')
+        else:
+            print('[!] No recordthresher_ids found for DOIs')
 
 
 def upsert_in_db(upw_response, recordthresher_id: bytes, doi: str):
