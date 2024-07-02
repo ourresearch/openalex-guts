@@ -77,23 +77,27 @@ class Record(db.Model):
 
     @property
     def has_affiliations(self):
-        return any([bool(author.get('affiliation')) or bool(author.get('affiliations')) for author in self.authors_json])
+        return any(
+            [bool(author.get('affiliation')) or bool(author.get('affiliations'))
+             for author in self.authors_json])
+
+    @property
+    def has_citations(self):
+        return bool(self.citations_json)
 
     @property
     def authors_json(self):
         return json.loads(self.authors or '[]')
 
+    @property
+    def citations_json(self):
+        return json.loads(self.citations or '[]')
+
     @cached_property
     def with_parsed_data(self):
-        if self.parseland_record and self.parseland_record.has_affiliations:
-            return merge_crossref_with_parsed(self, self.parseland_record)
-        elif self.pdf_record and self.pdf_record.has_affiliations:
-            return merge_crossref_with_parsed(self, self.pdf_record)
-        elif self.parseland_record or self.pdf_record:
-            return merge_crossref_with_parsed(self,
-                                              self.parseland_record or self.pdf_record)
-        else:
-            return self
+        parsed_records = {'parseland_record': self.parseland_record,
+                          'pdf_record': self.pdf_record}
+        return merge_crossref_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
         super(Record, self).__init__(**kwargs)
@@ -123,7 +127,9 @@ class Record(db.Model):
         now = datetime.datetime.utcnow()
         if not self.journals:
             return None
-        sorted_journals = sorted(self.journals, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+        sorted_journals = sorted(self.journals, key=lambda
+            x: x.full_updated_date if x.full_updated_date else now,
+                                 reverse=True)
         best_journal = sorted_journals[0]
         return best_journal.merged_into_source or best_journal
 
@@ -147,26 +153,36 @@ class Record(db.Model):
             return
 
         matching_work = None
-        print(f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
+        print(
+            f"trying to match this record: {self.record_webpage_url} {self.doi} {self.title}")
 
         # by doi
-        if matching_works := [w for w in self.work_matches_by_doi if not w.merge_into_id]:
+        if matching_works := [w for w in self.work_matches_by_doi if
+                              not w.merge_into_id]:
             print("found by doi")
-            sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+            sorted_matching_works = sorted(matching_works, key=lambda
+                x: x.full_updated_date if x.full_updated_date else now,
+                                           reverse=True)
             matching_work = sorted_matching_works[0]
 
         # by pmid
         if not matching_works:
-            if matching_works := [w for w in self.work_matches_by_pmid if not w.merge_into_id]:
+            if matching_works := [w for w in self.work_matches_by_pmid if
+                                  not w.merge_into_id]:
                 print("found by pmid")
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+                sorted_matching_works = sorted(matching_works, key=lambda
+                    x: x.full_updated_date if x.full_updated_date else now,
+                                               reverse=True)
                 matching_work = sorted_matching_works[0]
 
         # by arxiv_id
         if not matching_works:
-            if matching_works := [w for w in self.work_matches_by_arxiv_id if not w.merge_into_id]:
+            if matching_works := [w for w in self.work_matches_by_arxiv_id if
+                                  not w.merge_into_id]:
                 print("found by arxiv_id")
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+                sorted_matching_works = sorted(matching_works, key=lambda
+                    x: x.full_updated_date if x.full_updated_date else now,
+                                               reverse=True)
                 matching_work = sorted_matching_works[0]
 
         # arxiv preprint from datacite, with associated doi
@@ -175,7 +191,8 @@ class Record(db.Model):
                 RecordRelatedVersion.doi == self.doi,
             ).first()
             if related_version:
-                print(f"trying to match by related_version_doi {related_version.related_version_doi}")
+                print(
+                    f"trying to match by related_version_doi {related_version.related_version_doi}")
 
                 match = db.session.query(Work).options(raiseload('*')).filter(
                     Work.doi_lower == related_version.related_version_doi,
@@ -184,7 +201,8 @@ class Record(db.Model):
 
                 if match:
                     matching_work = match
-                    print(f"found by related_version_doi {related_version.related_version_doi}")
+                    print(
+                        f"found by related_version_doi {related_version.related_version_doi}")
 
         # by title
         if not matching_work:
@@ -203,22 +221,28 @@ class Record(db.Model):
                 desc(Work.full_updated_date)
             ).limit(50).all()
 
-            if matching_works := [w for w in work_matches_by_title if not w.merge_into_id]:
-                sorted_matching_works = sorted(matching_works, key=lambda x: x.full_updated_date if x.full_updated_date else now, reverse=True)
+            if matching_works := [w for w in work_matches_by_title if
+                                  not w.merge_into_id]:
+                sorted_matching_works = sorted(matching_works, key=lambda
+                    x: x.full_updated_date if x.full_updated_date else now,
+                                               reverse=True)
 
                 # just look at the first 20 matches
                 for matching_work_temp in sorted_matching_works[:20]:
                     if matching_work_temp.doi_lower and self.doi and matching_work_temp.doi_lower != self.doi:
-                        print(f"titles match but dois don't so don't merge this for now")
+                        print(
+                            f"titles match but dois don't so don't merge this for now")
                         continue
 
                     if not self.with_parsed_data or not self.with_parsed_data.authors or self.with_parsed_data.authors == []:
                         # is considered a match
                         matching_work = matching_work_temp
-                        print(f"no authors for {self.id}, so considering it an author match")
+                        print(
+                            f"no authors for {self.id}, so considering it an author match")
                         break
 
-                    if matching_work_temp.matches_authors_in_record(self.with_parsed_data.authors):
+                    if matching_work_temp.matches_authors_in_record(
+                            self.with_parsed_data.authors):
                         matching_work = matching_work_temp
                         print(f"MATCHING AUTHORS for {self.id}!")
                         break
@@ -226,18 +250,22 @@ class Record(db.Model):
                         print(f"authors don't match for {self.id}!")
 
                 if matching_work:
-                    print(f"found by title {self.normalized_title} on {matching_work.id} to {self.id}")
+                    print(
+                        f"found by title {self.normalized_title} on {matching_work.id} to {self.id}")
 
         if (not matching_work) \
-                and (not self.doi) and (not self.pmid) and (not self.pmcid) and (not self.arxiv_id) \
+                and (not self.doi) and (not self.pmid) and (
+        not self.pmcid) and (not self.arxiv_id) \
                 and ((not self.title) or (len(self.normalized_title) < 20)):
             self.work_id = -1
-            print(f"{self.id} does not have a strong identifier and has no title, or title is too short, skipping")
+            print(
+                f"{self.id} does not have a strong identifier and has no title, or title is too short, skipping")
             return
 
         if matching_work:
-            print(f"FOUND A MATCH: https://openalex-guts.herokuapp.com/W{matching_work.paper_id}")
-            self.work_id = matching_work.paper_id   # link the record to the work
+            print(
+                f"FOUND A MATCH: https://openalex-guts.herokuapp.com/W{matching_work.paper_id}")
+            self.work_id = matching_work.paper_id  # link the record to the work
             matching_work.full_updated_date = None  # prep the work for needing an update
         else:
             print("no match, so minting")
@@ -265,7 +293,8 @@ class Record(db.Model):
         new_work.doi = normalize_doi(self.doi, return_none_if_error=True)
         new_work.doi_lower = normalize_doi(self.doi, return_none_if_error=True)
         new_work.original_title = self.title[:60000] if self.title else None
-        new_work.unpaywall_normalize_title = self.normalized_title if self.normalized_title else normalize_title_like_sql(self.title)
+        new_work.unpaywall_normalize_title = self.normalized_title if self.normalized_title else normalize_title_like_sql(
+            self.title)
         new_work.journal_id = journal_id
         new_work.genre = self.normalized_work_type
         new_work.doc_type = self.normalized_doc_type
@@ -299,8 +328,10 @@ class Record(db.Model):
         self.get_or_mint_work()
 
     def __repr__(self):
-        return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id, self.doi, self.pmh_id, self.pmid)
-
+        return "<Record ( {} ) doi:{}, pmh:{}, pmid:{}>".format(self.id,
+                                                                self.doi,
+                                                                self.pmh_id,
+                                                                self.pmid)
 
 
 work_type_strings = """
@@ -383,17 +414,21 @@ work_type_lookup = dict()
 for line in work_type_lines:
     if line:
         (lookup, work_type, doc_type) = line.split(",")
-        work_type_lookup[lookup.strip()] = {"work_type": work_type if work_type else None,
-                                            "doc_type": doc_type if doc_type else None}
+        work_type_lookup[lookup.strip()] = {
+            "work_type": work_type if work_type else None,
+            "doc_type": doc_type if doc_type else None}
 
 
 class RecordFulltext(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "record_fulltext"
 
-    recordthresher_id = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.id"), primary_key=True)
+    recordthresher_id = db.Column(db.Text,
+                                  db.ForeignKey("ins.recordthresher_record.id"),
+                                  primary_key=True)
     _fulltext = db.Column('fulltext', db.Text)
-    truncated_fulltext = db.column_property(func.substring(_fulltext, 1, 200000))
+    truncated_fulltext = db.column_property(
+        func.substring(_fulltext, 1, 200000))
 
 
 class RecordthresherParentRecord(db.Model):
@@ -408,10 +443,11 @@ class RecordRelatedVersion(db.Model):
     __table_args__ = {'schema': 'ins'}
     __tablename__ = 'record_related_version'
 
-    doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"), primary_key=True)
+    doi = db.Column(db.Text, db.ForeignKey("ins.recordthresher_record.doi"),
+                    primary_key=True)
     related_version_doi = db.Column(db.Text, primary_key=True)
     type = db.Column(db.Text, primary_key=True)
 
 
-Record.fulltext = db.relationship(RecordFulltext, lazy='selectin', viewonly=True, uselist=False)
-
+Record.fulltext = db.relationship(RecordFulltext, lazy='selectin',
+                                  viewonly=True, uselist=False)

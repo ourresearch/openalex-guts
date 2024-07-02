@@ -1249,13 +1249,12 @@ class Work(db.Model):
 
         reference_source_num = 0
         for record in self.records_merged:
-            if record.citations:
+            if record.has_citations:
                 new_references_unmatched = []
                 self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
                 try:
-                    citation_dict_list = json.loads(record.citations)
-                    for citation_dict in citation_dict_list:
+                    for citation_dict in record.citations_json:
                         reference_source_num += 1
                         if isinstance(citation_dict, str) and (
                         doi := clean_doi(citation_dict,
