@@ -209,7 +209,7 @@ def oa_status_from_location(loc, type_crossref):
             return 'gold'
         elif source['type'] == 'repository':
             return 'green'
-        elif loc.get('license') == 'publisher-specific-oa' and 'elsevier' in source.get('publisher', '').lower():
+        elif loc.get('license') == 'publisher-specific-oa' and source.get('publisher', '') and 'elsevier' in source.get('publisher', '').lower():
             return 'bronze'
         elif loc.get('license') and loc['license'] not in ['unknown',
                                                            'unspecified-oa',
