@@ -236,11 +236,15 @@ class RorRelationships(db.Model):
     @classmethod
     def yield_from_ror_entry(cls, item):
         for relationship in item['relationships']:
-            yield cls(
-                ror_id=ror_short_id(item['id']),
-                relationship_type=relationship['type'],
-                related_ror_id=ror_short_id(relationship['id'])
-            )
+            if (relationship['type'] in ['Parent', 'Child']) and (item['id'] == relationship['id']):
+                # this will cause an infinite loop in the ancestry, so don't include it
+                continue
+            else:
+                yield cls(
+                    ror_id=ror_short_id(item['id']),
+                    relationship_type=relationship['type'],
+                    related_ror_id=ror_short_id(relationship['id'])
+                )
 
 
 class RorTypes(db.Model):
