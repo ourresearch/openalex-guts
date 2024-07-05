@@ -2551,7 +2551,7 @@ class Work(db.Model):
                     'doi': doi_url,
                 }
 
-                if self.is_springer_ebook and self.oa_status == 'closed':
+                if self.is_springer_ebook:
                     override_all_oa_false = True
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
@@ -2846,7 +2846,7 @@ class Work(db.Model):
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
         # Springer e-book exception
-        if self.is_springer_ebook and (oa_status == 'closed' or not self.is_oa):
+        if self.is_springer_ebook:
             self.oa_status = 'closed'
             oa_status = 'closed'
         # if is_oa and oa_status are inconsistent, we need to fix
