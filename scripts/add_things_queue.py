@@ -36,7 +36,7 @@ def parse_args():
 def enqueue_jobs(work_ids, priority=None, methods=None):
     if methods is None:
         methods = []
-    if not priority:
+    if priority is None:
         priority = time()
     mapping = {json.dumps({'work_id': work_id, 'methods': methods}): priority
                for work_id in work_ids}
@@ -91,7 +91,7 @@ def enqueue_from_api(oa_filters):
                 ids = [int(work['id'].split('/W')[-1]) for work in j.get('results', [])]
                 if not ids:
                     break
-                enqueue_jobs(ids)
+                enqueue_jobs(ids, priority=0)
                 count += len(ids)
                 logger.info(
                     f'[*] Inserted {count} into add_things queue from filter - {oa_filter}')
