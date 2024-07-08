@@ -183,7 +183,7 @@ def refresh_from_queue():
         hrs_running = (datetime.now() - start).total_seconds() / (60 * 60)
         rate = round(count / hrs_running, 2)
         q_size = redis.zcard(REDIS_UNPAYWALL_REFRESH_QUEUE)
-        enqueue_jobs(work_ids_batch, priority=0)
+        enqueue_jobs(work_ids_batch)
         work_ids_batch.clear()
         dois_batch.clear()
         print(
