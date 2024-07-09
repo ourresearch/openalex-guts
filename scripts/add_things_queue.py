@@ -30,6 +30,7 @@ def parse_args():
                         action='append',
                         help='OpenAlex API filter(s) to enqueue')
     parser.add_argument('-fname', '--filename', type=str, help='Filename containing DOIs from which to enqueue with priority into add_things queue')
+    parser.add_argument('-m', '--method', type=str, help='Methods to run on Work objects', action='append', dest='methods')
     return parser.parse_args()
 
 
@@ -73,7 +74,7 @@ def log_memory_usage():
     logger.info(f"Memory usage (MB): {round(memory_mb, 2)}")
 
 
-def enqueue_from_api(oa_filters):
+def enqueue_from_api(oa_filters, methods=None):
     for oa_filter in oa_filters:
         logger.info(f'[*] Starting to enqueue using OA filter: {oa_filter}')
         cursor = '*'
@@ -91,7 +92,7 @@ def enqueue_from_api(oa_filters):
                 ids = [int(work['id'].split('/W')[-1]) for work in j.get('results', [])]
                 if not ids:
                     break
-                enqueue_jobs(ids, priority=0)
+                enqueue_jobs(ids, methods=methods, priority=0)
                 count += len(ids)
                 logger.info(
                     f'[*] Inserted {count} into add_things queue from filter - {oa_filter}')
@@ -115,7 +116,7 @@ def main():
         enqueue_dois_txt_file(args.filename)
         return
     elif args.filter:
-        enqueue_from_api(args.filter)
+        enqueue_from_api(args.filter, methods=args.methods)
         return
     total_processed = 0
     errors_count = 0
