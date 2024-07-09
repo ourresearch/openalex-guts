@@ -1596,6 +1596,23 @@ class Work(db.Model):
         return [dataset.related_dataset.openalex_id for dataset in self.datasets
                 if dataset.type == 'supplement'][:100]
 
+    def set_from_unpaywall_fields(self, record=None):
+        if record is None:
+            record = self.crossref_record
+        if hasattr(record, "unpaywall") and record.unpaywall:
+            self.is_paratext = record.unpaywall.is_paratext
+            if all((self.publisher and 'elsevier' in self.publisher.lower() or (
+                    self.journal and self.journal.publisher_id == 4310320990),
+                    self.oa_status == 'hybrid',
+                    any([loc['license'] == 'publisher-specific-oa' for loc in
+                         record.unpaywall.oa_locations]))) or self.is_springer_ebook:  # https://openalex.zendesk.com/agent/tickets/1747
+                self.oa_status = record.unpaywall.oa_status
+            else:
+                self.oa_status = self.update_oa_status_if_better(
+                    record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
+            self.best_free_url = record.unpaywall.best_oa_location_url
+            self.best_free_version = record.unpaywall.best_oa_location_version
+
     def set_fields_from_record(self, record):
         from util import normalize_doi
 
@@ -1635,20 +1652,7 @@ class Work(db.Model):
         self.genre = record.normalized_work_type
         self.doc_type = record.normalized_doc_type
         self.best_url = record.record_webpage_url
-
-        if hasattr(record, "unpaywall") and record.unpaywall:
-            self.is_paratext = record.unpaywall.is_paratext
-            if all((self.publisher and 'elsevier' in self.publisher.lower() or (
-                    self.journal and self.journal.publisher_id == 4310320990),
-                    self.oa_status == 'hybrid',
-                    any([loc['license'] == 'publisher-specific-oa' for loc in
-                         record.unpaywall.oa_locations]))) or self.is_springer_ebook:  # https://openalex.zendesk.com/agent/tickets/1747
-                self.oa_status = record.unpaywall.oa_status
-            else:
-                self.oa_status = self.update_oa_status_if_better(
-                    record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
-            self.best_free_url = record.unpaywall.best_oa_location_url
-            self.best_free_version = record.unpaywall.best_oa_location_version
+        self.set_from_unpaywall_fields(record)
 
     def set_fields_from_override_record(self, override):
         from util import normalize_doi
