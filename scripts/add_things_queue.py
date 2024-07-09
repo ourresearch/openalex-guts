@@ -154,7 +154,7 @@ def main():
                         f'Exception calling {method_name}() on work {work.paper_id}')
                     logger.exception(e)
                     # Re-queue job
-                    enqueue_job(work.paper_title, 1e9, job['methods'])
+                    enqueue_job(work.paper_id, 1e9, job['methods'])
                     errors_count += 1
             total_processed += 1
         now = datetime.now()
