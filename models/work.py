@@ -1785,6 +1785,8 @@ class Work(db.Model):
 
     @property
     def crossref_record(self):
+        if not self.records_sorted:
+            return None
         best = self.records_sorted[0]
         if best.record_type == 'crossref_doi':
             return best
