@@ -189,6 +189,7 @@ def override_location_sources(locations):
 class OAStatusEnum(IntEnum):
     # we prioritize publisher-hosted versions
     # see https://docs.openalex.org/api-entities/works/work-object#any_repository_has_fulltext
+    diamond = -1
     closed = 0
     unknown = 1
     green = 2
@@ -1779,6 +1780,13 @@ class Work(db.Model):
         ) or []
 
     @property
+    def crossref_record(self):
+        best = self.records_sorted[0]
+        if best.record_type == 'crossref_doi':
+            return best
+        return None
+
+    @property
     def records_merged(self):
         return [r.with_parsed_data for r in self.records or [] if
                 r.with_parsed_data]
@@ -2866,9 +2874,9 @@ class Work(db.Model):
                                                              self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
-        # if oa_status == 'gold' and self.apc_list and self.apc_list.get(
-        #         'value') == 0:
-        #     oa_status = self.oa_status = 'diamond'
+        if oa_status == 'gold' and self.apc_list and self.apc_list.get(
+                'value') == 0:
+            oa_status = self.oa_status = 'diamond'
 
         response = {
             "id": self.openalex_id,
