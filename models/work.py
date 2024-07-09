@@ -2866,7 +2866,7 @@ class Work(db.Model):
                                                              self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
-        if self.oa_status in {'gold', 'hybrid'} and self.apc_list and self.apc_list.get(
+        if oa_status in {'gold', 'hybrid'} and self.apc_list and self.apc_list.get(
                 'value') == 0:
             oa_status = self.oa_status = 'diamond'
 
