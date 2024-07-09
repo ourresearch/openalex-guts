@@ -209,7 +209,9 @@ def oa_status_from_location(loc, type_crossref):
             return 'gold'
         elif source['type'] == 'repository':
             return 'green'
-        elif loc.get('license') == 'publisher-specific-oa' and source.get('publisher', '') and 'elsevier' in source.get('publisher', '').lower():
+        elif loc.get('license') == 'publisher-specific-oa' and source.get(
+                'publisher', '') and 'elsevier' in source.get('publisher',
+                                                              '').lower():
             return 'bronze'
         elif loc.get('license') and loc['license'] not in ['unknown',
                                                            'unspecified-oa',
@@ -1257,8 +1259,8 @@ class Work(db.Model):
                     for citation_dict in record.citations_json:
                         reference_source_num += 1
                         if isinstance(citation_dict, str) and (
-                        doi := clean_doi(citation_dict,
-                                         return_none_if_error=True)):
+                                doi := clean_doi(citation_dict,
+                                                 return_none_if_error=True)):
                             citation_dois.append(doi)
                             continue
                         if citation_dict.get('doi'):
@@ -1339,7 +1341,6 @@ class Work(db.Model):
         if citation_paper_ids:
             self.citation_paper_ids = citation_paper_ids  # used for matching authors right now
 
-
     def update_affiliations(self, affiliation_retry_attempts=30):
         """
         This function will be used to update affiliations for a work for the following reasons:
@@ -1357,7 +1358,7 @@ class Work(db.Model):
                 if f"{author_aff.author_sequence_number}_{norm_name}" not in old_affiliations:
                     old_affiliations[
                         f"{author_aff.author_sequence_number}_{norm_name}"] = \
-                        {'author_id': author_aff.author_id, 
+                        {'author_id': author_aff.author_id,
                          'orcid': author_aff.original_orcid if author_aff.original_orcid else ""}
 
             if not self.affiliation_records_sorted:
@@ -1393,7 +1394,7 @@ class Work(db.Model):
 
                 raw_author_string = original_name if original_name else None
                 original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                author_dict["orcid"] else None
+                    author_dict["orcid"] else None
 
                 seen_institution_ids = set()
 
@@ -1410,26 +1411,26 @@ class Work(db.Model):
                         f"{author_sequence_order}_{curr_norm_name}"][
                         "author_id"] \
                         if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else None
-                    
+
                     ##### commenting this out until ORCID is fixed (can probably remove "update_orcid" as well ######
                     # Look in old affiliations to see if we have an orcid (only if there is an author_id)
                     # if old_author_id:
                     #     old_orcid = old_affiliations[
                     #         f"{author_sequence_order}_{curr_norm_name}"][
                     #             "orcid"]
-                        
-                        # If we have a different orcid, need to run through AND again
-                        # if old_orcid and original_orcid and (original_orcid != old_orcid):
-                        #     old_author_id = None
-                        # elif not old_orcid and original_orcid:
-                        #     old_author_id = None
-                        # elif old_orcid and not original_orcid:
-                        #     old_author_id = None
+
+                    # If we have a different orcid, need to run through AND again
+                    # if old_orcid and original_orcid and (original_orcid != old_orcid):
+                    #     old_author_id = None
+                    # elif not old_orcid and original_orcid:
+                    #     old_author_id = None
+                    # elif old_orcid and not original_orcid:
+                    #     old_author_id = None
                     ######################################################
 
                     for affiliation_dict in author_dict["affiliation"]:
                         raw_affiliation_string = affiliation_dict["name"] if \
-                        affiliation_dict["name"] else None
+                            affiliation_dict["name"] else None
                         raw_affiliation_string = clean_html(
                             raw_affiliation_string)
                         my_institutions = []
@@ -1504,7 +1505,7 @@ class Work(db.Model):
 
             raw_author_string = original_name if original_name else None
             original_orcid = normalize_orcid(author_dict["orcid"]) if \
-            author_dict["orcid"] else None
+                author_dict["orcid"] else None
 
             seen_institution_ids = set()
 
@@ -1512,7 +1513,7 @@ class Work(db.Model):
                 affiliation_sequence_order = 1
                 for affiliation_dict in author_dict["affiliation"]:
                     raw_affiliation_string = affiliation_dict["name"] if \
-                    affiliation_dict["name"] else None
+                        affiliation_dict["name"] else None
                     raw_affiliation_string = clean_html(raw_affiliation_string)
                     my_institutions = []
 
@@ -1636,9 +1637,11 @@ class Work(db.Model):
 
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            if all((self.publisher and 'elsevier' in self.publisher.lower() or (self.journal and self.journal.publisher_id == 4310320990),
-                   self.oa_status == 'hybrid',
-                   any([loc['license'] == 'publisher-specific-oa' for loc in record.unpaywall.oa_locations]))) or self.is_springer_ebook: # https://openalex.zendesk.com/agent/tickets/1747
+            if all((self.publisher and 'elsevier' in self.publisher.lower() or (
+                    self.journal and self.journal.publisher_id == 4310320990),
+                    self.oa_status == 'hybrid',
+                    any([loc['license'] == 'publisher-specific-oa' for loc in
+                         record.unpaywall.oa_locations]))) or self.is_springer_ebook:  # https://openalex.zendesk.com/agent/tickets/1747
                 self.oa_status = record.unpaywall.oa_status
             else:
                 self.oa_status = self.update_oa_status_if_better(
@@ -1797,7 +1800,8 @@ class Work(db.Model):
     @property
     def only_mag_records(self):
         if self.records_merged:
-            return all(r.record_type == 'mag_location' for r in self.records_merged)
+            return all(
+                r.record_type == 'mag_location' for r in self.records_merged)
         else:
             return False
 
@@ -1945,7 +1949,8 @@ class Work(db.Model):
             found = False
             for affiliation in affiliations:
                 if (affiliation["author_position"] == author_position and
-                        affiliation["raw_affiliation_string"] == raw_affiliation_string):
+                        affiliation[
+                            "raw_affiliation_string"] == raw_affiliation_string):
                     if institution_id:
                         affiliation["institution_ids"].append(institution_id)
                     found = True
@@ -1956,7 +1961,8 @@ class Work(db.Model):
                 affiliations.append({
                     "author_position": author_position,
                     "raw_affiliation_string": raw_affiliation_string,
-                    "institution_ids": [institution_id] if institution_id else []
+                    "institution_ids": [
+                        institution_id] if institution_id else []
                 })
 
         # remove author_position, no longer needed
@@ -2143,7 +2149,7 @@ class Work(db.Model):
     @property
     def is_review(self):
         return self.journal_id in REVIEW_JOURNAL_IDS or (
-                    self.original_title and 'a review' in self.original_title.lower())
+                self.original_title and 'a review' in self.original_title.lower())
 
     @cached_property
     def display_genre(self):
@@ -2235,7 +2241,7 @@ class Work(db.Model):
                 this_loc_oa_status = oa_status_from_location(loc,
                                                              self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
-        
+
         if oa_status in ['gold', 'hybrid'] and self.apc_list:
             return self.apc_list
 
@@ -2654,7 +2660,8 @@ class Work(db.Model):
                 if other_location_dict['landing_page_url']:
                     seen_urls.add(other_location_dict['landing_page_url'])
 
-                if (not self.records_merged or self.only_mag_records) and self.journal:
+                if (
+                        not self.records_merged or self.only_mag_records) and self.journal:
                     # mag location, assume it came from the work's mag journal
                     other_location_dict['source'] = self.journal.to_dict(
                         return_level='minimum')
@@ -2751,7 +2758,8 @@ class Work(db.Model):
             locations[0]['is_published'] = is_published(locations[0]['version'])
 
         if override_all_oa_false:
-            locations = [loc for loc in locations if loc == doi_location] if doi_location else []
+            locations = [loc for loc in locations if
+                         loc == doi_location] if doi_location else []
             for loc in locations:
                 loc['is_oa'] = False
         return locations
@@ -2847,8 +2855,7 @@ class Work(db.Model):
         oa_status = self.oa_status or "closed"
         # Springer e-book exception
         if self.is_springer_ebook:
-            self.oa_status = 'closed'
-            oa_status = 'closed'
+            self.oa_status = oa_status = 'closed'
         # if is_oa and oa_status are inconsistent, we need to fix
         elif is_oa is False and oa_status != 'closed':
             # on inspection, a lot of these seem to be open, so let's mark them OA
@@ -2858,6 +2865,10 @@ class Work(db.Model):
                 this_loc_oa_status = oa_status_from_location(loc,
                                                              self.type_crossref)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
+
+        if self.oa_status in {'gold', 'hybrid'} and self.apc_list and self.apc_list.get(
+                'value') == 0:
+            oa_status = self.oa_status = 'diamond'
 
         response = {
             "id": self.openalex_id,
@@ -2959,7 +2970,8 @@ class Work(db.Model):
                 "primary_topic": [topic.to_dict("minimum") for topic in
                                   self.topics_sorted[:1]][
                     0] if self.topics_sorted else None,
-                "fwci": round(self.work_fwci.fwci, 3) if (self.work_fwci) and (self.work_fwci.fwci) else None,
+                "fwci": round(self.work_fwci.fwci, 3) if (self.work_fwci) and (
+                    self.work_fwci.fwci) else None,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
