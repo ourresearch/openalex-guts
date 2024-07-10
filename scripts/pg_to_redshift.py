@@ -22,7 +22,7 @@ s3_bucket = 'redshift-openalex'
 if not postgres_db_url or not redshift_db_url:
     raise EnvironmentError("Both POSTGRES_URL and REDSHIFT_URL environment variables must be set")
 
-current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+current_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 s3_client = boto3.client('s3')
 
