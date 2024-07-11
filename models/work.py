@@ -2985,7 +2985,7 @@ class Work(db.Model):
                                   self.topics_sorted[:1]][
                     0] if self.topics_sorted else None,
                 "fwci": round(self.work_fwci.fwci, 3) if (self.work_fwci) and (
-                    self.work_fwci.fwci or (self.work_fwci == 0.0)) else None,
+                    self.work_fwci.fwci or (self.work_fwci.fwci == 0.0)) else None,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
