@@ -12,32 +12,102 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 """
-Run with: heroku local:run python -- -m scripts.pg_to_redshift --entity institution
+Run with: heroku local:run python -- -m scripts.pg_to_redshift --entity=author
 """
 
 postgres_db_url = os.getenv("POSTGRES_URL")
 redshift_db_url = os.getenv("REDSHIFT_SERVERLESS_URL")
 s3_bucket = 'redshift-openalex'
+s3_client = boto3.client('s3')
 
 if not postgres_db_url or not redshift_db_url:
     raise EnvironmentError("Both POSTGRES_URL and REDSHIFT_URL environment variables must be set")
 
+redshift_engine = create_engine(redshift_db_url)
 current_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-s3_client = boto3.client('s3')
-
-queries = {
-    "author": "select author_id, display_name, merge_into_id from mid.author where author_id > 5000000000",
-    "affiliation": "SELECT paper_id, author_id, affiliation_id, author_sequence_number, original_author, original_orcid FROM mid.affiliation",
-    "citation": "select paper_id, paper_reference_id from mid.citation",
-    "institution": "SELECT * FROM mid.institution",
-    "work": "SELECT paper_id, original_title, doi_lower, journal_id, merge_into_id, publication_date, doc_type, genre, arxiv_id, is_paratext, best_url, best_free_url, created_date FROM mid.work",
-    "work_concept": "SELECT paper_id, field_of_study FROM mid.work_concept WHERE score > 0.3",
+schemas = {
+    "affiliation": [
+        ("paper_id", "BIGINT"),
+        ("author_id", "BIGINT"),
+        ("affiliation_id", "BIGINT"),
+        ("author_sequence_number", "INTEGER"),
+        ("original_author", "VARCHAR(65535)"),
+        ("original_orcid", "VARCHAR(500)")
+    ],
+    "author": [
+        ("author_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("merge_into_id", "BIGINT")
+    ],
+    "citation": [
+        ("paper_id", "BIGINT"),
+        ("paper_reference_id", "BIGINT")
+    ],
+    "work": [
+        ("paper_id", "BIGINT"),
+        ("original_title", "VARCHAR(65535)"),
+        ("doi_lower", "VARCHAR(500)"),
+        ("journal_id", "BIGINT"),
+        ("merge_into_id", "BIGINT"),
+        ("publication_date", "VARCHAR(500)"),
+        ("doc_type", "VARCHAR(500)"),
+        ("genre", "VARCHAR(500)"),
+        ("arxiv_id", "VARCHAR(500)"),
+        ("is_paratext", "BOOLEAN"),
+        ("best_url", "VARCHAR(65535)"),
+        ("best_free_url", "VARCHAR(65535)"),
+        ("created_date", "VARCHAR(500)")
+    ],
+    "work_concept": [
+        ("paper_id", "BIGINT"),
+        ("field_of_study", "BIGINT")
+    ]
 }
 
 
+def get_schema_sql(schema):
+    """SQL schema string used for creating tables."""
+    return ",\n".join([f"{col} {datatype}" for col, datatype in schema])
+
+
+def get_columns(schema):
+    """comma-separated list of columns for running queries."""
+    return ", ".join([col for col, _ in schema])
+
+
+queries = {
+    "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
+    "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
+    "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
+    "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work",
+    "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
+}
+
+
+def create_tables(table_name, schema):
+    """helper function to create a table and its staging table."""
+    schema_sql = get_schema_sql(schema)
+    with redshift_engine.connect() as connection:
+        connection.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                {schema_sql}
+            )
+            """
+        )
+        connection.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {table_name}_staging (
+                {schema_sql}
+            )
+            """
+        )
+    logger.info(f"tables {table_name} and {table_name}_staging created if not exists.")
+
+
 def get_s3_key(entity):
-    """generate S3 key for the given entity."""
+    """generate S3 filename (key) for the given entity."""
     return f"{entity}s_{current_date}.csv"
 
 
@@ -105,18 +175,20 @@ def replace_existing_data(redshift_engine, entity):
 
 
 def delete_s3_file(s3_key):
-    """delete the left over S3 file."""
+    """delete the leftover S3 file."""
     logger.info(f"Deleting S3 file s3://{s3_bucket}/{s3_key}")
     s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
     logger.info(f"Successfully deleted S3 file s3://{s3_bucket}/{s3_key}")
 
 
 def main(entity):
+    schema = schemas.get(entity)
     query = queries.get(entity)
-    if not query:
-        raise ValueError(f"Entity {entity} not found in queries")
+    if not schema or not query:
+        raise ValueError(f"Entity {entity} not found in schemas and queries")
 
-    redshift_engine = create_engine(redshift_db_url)
+    create_tables(entity, schema)
+
     s3_key = get_s3_key(entity)
 
     start_time = time.time()
@@ -135,9 +207,9 @@ if __name__ == "__main__":
                         help="The entity to process (e.g., affiliation, institution, work, work_concept).")
     args = parser.parse_args()
 
-    entity = args.entity
+    entity_input = args.entity
     try:
-        main(entity)
+        main(entity_input)
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         raise
