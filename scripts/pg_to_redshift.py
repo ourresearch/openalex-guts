@@ -27,7 +27,9 @@ current_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 s3_client = boto3.client('s3')
 
 queries = {
+    "author": "select author_id, display_name, merge_into_id from mid.author where author_id > 5000000000",
     "affiliation": "SELECT paper_id, author_id, affiliation_id, author_sequence_number, original_author, original_orcid FROM mid.affiliation",
+    "citation": "select paper_id, paper_reference_id from mid.citation",
     "institution": "SELECT * FROM mid.institution",
     "work": "SELECT paper_id, original_title, doi_lower, journal_id, merge_into_id, publication_date, doc_type, genre, arxiv_id, is_paratext, best_url, best_free_url, created_date FROM mid.work",
     "work_concept": "SELECT paper_id, field_of_study FROM mid.work_concept WHERE score > 0.3",
