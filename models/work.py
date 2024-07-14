@@ -189,13 +189,14 @@ def override_location_sources(locations):
 class OAStatusEnum(IntEnum):
     # we prioritize publisher-hosted versions
     # see https://docs.openalex.org/api-entities/works/work-object#any_repository_has_fulltext
-    diamond = -1
     closed = 0
     unknown = 1
     green = 2
     bronze = 3
     hybrid = 4
     gold = 5
+    diamond = 6
+
 
 
 def oa_status_from_location(loc, type_crossref):
