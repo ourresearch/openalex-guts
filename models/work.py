@@ -2159,7 +2159,7 @@ class Work(db.Model):
             crossref_json = get_crossref_json_from_unpaywall(r.doi)
             if crossref_json and crossref_json.get('subtype', '') == 'preprint':
                 return True
-        return self.journal_id in PREPRINT_JOURNAL_IDS
+        return self.journal_id in PREPRINT_JOURNAL_IDS or (self.journal_id is None and self.genre == 'posted-content') # From Unpaywall
 
     @property
     def is_review(self):
