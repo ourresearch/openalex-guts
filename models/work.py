@@ -1750,12 +1750,12 @@ class Work(db.Model):
                 return "erratum"
 
         letter_exprs = [
-            r'^letter:',
-            r'^\[*letter to',
-            r'^\[*letter from',
-            r'^letter$',
-            r'^\[*letter:',
-            r'^Open letter'
+            r'^(A )?letter:',
+            r'^(A )?\[*letter to',
+            r'^(A )?\[*letter from',
+            r'^(A )?letter$',
+            r'^(A )?\[*letter:',
+            r'^(An )?Open letter'
         ]
         for expr in letter_exprs:
             if self.work_title and re.search(expr, self.work_title,
@@ -1763,13 +1763,13 @@ class Work(db.Model):
                 return "letter"
 
         editorial_exprs = [
-            r'^editorial:',
-            r'^editorial$',
-            r'^editorial comment',
-            r'^guest editorial',
-            r'^editorial note',
-            r'^editorial -'
-            r'editorial \w+:'
+            r'^(An )?editorial:',
+            r'^(An )?editorial$',
+            r'^(An )?editorial comment',
+            r'^(A )?guest editorial',
+            r'^(An )?editorial note',
+            r'^(An )?editorial -'
+            r'(A )?editorial \w+:'
         ]
         for expr in editorial_exprs:
             if self.work_title and re.search(expr, self.work_title,
