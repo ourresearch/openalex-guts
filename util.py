@@ -784,6 +784,18 @@ def punctuation_density(words):
         [word[-1] in string.punctuation for word in words if word]) / len(words)
 
 
+def words_within_distance(text, word1, word2, distance):
+    words = text.split()
+    word1_indices = [i for i, w in enumerate(words) if w == word1]
+    word2_indices = [i for i, w in enumerate(words) if w == word2]
+
+    for i in word1_indices:
+        for j in word2_indices:
+            if abs(i - j) <= distance:
+                return True
+    return False
+
+
 def detect_language_abstract(
         abstract_words, probability_threshold=0.7,
         punctuation_density_threshold=0.5
