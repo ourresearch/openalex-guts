@@ -1743,6 +1743,9 @@ class Work(db.Model):
     def guess_type_from_title(self):
         erratum_exprs = [
             r'^erratum',
+            r'erratum$',
+            r'\[erratum',
+            r'\(erratum',
         ]
         for expr in erratum_exprs:
             if self.work_title and re.search(expr, self.work_title,
