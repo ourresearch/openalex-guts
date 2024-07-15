@@ -35,7 +35,8 @@ from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
-    matching_author_strings, get_crossref_json_from_unpaywall
+    matching_author_strings, get_crossref_json_from_unpaywall, \
+    words_within_distance
 from util import clean_html
 from util import detect_language_from_abstract_and_title
 from util import elapsed
@@ -1750,9 +1751,11 @@ class Work(db.Model):
 
         letter_exprs = [
             r'^letter:',
-            r'^letter to',
+            r'^\[*letter to',
+            r'^\[*letter from',
             r'^letter$',
-            r'^\[letter to',
+            r'^\[*letter:',
+            r'^Open letter'
         ]
         for expr in letter_exprs:
             if self.work_title and re.search(expr, self.work_title,
@@ -1766,6 +1769,7 @@ class Work(db.Model):
             r'^guest editorial',
             r'^editorial note',
             r'^editorial -'
+            r'editorial \w+:'
         ]
         for expr in editorial_exprs:
             if self.work_title and re.search(expr, self.work_title,
@@ -2164,7 +2168,7 @@ class Work(db.Model):
     @property
     def is_review(self):
         return self.journal_id in REVIEW_JOURNAL_IDS or (
-                self.original_title and 'a review' in self.original_title.lower())
+                self.original_title and words_within_distance(self.original_title.lower(), 'a', 'review', 2))
 
     @cached_property
     def display_genre(self):
