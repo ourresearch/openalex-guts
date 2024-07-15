@@ -29,8 +29,11 @@ def parse_args():
                         type=str,
                         action='append',
                         help='OpenAlex API filter(s) to enqueue')
-    parser.add_argument('-fname', '--filename', type=str, help='Filename containing DOIs from which to enqueue with priority into add_things queue')
-    parser.add_argument('-m', '--method', type=str, help='Methods to run on Work objects', action='append', dest='methods')
+    parser.add_argument('-fname', '--filename', type=str,
+                        help='Filename containing DOIs from which to enqueue with priority into add_things queue')
+    parser.add_argument('-m', '--method', type=str,
+                        help='Methods to run on Work objects', action='append',
+                        dest='methods')
     return parser.parse_args()
 
 
@@ -87,9 +90,10 @@ def enqueue_from_api(oa_filters, methods=None):
                           'per-page': 200,
                           'select': 'id'}
                 j = get_openalex_json('https://api.openalex.org/works',
-                                          params=params, s=s)
+                                      params=params, s=s)
                 cursor = j['meta'].get('next_cursor')
-                ids = [int(work['id'].split('/W')[-1]) for work in j.get('results', [])]
+                ids = [int(work['id'].split('/W')[-1]) for work in
+                       j.get('results', [])]
                 if not ids:
                     break
                 enqueue_jobs(ids, methods=methods, priority=0)
@@ -101,19 +105,24 @@ def enqueue_from_api(oa_filters, methods=None):
                 logger.exception(traceback.format_exception())
 
 
-def enqueue_dois_txt_file(fname):
+def enqueue_txt_file(fname, methods=None):
     with open(fname) as f:
-        dois = tuple([line.strip() for line in f.readlines() if line.strip()])
-        work_ids = db.session.execute(text('SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
-                                                params={'dois': dois}).fetchall()
-        work_ids = [r[0] for r in work_ids]
-        enqueue_jobs(work_ids, priority=0)
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+        dois = tuple([line for line in lines if line.startswith('10.')])
+        doi_work_ids = []
+        if dois:
+            doi_work_ids = db.session.execute(text(
+                'SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
+                                          params={'dois': dois}).fetchall()
+            doi_work_ids = [r[0] for r in doi_work_ids]
+        all_work_ids = [int(item) for item in set(lines) - set(dois)] + doi_work_ids
+        enqueue_jobs(all_work_ids, priority=0, methods=methods)
 
 
 def main():
     args = parse_args()
     if args.filename:
-        enqueue_dois_txt_file(args.filename)
+        enqueue_txt_file(args.filename)
         return
     elif args.filter:
         enqueue_from_api(args.filter, methods=args.methods)
