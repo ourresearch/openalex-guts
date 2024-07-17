@@ -254,6 +254,9 @@ class Work(db.Model):
     topics_input_hash = db.Column(db.Text)
     previous_years = db.Column(ARRAY(db.Numeric))
 
+    type = db.Column(db.VARCHAR(250))
+    type_crossref = db.Column(db.VARCHAR(250))
+
     doi_lower = db.Column(db.Text)
     doc_sub_types = db.Column(db.Text)
     original_venue = db.Column(db.Text)
@@ -1120,7 +1123,7 @@ class Work(db.Model):
 
     def guess_version(self):
         # some last-minute rules to try to guess the location's version
-        if self.type_crossref == 'posted-content':
+        if self.type_crossref_calculated == 'posted-content':
             return 'submittedVersion'
         return None
 
@@ -2132,7 +2135,7 @@ class Work(db.Model):
         return True if self.oa_locations else False
 
     @cached_property
-    def type_crossref(self):
+    def type_crossref_calculated(self):
         # legacy type used < 2023-08
         # (but don't get rid of it, it's used to derive the new type (display_genre))
         if self.looks_like_paratext:
@@ -2174,7 +2177,7 @@ class Work(db.Model):
                 self.original_title and words_within_distance(self.original_title.lower(), 'a', 'review', 2))
 
     @cached_property
-    def display_genre(self):
+    def type_calculated(self):
         # this is what goes into the `Work.type` attribute
         if self.looks_like_paratext:
             return "paratext"
@@ -2213,8 +2216,8 @@ class Work(db.Model):
             "edited-book": "book",
         }
         # return mapping from lookup if it's in there, otherwise pass-through
-        return lookup_crossref_to_openalex_type.get(self.type_crossref,
-                                                    self.type_crossref)
+        return lookup_crossref_to_openalex_type.get(self.type_crossref_calculated,
+                                                    self.type_crossref_calculated)
 
     @cached_property
     def language(self):
@@ -2261,7 +2264,7 @@ class Work(db.Model):
         if self.is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
                 this_loc_oa_status = oa_status_from_location(loc,
-                                                             self.type_crossref)
+                                                             self.type_crossref_calculated)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
         if oa_status in ['gold', 'hybrid'] and self.apc_list:
@@ -2470,6 +2473,9 @@ class Work(db.Model):
             my_dict["abstract_inverted_index"] = None
 
         entity_hash = entity_md5(my_dict)
+
+        self.type = self.type_calculated
+        self.type_crossref = self.type_crossref_calculated
 
         if work_has_null_author_ids(my_dict):
             logger.info('not saving work because some authors have null IDs')
@@ -2885,7 +2891,7 @@ class Work(db.Model):
         elif is_oa is True and oa_status == 'closed':
             for loc in self.oa_locations:
                 this_loc_oa_status = oa_status_from_location(loc,
-                                                             self.type_crossref)
+                                                             self.type_crossref_calculated)
                 oa_status = self.update_oa_status_if_better(this_loc_oa_status)
 
         if oa_status == 'gold' and self.apc_list and self.apc_list.get(
@@ -2913,9 +2919,9 @@ class Work(db.Model):
                 0] if self.dict_locations else None,
             "best_oa_location": self.oa_locations[
                 0] if self.oa_locations else None,
-            "type": self.display_genre,
-            "type_crossref": self.type_crossref,
-            "type_id": f"https://openalex.org/work-types/{self.display_genre}",
+            "type": self.type_calculated,
+            "type_crossref": self.type_crossref_calculated,
+            "type_id": f"https://openalex.org/work-types/{self.type_calculated}",
             "indexed_in": self.indexed_in,
             "open_access": {
                 "is_oa": is_oa,
@@ -2983,7 +2989,7 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
-                "is_paratext": self.display_genre == 'paratext' or self.looks_like_paratext,
+                "is_paratext": self.type_calculated == 'paratext' or self.looks_like_paratext,
                 "concepts": [concept.to_dict("minimum") for concept in
                              self.concepts_sorted],
                 "topics": [topic.to_dict("minimum") for topic in
