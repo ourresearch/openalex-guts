@@ -19,13 +19,6 @@ Run with: heroku local:run python -m -- scripts.queue_work_process_embeddings --
 def process_embeddings(work):
     print(f"Processing {work.id}")
     get_and_save_embeddings(work)
-    db.session.execute('''
-        UPDATE queue.run_once_work_store_embeddings
-        SET finished = NOW()
-        WHERE work_id = :work_id
-    ''', {'work_id': work.id})
-    db.session.commit()
-    print(f"Processed {work.id}")
 
 
 class QueueWorkProcessEmbeddings:
@@ -46,6 +39,7 @@ class QueueWorkProcessEmbeddings:
             ''', {'work_id': single_id})
             db.session.commit()
             process_embeddings(work)
+            self.update_finished([single_id])
         else:
             num_updated = 0
 
@@ -61,14 +55,18 @@ class QueueWorkProcessEmbeddings:
 
                 works = QueueWorkProcessEmbeddings.fetch_works(work_ids)
 
+                processed_ids = []
                 for work in works:
                     logger.info(f'running process_embeddings on {work}')
                     try:
                         process_embeddings(work)
+                        processed_ids.append(work.id)
                     except Exception as e:
                         logger.error(f'Error processing {work} - {e}')
                         db.session.rollback()
                         continue
+
+                self.update_finished(processed_ids)
 
                 commit_start_time = time()
                 db.session.commit()
@@ -102,6 +100,17 @@ class QueueWorkProcessEmbeddings:
         logger.info(f'got {len(id_list)} IDs to process')
 
         return id_list
+
+    @staticmethod
+    def update_finished(work_ids):
+        if not work_ids:
+            return
+        logger.info(f'updating finished for {len(work_ids)} works')
+        db.session.execute("""
+            UPDATE queue.run_once_work_store_embeddings
+            SET finished = NOW()
+            WHERE work_id = ANY(:work_ids)
+        """, {'work_ids': work_ids})
 
     @staticmethod
     def base_works_query():
