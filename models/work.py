@@ -51,14 +51,6 @@ from timeit import default_timer as timer
 DELETED_WORK_ID = 4285719527
 
 
-def get_libguides_ids():
-    ids = db.session.execute('SELECT * FROM libguides_paper_ids;').fetchall()
-    return set([_id[0] for _id in ids])
-
-
-LIBGUIDES_IDS = get_libguides_ids()
-
-
 def elastic_index_suffix(publication_year):
     if not publication_year or not isinstance(publication_year, int):
         return "invalid-data"
@@ -1701,89 +1693,6 @@ class Work(db.Model):
             if override_val:
                 setattr(self, work_field, override_val)
 
-    @cached_property
-    def looks_like_paratext(self):
-        if self.is_paratext:
-            return True
-
-        paratext_exprs = [
-            r'^Author Guidelines$',
-            r'^Author Index$'
-            r'^Back Cover',
-            r'^Back Matter',
-            r'^Contents$',
-            r'^Contents:',
-            r'^Cover Image',
-            r'^Cover Picture',
-            r'^Editorial Board',
-            r'Editor Report$',
-            r'^Front Cover',
-            r'^Frontispiece',
-            r'^Graphical Contents List$',
-            r'^Index$',
-            r'^Inside Back Cover',
-            r'^Inside Cover',
-            r'^Inside Front Cover',
-            r'^Issue Information',
-            r'^List of contents',
-            r'^List of Tables$',
-            r'^List of Figures$',
-            r'^List of Plates$',
-            r'^Masthead',
-            r'^Pages de début$',
-            r'^Title page',
-            r"^Editor's Preface",
-        ]
-
-        for expr in paratext_exprs:
-            if self.work_title and re.search(expr, self.work_title,
-                                             re.IGNORECASE):
-                return True
-
-        return False
-
-    @cached_property
-    def guess_type_from_title(self):
-        erratum_exprs = [
-            r'^erratum',
-            r'erratum$',
-            r'\[erratum',
-            r'\(erratum',
-        ]
-        for expr in erratum_exprs:
-            if self.work_title and re.search(expr, self.work_title,
-                                             re.IGNORECASE):
-                return "erratum"
-
-        letter_exprs = [
-            r'^(A )?letter:',
-            r'^(A )?\[*letter to',
-            r'^(A )?\[*letter from',
-            r'^(A )?letter$',
-            r'^(A )?\[*letter:',
-            r'^(An )?Open letter'
-        ]
-        for expr in letter_exprs:
-            if self.work_title and re.search(expr, self.work_title,
-                                             re.IGNORECASE):
-                return "letter"
-
-        editorial_exprs = [
-            r'^(An )?editorial:',
-            r'^(An )?editorial$',
-            r'^(An )?editorial comment',
-            r'^(A )?guest editorial',
-            r'^(An )?editorial note',
-            r'^(An )?editorial -'
-            r'(A )?editorial \w+:'
-        ]
-        for expr in editorial_exprs:
-            if self.work_title and re.search(expr, self.work_title,
-                                             re.IGNORECASE):
-                return "editorial"
-
-        return None
-
     @property
     def records_sorted(self):
         if not self.records_merged:
@@ -2138,25 +2047,9 @@ class Work(db.Model):
     def type_crossref_calculated(self):
         # legacy type used < 2023-08
         # (but don't get rid of it, it's used to derive the new type (display_genre))
-        if self.looks_like_paratext:
-            return "other"
-        if self.genre:
-            return self.genre
-        if self.doc_type:
-            lookup_mag_to_crossref_type = {
-                "Journal": "journal-article",
-                "Thesis": "dissertation",
-                "Conference": "proceedings-article",
-                "Repository": "posted-content",
-                "Book": "book",
-                "BookChapter": "book-chapter",
-                "Dataset": "dataset",
-            }
-            if mag_type := lookup_mag_to_crossref_type.get(self.doc_type):
-                return mag_type
-        if self.journal and self.journal.type and 'book' in self.journal.type:
-            return 'book-chapter'
-        return 'journal-article'
+        from detective import WorkTypeDetective
+        detective = WorkTypeDetective(self)
+        return detective.type_crossref_calculated
 
     def get_record(self, record_type):
         for record in self.records_sorted:
@@ -2164,60 +2057,12 @@ class Work(db.Model):
                 return record
 
     @cached_property
-    def is_preprint(self):
-        if r := self.get_record('crossref_doi'):
-            crossref_json = get_crossref_json_from_unpaywall(r.doi)
-            if crossref_json and crossref_json.get('subtype', '') == 'preprint':
-                return True
-        return self.journal_id in PREPRINT_JOURNAL_IDS or (self.journal_id is None and self.genre == 'posted-content') # From Unpaywall
-
-    @property
-    def is_review(self):
-        return self.journal_id in REVIEW_JOURNAL_IDS or (
-                self.original_title and words_within_distance(self.original_title.lower(), 'a', 'review', 2))
-
-    @cached_property
     def type_calculated(self):
         # this is what goes into the `Work.type` attribute
-        if self.looks_like_paratext:
-            return "paratext"
-        if self.original_title and 'supplementary table' in self.original_title.lower():
-            return 'supplementary-materials'
-        if self.is_review:
-            return 'review'
-        if self.is_preprint:
-            return 'preprint'
-        if self.paper_id in LIBGUIDES_IDS:
-            return 'libguides'
-
-        # infer "erratum", "editorial", "letter" types:
-        try:
-            if self.guess_type_from_title:
-                # todo: do another pass at this. improve precision and recall.
-                return self.guess_type_from_title
-        except AttributeError:
-            pass
-        lookup_crossref_to_openalex_type = {
-            "journal-article": "article",
-            "proceedings-article": "article",
-            "posted-content": "article",
-            "book-part": "book-chapter",
-            "journal-issue": "paratext",
-            "journal": "paratext",
-            "journal-volume": "paratext",
-            "report-series": "paratext",
-            "proceedings": "paratext",
-            "proceedings-series": "paratext",
-            "book-series": "paratext",
-            "component": "paratext",
-            "monograph": "book",
-            "reference-book": "book",
-            "book-set": "book",
-            "edited-book": "book",
-        }
-        # return mapping from lookup if it's in there, otherwise pass-through
-        return lookup_crossref_to_openalex_type.get(self.type_crossref_calculated,
-                                                    self.type_crossref_calculated)
+        from detective import WorkTypeDetective
+        detective = WorkTypeDetective(self)
+        return detective.type_calculated
+    
 
     @cached_property
     def language(self):
@@ -2989,7 +2834,7 @@ class Work(db.Model):
                     "last_page": self.last_page
                 },
                 "is_retracted": self.is_retracted,
-                "is_paratext": self.type_calculated == 'paratext' or self.looks_like_paratext,
+                "is_paratext": self.type_calculated == 'paratext',
                 "concepts": [concept.to_dict("minimum") for concept in
                              self.concepts_sorted],
                 "topics": [topic.to_dict("minimum") for topic in
