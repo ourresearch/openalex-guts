@@ -136,6 +136,18 @@ class Author(db.Model):
     def store(self):
         bulk_actions = []
 
+        # temp to delete old author records
+        if self.author_id < 5000000000:
+            delete_record = {
+                "_op_type": "delete",
+                "_index": AUTHORS_INDEX,
+                "_id": self.openalex_id,
+            }
+            logger.info(f"deleting old author record {self.openalex_id}")
+            bulk_actions.append(delete_record)
+            return bulk_actions
+        # end temp
+
         if self.merge_into_id is not None:
             entity_hash = entity_md5(self.merge_into_id)
 
