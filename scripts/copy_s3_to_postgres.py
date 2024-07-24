@@ -52,7 +52,7 @@ if __name__ == '__main__':
             max_part = 10
         elif table_name == "mid.json_authors":
             max_part = 3
-        elif table_name == "ins.unpaywall_recordthresher_fields_mv":
+        elif table_name == "ins.unpaywaLl_recordthresher_fields_mv":
             max_part = 2
         for j in range(0, max_part):
 

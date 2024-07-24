@@ -1,5 +1,11 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+upcoming release
+- improvements to work type assignments: TODO details
+- change titles (display_name) for 89.5k journals based on data from Crossref
+- delete 187,452 works: deleted Zenodo records. (merge into deleted id: W4285719527)
+- clean up author names
+
 RELEASE 2024-06-30
 - add new affiliations field to Work.authorships, allowing more detailed mapping of raw affiliation strings to institutions
 - new is_core boolean added to sources and associated works based on dataset from CWTS: https://zenodo.org/records/10949671
