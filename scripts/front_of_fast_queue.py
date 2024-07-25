@@ -4,9 +4,9 @@ from time import gmtime, mktime, sleep
 
 from redis import Redis
 
-from app import REDIS_QUEUE_URL
+from app import REDIS_QUEUE_URL, db
 from models import REDIS_WORK_QUEUE
-from util import openalex_works_paginate
+from util import openalex_works_paginate, chunks
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
@@ -82,22 +82,38 @@ def front_of_fast_queue_api(oax_filter, batch_size, no_redis=False):
     batch.clear()
 
 
+def front_of_fast_queue_sql(sql_query, batch_size, no_redis=False):
+    rows = db.session.execute(sql_query).fetchall()
+    work_ids = [row[0] for row in rows]
+    for chunk in chunks(work_ids, batch_size):
+        try:
+            front_of_fast_queue_one_batch(chunk, no_redis)
+            print(
+                f'Enqueued {len(chunk)} ({len(work_ids)} total) works to front of fast queue from SQL query: {sql_query}')
+        except Exception as e:
+            print(e)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Front of Fast Queue Script")
     parser.add_argument('--oax_filter', '-oaxf',
                         help='OpenAlex API filter(s) to enqueue works',
                         action='append')
+    parser.add_argument('--sql_query', '-sql', type=str,
+                        help='SQL query to fetch work IDs enqueue')
     parser.add_argument("--file", help="Input CSV file name")
     parser.add_argument("--batch-size", type=int, default=10000,
                         help="Batch size (default: 10000)")
     parser.add_argument("--no-redis", action="store_true",
                         help="Test script without saving to Redis")
     args = parser.parse_args()
-    if not args.oax_filter and not args.file:
-        raise ValueError('Either --oax_filter or --file must be specified')
+    if not args.oax_filter and not args.file and not args.sql_query:
+        raise ValueError('Either --oax_filter or --file or --sql_query must be specified')
     if args.file:
         front_of_fast_queue(args.file, args.batch_size, args.no_redis)
-    else:
+    elif args.oax_filter:
         for _filter in args.oax_filter:
             print(f'Enqueueing works from OpenAlex filter: {_filter}')
             front_of_fast_queue_api(_filter, args.batch_size, args.no_redis)
+    elif args.sql_query:
+        front_of_fast_queue_sql(args.sql_query, args.batch_size, args.no_redis)
