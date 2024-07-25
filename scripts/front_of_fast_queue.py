@@ -85,11 +85,13 @@ def front_of_fast_queue_api(oax_filter, batch_size, no_redis=False):
 def front_of_fast_queue_sql(sql_query, batch_size, no_redis=False):
     rows = db.session.execute(sql_query).fetchall()
     work_ids = [row[0] for row in rows]
+    count = 0
     for chunk in chunks(work_ids, batch_size):
         try:
             front_of_fast_queue_one_batch(chunk, no_redis)
+            count += len(chunk)
             print(
-                f'Enqueued {len(chunk)} ({len(work_ids)} total) works to front of fast queue from SQL query: {sql_query}')
+                f'Enqueued {count} ({len(work_ids)} total) works to front of fast queue from SQL query: {sql_query}')
         except Exception as e:
             print(e)
 
