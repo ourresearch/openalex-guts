@@ -31,6 +31,7 @@ class QueueWorkProcessEmbeddings:
             limit = float("inf")
 
         if single_id:
+            single_id = int(single_id)
             work = QueueWorkProcessEmbeddings.fetch_works([single_id])[0]
             db.session.execute('''
                 UPDATE queue.run_once_work_store_embeddings
