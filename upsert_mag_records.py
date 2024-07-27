@@ -56,7 +56,6 @@ def dequeue_and_mark_processing(session, batch_size=100):
     """
 
     result = session.connection().execution_options(autocommit=True).execute(text(cte_query), {'batch_size': batch_size})
-    session.commit()
     return result.mappings().all()
 
 
