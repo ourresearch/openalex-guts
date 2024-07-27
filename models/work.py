@@ -1391,8 +1391,7 @@ class Work(db.Model):
                     author_dict["affiliation"] = [defaultdict(str)]
 
                 raw_author_string = original_name if original_name else None
-                original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                    author_dict["orcid"] else None
+                original_orcid = normalize_orcid(author_dict.get("orcid"))
 
                 seen_institution_ids = set()
 
@@ -1502,16 +1501,14 @@ class Work(db.Model):
                 author_dict["affiliation"] = [defaultdict(str)]
 
             raw_author_string = original_name if original_name else None
-            original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                author_dict["orcid"] else None
+            original_orcid = normalize_orcid(author_dict.get("orcid"))
 
             seen_institution_ids = set()
 
             if raw_author_string:
                 affiliation_sequence_order = 1
                 for affiliation_dict in author_dict["affiliation"]:
-                    raw_affiliation_string = affiliation_dict["name"] if \
-                        affiliation_dict["name"] else None
+                    raw_affiliation_string = affiliation_dict.get('name')
                     raw_affiliation_string = clean_html(raw_affiliation_string)
                     my_institutions = []
 
