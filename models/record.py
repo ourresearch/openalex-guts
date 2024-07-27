@@ -278,6 +278,7 @@ class Record(db.Model):
             "datacite_doi",
             "pubmed_record",
             "pmh_record",
+            "mag_location",
             "override",
         }
 
