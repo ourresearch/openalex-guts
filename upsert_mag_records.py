@@ -4,10 +4,8 @@ from sqlalchemy import text
 
 from app import db
 import shortuuid
-from tqdm.auto import tqdm
 
 from scripts.helpers.enqueue_add_some_things import enqueue_works
-from util import chunks
 
 
 def make_recordthresher_id():
