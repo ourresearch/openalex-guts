@@ -26,52 +26,51 @@ def authors_no_affiliations(normalized_authors):
 
 def clone_record(record):
     from models import Record
-    exclude_attrs = {'parseland_record',
-                     '_sa_instance_state',
+    exclude_attrs = {'_sa_instance_state',
                      'insert_dict'}
-    crossref_record_d = {k: v for k, v in record.__dict__.items() if
+    parent_record_d = {k: v for k, v in record.__dict__.items() if
                          k not in exclude_attrs}
-    cloned = Record(**crossref_record_d)
+    cloned = Record(**parent_record_d)
     return cloned
 
 
-def merge_crossref_with_parsed(crossref_record, **parsed_records):
-    if not crossref_record or crossref_record.record_type != 'crossref_doi':
-        return crossref_record
+def merge_primary_with_parsed(primary_record, **parsed_records):
+    if not primary_record or not primary_record.record_type in {'crossref_doi', 'datacite_doi'}:
+        return primary_record
     pl_record, pdf_record = parsed_records['parseland_record'], parsed_records[
         'pdf_record']
     if pl_record is None and pdf_record is None:
-        return crossref_record
+        return primary_record
 
     logger.info(
-        f"merging record {crossref_record.id} with parsed records {pl_record.id if pl_record else None} (parseland), {pdf_record.id if pdf_record else None} (pdf)")
+        f"merging record {primary_record.id} with parsed records {pl_record.id if pl_record else None} (parseland), {pdf_record.id if pdf_record else None} (pdf)")
 
-    cloned_crossref_record = clone_record(crossref_record)
+    cloned_parent_record = clone_record(primary_record)
 
-    cloned_crossref_record = merge_authors(cloned_crossref_record,
-                                           crossref_record, **parsed_records)
-    cloned_crossref_record = merge_citations(cloned_crossref_record,
-                                             crossref_record, **parsed_records)
-    cloned_crossref_record = merge_abstract(cloned_crossref_record,
-                                            crossref_record, **parsed_records)
-    return cloned_crossref_record
+    cloned_parent_record = merge_authors(cloned_parent_record,
+                                           primary_record, **parsed_records)
+    cloned_parent_record = merge_citations(cloned_parent_record,
+                                             primary_record, **parsed_records)
+    cloned_parent_record = merge_abstract(cloned_parent_record,
+                                            primary_record, **parsed_records)
+    return cloned_parent_record
 
 
-def merge_abstract(cloned_crossref_record, crossref_record, **parsed_records):
+def merge_abstract(cloned_parent_record, original_parent_record, **parsed_records):
     pl_record, pdf_record = parsed_records.get(
         'parseland_record'), parsed_records.get('pdf_record')
     abstract_record = pl_record
     if (
             not pl_record or not pl_record.abstract) and pdf_record and pdf_record.abstract:
         abstract_record = pdf_record
-    if crossref_record.abstract:
-        cloned_crossref_record.abstract = crossref_record.abstract
+    if original_parent_record.abstract:
+        cloned_parent_record.abstract = original_parent_record.abstract
     elif abstract_record and abstract_record.abstract:
-        cloned_crossref_record.abstract = abstract_record.abstract
-    return cloned_crossref_record
+        cloned_parent_record.abstract = abstract_record.abstract
+    return cloned_parent_record
 
 
-def merge_citations(cloned_crossref_record, crossref_record, **parsed_records):
+def merge_citations(cloned_parent_record, original_parent_record, **parsed_records):
     records_sorted = [parsed_records.get('parseland_record'),
                       parsed_records.get('pdf_record')]
     records_sorted = [record for record in records_sorted if record]
@@ -79,14 +78,14 @@ def merge_citations(cloned_crossref_record, crossref_record, **parsed_records):
     for record in records_sorted:
         if record and record.has_citations:
             citation_record = record
-    if len(crossref_record.citations or '[]') > 3:
-        cloned_crossref_record.citations = crossref_record.citations
+    if len(original_parent_record.citations or '[]') > 3:
+        cloned_parent_record.citations = original_parent_record.citations
     elif citation_record:
-        cloned_crossref_record.citations = citation_record.citations
-    return cloned_crossref_record
+        cloned_parent_record.citations = citation_record.citations
+    return cloned_parent_record
 
 
-def merge_authors(cloned_crossref_record, crossref_record, **parsed_records):
+def merge_authors(cloned_parent_record, original_parent_record, **parsed_records):
     pl_record, pdf_record = parsed_records.get(
         'parseland_record'), parsed_records.get('pdf_record')
     normalized_pl_dict, normalized_pdf_dict = _normalized_record_dict(
@@ -96,38 +95,38 @@ def merge_authors(cloned_crossref_record, crossref_record, **parsed_records):
             pdf_record and pdf_record.has_affiliations):
         normalized_authors_dict = normalized_pdf_dict
     normalized_authors = normalized_authors_dict.get('authors', [])
-    crossref_authors = crossref_record.authors_json
-    if not crossref_authors and normalized_authors and not affiliations_probably_invalid(normalized_authors):
-        cloned_crossref_record.authors = json.dumps(normalized_authors)
+    parent_authors = original_parent_record.authors_json
+    if not parent_authors and normalized_authors and not affiliations_probably_invalid(normalized_authors):
+        cloned_parent_record.authors = json.dumps(normalized_authors)
     else:
-        cloned_crossref_record.authors = json.dumps(merge_affiliations(crossref_record, normalized_authors))
-    return cloned_crossref_record
+        cloned_parent_record.authors = json.dumps(merge_affiliations(original_parent_record, normalized_authors))
+    return cloned_parent_record
 
 
-def merge_affiliations(crossref_record, normalized_authors):
-    crossref_authors = crossref_record.authors_json
+def merge_affiliations(original_record, normalized_authors):
+    parent_authors = original_record.authors_json
     normalized_parsed_authors = [normalize(author.get('raw', '')) for author in
                                  normalized_authors]
-    for crossref_author_idx, crossref_author in enumerate(crossref_authors):
+    for parent_author_idx, parent_author in enumerate(parent_authors):
         best_match_idx = _match_parsed_author(
-            crossref_author,
-            crossref_author_idx,
+            parent_author,
+            parent_author_idx,
             normalized_parsed_authors
         )
 
         if best_match_idx > -1:
             parsed_author = normalized_authors[best_match_idx]
-            crossref_author['is_corresponding'] = parsed_author.get(
+            parent_author['is_corresponding'] = parsed_author.get(
                 'is_corresponding', '')
-            crossref_author['affiliation'] = _reconcile_affiliations(
-                crossref_author,
+            parent_author['affiliation'] = _reconcile_affiliations(
+                parent_author,
                 parsed_author,
-                crossref_record.doi
+                original_record.doi
             )
-    return crossref_authors
+    return parent_authors
 
 
-def _reconcile_affiliations(crossref_author, pl_author, doi):
+def _reconcile_affiliations(parent_author, pl_author, doi):
     if '/nejm' in doi.lower():
         return pl_author['affiliation']
     final_affs = []
@@ -136,8 +135,8 @@ def _reconcile_affiliations(crossref_author, pl_author, doi):
     # Sometimes Crossref will have English version and Parseland will have version in another language
     # We probably don't want to keep version that is not in English
     pl_affs = [aff for aff in pl_affs if aff['name'].isascii()] if \
-        crossref_author['affiliation'] else pl_affs
-    for aff in crossref_author['affiliation']:
+        parent_author['affiliation'] else pl_affs
+    for aff in parent_author['affiliation']:
         # Assume crossref affiliation is better version initially
         if all((aff.get('department'), aff.get('id'), not pl_affs,
                 not aff['name'])):
@@ -197,10 +196,10 @@ def _match_affiliation(aff, other_affs):
     return best_match_idx
 
 
-def _match_parsed_author(crossref_author, crossref_author_idx,
+def _match_parsed_author(parent_author, parent_author_idx,
                          normalized_authors):
-    family = normalize(crossref_author.get('family') or '')
-    given = normalize(crossref_author.get('given') or '')
+    family = normalize(parent_author.get('family') or '')
+    given = normalize(parent_author.get('given') or '')
 
     best_match_score = (0, -math.inf)
     best_match_idx = -1
@@ -213,7 +212,7 @@ def _match_parsed_author(crossref_author, crossref_author_idx,
         if given and pl_author_name and given in pl_author_name:
             name_match_score += 1
 
-        index_difference = abs(crossref_author_idx - pl_author_idx)
+        index_difference = abs(parent_author_idx - pl_author_idx)
 
         if name_match_score:
             match_score = (name_match_score, -index_difference)

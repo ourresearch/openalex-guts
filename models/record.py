@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import func
 
 from app import db
 from models.location import normalize_license
-from models.merge_utils import merge_crossref_with_parsed
+from models.merge_utils import merge_primary_with_parsed
 from util import normalize_title_like_sql
 
 
@@ -102,7 +102,7 @@ class Record(db.Model):
     def with_parsed_data(self):
         parsed_records = {'parseland_record': self.parseland_record,
                           'pdf_record': self.pdf_record}
-        return merge_crossref_with_parsed(self, **parsed_records)
+        return merge_primary_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
         super(Record, self).__init__(**kwargs)
