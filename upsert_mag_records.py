@@ -9,7 +9,7 @@ from scripts.helpers.enqueue_add_some_things import enqueue_works
 
 UPSERT_QUEUE = 'queue:mag_authors_upsert'
 REDIS = redis.from_url(REDIS_QUEUE_URL)
-BATCH_SIZE = 1_000
+BATCH_SIZE = 100
 
 
 def make_recordthresher_id():
@@ -51,7 +51,9 @@ if __name__ == '__main__':
     count = 0
     start = datetime.now()
     while True:
+        print(f'Popping {BATCH_SIZE} work ids from {UPSERT_QUEUE}')
         work_ids = dequeue_work_ids(BATCH_SIZE)
+        print(f'Popped {len(work_ids)} work ids from {UPSERT_QUEUE}')
 
         for work_id in work_ids:
             update_or_insert_record(db.session, work_id)
