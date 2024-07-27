@@ -80,4 +80,4 @@ if __name__ == '__main__':
         now = datetime.now()
         elapsed_hrs = (now - start).total_seconds() / 3600
         rate = round(count / elapsed_hrs, 2)
-        print(f'Processed: {count} | Rate: {rate}/hr')
+        print(f'Processed: {count} | Rate: {rate}/hr | Last ID: {last_work_id}')
