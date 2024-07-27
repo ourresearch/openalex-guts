@@ -175,7 +175,7 @@ def main():
             logger.exception(e)
             db.session.rollback()
         if not args.skip_fast_enqueue:
-            enqueue_fast_queue(works)
+            enqueue_fast_queue(works, -1)
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
         hrs_diff = (now - start).total_seconds() / (60 * 60)
