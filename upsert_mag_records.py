@@ -43,7 +43,7 @@ def dequeue_and_mark_processing(session, batch_size=100):
         WITH rows_to_process AS (
             SELECT *
             FROM ins.mag_authors
-            WHERE (processing IS NULL OR processing = FALSE) AND authors LIKE '%affiliations": [{%'
+            WHERE (processing IS NULL OR processing = FALSE)
             ORDER BY work_id
             LIMIT :batch_size
             FOR UPDATE SKIP LOCKED
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     count = 0
     start = datetime.now()
     while True:
-        rows = dequeue_and_mark_processing(db.session, batch_size=100)
+        rows = dequeue_and_mark_processing(db.session)
         if not rows:
             break
 
