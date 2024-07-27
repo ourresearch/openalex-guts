@@ -1727,7 +1727,7 @@ class Work(db.Model):
                                      record.has_affiliations]
         if not records_with_affiliations:
             records_with_affiliations = [record for record in
-                                         self.records_sorted if record.authors]
+                                         self.records_sorted if record.authors_json]
         # make exception for HAL records (prioritize HAL records over crossref)
         hal_records = [record for record in records_with_affiliations if
                        record.pmh_id and 'oai:hal' in record.pmh_id.lower()]
