@@ -239,7 +239,12 @@ Record.pdf_record = db.relationship(
     lazy='selectin',
     uselist=False,
     viewonly=True,
-    primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'parsed_pdf', foreign(Record.doi) == remote(Record.doi))"
+    primaryjoin=(
+        "and_("
+        "or_(foreign(Record.record_type).in_(['crossref_doi', 'datacite_doi']), "
+        "remote(Record.record_type) == 'parsed_pdf'), "
+        "foreign(Record.doi) == remote(Record.doi))"
+    )
 )
 
 Record.child_records = db.relationship(
