@@ -37,18 +37,20 @@ def parse_args():
     return parser.parse_args()
 
 
-def enqueue_jobs(work_ids, priority=None, methods=None):
+def enqueue_jobs(work_ids, priority=None, methods=None, fast_queue_priority=None):
     if methods is None:
         methods = []
     if priority is None:
         priority = time()
-    mapping = {json.dumps({'work_id': work_id, 'methods': methods}): priority
+    mapping = {json.dumps({'work_id': work_id,
+                           'methods': methods,
+                           'fast_queue_priority': fast_queue_priority}): priority
                for work_id in work_ids}
     _redis.zadd(REDIS_ADD_THINGS_QUEUE, mapping)
 
 
-def enqueue_job(work_id, priority=None, methods=None):
-    enqueue_jobs([work_id], priority, methods)
+def enqueue_job(work_id, priority=None, methods=None, fast_queue_priority=None):
+    enqueue_jobs([work_id], priority, methods, fast_queue_priority)
 
 
 def dequeue_chunk(chunk_size):
@@ -77,7 +79,7 @@ def log_memory_usage():
     logger.info(f"Memory usage (MB): {round(memory_mb, 2)}")
 
 
-def enqueue_from_api(oa_filters, methods=None):
+def enqueue_from_api(oa_filters, methods=None, fast_queue_priority=None):
     for oa_filter in oa_filters:
         logger.info(f'[*] Starting to enqueue using OA filter: {oa_filter}')
         cursor = '*'
@@ -96,7 +98,10 @@ def enqueue_from_api(oa_filters, methods=None):
                        j.get('results', [])]
                 if not ids:
                     break
-                enqueue_jobs(ids, methods=methods, priority=0)
+                enqueue_jobs(ids,
+                             methods=methods,
+                             priority=0,
+                             fast_queue_priority=fast_queue_priority)
                 count += len(ids)
                 logger.info(
                     f'[*] Inserted {count} into add_things queue from filter - {oa_filter}')
@@ -105,7 +110,7 @@ def enqueue_from_api(oa_filters, methods=None):
                 logger.exception(traceback.format_exception())
 
 
-def enqueue_txt_file(fname, methods=None):
+def enqueue_txt_file(fname, methods=None, fast_queue_priority=None):
     with open(fname) as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
         dois = tuple([line for line in lines if line.startswith('10.')])
@@ -116,7 +121,9 @@ def enqueue_txt_file(fname, methods=None):
                                           params={'dois': dois}).fetchall()
             doi_work_ids = [r[0] for r in doi_work_ids]
         all_work_ids = [int(item) for item in set(lines) - set(dois)] + doi_work_ids
-        enqueue_jobs(all_work_ids, priority=0, methods=methods)
+        enqueue_jobs(all_work_ids, priority=0,
+                     methods=methods,
+                     fast_queue_priority=fast_queue_priority)
 
 
 def main():
@@ -125,7 +132,9 @@ def main():
         enqueue_txt_file(args.filename)
         return
     elif args.filter:
-        enqueue_from_api(args.filter, methods=args.methods)
+        enqueue_from_api(args.filter,
+                         methods=args.methods,
+                         fast_queue_priority=args.fast_queue_priority)
         return
     total_processed = 0
     errors_count = 0
@@ -164,7 +173,7 @@ def main():
                         f'Exception calling {method_name}() on work {work.paper_id}')
                     logger.exception(e)
                     # Re-queue job
-                    enqueue_job(work.paper_id, 1e9, job['methods'])
+                    enqueue_job(work.paper_id, 1e9, job['methods'], job['fast_queue_priority'])
                     errors_count += 1
             total_processed += 1
         now = datetime.now()
@@ -175,7 +184,7 @@ def main():
             logger.exception(e)
             db.session.rollback()
         if not args.skip_fast_enqueue:
-            enqueue_fast_queue(works, -1)
+            enqueue_fast_queue(works, priority=job['fast_queue_priority'])
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
         hrs_diff = (now - start).total_seconds() / (60 * 60)
