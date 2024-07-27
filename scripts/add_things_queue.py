@@ -173,7 +173,7 @@ def main():
                         f'Exception calling {method_name}() on work {work.paper_id}')
                     logger.exception(e)
                     # Re-queue job
-                    enqueue_job(work.paper_id, 1e9, job['methods'], job['fast_queue_priority'])
+                    enqueue_job(work.paper_id, 1e9, job['methods'], job.get('fast_queue_priority'))
                     errors_count += 1
             total_processed += 1
         now = datetime.now()
@@ -184,7 +184,7 @@ def main():
             logger.exception(e)
             db.session.rollback()
         if not args.skip_fast_enqueue:
-            enqueue_fast_queue(works, priority=job['fast_queue_priority'])
+            enqueue_fast_queue(works, priority=job.get('fast_queue_priority'))
         else:
             logger.info(f'Skipping priority enqueue to fast queue')
         hrs_diff = (now - start).total_seconds() / (60 * 60)
