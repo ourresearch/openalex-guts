@@ -1384,7 +1384,7 @@ class Work(db.Model):
             author_sequence_order = 1
             for author_dict in record.authors_json:
                 original_name = author_dict["raw"]
-                if author_dict["family"]:
+                if author_dict.get("family"):
                     original_name = "{} {}".format(author_dict["given"],
                                                    author_dict["family"])
                 if not author_dict["affiliation"]:
