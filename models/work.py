@@ -1193,7 +1193,16 @@ class Work(db.Model):
                 self.locations = new_locations
                 logger.info(f'Updated {len(new_locs)} locations')
 
-    def _try_match_reference(self, reference_json):
+    @staticmethod
+    def _try_parse_arxiv_doi(reference_json):
+        if raw := reference_json.get('raw'):
+            if 'arxiv' in raw.lower() and (match := re.search(r'\d{4}\.\d{5}', raw)):
+                arxiv_id = match.group()
+                return '10.48550/arxiv.' + arxiv_id
+        return None
+
+    @staticmethod
+    def _try_match_reference(reference_json):
         def find_key(j, partial_key):
             for key in j.keys():
                 if partial_key in key.lower():
@@ -1233,11 +1242,7 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        match = work_matches_by_title[scores.index(max(scores))]
-        titles_ids_scores = [
-            {'title': w.original_title, 'id': w.paper_id, 'score': score} for
-            w, score in zip(work_matches_by_title, scores)]
-        return match
+        return work_matches_by_title[scores.index(max(scores))]
 
     def add_references(self):
         from models import WorkExtraIds
@@ -1275,6 +1280,8 @@ class Work(db.Model):
                                 citation_dict):
                             if work_match.paper_id:
                                 citation_paper_ids.append(work_match.paper_id)
+                        elif arxiv_doi := self._try_parse_arxiv_doi(citation_dict):
+                            citation_dois.append(arxiv_doi)
                         else:
                             new_references_unmatched += [
                                 models.CitationUnmatched(
