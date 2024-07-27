@@ -10,6 +10,7 @@ run_once_work_store_vectors_bash: bash scripts/run_store_vectors_worker.sh
 run_once_work_process_sdgs: python -m scripts.queue_work_process_sdgs --chunk=100
 run_once_work_process_sdgs_bash: bash scripts/run_process_sdg_worker.sh
 unpaywall_refresh: python -m scripts.unpaywall_recordthresher_refresh
+upsert_mag_records: bash upsert_mag_records_worker.sh
 
 fast_store_authors: python -m scripts.fast_queue --entity=author --method=store --chunk=$AUTHOR_STORE_CHUNK_SIZE
 fast_store_works: python -m scripts.fast_queue --entity=work --method=store --chunk=$WORK_STORE_CHUNK_SIZE
