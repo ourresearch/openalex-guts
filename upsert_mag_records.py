@@ -76,7 +76,7 @@ if __name__ == '__main__':
         mark_updated_query = '''UPDATE ins.mag_authors SET finished = true WHERE work_id IN :work_ids'''
         work_ids = [row['work_id'] for row in rows]
         db.session.execute(text(mark_updated_query), {'work_ids': tuple(work_ids)})
-        enqueue_works(work_ids, methods=['update_affiliations'], fast_queue_priority=-1)
+        enqueue_works(work_ids, methods=None, fast_queue_priority=-1)
         now = datetime.now()
         elapsed_hrs = (now - start).total_seconds() / 3600
         rate = round(count / elapsed_hrs, 2)
