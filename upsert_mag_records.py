@@ -55,7 +55,7 @@ def dequeue_and_mark_processing(session, batch_size=100):
         RETURNING rows_to_process.*;
     """
 
-    result = session.execute(text(cte_query), {'batch_size': batch_size})
+    result = session.connection().execution_options(autocommit=True).execute(text(cte_query), {'batch_size': batch_size})
     session.commit()
     return result.mappings().all()
 
