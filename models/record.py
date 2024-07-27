@@ -87,7 +87,12 @@ class Record(db.Model):
 
     @property
     def authors_json(self):
-        return json.loads(self.authors or '[]')
+        j = json.loads(self.authors or '[]')
+        for author in j:
+            if 'affiliations' in author and 'affiliation' not in author:
+                author['affiliation'] = author['affiliations']
+                del author['affiliations']
+        return j
 
     @property
     def citations_json(self):
