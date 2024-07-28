@@ -1,6 +1,5 @@
-from sqlalchemy import and_, or_, orm
+from sqlalchemy import and_, or_, orm, func
 from sqlalchemy.orm import foreign, remote, selectinload
-from sqlalchemy.sql.expression import func
 
 from app import db
 from models.abstract import Abstract
@@ -246,6 +245,19 @@ Record.pdf_record = db.relationship(
         "foreign(Record.doi) == remote(Record.doi))"
     )
 )
+
+Record.hal_records = db.relationship(
+    "Record",
+    lazy='selectin',
+    uselist=True,
+    viewonly=True,
+    primaryjoin=and_(
+        foreign(Record.record_type) == 'crossref_doi',
+        foreign(Record.doi) == remote(Record.doi),
+        func.lower(remote(Record.pmh_id)).contains('oai:hal')
+    )
+)
+
 
 Record.child_records = db.relationship(
     'Record',

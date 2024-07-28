@@ -98,10 +98,21 @@ class Record(db.Model):
     def citations_json(self):
         return json.loads(self.citations or '[]')
 
+    @property
+    def is_hal_record(self):
+        return self.pmh_id and 'oai:hal' in self.pmh_id.lower()
+
+    @property
+    def best_hal_record(self):
+        if self.hal_records:
+            return self.hal_records[0]
+        return None
+
     @cached_property
     def with_parsed_data(self):
         parsed_records = {'parseland_record': self.parseland_record,
-                          'pdf_record': self.pdf_record}
+                          'pdf_record': self.pdf_record,
+                          'hal_record': self.best_hal_record}
         return merge_primary_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
