@@ -1717,6 +1717,10 @@ class Work(db.Model):
         return None
 
     @property
+    def hal_records(self):
+        return [record for record in self.records if record.is_hal_record]
+
+    @property
     def records_merged(self):
         return [r.with_parsed_data for r in self.records or [] if
                 r.with_parsed_data]
@@ -1728,12 +1732,7 @@ class Work(db.Model):
         if not records_with_affiliations:
             records_with_affiliations = [record for record in
                                          self.records_sorted if record.authors_json]
-        # make exception for HAL records (prioritize HAL records over crossref)
-        hal_records = [record for record in records_with_affiliations if
-                       record.pmh_id and 'oai:hal' in record.pmh_id.lower()]
-        others = [record for record in records_with_affiliations if
-                  not record.pmh_id or 'oai:hal' not in record.pmh_id.lower()]
-        return hal_records + others
+        return records_with_affiliations
 
     @property
     def only_mag_records(self):

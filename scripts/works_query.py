@@ -19,6 +19,8 @@ def base_works_query():
         selectinload(models.Work.records).selectinload
         (models.Record.pdf_record).raiseload('*'),
         selectinload(models.Work.records).selectinload
+        (models.Record.hal_records).raiseload('*'),
+        selectinload(models.Work.records).selectinload
         (models.Record.child_records).raiseload('*'),
         selectinload(models.Work.records).selectinload
         (models.Record.related_version_dois).raiseload('*'),

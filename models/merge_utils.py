@@ -24,18 +24,24 @@ def authors_no_affiliations(normalized_authors):
     return normalized_authors
 
 
+def normalized_authors_has_affiliations(normalized_authors):
+    return any(
+        [bool(author.get('affiliation', [])) for author in normalized_authors])
+
+
 def clone_record(record):
     from models import Record
     exclude_attrs = {'_sa_instance_state',
                      'insert_dict'}
     parent_record_d = {k: v for k, v in record.__dict__.items() if
-                         k not in exclude_attrs}
+                       k not in exclude_attrs}
     cloned = Record(**parent_record_d)
     return cloned
 
 
 def merge_primary_with_parsed(primary_record, **parsed_records):
-    if not primary_record or not primary_record.record_type in {'crossref_doi', 'datacite_doi'}:
+    if not primary_record or not primary_record.record_type in {'crossref_doi',
+                                                                'datacite_doi'}:
         return primary_record
     pl_record, pdf_record = parsed_records['parseland_record'], parsed_records[
         'pdf_record']
@@ -48,15 +54,16 @@ def merge_primary_with_parsed(primary_record, **parsed_records):
     cloned_parent_record = clone_record(primary_record)
 
     cloned_parent_record = merge_authors(cloned_parent_record,
-                                           primary_record, **parsed_records)
+                                         primary_record, **parsed_records)
     cloned_parent_record = merge_citations(cloned_parent_record,
-                                             primary_record, **parsed_records)
+                                           primary_record, **parsed_records)
     cloned_parent_record = merge_abstract(cloned_parent_record,
-                                            primary_record, **parsed_records)
+                                          primary_record, **parsed_records)
     return cloned_parent_record
 
 
-def merge_abstract(cloned_parent_record, original_parent_record, **parsed_records):
+def merge_abstract(cloned_parent_record, original_parent_record,
+                   **parsed_records):
     pl_record, pdf_record = parsed_records.get(
         'parseland_record'), parsed_records.get('pdf_record')
     abstract_record = pl_record
@@ -70,7 +77,8 @@ def merge_abstract(cloned_parent_record, original_parent_record, **parsed_record
     return cloned_parent_record
 
 
-def merge_citations(cloned_parent_record, original_parent_record, **parsed_records):
+def merge_citations(cloned_parent_record, original_parent_record,
+                    **parsed_records):
     records_sorted = [parsed_records.get('parseland_record'),
                       parsed_records.get('pdf_record')]
     records_sorted = [record for record in records_sorted if record]
@@ -85,21 +93,28 @@ def merge_citations(cloned_parent_record, original_parent_record, **parsed_recor
     return cloned_parent_record
 
 
-def merge_authors(cloned_parent_record, original_parent_record, **parsed_records):
-    pl_record, pdf_record = parsed_records.get(
-        'parseland_record'), parsed_records.get('pdf_record')
-    normalized_pl_dict, normalized_pdf_dict = _normalized_record_dict(
-        pl_record), _normalized_record_dict(pdf_record)
-    normalized_authors_dict = normalized_pl_dict
-    if (not pl_record or not pl_record.has_affiliations) and (
-            pdf_record and pdf_record.has_affiliations):
+def merge_authors(cloned_parent_record, original_parent_record,
+                  **parsed_records):
+    pl_record, pdf_record, hal_record = (parsed_records.get('parseland_record'),
+                                         parsed_records.get('pdf_record'),
+                                         parsed_records.get('hal_record'))
+    normalized_pl_dict, normalized_pdf_dict, normalized_hal_dict = (
+    _normalized_record_dict(pl_record),
+    _normalized_record_dict(pdf_record),
+    _normalized_record_dict(hal_record))
+    normalized_authors_dict = normalized_hal_dict
+    if not normalized_authors_dict:
+        normalized_authors_dict = normalized_pl_dict
+    if (not normalized_authors_dict or not normalized_authors_has_affiliations(normalized_authors_dict.get('authors', []))) and (pdf_record and pdf_record.has_affiliations):
         normalized_authors_dict = normalized_pdf_dict
     normalized_authors = normalized_authors_dict.get('authors', [])
     parent_authors = original_parent_record.authors_json
-    if not parent_authors and normalized_authors and not affiliations_probably_invalid(normalized_authors):
+    if not parent_authors and normalized_authors and not affiliations_probably_invalid(
+            normalized_authors):
         cloned_parent_record.authors = json.dumps(normalized_authors)
     else:
-        cloned_parent_record.authors = json.dumps(merge_affiliations(original_parent_record, normalized_authors))
+        cloned_parent_record.authors = json.dumps(
+            merge_affiliations(original_parent_record, normalized_authors))
     return cloned_parent_record
 
 
@@ -238,14 +253,17 @@ def _normalized_record_dict(parsed_record):
 
     for parsed_author in parsed_authors:
         author = {
-            'raw': parsed_author.get('name'),
+            'raw': parsed_author.get('name') or parsed_author.get('raw'),
             'affiliation': [],
             'is_corresponding': parsed_author.get('is_corresponding')
         }
-        parsed_affiliations = parsed_author.get('affiliations')
+        parsed_affiliations = parsed_author.get(
+            'affiliations') or parsed_author.get('affiliation')
 
         if isinstance(parsed_affiliations, list):
             for parsed_affiliation in parsed_affiliations:
+                if isinstance(parsed_affiliation, dict) and 'name' in parsed_affiliation:
+                    parsed_affiliation = parsed_affiliation['name']
                 author['affiliation'].append({'name': parsed_affiliation})
 
         if orcid := parsed_author.get('orcid'):
