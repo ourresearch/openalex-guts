@@ -1,11 +1,11 @@
 from datetime import datetime
 from sqlalchemy import text
+from scripts.add_things_queue import enqueue_jobs
 
 import redis
 import shortuuid
 
 from app import db, REDIS_QUEUE_URL
-from scripts.helpers.enqueue_add_some_things import enqueue_works
 
 UPSERT_QUEUE = 'queue:mag_authors_upsert'
 REDIS = redis.from_url(REDIS_QUEUE_URL)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         mark_updated_query = '''UPDATE ins.mag_authors SET finished = true WHERE work_id IN :work_ids'''
         db.session.execute(text(mark_updated_query),
                            {'work_ids': tuple(work_ids)})
-        enqueue_works(work_ids, methods=None, fast_queue_priority=-1)
+        enqueue_jobs(work_ids, methods=None, fast_queue_priority=-1)
         now = datetime.now()
         elapsed_hrs = (now - start).total_seconds() / 3600
         rate = round(count / elapsed_hrs, 2)
