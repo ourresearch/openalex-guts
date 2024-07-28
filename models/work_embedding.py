@@ -33,7 +33,7 @@ def get_and_save_embeddings(work):
         logger.info(f"error processing title embeddings for {work.id} - text too short")
         return None
 
-    max_characters = 20000
+    max_characters = 10000
     if len(text_to_process) > max_characters:
         print(f"truncating text for {work.id} from {len(text_to_process)} to {max_characters} characters")
         text_to_process = text_to_process[:max_characters]
