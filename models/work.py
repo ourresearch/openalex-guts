@@ -1193,7 +1193,16 @@ class Work(db.Model):
                 self.locations = new_locations
                 logger.info(f'Updated {len(new_locs)} locations')
 
-    def _try_match_reference(self, reference_json):
+    @staticmethod
+    def _try_parse_arxiv_doi(reference_json):
+        if raw := reference_json.get('raw'):
+            if 'arxiv' in raw.lower() and (match := re.search(r'\d{4}\.\d{5}', raw)):
+                arxiv_id = match.group()
+                return '10.48550/arxiv.' + arxiv_id
+        return None
+
+    @staticmethod
+    def _try_match_reference(reference_json):
         def find_key(j, partial_key):
             for key in j.keys():
                 if partial_key in key.lower():
@@ -1233,11 +1242,7 @@ class Work(db.Model):
             pub_year = int(w.publication_date.split('-')[0])
             if pub_year - 1 <= ref_pub_yr <= pub_year + 1:
                 scores[i] += 1
-        match = work_matches_by_title[scores.index(max(scores))]
-        titles_ids_scores = [
-            {'title': w.original_title, 'id': w.paper_id, 'score': score} for
-            w, score in zip(work_matches_by_title, scores)]
-        return match
+        return work_matches_by_title[scores.index(max(scores))]
 
     def add_references(self):
         from models import WorkExtraIds
@@ -1275,6 +1280,8 @@ class Work(db.Model):
                                 citation_dict):
                             if work_match.paper_id:
                                 citation_paper_ids.append(work_match.paper_id)
+                        elif arxiv_doi := self._try_parse_arxiv_doi(citation_dict):
+                            citation_dois.append(arxiv_doi)
                         else:
                             new_references_unmatched += [
                                 models.CitationUnmatched(
@@ -1384,15 +1391,14 @@ class Work(db.Model):
             author_sequence_order = 1
             for author_dict in record.authors_json:
                 original_name = author_dict["raw"]
-                if author_dict["family"]:
+                if author_dict.get("family"):
                     original_name = "{} {}".format(author_dict["given"],
                                                    author_dict["family"])
-                if not author_dict["affiliation"]:
+                if not author_dict.get("affiliation"):
                     author_dict["affiliation"] = [defaultdict(str)]
 
                 raw_author_string = original_name if original_name else None
-                original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                    author_dict["orcid"] else None
+                original_orcid = normalize_orcid(author_dict.get("orcid"))
 
                 seen_institution_ids = set()
 
@@ -1495,23 +1501,21 @@ class Work(db.Model):
         author_sequence_order = 1
         for author_dict in record.authors_json:
             original_name = author_dict["raw"]
-            if author_dict["family"]:
+            if author_dict.get("family"):
                 original_name = "{} {}".format(author_dict["given"],
                                                author_dict["family"])
             if not author_dict["affiliation"]:
                 author_dict["affiliation"] = [defaultdict(str)]
 
             raw_author_string = original_name if original_name else None
-            original_orcid = normalize_orcid(author_dict["orcid"]) if \
-                author_dict["orcid"] else None
+            original_orcid = normalize_orcid(author_dict.get("orcid"))
 
             seen_institution_ids = set()
 
             if raw_author_string:
                 affiliation_sequence_order = 1
                 for affiliation_dict in author_dict["affiliation"]:
-                    raw_affiliation_string = affiliation_dict["name"] if \
-                        affiliation_dict["name"] else None
+                    raw_affiliation_string = affiliation_dict.get('name')
                     raw_affiliation_string = clean_html(raw_affiliation_string)
                     my_institutions = []
 
@@ -1713,6 +1717,10 @@ class Work(db.Model):
         return None
 
     @property
+    def hal_records(self):
+        return [record for record in self.records if record.is_hal_record]
+
+    @property
     def records_merged(self):
         return [r.with_parsed_data for r in self.records or [] if
                 r.with_parsed_data]
@@ -1723,13 +1731,8 @@ class Work(db.Model):
                                      record.has_affiliations]
         if not records_with_affiliations:
             records_with_affiliations = [record for record in
-                                         self.records_sorted if record.authors]
-        # make exception for HAL records (prioritize HAL records over crossref)
-        hal_records = [record for record in records_with_affiliations if
-                       record.pmh_id and 'oai:hal' in record.pmh_id.lower()]
-        others = [record for record in records_with_affiliations if
-                  not record.pmh_id or 'oai:hal' not in record.pmh_id.lower()]
-        return hal_records + others
+                                         self.records_sorted if record.authors_json]
+        return records_with_affiliations
 
     @property
     def only_mag_records(self):

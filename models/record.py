@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import func
 
 from app import db
 from models.location import normalize_license
-from models.merge_utils import merge_crossref_with_parsed
+from models.merge_utils import merge_primary_with_parsed
 from util import normalize_title_like_sql
 
 
@@ -87,17 +87,33 @@ class Record(db.Model):
 
     @property
     def authors_json(self):
-        return json.loads(self.authors or '[]')
+        j = json.loads(self.authors or '[]')
+        for author in j:
+            if 'affiliations' in author and 'affiliation' not in author:
+                author['affiliation'] = author['affiliations']
+                del author['affiliations']
+        return j
 
     @property
     def citations_json(self):
         return json.loads(self.citations or '[]')
 
+    @property
+    def is_hal_record(self):
+        return self.pmh_id and 'oai:hal' in self.pmh_id.lower()
+
+    @property
+    def best_hal_record(self):
+        if self.hal_records:
+            return self.hal_records[0]
+        return None
+
     @cached_property
     def with_parsed_data(self):
         parsed_records = {'parseland_record': self.parseland_record,
-                          'pdf_record': self.pdf_record}
-        return merge_crossref_with_parsed(self, **parsed_records)
+                          'pdf_record': self.pdf_record,
+                          'hal_record': self.best_hal_record}
+        return merge_primary_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
         super(Record, self).__init__(**kwargs)
@@ -278,6 +294,7 @@ class Record(db.Model):
             "datacite_doi",
             "pubmed_record",
             "pmh_record",
+            "mag_location",
             "override",
         }
 

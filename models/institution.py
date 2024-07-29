@@ -631,7 +631,7 @@ class AffiliationString(db.Model):
 
 class InstitutionAncestors(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "institution_ancestors_improved_mv"
+    __tablename__ = "institution_ancestors_mv"
 
     institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"), primary_key=True)
     ror_id = db.Column(db.String(256))
