@@ -1353,7 +1353,7 @@ class Work(db.Model):
             * Authorships are missing
             * Author sequence numbers are incorrect
         """
-        before_affiliations = self.affiliations
+        before_affiliations = [aff for aff in self.affiliations if aff.affiliation_id is not None]
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
