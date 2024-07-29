@@ -14,9 +14,10 @@ PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
 
 def affiliations_probably_invalid(normalized_authors):
-    return max(
-        [len(author.get('affiliation', [])) for author in
-         normalized_authors]) > MAX_AFFILIATIONS_PER_AUTHOR
+    aff_lengths = [len(author.get('affiliation', [])) for author in normalized_authors]
+    if not aff_lengths:
+        return False
+    return max(aff_lengths) > MAX_AFFILIATIONS_PER_AUTHOR
 
 
 def normalized_authors_has_affiliations(normalized_authors):
