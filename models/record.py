@@ -77,9 +77,14 @@ class Record(db.Model):
 
     @property
     def has_affiliations(self):
-        return any(
-            [bool(author.get('affiliation')) or bool(author.get('affiliations'))
-             for author in self.authors_json])
+        return self.affiliations_count > 0
+
+    @property
+    def affiliations_count(self):
+        count = 0
+        for author in self.authors_json:
+            count += len(author.get("affiliation", [])) or len(author.get("affiliations", []))
+        return count
 
     @property
     def has_citations(self):

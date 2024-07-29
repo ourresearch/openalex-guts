@@ -1731,12 +1731,14 @@ class Work(db.Model):
 
     @property
     def affiliation_records_sorted(self):
-        records_with_affiliations = [record for record in self.records_sorted if
+        records = [record for record in self.records_sorted if
                                      record.has_affiliations]
-        if not records_with_affiliations:
-            records_with_affiliations = [record for record in
-                                         self.records_sorted if record.authors_json]
-        return records_with_affiliations
+        if not records:
+            records = [record for record in
+                                         self.records_sorted if
+                                         record.authors_json]
+
+        return sorted(records, key=lambda record: record.affiliations_count, reverse=True)
 
     @property
     def only_mag_records(self):
