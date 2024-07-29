@@ -261,7 +261,7 @@ Record.hal_records = db.relationship(
 Record.mag_record = db.relationship(
     "Record",
     lazy='selectin',
-    uselist=True,
+    uselist=False,
     viewonly=True,
     primaryjoin=and_(
         foreign(Record.record_type) == 'crossref_doi',
