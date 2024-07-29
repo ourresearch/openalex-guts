@@ -41,13 +41,11 @@ def merge_primary_with_parsed(primary_record, **parsed_records):
     if not primary_record or not primary_record.record_type in {'crossref_doi',
                                                                 'datacite_doi'}:
         return primary_record
-    pl_record, pdf_record = parsed_records['parseland_record'], parsed_records[
-        'pdf_record']
-    if pl_record is None and pdf_record is None:
+    if all([value is None for value in parsed_records.values()]):
         return primary_record
 
     logger.info(
-        f"merging record {primary_record.id} with parsed records {pl_record.id if pl_record else None} (parseland), {pdf_record.id if pdf_record else None} (pdf)")
+        f"merging record {primary_record.id} with parsed records {parsed_records}")
 
     cloned_parent_record = clone_record(primary_record)
 
