@@ -286,6 +286,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.topics).selectinload(models.WorkTopic.topic).selectinload(models.Topic.domain).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.parseland_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.pdf_record).raiseload('*'),
+            selectinload(models.Work.records).selectinload(models.Record.mag_record).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.hal_records).raiseload('*'),
             selectinload(models.Work.records).selectinload(models.Record.child_records).raiseload('*'),
             selectinload(models.Work.related_versions).selectinload(models.WorkRelatedVersion.related_work).raiseload(

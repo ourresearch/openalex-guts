@@ -14,7 +14,8 @@ PARSED_RECORD_TYPES = {'crossref_parseland', 'parsed_pdf'}
 
 
 def affiliations_probably_invalid(normalized_authors):
-    aff_lengths = [len(author.get('affiliation', [])) for author in normalized_authors]
+    aff_lengths = [len(author.get('affiliation', [])) for author in
+                   normalized_authors]
     if not aff_lengths:
         return False
     return max(aff_lengths) > MAX_AFFILIATIONS_PER_AUTHOR
@@ -63,7 +64,8 @@ def merge_abstract(cloned_parent_record, original_parent_record,
     pl_record, pdf_record = parsed_records.get(
         'parseland_record'), parsed_records.get('pdf_record')
     abstract_record = pl_record
-    if (not pl_record or not pl_record.abstract) and pdf_record and pdf_record.abstract:
+    if (
+            not pl_record or not pl_record.abstract) and pdf_record and pdf_record.abstract:
         abstract_record = pdf_record
     if original_parent_record.abstract:
         cloned_parent_record.abstract = original_parent_record.abstract
@@ -92,23 +94,32 @@ def merge_author_affiliations(author_dict,
                               author_idx,
                               sorted_normalized_parsed_record_dicts):
     sorted_normalized_parsed_record_dicts = [parsed_dict for parsed_dict in
-                                             sorted_normalized_parsed_record_dicts if not affiliations_probably_invalid(
-                                          parsed_dict.get('authors', []))]
+                                             sorted_normalized_parsed_record_dicts
+                                             if
+                                             not affiliations_probably_invalid(
+                                                 parsed_dict.get('authors',
+                                                                 []))]
     if not sorted_normalized_parsed_record_dicts:
         sorted_normalized_parsed_record_dicts = [parsed_dict for parsed_dict in
-                                                 sorted_normalized_parsed_record_dicts if
-                                                 bool(parsed_dict.get('authors'))]
+                                                 sorted_normalized_parsed_record_dicts
+                                                 if
+                                                 bool(parsed_dict.get(
+                                                     'authors'))]
     best_source_idx = -1
-    for i, normalized_parsed_record in enumerate(sorted_normalized_parsed_record_dicts):
+    for i, normalized_parsed_record in enumerate(
+            sorted_normalized_parsed_record_dicts):
         normalized_parsed_author_names = [normalize(author.get('raw', '')) for
                                           author
-                                          in normalized_parsed_record.get('authors', [])]
+                                          in normalized_parsed_record.get(
+                'authors', [])]
         best_match_idx = _match_parsed_author(author_dict, author_idx,
                                               normalized_parsed_author_names)
         if best_match_idx > -1:
-            matched_parsed_author_dict = normalized_parsed_record['authors'][best_match_idx]
+            matched_parsed_author_dict = normalized_parsed_record['authors'][
+                best_match_idx]
             if matched_parsed_author_dict.get('affiliation') or matched_parsed_author_dict.get('affiliations'):
-                author_dict['is_corresponding'] = matched_parsed_author_dict.get(
+                author_dict[
+                    'is_corresponding'] = matched_parsed_author_dict.get(
                     'is_corresponding', '')
                 author_dict['affiliation'] = _reconcile_affiliations(
                     author_dict,
@@ -120,29 +131,42 @@ def merge_author_affiliations(author_dict,
 
 def merge_authors(cloned_parent_record, original_parent_record,
                   **parsed_records):
-    hal_record, pl_record, pdf_record = (parsed_records.get('hal_record'),
-                                         parsed_records.get('parseland_record'),
-                                         parsed_records.get('pdf_record'))
-    sorted_parsed_records = (hal_record, pl_record, pdf_record)
-    sorted_normalized_parsed_record_dicts = [_normalized_record_dict(parsed_record) for parsed_record in sorted_parsed_records]
-    normalized_pl_record = sorted_normalized_parsed_record_dicts[1]
+    hal_record, pl_record, mag_record, pdf_record = (
+        parsed_records.get('mag_record'),
+        parsed_records.get('hal_record'),
+        parsed_records.get('parseland_record'),
+        parsed_records.get('pdf_record'))
+    sorted_parsed_records = (mag_record, hal_record, pl_record, pdf_record)
+    sorted_normalized_parsed_record_dicts = [
+        _normalized_record_dict(parsed_record) for parsed_record in
+        sorted_parsed_records]
+    normalized_pl_record = _normalized_record_dict(pl_record)
     final_authors = []
     for i, author in enumerate(original_parent_record.authors_json):
         author_dict = _normalize_author(author)
-        if '/nejm' in original_parent_record.doi.lower(): # force Parseland
-            normalized_parsed_author_names = [normalize(author.get('raw', '')) for author
-                                              in normalized_pl_record.get('authors', [])]
-            best_match_idx = _match_parsed_author(author_dict, i, normalized_parsed_author_names)
+        if '/nejm' in original_parent_record.doi.lower():  # force Parseland
+            normalized_parsed_author_names = [normalize(author.get('raw', ''))
+                                              for author
+                                              in normalized_pl_record.get(
+                    'authors', [])]
+            best_match_idx = _match_parsed_author(author_dict, i,
+                                                  normalized_parsed_author_names)
             if best_match_idx > -1:
-                matched_author_normalized = normalized_pl_record['authors'][best_match_idx]
-                author_dict['affiliation'] = matched_author_normalized['affiliation']
-                author_dict['is_corresponding'] = matched_author_normalized['is_corresponding']
+                matched_author_normalized = normalized_pl_record['authors'][
+                    best_match_idx]
+                author_dict['affiliation'] = matched_author_normalized[
+                    'affiliation']
+                author_dict['is_corresponding'] = matched_author_normalized[
+                    'is_corresponding']
             final_authors.append(author_dict)
             continue
-        author_dict, chosen_source_idx = merge_author_affiliations(author_dict, i, sorted_normalized_parsed_record_dicts)
+        author_dict, chosen_source_idx = merge_author_affiliations(author_dict,
+                                                                   i,
+                                                                   sorted_normalized_parsed_record_dicts)
         if chosen_source_idx > -1:
             name_display = f'{author_dict.get("given")} {author_dict.get("family")}'
-            print(f'[work_id = {original_parent_record.work_id}] Merged affiliations for author {name_display} from {sorted_parsed_records[chosen_source_idx].record_type} - {author_dict.get("affiliation")}')
+            print(
+                f'[work_id = {original_parent_record.work_id}] Merged affiliations for author {name_display} from {sorted_parsed_records[chosen_source_idx].record_type} - {author_dict.get("affiliation")}')
         final_authors.append(author_dict)
     cloned_parent_record.authors = json.dumps(final_authors)
     return cloned_parent_record
