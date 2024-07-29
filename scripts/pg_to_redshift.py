@@ -57,6 +57,10 @@ schemas = {
         ("is_paratext", "BOOLEAN"),
         ("best_url", "VARCHAR(65535)"),
         ("best_free_url", "VARCHAR(65535)"),
+        ("oa_status", "VARCHAR(500)"),
+        ("type", "VARCHAR(500)"),
+        ("type_crossref", "VARCHAR(500)"),
+        ("year", "INTEGER"),
         ("created_date", "VARCHAR(500)")
     ],
     "work_concept": [
