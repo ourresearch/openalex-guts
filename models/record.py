@@ -108,16 +108,22 @@ class Record(db.Model):
         return self.pmh_id and 'oai:hal' in self.pmh_id.lower()
 
     @property
-    def best_hal_record(self):
-        if self.hal_records:
-            return self.hal_records[0]
-        return None
+    def best_hal_affiliations_record(self):
+        if not self.hal_records:
+            return None
+        best_count, best_record = 0, self.hal_records[0]
+        for record in self.hal_records:
+            if record.affiliations_count > best_count:
+                best_count = record.affiliations_count
+                best_record = record
+        return best_record
 
     @cached_property
     def with_parsed_data(self):
         parsed_records = {'parseland_record': self.parseland_record,
                           'pdf_record': self.pdf_record,
-                          'hal_record': self.best_hal_record}
+                          'hal_record': self.best_hal_affiliations_record,
+                          'mag_record': self.mag_record}
         return merge_primary_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
