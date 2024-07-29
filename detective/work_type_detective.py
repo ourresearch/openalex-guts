@@ -179,6 +179,10 @@ class WorkTypeDetective:
             r'erratum$',
             r'\[erratum',
             r'\(erratum',
+            r'^corrigendum',
+            r'corrigendum$',
+            r'\[corrigendum',
+            r'\(corrigendum',
         ]
         for expr in erratum_exprs:
             if self.work.work_title and re.search(expr, self.work.work_title,
