@@ -258,6 +258,19 @@ Record.hal_records = db.relationship(
     )
 )
 
+Record.mag_record = db.relationship(
+    "Record",
+    lazy='selectin',
+    uselist=True,
+    viewonly=True,
+    primaryjoin=and_(
+        foreign(Record.record_type) == 'crossref_doi',
+        foreign(Record.record_type) == 'mag_location',
+        foreign(Record.doi) == remote(Record.doi),
+    )
+)
+
+
 
 Record.child_records = db.relationship(
     'Record',
