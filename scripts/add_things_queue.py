@@ -18,17 +18,22 @@ from util import work_has_null_author_ids, elapsed, get_openalex_json
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
 
-CHUNK_SIZE = 50
+DEQUEUE_CHUNK_SIZE = 50
+SQL_ENQUEUE_CHUNK_SIZE = 100
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--skip_fast_enqueue', '-s', action='store_true',
+    parser.add_argument('--skip_fast_enqueue', '-sfq', action='store_true',
                         help='Skip enqueue to fast queue')
     parser.add_argument('--filter', '-f',
                         type=str,
                         action='append',
                         help='OpenAlex API filter(s) to enqueue')
+    parser.add_argument('--sql_query', '-sql', type=str,
+                        help='SQL query to fetch work IDs enqueue')
+    parser.add_argument('--fast_queue_priority', '-fqp', type=int, default=None,
+                        help='Priority to enqueue into fast queue after completion in this queue')
     parser.add_argument('-fname', '--filename', type=str,
                         help='Filename containing DOIs from which to enqueue with priority into add_things queue')
     parser.add_argument('-m', '--method', type=str,
@@ -37,7 +42,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def enqueue_jobs(work_ids, priority=None, methods=None, fast_queue_priority=None):
+def enqueue_jobs(work_ids, priority=None, methods=None,
+                 fast_queue_priority=None):
     if methods is None:
         methods = []
     if priority is None:
@@ -61,22 +67,13 @@ def dequeue_chunk(chunk_size):
 def enqueue_fast_queue(works, priority=None):
     redis_queue_time = time() if priority is None else priority
     redis_queue_mapping = {
-        work.paper_id: time() if priority is None else priority
+        work.paper_id: redis_queue_time
         for work in works if not work_has_null_author_ids(work)
     }
     if redis_queue_mapping:
         _redis.zadd(models.REDIS_WORK_QUEUE, redis_queue_mapping)
     logger.info(
         f'enqueueing works in redis work_store took {elapsed(redis_queue_time, 2)} seconds')
-
-
-def log_memory_usage():
-    process = psutil.Process(os.getpid())
-    memory_info = process.memory_info()
-    memory_mb = memory_info.rss / (1024 ** 2)
-
-    # Print the memory usage of the current Python process in MB
-    logger.info(f"Memory usage (MB): {round(memory_mb, 2)}")
 
 
 def enqueue_from_api(oa_filters, methods=None, fast_queue_priority=None):
@@ -118,12 +115,53 @@ def enqueue_txt_file(fname, methods=None, fast_queue_priority=None):
         if dois:
             doi_work_ids = db.session.execute(text(
                 'SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
-                                          params={'dois': dois}).fetchall()
+                params={'dois': dois}).fetchall()
             doi_work_ids = [r[0] for r in doi_work_ids]
-        all_work_ids = [int(item) for item in set(lines) - set(dois)] + doi_work_ids
+        all_work_ids = [int(item) for item in
+                        set(lines) - set(dois)] + doi_work_ids
         enqueue_jobs(all_work_ids, priority=0,
                      methods=methods,
                      fast_queue_priority=fast_queue_priority)
+
+
+def make_keyset_pagination_query(query):
+    query = query.strip(';')
+    pagination_column = 'paper_id' if 'SELECT paper_id' in query else 'work_id'
+    filter_word = 'WHERE' if 'WHERE' not in query else 'AND'
+    pagination_query = f"""
+    {query}
+    {filter_word} {pagination_column} > :last_work_id
+    ORDER BY {pagination_column}
+    LIMIT :page_size;
+    """
+    return pagination_query
+
+
+def paginate_query(query, last_work_id=0, page_size=SQL_ENQUEUE_CHUNK_SIZE):
+    pagination_query = make_keyset_pagination_query(query)
+    params = {'last_work_id': last_work_id, 'page_size': page_size}
+    result = db.session.execute(text(pagination_query), params)
+    return result.mappings().all()
+
+
+def enqueue_from_sql(sql_query, methods=None, fast_queue_priority=None):
+    last_work_id = 0
+    has_more = True
+    count = 0
+    while has_more:
+        display_query = make_keyset_pagination_query(sql_query).replace(
+            ':last_work_id', str(last_work_id)).replace(':page_size', str(SQL_ENQUEUE_CHUNK_SIZE))
+        print(f'Fetching SQL query: {display_query}')
+        start = time()
+        page = paginate_query(sql_query, last_work_id, SQL_ENQUEUE_CHUNK_SIZE)
+        _elapsed = elapsed(start)
+        print(f'SQL page query took {_elapsed} seconds')
+        work_ids = [list(row.values())[0] for row in page]
+        enqueue_jobs(work_ids, methods, fast_queue_priority)
+        count += len(work_ids)
+        print(f'Successfully enqueued {len(work_ids)} works ({count} total)')
+        last_work_id = work_ids[-1]
+        has_more = len(work_ids) >= SQL_ENQUEUE_CHUNK_SIZE
 
 
 def main():
@@ -136,12 +174,17 @@ def main():
                          methods=args.methods,
                          fast_queue_priority=args.fast_queue_priority)
         return
+    elif args.sql_query:
+        enqueue_from_sql(args.sql_query,
+                         methods=args.methods,
+                         fast_queue_priority=args.fast_queue_priority)
+        return
     total_processed = 0
     errors_count = 0
     start = datetime.now()
     while True:
         try:
-            jobs = dequeue_chunk(CHUNK_SIZE)
+            jobs = dequeue_chunk(DEQUEUE_CHUNK_SIZE)
         except Exception as e:
             logger.info('Exception during dequeue, exiting...')
             logger.exception(e)
@@ -167,13 +210,13 @@ def main():
                     fargs = [True]
                 try:
                     method(*fargs)
-                    log_memory_usage()
                 except Exception as e:
                     logger.info(
                         f'Exception calling {method_name}() on work {work.paper_id}')
                     logger.exception(e)
                     # Re-queue job
-                    enqueue_job(work.paper_id, 1e9, job['methods'], job.get('fast_queue_priority'))
+                    enqueue_job(work.paper_id, 1e9, job['methods'],
+                                job.get('fast_queue_priority'))
                     errors_count += 1
             total_processed += 1
         now = datetime.now()
