@@ -44,6 +44,16 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("paper_reference_id", "BIGINT")
     ],
+    "topic": [
+        ("topic_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("summary", "VARCHAR(65535)"),
+        ("keywords", "VARCHAR(65535)"),
+        ("subfield_id", "INTEGER"),
+        ("field_id", "INTEGER"),
+        ("domain_id", "INTEGER"),
+        ("wikipedia_url", "VARCHAR(65535)"),
+    ],
     "work": [
         ("paper_id", "BIGINT"),
         ("original_title", "VARCHAR(65535)"),
@@ -66,7 +76,13 @@ schemas = {
     "work_concept": [
         ("paper_id", "BIGINT"),
         ("field_of_study", "BIGINT")
-    ]
+    ],
+    "work_topic": [
+        ("paper_id", "BIGINT"),
+        ("topic_id", "INTEGER"),
+        ("score", "FLOAT")
+    ],
+
 }
 
 
