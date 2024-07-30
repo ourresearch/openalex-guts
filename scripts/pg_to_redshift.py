@@ -44,6 +44,11 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("paper_reference_id", "BIGINT")
     ],
+    "subfield": [
+        ("subfield_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+    ],
     "topic": [
         ("topic_id", "INTEGER"),
         ("display_name", "VARCHAR(65535)"),
@@ -100,6 +105,7 @@ queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
+    "subfield": f"SELECT {get_columns(schemas['subfield'])} FROM mid.subfield",
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
     "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
