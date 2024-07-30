@@ -100,8 +100,10 @@ queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
+    "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
     "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
+    "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic"
 }
 
 
