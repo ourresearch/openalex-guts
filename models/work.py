@@ -298,7 +298,7 @@ class Work(db.Model):
 
         if self.affiliation_records_sorted:
             record_author_dict_list = self.affiliation_records_sorted[
-                0].authors_json
+                0].cleaned_authors_json
 
         all_affiliations = sorted(
             self.affiliations,
@@ -421,7 +421,7 @@ class Work(db.Model):
         if self.affiliation_records_sorted:
             try:
                 record_author_dict_list = self.affiliation_records_sorted[
-                    0].authors_json
+                    0].cleaned_authors_json
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON authors for {self.id}: {e}")
                 return
@@ -1390,7 +1390,7 @@ class Work(db.Model):
             record = self.affiliation_records_sorted[0]
 
             author_sequence_order = 1
-            for author_dict in record.authors_json:
+            for author_dict in record.cleaned_authors_json:
                 original_name = author_dict["raw"]
                 if author_dict.get("family"):
                     original_name = "{} {}".format(author_dict["given"],
@@ -1491,7 +1491,6 @@ class Work(db.Model):
         aff_count_diff = len(self.affiliations) - len(before_affiliations)
         if aff_count_diff < 0:
             logger.warn(f'LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id}')
-            self.affiliations = before_affiliations
         elif aff_count_diff > 0:
             logger.info(f'GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
 
@@ -1506,7 +1505,7 @@ class Work(db.Model):
         record = self.affiliation_records_sorted[0]
 
         author_sequence_order = 1
-        for author_dict in record.authors_json:
+        for author_dict in record.cleaned_authors_json:
             original_name = author_dict["raw"]
             if author_dict.get("family"):
                 original_name = "{} {}".format(author_dict["given"],
@@ -1738,8 +1737,8 @@ class Work(db.Model):
                                      record.has_affiliations]
         if not records:
             records = [record for record in
-                                         self.records_sorted if
-                                         record.authors_json]
+                       self.records_sorted if
+                       record.cleaned_authors_json]
 
         return sorted(records, key=lambda record: record.affiliations_count, reverse=True)
 
