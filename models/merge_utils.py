@@ -136,9 +136,11 @@ def merge_authors(cloned_parent_record, original_parent_record,
         parsed_records.get('hal_record'),
         parsed_records.get('parseland_record'),
         parsed_records.get('pdf_record'))
-    sorted_parsed_records = [mag_record, hal_record, pl_record, pdf_record]
+    sorted_parsed_records = [mag_record, hal_record, pl_record]
     sorted_parsed_records = [record for record in sorted_parsed_records if record]
     sorted_parsed_records = sorted(sorted_parsed_records, key=lambda x: x.affiliations_count, reverse=True)
+    # Put PDF at the end
+    sorted_parsed_records.append(pdf_record)
     sorted_normalized_parsed_record_dicts = [
         _normalized_record_dict(parsed_record) for parsed_record in
         sorted_parsed_records]
