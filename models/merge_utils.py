@@ -167,10 +167,6 @@ def merge_authors(cloned_parent_record, original_parent_record,
         author_dict, chosen_source_idx = merge_author_affiliations(author_dict,
                                                                    i,
                                                                    sorted_normalized_parsed_record_dicts)
-        if chosen_source_idx > -1:
-            name_display = f'{author_dict.get("given")} {author_dict.get("family")}'
-            print(
-                f'[work_id = {original_parent_record.work_id}] Merged affiliations for author {name_display} from {sorted_parsed_records[chosen_source_idx].record_type} - {author_dict.get("affiliation")}')
         final_authors.append(author_dict)
     cloned_parent_record.authors = json.dumps(final_authors)
     return cloned_parent_record
