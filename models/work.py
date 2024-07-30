@@ -1490,7 +1490,7 @@ class Work(db.Model):
 
         aff_count_diff = len(self.affiliations) - len(before_affiliations)
         if aff_count_diff < 0:
-            logger.warn(f'LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id}')
+            logger.warn(f'LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
         elif aff_count_diff > 0:
             logger.info(f'GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
 
