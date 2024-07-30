@@ -230,7 +230,9 @@ Record.parseland_record = db.relationship(
     lazy='selectin',
     uselist=False,
     viewonly=True,
-    primaryjoin="and_(foreign(Record.record_type) == 'crossref_doi', remote(Record.record_type) == 'crossref_parseland', foreign(Record.doi) == remote(Record.doi))"
+    primaryjoin=and_(foreign(Record.record_type) == 'crossref_doi',
+                     remote(Record.record_type) == 'crossref_parseland',
+                     foreign(Record.doi) == remote(Record.doi))
 )
 
 Record.pdf_record = db.relationship(
@@ -238,12 +240,10 @@ Record.pdf_record = db.relationship(
     lazy='selectin',
     uselist=False,
     viewonly=True,
-    primaryjoin=(
-        "and_("
-        "or_(foreign(Record.record_type).in_(['crossref_doi', 'datacite_doi']), "
-        "remote(Record.record_type) == 'parsed_pdf'), "
-        "foreign(Record.doi) == remote(Record.doi))"
-    )
+    primaryjoin=and_(
+        foreign(Record.record_type).in_(['crossref_doi', 'datacite_doi']),
+        remote(Record.record_type) == 'parsed_pdf',
+        foreign(Record.doi) == remote(Record.doi))
 )
 
 Record.hal_records = db.relationship(
@@ -265,8 +265,9 @@ Record.mag_record = db.relationship(
     viewonly=True,
     primaryjoin=and_(
         foreign(Record.record_type) == 'crossref_doi',
-        foreign(Record.record_type) == 'mag_location',
-        foreign(Record.doi) == remote(Record.doi),
+        remote(Record.record_type) == 'mag_location',
+        or_(foreign(Record.doi) == remote(Record.doi),
+            foreign(Record.work_id) == remote(Record.work_id)),
     )
 )
 
@@ -464,7 +465,7 @@ def hydrate_role(openalex_id_short):
     if entity_id == DELETED_INSTITUTION_ID:
         # this institution has been deleted
         return None
-    entity = cls.query.options(selectinload(cls.counts).raiseload('*'), 
+    entity = cls.query.options(selectinload(cls.counts).raiseload('*'),
                                orm.Load(cls).raiseload('*')).get(entity_id)
     works_count = int(entity.counts.paper_count or 0) if entity.counts else 0
     return {
