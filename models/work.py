@@ -1488,7 +1488,8 @@ class Work(db.Model):
                 "no affiliations found for this work, going through the normal add_affiliation process")
             self.add_affiliations(affiliation_retry_attempts)
 
-        aff_count_diff = len(self.affiliations) - len(before_affiliations)
+        new_affs = [aff for aff in self.affiliations if aff.affiliation_id is not None]
+        aff_count_diff = len(new_affs) - len(before_affiliations)
         if aff_count_diff < 0:
             logger.warn(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
         elif aff_count_diff > 0:
