@@ -1481,6 +1481,7 @@ class Work(db.Model):
                                     updated_date=datetime.datetime.utcnow().isoformat()
                                 )
                                 my_affiliation.institution = my_institution
+                                my_affiliation.affiliation_id = my_institution.affiliation_id
                                 self.affiliations.append(my_affiliation)
                                 affiliation_sequence_order += 1
                     author_sequence_order += 1
