@@ -1353,7 +1353,7 @@ class Work(db.Model):
             * Authorships are missing
             * Author sequence numbers are incorrect
         """
-        before_affiliations = [aff for aff in self.affiliations if aff.affiliation_id is not None]
+        before_all_affiliations = self.affiliations
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
@@ -1488,10 +1488,10 @@ class Work(db.Model):
                 "no affiliations found for this work, going through the normal add_affiliation process")
             self.add_affiliations(affiliation_retry_attempts)
 
-        new_affs = [aff for aff in self.affiliations if aff.affiliation_id is not None]
-        aff_count_diff = len(new_affs) - len(before_affiliations)
+        aff_count_diff = len(self.affiliations) - len(before_all_affiliations)
         if aff_count_diff < 0:
-            logger.warn(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
+            logger.warn(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id}')
+            self.affiliations = before_all_affiliations
         elif aff_count_diff > 0:
             logger.info(f'[AFFILIATION UPDATE] GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id}')
 
