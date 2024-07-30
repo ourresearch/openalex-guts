@@ -865,6 +865,8 @@ class Work(db.Model):
         if not self.affiliations:
             logger.info("adding affiliations because work didn't have any yet")
             self.add_affiliations()
+            non_null_affs = [aff for aff in self.affiliations if aff.affiliation_id is not None]
+            logger.info(f'[AFFILIATION UPDATE] GAINED {len(non_null_affs)} ON WORK ID (0 before): {self.work_id} ({self.doi})')
             logger.info(
                 f'add_affiliations took {elapsed(start_time, 2)} seconds')
         else:
@@ -1569,6 +1571,8 @@ class Work(db.Model):
                                 updated_date=datetime.datetime.utcnow().isoformat()
                             )
                             my_affiliation.institution = my_institution
+                            if my_institution:
+                                my_affiliation.affiliation_id = my_institution.affiliation_id
                             self.affiliations.append(my_affiliation)
                             affiliation_sequence_order += 1
                 author_sequence_order += 1
