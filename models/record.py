@@ -7,6 +7,7 @@ from sqlalchemy.orm import raiseload
 from sqlalchemy.sql.expression import func
 
 from app import db
+from const import MAX_AFFILIATIONS_PER_AUTHOR, MIN_CHARACTERS_PER_AFFILIATION
 from models.location import normalize_license
 from models.merge_utils import merge_primary_with_parsed
 from util import normalize_title_like_sql
@@ -82,8 +83,8 @@ class Record(db.Model):
     @property
     def affiliations_count(self):
         count = 0
-        for author in self.authors_json:
-            count += len(author.get("affiliation", [])) or len(author.get("affiliations", []))
+        for author in self.cleaned_authors_json:
+            count += len(author.get("affiliation", []))
         return count
 
     @property
@@ -91,13 +92,30 @@ class Record(db.Model):
         return bool(self.citations_json)
 
     @property
-    def authors_json(self):
+    def cleaned_authors_json(self):
         j = json.loads(self.authors or '[]')
         for author in j:
             if 'affiliations' in author and 'affiliation' not in author:
                 author['affiliation'] = author['affiliations']
                 del author['affiliations']
+            final_affs = []
+            if len(author.get("affiliation", [])) > MAX_AFFILIATIONS_PER_AUTHOR:
+                author['affiliation'] = final_affs
+                continue
+            for aff in author.get('affiliation', []):
+                if (isinstance(aff, dict) and len(aff.get('name', '')) >= MIN_CHARACTERS_PER_AFFILIATION) or (isinstance(aff, str) and len(aff) >= MIN_CHARACTERS_PER_AFFILIATION):
+                    final_affs.append(aff)
+            author['affiliation'] = final_affs
         return j
+
+    @property
+    def authors_json(self):
+        return json.loads(self.authors or '[]')
+
+    @property
+    def affiliations_probably_invalid(self):
+        return self.affiliations_count / len(
+            self.cleaned_authors_json) > MAX_AFFILIATIONS_PER_AUTHOR
 
     @property
     def citations_json(self):
@@ -282,7 +300,7 @@ class Record(db.Model):
 
         if (not matching_work) \
                 and (not self.doi) and (not self.pmid) and (
-        not self.pmcid) and (not self.arxiv_id) \
+                not self.pmcid) and (not self.arxiv_id) \
                 and ((not self.title) or (len(self.normalized_title) < 20)):
             self.work_id = -1
             print(
