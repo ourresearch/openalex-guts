@@ -136,13 +136,15 @@ def merge_authors(cloned_parent_record, original_parent_record,
         parsed_records.get('hal_record'),
         parsed_records.get('parseland_record'),
         parsed_records.get('pdf_record'))
-    sorted_parsed_records = (mag_record, hal_record, pl_record, pdf_record)
+    sorted_parsed_records = [mag_record, hal_record, pl_record, pdf_record]
+    sorted_parsed_records = [record for record in sorted_parsed_records if record]
+    sorted_parsed_records = sorted(sorted_parsed_records, key=lambda x: x.affiliations_count, reverse=True)
     sorted_normalized_parsed_record_dicts = [
         _normalized_record_dict(parsed_record) for parsed_record in
         sorted_parsed_records]
     normalized_pl_record = _normalized_record_dict(pl_record)
     final_authors = []
-    for i, author in enumerate(original_parent_record.authors_json):
+    for i, author in enumerate(original_parent_record.cleaned_authors_json):
         author_dict = _normalize_author(author)
         if '/nejm' in original_parent_record.doi.lower():  # force Parseland
             normalized_parsed_author_names = [normalize(author.get('raw', ''))
@@ -278,7 +280,7 @@ def _normalized_record_dict(parsed_record):
     if not parsed_record:
         return normalized_dict
 
-    parsed_authors = parsed_record.authors_json
+    parsed_authors = parsed_record.cleaned_authors_json
 
     for parsed_author in parsed_authors:
         author = {
