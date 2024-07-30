@@ -113,9 +113,13 @@ class Record(db.Model):
         return json.loads(self.authors or '[]')
 
     @property
-    def affiliations_probably_invalid(self):
+    def affiliations_per_author(self):
         return self.affiliations_count / len(
-            self.cleaned_authors_json) > MAX_AFFILIATIONS_PER_AUTHOR
+            self.cleaned_authors_json)
+
+    @property
+    def affiliations_probably_invalid(self):
+        return self.affiliations_per_author > MAX_AFFILIATIONS_PER_AUTHOR
 
     @property
     def citations_json(self):
