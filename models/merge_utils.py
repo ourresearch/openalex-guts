@@ -131,7 +131,7 @@ def merge_author_affiliations(author_dict,
 
 def merge_authors(cloned_parent_record, original_parent_record,
                   **parsed_records):
-    hal_record, pl_record, mag_record, pdf_record = (
+    mag_record, hal_record, pl_record, pdf_record = (
         parsed_records.get('mag_record'),
         parsed_records.get('hal_record'),
         parsed_records.get('parseland_record'),
@@ -151,8 +151,7 @@ def merge_authors(cloned_parent_record, original_parent_record,
         if '/nejm' in original_parent_record.doi.lower():  # force Parseland
             normalized_parsed_author_names = [normalize(author.get('raw', ''))
                                               for author
-                                              in normalized_pl_record.get(
-                    'authors', [])]
+                                              in normalized_pl_record.get('authors', [])]
             best_match_idx = _match_parsed_author(author_dict, i,
                                                   normalized_parsed_author_names)
             if best_match_idx > -1:
