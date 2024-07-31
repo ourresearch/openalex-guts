@@ -7,7 +7,8 @@ from sqlalchemy.orm import raiseload
 from sqlalchemy.sql.expression import func
 
 from app import db
-from const import MAX_AFFILIATIONS_PER_AUTHOR, MIN_CHARACTERS_PER_AFFILIATION
+from const import MAX_AFFILIATIONS_PER_AUTHOR, MIN_CHARACTERS_PER_AFFILIATION, \
+    BAD_TITLES
 from models.location import normalize_license
 from models.merge_utils import merge_primary_with_parsed
 from util import normalize_title_like_sql
@@ -262,6 +263,7 @@ class Record(db.Model):
                 orm.Load(Work).raiseload('*')
             ).filter(
                 and_(
+                    Work.original_title.not_in(BAD_TITLES),
                     self.normalized_title is not None,
                     len(self.normalized_title) > 19,
                     Work.unpaywall_normalize_title == self.normalized_title
