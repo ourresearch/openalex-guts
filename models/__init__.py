@@ -266,8 +266,8 @@ Record.mag_record = db.relationship(
     primaryjoin=and_(
         foreign(Record.record_type) == 'crossref_doi',
         remote(Record.record_type) == 'mag_location',
-        or_(foreign(Record.doi) == remote(Record.doi),
-            foreign(Record.work_id) == remote(Record.work_id)),
+        foreign(Record.work_id) > 0,
+        foreign(Record.work_id) == remote(Record.work_id),
     )
 )
 
