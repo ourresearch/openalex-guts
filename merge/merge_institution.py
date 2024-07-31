@@ -96,17 +96,6 @@ def process_institution(old_id, merge_into_id, null_ror_id=True):
     response = db.engine.execute(affiliation_sql)
     logger.info(f"Rows affected: {response.rowcount}")
 
-    # update mid.author (last known affiliation)
-    logger.info(f"Updating author table (last known affiliation) for {old_id} into {merge_into_id}")
-    author_sql = f"""
-                    UPDATE mid.author
-                    SET last_known_affiliation_id = {merge_into_id},
-                        updated_date = '{current_datetime}'
-                    WHERE last_known_affiliation_id = {old_id}
-                """
-    response = db.engine.execute(author_sql)
-    logger.info(f"Rows affected: {response.rowcount}")
-
     # update mid.affiliation_string_v2.affiliation_id, replacing the old id with the new id
     logger.info(f"Updating affiliation_string_v2 table for {old_id} into {merge_into_id}")
     affiliation_strings_sql = f"""
