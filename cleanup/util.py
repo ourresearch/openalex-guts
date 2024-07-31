@@ -136,14 +136,16 @@ def paginate_es(s: Search, page_size=1000):
 
 @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_time=30)
 @backoff.on_predicate(backoff.expo, lambda x: x.status_code >= 429, max_time=30)
-def make_request(url, params=None):
+def make_request(url, params=None, debug=False):
+    if debug:
+        print(url, params)
     if params is None:
         return requests.get(url)
     else:
         return requests.get(url, params=params)
 
 
-def paginate_openalex(url, params=None, per_page=200):
+def paginate_openalex(url, params=None, per_page=200, debug=False):
     if params is None:
         params = {}
     if "per-page" not in params and per_page:
@@ -151,7 +153,7 @@ def paginate_openalex(url, params=None, per_page=200):
     cursor = "*"
     while cursor:
         params["cursor"] = cursor
-        r = make_request(url, params)
+        r = make_request(url, params, debug=debug)
         yield r
 
         page_with_results = r.json()
@@ -160,7 +162,7 @@ def paginate_openalex(url, params=None, per_page=200):
 
 
 def entities_by_ids(
-    id_list, api_endpoint="works", filterkey="openalex", chunksize=50, params=None
+    id_list, api_endpoint="works", filterkey="openalex", chunksize=100, params=None, debug=False
 ):
     if params is None:
         params = {}
@@ -174,11 +176,10 @@ def entities_by_ids(
             params["filter"] = existing_filter + f",{filterkey}:{chunk_str}"
         else:
             params["filter"] = f"{filterkey}:{chunk_str}"
-        for r in paginate_openalex(url, params):
-            yield r
+        yield make_request(url, params=params, debug=debug)
 
 
-def openalex_entities_by_ids(id_list, chunksize=50, params=None):
+def openalex_entities_by_ids(id_list, chunksize=100, params=None):
     id_list = [OpenAlexID(oid) for oid in id_list]
     if params is None:
         params = {}
