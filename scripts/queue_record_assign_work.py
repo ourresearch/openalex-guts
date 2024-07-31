@@ -3,7 +3,7 @@ from collections import defaultdict
 from time import sleep, time
 
 from sqlalchemy import orm, text
-from sqlalchemy.orm import lazyload, joinedload
+from sqlalchemy.orm import lazyload, joinedload, selectinload
 
 import models
 from app import db
@@ -134,8 +134,8 @@ def get_records(record_ids):
         joinedload(models.Record.journals).selectinload(models.Source.merged_into_source).raiseload('*'),
         joinedload(models.Record.parseland_record).raiseload('*'),
         joinedload(models.Record.pdf_record).raiseload('*'),
+        selectinload(models.Record.mag_record).raiseload('*'),
         joinedload(models.Record.hal_records).raiseload('*'),
-        joinedload(models.Record.mag_record).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
     ).filter(models.Record.id.in_(record_ids)).all()
 
