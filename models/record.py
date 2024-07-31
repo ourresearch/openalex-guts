@@ -103,7 +103,7 @@ class Record(db.Model):
                 author['affiliation'] = final_affs
                 continue
             for aff in author.get('affiliation', []):
-                if (isinstance(aff, dict) and len(aff.get('name', '')) >= MIN_CHARACTERS_PER_AFFILIATION) or (isinstance(aff, str) and len(aff) >= MIN_CHARACTERS_PER_AFFILIATION):
+                if (isinstance(aff, dict) and len(aff.get('name', '') or '') >= MIN_CHARACTERS_PER_AFFILIATION) or (isinstance(aff, str) and len(aff) >= MIN_CHARACTERS_PER_AFFILIATION):
                     final_affs.append(aff)
             author['affiliation'] = final_affs
         return j
