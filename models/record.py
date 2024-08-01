@@ -79,12 +79,19 @@ class Record(db.Model):
 
     @property
     def has_affiliations(self):
-        return self.affiliations_count > 0
+        return self.cleaned_affiliations_count > 0
+
+    @property
+    def cleaned_affiliations_count(self):
+        count = 0
+        for author in self.cleaned_authors_json:
+            count += len(author.get("affiliation", []))
+        return count
 
     @property
     def affiliations_count(self):
         count = 0
-        for author in self.cleaned_authors_json:
+        for author in self.authors_json:
             count += len(author.get("affiliation", []))
         return count
 
@@ -115,8 +122,12 @@ class Record(db.Model):
 
     @property
     def affiliations_per_author(self):
-        return self.affiliations_count / len(
-            self.cleaned_authors_json)
+        return self.cleaned_affiliations_count / len(
+            self.authors_json)
+
+    @property
+    def clean_affiliations_per_author(self):
+        return self.cleaned_affiliations_count / len(self.cleaned_authors_json)
 
     @property
     def affiliations_probably_invalid(self):
@@ -136,8 +147,8 @@ class Record(db.Model):
             return None
         best_count, best_record = 0, self.hal_records[0]
         for record in self.hal_records:
-            if record.affiliations_count > best_count:
-                best_count = record.affiliations_count
+            if record.cleaned_affiliations_count > best_count:
+                best_count = record.cleaned_affiliations_count
                 best_record = record
         return best_record
 
@@ -285,7 +296,7 @@ class Record(db.Model):
                             f"titles match but dois don't so don't merge this for now")
                         continue
 
-                    if not self.with_parsed_data or not self.with_parsed_data.authors or self.with_parsed_data.authors == []:
+                    if not self.with_parsed_data or not self.with_parsed_data.authors or not self.with_parsed_data.authors_json:
                         # is considered a match
                         matching_work = matching_work_temp
                         print(
