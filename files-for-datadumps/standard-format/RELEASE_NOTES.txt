@@ -1,8 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
-upcoming release
+RELEASE 2024-07-30
 - new work type: retraction
 - used data from Pubmed to reclassify 4M works from type "article" to one of: editorial, erratum, letter, preprint, review, retraction
+- improved type classification for works using string matching
 - change titles (display_name) for ~30k journals based on data from Crossref
 - delete 187,452 works: deleted Zenodo records. (merge into deleted id: W4285719527)
 - clean up author names: remove non-name strings prepended to certain author names; remove non-printing characters and whitespace, delete authors with bad names (only whitespace, only numbers)
