@@ -1749,7 +1749,7 @@ class Work(db.Model):
                        self.records_sorted if
                        record.cleaned_authors_json]
 
-        return sorted(records, key=lambda record: record.affiliations_count, reverse=True)
+        return sorted(records, key=lambda record: record.cleaned_affiliations_count, reverse=True)
 
     @property
     def only_mag_records(self):
