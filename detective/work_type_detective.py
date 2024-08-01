@@ -195,7 +195,7 @@ class WorkTypeDetective:
             r'^(A )?\[*letter from',
             r'^(A )?letter$',
             r'^(A )?\[*letter:',
-            r'^(An )?Open letter'
+            r'^(An )?Open letter',
         ]
         for expr in letter_exprs:
             if self.work.work_title and re.search(expr, self.work.work_title,
@@ -208,8 +208,8 @@ class WorkTypeDetective:
             r'^(An )?editorial comment',
             r'^(A )?guest editorial',
             r'^(An )?editorial note',
-            r'^(An )?editorial -'
-            r'(A )?editorial \w+:'
+            r'^(An )?editorial -',
+            r'(A )?editorial \w+:',
         ]
         for expr in editorial_exprs:
             if self.work.work_title and re.search(expr, self.work.work_title,
