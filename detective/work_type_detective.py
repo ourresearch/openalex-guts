@@ -131,7 +131,7 @@ class WorkTypeDetective:
 
         paratext_exprs = [
             r'^Author Guidelines$',
-            r'^Author Index$'
+            r'^Author Index$',
             r'^Back Cover',
             r'^Back Matter',
             r'Back Matter]*$',
