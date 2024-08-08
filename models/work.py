@@ -483,6 +483,23 @@ class Work(db.Model):
             "topics": topic_ids
         }
 
+    def keywords_and_leaf_concepts(self):
+        all_concepts = [concept.to_dict("keyword") for concept in self.concepts_sorted]
+
+        concepts_to_use = []
+        keyword_ids_used = [keyword.keyword_id for keyword in self.keywords_sorted if keyword.keyword_id != ""] if self.keywords_sorted else []
+        for concept in all_concepts:
+            if concept.get('use_as_keyword') and concept.get('keyword_id') and is_valid_keyword_id(concept.get('keyword_id')):
+                if concept.get('keyword_id') not in keyword_ids_used and concept.get('score') > 0.4:
+                    # query Keyword table to get openalex_id
+                    keyword = models.Keyword.query.get(concept.get('keyword_id'))
+                    concepts_to_use.append({"id": keyword.openalex_id, 
+                                            "display_name": concept.get('display_name'), 
+                                            "score": concept.get('score')})
+                    keyword_ids_used.append(concept.get('keyword_id'))
+        
+        return concepts_to_use
+
     def get_concepts_input_hash(self):
         return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode(
@@ -705,9 +722,9 @@ class Work(db.Model):
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
 
-        if self.concepts_input_hash == current_concepts_input_hash:
-            logger.info('skipping concept tagging because inputs are unchanged')
-            return
+        # if self.concepts_input_hash == current_concepts_input_hash:
+        #     logger.info('skipping concept tagging because inputs are unchanged')
+        #     return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -1002,10 +1019,10 @@ class Work(db.Model):
             select
             field_of_study_id,
             num_papers
-            from mid.concept_for_api_mv
+            from mid.concept_api_mv
             join mid.num_papers_by_concept_mv
-            on concept_for_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
-            where concept_for_api_mv.field_of_study_id in %s
+            on concept_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
+            where concept_api_mv.field_of_study_id in %s
         )
         select
             paper_id as related_paper_id,
@@ -1246,6 +1263,18 @@ class Work(db.Model):
                 scores[i] += 1
         return work_matches_by_title[scores.index(max(scores))]
 
+    @property
+    def has_pdf_affiliations(self):
+        aff_strings = set(
+            [aff.original_affiliation for aff in self.affiliations])
+        if self.crossref_record and (pdf_record := self.crossref_record.pdf_record):
+            for author in pdf_record.authors_json:
+                affs = author.get('affiliation', []) or author.get(
+                    'affiliations', [])
+                if any([aff in aff_strings for aff in affs]):
+                    return True
+        return False
+
     def add_references(self):
         from models import WorkExtraIds
         citation_dois = []
@@ -1356,7 +1385,9 @@ class Work(db.Model):
             * Author sequence numbers are incorrect
         """
         before_all_affiliations = self.affiliations
-        before_affiliations = [aff for aff in self.affiliations if aff.affiliation_id is not None]
+        before_affiliations = [aff for aff in self.affiliations if
+                               aff.affiliation_id is not None]
+        has_pdf_affiliations = self.has_pdf_affiliations
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
@@ -1404,8 +1435,6 @@ class Work(db.Model):
                 raw_author_string = original_name if original_name else None
                 original_orcid = normalize_orcid(author_dict.get("orcid"))
 
-                seen_institution_ids = set()
-
                 if raw_author_string:
                     # Get normalized author string to check against
                     curr_norm_name = str(
@@ -1438,7 +1467,7 @@ class Work(db.Model):
 
                     for affiliation_dict in author_dict["affiliation"]:
                         raw_affiliation_string = affiliation_dict["name"] if \
-                            affiliation_dict["name"] else None
+                            affiliation_dict.get('name') else None
                         raw_affiliation_string = clean_html(
                             raw_affiliation_string)
                         my_institutions = []
@@ -1455,14 +1484,7 @@ class Work(db.Model):
                                     orm.Load(models.Institution).raiseload('*')
                                 ).get(institution_id_match)
 
-                                if (
-                                        my_institution and my_institution.affiliation_id
-                                        and my_institution.affiliation_id in seen_institution_ids
-                                ):
-                                    continue
                                 my_institutions.append(my_institution)
-                                seen_institution_ids.add(
-                                    my_institution.affiliation_id)
 
                         my_institutions = my_institutions or [None]
 
@@ -1493,13 +1515,19 @@ class Work(db.Model):
                 "no affiliations found for this work, going through the normal add_affiliation process")
             self.add_affiliations(affiliation_retry_attempts)
 
-        new_affiliations = [aff for aff in self.affiliations if aff.affiliation_id is not None]
+        new_affiliations = [aff for aff in self.affiliations if
+                            aff.affiliation_id is not None]
         aff_count_diff = len(new_affiliations) - len(before_affiliations)
         if aff_count_diff < 0:
-            logger.warn(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
-            self.affiliations = before_all_affiliations
+            if has_pdf_affiliations:
+                logger.info(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID (PDF AFFILIATIONS)')
+            else:
+                logger.warn(
+                    f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
+                self.affiliations = before_all_affiliations
         elif aff_count_diff > 0:
-            logger.info(f'[AFFILIATION UPDATE] GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id} ({self.doi})')
+            logger.info(
+                f'[AFFILIATION UPDATE] GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id} ({self.doi})')
 
     def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
@@ -1523,8 +1551,6 @@ class Work(db.Model):
             raw_author_string = original_name if original_name else None
             original_orcid = normalize_orcid(author_dict.get("orcid"))
 
-            seen_institution_ids = set()
-
             if raw_author_string:
                 affiliation_sequence_order = 1
                 for affiliation_dict in author_dict["affiliation"]:
@@ -1544,14 +1570,7 @@ class Work(db.Model):
                                 orm.Load(models.Institution).raiseload('*')
                             ).get(institution_id_match)
 
-                            if (
-                                    my_institution and my_institution.affiliation_id
-                                    and my_institution.affiliation_id in seen_institution_ids
-                            ):
-                                continue
                             my_institutions.append(my_institution)
-                            seen_institution_ids.add(
-                                my_institution.affiliation_id)
 
                     my_institutions = my_institutions or [None]
 
@@ -1843,6 +1862,8 @@ class Work(db.Model):
         for seq, affil_list in affiliation_dict.items():
             institution_list = [a["institution"] for a in affil_list if
                                 a["institution"].get("id") is not None]
+            # De-dupe by institution["id"]
+            institution_list = list({i['id']: i for i in institution_list}.values())
             if institution_list == [{}]:
                 institution_list = []
             if len(affiliation_dict) == 1:
@@ -2082,7 +2103,7 @@ class Work(db.Model):
         from detective import WorkTypeDetective
         detective = WorkTypeDetective(self)
         return detective.type_calculated
-    
+
 
     @cached_property
     def language(self):
@@ -2727,6 +2748,20 @@ class Work(db.Model):
                     [line.strip() for line in clean_fulltext.splitlines() if
                      line.strip()])
                 return clean_fulltext
+    
+    def get_final_keywords(self):
+        # Adding in leaf concepts
+        concepts_to_use = self.keywords_and_leaf_concepts()
+
+        final_keywords  = [keyword.to_dict("minimum") for keyword in
+                             self.keywords if
+                             keyword.keyword_id != ""] if self.keywords else []
+        
+        final_keywords += concepts_to_use
+
+        final_keywords_sorted = sorted(final_keywords, key=lambda x: x['score'], reverse=True) if final_keywords else []
+
+        return final_keywords_sorted
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
@@ -2871,9 +2906,7 @@ class Work(db.Model):
                 "referenced_works": self.references_list_sorted,
                 "referenced_works_count": len(self.references_list_sorted),
                 "sustainable_development_goals": self.sustainable_development_goals,
-                "keywords": [keyword.to_dict("minimum") for keyword in
-                             self.keywords_sorted if
-                             keyword.keyword_id != ""] if self.keywords_sorted else [],
+                "keywords": self.get_final_keywords(),
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
