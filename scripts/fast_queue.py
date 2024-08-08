@@ -273,6 +273,7 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.extra_ids).raiseload('*'),
             selectinload(models.Work.related_works).raiseload('*'),
             selectinload(models.Work.work_fwci).raiseload('*'),
+            selectinload(models.Work.work_citations_norm_percentile).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).selectinload(models.Author.orcids).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.author).raiseload('*'),
             selectinload(models.Work.affiliations).selectinload(models.Affiliation.institution).selectinload(models.Institution.ror).raiseload('*'),
