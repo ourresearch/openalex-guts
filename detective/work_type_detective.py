@@ -52,10 +52,11 @@ class WorkTypeDetective:
 
     @property
     def is_preprint(self):
-        if r := self.get_record('crossref_doi'):
-            crossref_json = get_crossref_json_from_unpaywall(r.doi)
-            if crossref_json and crossref_json.get('subtype', '') == 'preprint':
-                return True
+        # remove the unpaywall check while we debug unpaywall db problems
+        # if r := self.get_record('crossref_doi'):
+        #     crossref_json = get_crossref_json_from_unpaywall(r.doi)
+        #     if crossref_json and crossref_json.get('subtype', '') == 'preprint':
+        #         return True
         return self.work.journal_id in PREPRINT_JOURNAL_IDS or (self.work.journal_id is None and self.work.genre == 'posted-content') # From Unpaywall
 
     @property
