@@ -26,7 +26,7 @@ def as_concept_openalex_id(id):
 
 class Concept(db.Model):
     __table_args__ = {'schema': 'mid'}
-    __tablename__ = "concept_for_api_mv"
+    __tablename__ = "concept_api_mv"
 
     field_of_study_id = db.Column(db.BigInteger, primary_key=True)
     normalized_name = db.Column(db.Text)
@@ -40,6 +40,8 @@ class Concept(db.Model):
     created_date = db.Column(db.DateTime)
     updated_date = db.Column(db.DateTime)
     full_updated_date = db.Column(db.DateTime)
+    use_as_keyword = db.Column(db.Boolean)
+    keyword_id = db.Column(db.Text, db.ForeignKey("mid.keyword.keyword_id"))
 
     @cached_property
     def id(self):
@@ -162,7 +164,7 @@ class Concept(db.Model):
         concept2.level as field_of_study_id2_level,
         related.rank        
         from legacy.mag_advanced_related_field_of_study related
-        join mid.concept_for_api_mv concept2 on concept2.field_of_study_id = field_of_study_id2
+        join mid.concept_api_mv concept2 on concept2.field_of_study_id = field_of_study_id2
         WHERE field_of_study_id1 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
@@ -180,7 +182,7 @@ class Concept(db.Model):
         concept1.level as field_of_study_id1_level,        
         related.rank       
         from legacy.mag_advanced_related_field_of_study related
-        join mid.concept_for_api_mv concept1 on concept1.field_of_study_id = field_of_study_id1
+        join mid.concept_api_mv concept1 on concept1.field_of_study_id = field_of_study_id1
         WHERE field_of_study_id2 = :concept_id
         """
         rows = db.session.execute(text(q), {"concept_id": self.field_of_study_id}).fetchall()
@@ -527,6 +529,12 @@ class Concept(db.Model):
             for id_type in list(response["ids"].keys()):
                 if response["ids"][id_type] == None:
                     del response["ids"][id_type]
+
+        elif return_level == "keyword":
+            response.update({
+                "use_as_keyword": self.use_as_keyword,
+                "keyword_id": self.keyword_id
+            })
         return response
 
     def __repr__(self):
@@ -547,7 +555,7 @@ class ConceptJsonEntityHash(db.Model):
     __tablename__ = "concept_json_entity_hash"
 
     field_of_study_id = db.Column(
-        db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True
+        db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True
     )
     json_entity_hash = db.Column(db.Text)
 

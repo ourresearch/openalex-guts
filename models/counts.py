@@ -429,7 +429,7 @@ class ConceptCounts(db.Model):
 
     field_of_study_id = db.Column(
         db.BigInteger,
-        db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"),
+        db.ForeignKey("mid.concept_api_mv.field_of_study_id"),
         primary_key=True,
     )
     paper_count = db.Column(db.Numeric)
@@ -448,7 +448,7 @@ class ConceptCounts2Year(db.Model):
 
     field_of_study_id = db.Column(
         db.BigInteger,
-        db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"),
+        db.ForeignKey("mid.concept_api_mv.field_of_study_id"),
         primary_key=True,
     )
     paper_count = db.Column(db.Numeric)
@@ -466,7 +466,7 @@ class ConceptCountsByYear(db.Model):
 
     field_of_study_id = db.Column(
         db.BigInteger,
-        db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"),
+        db.ForeignKey("mid.concept_api_mv.field_of_study_id"),
         primary_key=True,
     )
     type = db.Column(db.Text, primary_key=True)
