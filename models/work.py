@@ -483,6 +483,23 @@ class Work(db.Model):
             "topics": topic_ids
         }
 
+    def keywords_and_leaf_concepts(self):
+        all_concepts = [concept.to_dict("keyword") for concept in self.concepts_sorted]
+
+        concepts_to_use = []
+        keyword_ids_used = [keyword.keyword_id for keyword in self.keywords_sorted if keyword.keyword_id != ""] if self.keywords_sorted else []
+        for concept in all_concepts:
+            if concept.get('use_as_keyword') and concept.get('keyword_id') and is_valid_keyword_id(concept.get('keyword_id')):
+                if concept.get('keyword_id') not in keyword_ids_used and concept.get('score') > 0.4:
+                    # query Keyword table to get openalex_id
+                    keyword = models.Keyword.query.get(concept.get('keyword_id'))
+                    concepts_to_use.append({"id": keyword.openalex_id, 
+                                            "display_name": concept.get('display_name'), 
+                                            "score": concept.get('score')})
+                    keyword_ids_used.append(concept.get('keyword_id'))
+        
+        return concepts_to_use
+
     def get_concepts_input_hash(self):
         return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode(
@@ -705,9 +722,9 @@ class Work(db.Model):
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
 
-        if self.concepts_input_hash == current_concepts_input_hash:
-            logger.info('skipping concept tagging because inputs are unchanged')
-            return
+        # if self.concepts_input_hash == current_concepts_input_hash:
+        #     logger.info('skipping concept tagging because inputs are unchanged')
+        #     return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -1002,10 +1019,10 @@ class Work(db.Model):
             select
             field_of_study_id,
             num_papers
-            from mid.concept_for_api_mv
+            from mid.concept_api_mv
             join mid.num_papers_by_concept_mv
-            on concept_for_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
-            where concept_for_api_mv.field_of_study_id in %s
+            on concept_api_mv.field_of_study_id = num_papers_by_concept_mv.field_of_study
+            where concept_api_mv.field_of_study_id in %s
         )
         select
             paper_id as related_paper_id,
@@ -2731,6 +2748,20 @@ class Work(db.Model):
                     [line.strip() for line in clean_fulltext.splitlines() if
                      line.strip()])
                 return clean_fulltext
+    
+    def get_final_keywords(self):
+        # Adding in leaf concepts
+        concepts_to_use = self.keywords_and_leaf_concepts()
+
+        final_keywords  = [keyword.to_dict("minimum") for keyword in
+                             self.keywords if
+                             keyword.keyword_id != ""] if self.keywords else []
+        
+        final_keywords += concepts_to_use
+
+        final_keywords_sorted = sorted(final_keywords, key=lambda x: x['score'], reverse=True) if final_keywords else []
+
+        return final_keywords_sorted
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
@@ -2875,9 +2906,7 @@ class Work(db.Model):
                 "referenced_works": self.references_list_sorted,
                 "referenced_works_count": len(self.references_list_sorted),
                 "sustainable_development_goals": self.sustainable_development_goals,
-                "keywords": [keyword.to_dict("minimum") for keyword in
-                             self.keywords_sorted if
-                             keyword.keyword_id != ""] if self.keywords_sorted else [],
+                "keywords": self.get_final_keywords(),
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
