@@ -2762,6 +2762,17 @@ class Work(db.Model):
         final_keywords_sorted = sorted(final_keywords, key=lambda x: x['score'], reverse=True) if final_keywords else []
 
         return final_keywords_sorted
+    
+    @property
+    def citations_normalized_percentile(self):
+        normalized_citation_percentile = round(self.work_citations_norm_percentile.normalized_citation_percentile, 6) \
+              if (self.work_citations_norm_percentile) \
+              and (self.work_citations_norm_percentile.normalized_citation_percentile or 
+                   (self.work_citations_norm_percentile.normalized_citation_percentile == 0.0)) else None
+        
+        return {"value": normalized_citation_percentile, 
+                "is_in_top_1_percent": normalized_citation_percentile >= 0.99, 
+                "is_in_top_10_percent": normalized_citation_percentile >= 0.90} if normalized_citation_percentile else None
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
@@ -2900,6 +2911,7 @@ class Work(db.Model):
                     0] if self.topics_sorted else None,
                 "fwci": round(self.work_fwci.fwci, 3) if (self.work_fwci) and (
                     self.work_fwci.fwci or (self.work_fwci.fwci == 0.0)) else None,
+                "citation_normalized_percentile": self.citations_normalized_percentile,
                 "mesh": [mesh.to_dict("minimum") for mesh in self.mesh_sorted],
                 "locations_count": self.locations_count(),
                 "locations": self.dict_locations,
