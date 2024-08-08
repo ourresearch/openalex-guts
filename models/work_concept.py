@@ -11,7 +11,7 @@ class WorkConcept(db.Model):
     __tablename__ = "work_concept"
 
     paper_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
-    field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    field_of_study = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     score = db.Column(db.Float)
     algorithm_version = db.Column(db.Integer)
     uses_newest_algorithm = db.Column(db.Boolean)

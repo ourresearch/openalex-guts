@@ -60,7 +60,7 @@ class ConceptImpactFactor(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_impact_factor_mv"
 
-    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     impact_factor = db.Column(db.Float)
 
     def __repr__(self):
@@ -181,7 +181,7 @@ class ConceptHIndex(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_h_index_mv"
 
-    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     h_index = db.Column(db.Integer)
 
     def __repr__(self):
@@ -192,7 +192,7 @@ class ConceptHIndex2Year(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_h_index_2yr_mv"
 
-    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     h_index = db.Column(db.Integer)
 
     def __repr__(self):
@@ -313,7 +313,7 @@ class ConceptI10Index(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_i10_index_mv"
 
-    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     i10_index = db.Column(db.Integer)
 
     def __repr__(self):
@@ -324,7 +324,7 @@ class ConceptI10Index2Year(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_i10_index_2yr_mv"
 
-    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    concept_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     i10_index = db.Column(db.Integer)
 
     def __repr__(self):

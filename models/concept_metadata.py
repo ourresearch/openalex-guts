@@ -7,7 +7,7 @@ class ConceptMetadata(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "concept_metadata"
 
-    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_for_api_mv.field_of_study_id"), primary_key=True)
+    field_of_study_id = db.Column(db.BigInteger, db.ForeignKey("mid.concept_api_mv.field_of_study_id"), primary_key=True)
     wikipedia_id = db.Column(db.Text)
     wikidata_id = db.Column(db.Text)
     wikipedia_json = db.Column(db.Text)
