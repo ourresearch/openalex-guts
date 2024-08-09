@@ -1303,6 +1303,12 @@ class Work(db.Model):
                             if my_clean_doi:
                                 citation_dois.append(my_clean_doi)
                                 continue
+                        if 'work_id' in citation_dict:
+                            citation_paper_ids.append(citation_dict['work_id'])
+                            continue
+                        if 'paper_id' in citation_dict:
+                            citation_paper_ids.append(citation_dict['paper_id'])
+                            continue
                         if "pmid" in citation_dict:
                             my_clean_pmid = citation_dict["pmid"]
                             if my_clean_pmid:
