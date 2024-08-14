@@ -44,6 +44,19 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("paper_reference_id", "BIGINT")
     ],
+    "institution": [
+        ("affiliation_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("ror_id", "VARCHAR(500)"),
+        ("iso3166_code", "VARCHAR(500)"),
+    ],
+    "source": [
+        ("source_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("type", "VARCHAR(500)"),
+        ("issn", "VARCHAR(500)"),
+        ("is_in_doaj", "BOOLEAN"),
+    ],
     "subfield": [
         ("subfield_id", "INTEGER"),
         ("display_name", "VARCHAR(65535)"),
@@ -105,6 +118,13 @@ queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
+    "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
+    "source": f"""
+        SELECT 
+            journal_id AS source_id, 
+            {', '.join([col for col in get_columns(schemas['source']).split(', ') if col != 'source_id'])} 
+        FROM mid.journal
+    """,
     "subfield": f"SELECT {get_columns(schemas['subfield'])} FROM mid.subfield",
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
     "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work",
