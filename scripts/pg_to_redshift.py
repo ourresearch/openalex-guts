@@ -40,9 +40,17 @@ schemas = {
         ("display_name", "VARCHAR(65535)"),
         ("merge_into_id", "BIGINT")
     ],
+    "author_orcid": [
+        ("author_id", "BIGINT"),
+        ("orcid", "VARCHAR(500)")
+    ],
     "citation": [
         ("paper_id", "BIGINT"),
         ("paper_reference_id", "BIGINT")
+    ],
+    "citation_papers_mv": [
+        ("paper_id", "BIGINT"),
+        ("citation_count", "INTEGER")
     ],
     "institution": [
         ("affiliation_id", "BIGINT"),
@@ -117,8 +125,10 @@ def get_columns(schema):
 queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
+    "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
-    "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
+    "citation_papers_mv": f"SELECT {get_columns(schemas['citation_papers_mv'])} FROM mid.citation_papers_mv",
+    "institution": f"SELECT affiliation_id, display_name, ror_id AS ror, iso3166_code as country_code FROM mid.institution",
     "source": f"""
         SELECT 
             journal_id AS source_id, 
