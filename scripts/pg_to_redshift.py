@@ -233,7 +233,7 @@ queries = {
     "source_type": f"SELECT {get_columns(schemas['source_type'])} FROM mid.source_type",
     "subfield": f"SELECT {get_columns(schemas['subfield'])} FROM mid.subfield",
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
-    "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL",
+    "work": f"""SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL AND "year" IS NOT NULL""",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
     "work_keyword": f"SELECT {get_columns(schemas['work_keyword'])} FROM mid.work_keyword",
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic",
