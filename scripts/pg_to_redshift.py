@@ -154,10 +154,6 @@ schemas = {
         ("domain_id", "INTEGER"),
         ("wikipedia_url", "VARCHAR(65535)"),
     ],
-    "work_type": [
-        ("work_type_id", "VARCHAR(500)"),
-        ("display_name", "VARCHAR(65535)"),
-    ],
     "work": [
         ("paper_id", "BIGINT"),
         ("original_title", "VARCHAR(65535)"),
@@ -183,7 +179,7 @@ schemas = {
     ],
     "work_keyword": [
         ("paper_id", "BIGINT"),
-        ("keyword_id", "INTEGER"),
+        ("keyword_id", "VARCHAR(500)"),
         ("score", "FLOAT")
     ],
     "work_topic": [
@@ -191,7 +187,11 @@ schemas = {
         ("topic_id", "INTEGER"),
         ("score", "FLOAT")
     ],
-
+    "work_type": [
+        ("work_type_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+    ],
 }
 
 
