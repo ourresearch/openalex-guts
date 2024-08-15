@@ -90,9 +90,22 @@ schemas = {
         ("ror_id", "VARCHAR(500)"),
         ("iso3166_code", "VARCHAR(500)"),
     ],
+    "institution_type": [
+        ("institution_type_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+    ],
     "keyword": [
         ("keyword_id", "VARCHAR(500)"),
         ("display_name", "VARCHAR(65535)"),
+    ],
+    "language": [
+        ("language_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+    ],
+    "license": [
+        ("license_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
     ],
     "publisher": [
         ("publisher_id", "BIGINT"),
@@ -122,6 +135,10 @@ schemas = {
         ("issn", "VARCHAR(500)"),
         ("is_in_doaj", "BOOLEAN"),
     ],
+    "source_type": [
+        ("source_type_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+    ],
     "subfield": [
         ("subfield_id", "INTEGER"),
         ("display_name", "VARCHAR(65535)"),
@@ -136,6 +153,10 @@ schemas = {
         ("field_id", "INTEGER"),
         ("domain_id", "INTEGER"),
         ("wikipedia_url", "VARCHAR(65535)"),
+    ],
+    "work_type": [
+        ("work_type_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
     ],
     "work": [
         ("paper_id", "BIGINT"),
@@ -196,7 +217,10 @@ queries = {
     "field": f"SELECT {get_columns(schemas['field'])} FROM mid.field",
     "funder": f"SELECT {get_columns(schemas['funder'])} FROM mid.funder where merge_into_id IS NULL",
     "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
+    "institution_type": f"SELECT {get_columns(schemas['institution_type'])} FROM mid.institution_type",
     "keyword": f"SELECT {get_columns(schemas['keyword'])} FROM mid.keyword",
+    "language": f"SELECT {get_columns(schemas['language'])} FROM mid.language",
+    "license": f"SELECT {get_columns(schemas['license'])} FROM mid.license",
     "publisher": f"SELECT {get_columns(schemas['publisher'])} FROM mid.publisher WHERE merge_into_id IS NULL",
     "ror": f"SELECT {get_columns(schemas['ror'])} FROM ins.ror_summary",
     "sdg": f"SELECT {get_columns(schemas['sdg'])} FROM mid.sdg",
@@ -206,12 +230,14 @@ queries = {
             {', '.join([col for col in get_columns(schemas['source']).split(', ') if col != 'source_id'])} 
         FROM mid.journal WHERE merge_into_id IS NULL
     """,
+    "source_type": f"SELECT {get_columns(schemas['source_type'])} FROM mid.source_type",
     "subfield": f"SELECT {get_columns(schemas['subfield'])} FROM mid.subfield",
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
     "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
     "work_keyword": f"SELECT {get_columns(schemas['work_keyword'])} FROM mid.work_keyword",
-    "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic"
+    "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic",
+    "work_type": f"SELECT {get_columns(schemas['work_type'])} FROM mid.work_type",
 }
 
 
