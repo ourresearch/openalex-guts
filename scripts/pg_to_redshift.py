@@ -192,6 +192,15 @@ schemas = {
         ("display_name", "VARCHAR(65535)"),
         ("description", "VARCHAR(65535)"),
     ],
+    "work_fwci": [
+        ("paper_id", "BIGINT"),
+        ("publication_year", "INTEGER"),
+        ("subfield_id", "INTEGER"),
+        ("work_type", "VARCHAR(500)"),
+        ("pub_plus_3_citations", "BIGINT"),
+        ("fwci", "FLOAT"),
+        ("update_date", "VARCHAR(500)"),
+    ],
 }
 
 
@@ -238,6 +247,7 @@ queries = {
     "work_keyword": f"SELECT {get_columns(schemas['work_keyword'])} FROM mid.work_keyword",
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic",
     "work_type": f"SELECT {get_columns(schemas['work_type'])} FROM mid.work_type",
+    "work_fwci": f"SELECT {get_columns(schemas['work_fwci'])} FROM counts.work_fwci",
 }
 
 
