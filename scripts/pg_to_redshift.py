@@ -52,11 +52,37 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("citation_count", "INTEGER")
     ],
+    "domain": [
+        ("domain_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+    ],
+    "field": [
+        ("field_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+    ],
     "institution": [
         ("affiliation_id", "BIGINT"),
         ("display_name", "VARCHAR(65535)"),
         ("ror_id", "VARCHAR(500)"),
         ("iso3166_code", "VARCHAR(500)"),
+    ],
+    "publisher": [
+        ("publisher_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("country_code", "VARCHAR(500)"),
+    ],
+    "ror": [
+        ("ror_id", "VARCHAR(500)"),
+        ("name", "VARCHAR(65535)"),
+        ("city", "VARCHAR(65535)"),
+        ("state", "VARCHAR(65535)"),
+        ("country", "VARCHAR(65535)"),
+        ("country_code", "VARCHAR(500)"),
+        ("grid_id", "VARCHAR(500)"),
+        ("wikipedia_url", "VARCHAR(65535)"),
+        ("ror_type", "VARCHAR(500)"),
     ],
     "source": [
         ("source_id", "BIGINT"),
@@ -124,20 +150,24 @@ def get_columns(schema):
 
 queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
-    "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000",
+    "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000 WHERE merge_into_id IS NULL",
     "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
     "citation_papers_mv": f"SELECT {get_columns(schemas['citation_papers_mv'])} FROM mid.citation_papers_mv",
-    "institution": f"SELECT affiliation_id, display_name, ror_id AS ror, iso3166_code as country_code FROM mid.institution",
+    "domain": f"SELECT {get_columns(schemas['domain'])} FROM mid.domain",
+    "field": f"SELECT {get_columns(schemas['field'])} FROM mid.field",
+    "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
+    "publisher": f"SELECT {get_columns(schemas['publisher'])} FROM mid.publisher WHERE merge_into_id IS NULL",
+    "ror": f"SELECT {get_columns(schemas['ror'])} FROM ins.ror_summary",
     "source": f"""
         SELECT 
             journal_id AS source_id, 
             {', '.join([col for col in get_columns(schemas['source']).split(', ') if col != 'source_id'])} 
-        FROM mid.journal
+        FROM mid.journal WHERE merge_into_id IS NULL
     """,
     "subfield": f"SELECT {get_columns(schemas['subfield'])} FROM mid.subfield",
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
-    "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work",
+    "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic"
 }
