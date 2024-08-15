@@ -52,6 +52,19 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("citation_count", "INTEGER")
     ],
+    "country": [
+        ("country_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+        ("continent_id", "INTEGER"),
+        ("is_global_south", "BOOLEAN"),
+    ],
+    "continent": [
+        ("continent_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
+        ("wikidata_id", "VARCHAR(500)"),
+    ],
     "domain": [
         ("domain_id", "INTEGER"),
         ("display_name", "VARCHAR(65535)"),
@@ -62,11 +75,24 @@ schemas = {
         ("display_name", "VARCHAR(65535)"),
         ("description", "VARCHAR(65535)"),
     ],
+    "funder": [
+        ("funder_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("crossref_id", "BIGINT"),
+        ("country_code", "VARCHAR(500)"),
+        ("doi", "VARCHAR(500)"),
+        ("description", "VARCHAR(65535)"),
+        ("ror_id", "VARCHAR(500)"),
+    ],
     "institution": [
         ("affiliation_id", "BIGINT"),
         ("display_name", "VARCHAR(65535)"),
         ("ror_id", "VARCHAR(500)"),
         ("iso3166_code", "VARCHAR(500)"),
+    ],
+    "keyword": [
+        ("keyword_id", "VARCHAR(500)"),
+        ("display_name", "VARCHAR(65535)"),
     ],
     "publisher": [
         ("publisher_id", "BIGINT"),
@@ -83,6 +109,11 @@ schemas = {
         ("grid_id", "VARCHAR(500)"),
         ("wikipedia_url", "VARCHAR(65535)"),
         ("ror_type", "VARCHAR(500)"),
+    ],
+    "sdg": [
+        ("sdg_id", "INTEGER"),
+        ("display_name", "VARCHAR(65535)"),
+        ("description", "VARCHAR(65535)"),
     ],
     "source": [
         ("source_id", "BIGINT"),
@@ -129,6 +160,11 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("field_of_study", "BIGINT")
     ],
+    "work_keyword": [
+        ("paper_id", "BIGINT"),
+        ("keyword_id", "INTEGER"),
+        ("score", "FLOAT")
+    ],
     "work_topic": [
         ("paper_id", "BIGINT"),
         ("topic_id", "INTEGER"),
@@ -154,11 +190,16 @@ queries = {
     "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
     "citation_papers_mv": f"SELECT {get_columns(schemas['citation_papers_mv'])} FROM mid.citation_papers_mv",
+    "country": f"SELECT {get_columns(schemas['country'])} FROM mid.country",
+    "continent": f"SELECT {get_columns(schemas['continent'])} FROM mid.continent",
     "domain": f"SELECT {get_columns(schemas['domain'])} FROM mid.domain",
     "field": f"SELECT {get_columns(schemas['field'])} FROM mid.field",
+    "funder": f"SELECT {get_columns(schemas['funder'])} FROM mid.funder where merge_into_id IS NULL",
     "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
+    "keyword": f"SELECT {get_columns(schemas['keyword'])} FROM mid.keyword",
     "publisher": f"SELECT {get_columns(schemas['publisher'])} FROM mid.publisher WHERE merge_into_id IS NULL",
     "ror": f"SELECT {get_columns(schemas['ror'])} FROM ins.ror_summary",
+    "sdg": f"SELECT {get_columns(schemas['sdg'])} FROM mid.sdg",
     "source": f"""
         SELECT 
             journal_id AS source_id, 
@@ -169,6 +210,7 @@ queries = {
     "topic": f"SELECT {get_columns(schemas['topic'])} FROM mid.topic",
     "work": f"SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
+    "work_keyword": f"SELECT {get_columns(schemas['work_keyword'])} FROM mid.work_keyword",
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic"
 }
 
