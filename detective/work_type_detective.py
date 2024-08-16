@@ -45,10 +45,19 @@ class WorkTypeDetective:
             return 'book-chapter'
         return 'journal-article'
 
-    def get_record(self, record_type):
-        for record in self.work.records_sorted:
-            if record.record_type == record_type:
-                return record
+    def get_record(self, record_type, sortkey=None, descending=False):
+        # if multiple records are found, sortkey (and descending) can be used to select the one you want
+        record = [r for r in self.work.records_sorted if r.record_type == record_type]
+        if len(record) == 0:
+            return None
+        elif len(record) == 1 or sortkey is None:
+            return record[0]
+        else:
+            if sortkey == 'pmid':
+                record.sort(key=lambda r: int(r.pmid), reverse=descending)
+            else:
+                record.sort(key=lambda r:getattr(r, sortkey), reverse=descending)
+            return record[0]
 
     @property
     def is_preprint(self):
@@ -86,7 +95,7 @@ class WorkTypeDetective:
         except AttributeError:
             pass
 
-        if r := self.get_record('pubmed_record'):
+        if r := self.get_record('pubmed_record', sortkey='pmid', descending=True):
             # pubmed is generally better than crossref when it comes to work type
             lookup_pubmed_to_openalex_type = {
                 'Journal Article': 'article',
