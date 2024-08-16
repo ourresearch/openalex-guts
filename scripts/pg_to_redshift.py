@@ -33,7 +33,6 @@ schemas = {
         ("affiliation_id", "BIGINT"),
         ("author_sequence_number", "INTEGER"),
         ("original_author", "VARCHAR(65535)"),
-        ("original_affiliation", "VARCHAR(65535)"),
         ("original_orcid", "VARCHAR(500)")
     ],
     "author": [
