@@ -35,6 +35,11 @@ schemas = {
         ("original_author", "VARCHAR(65535)"),
         ("original_orcid", "VARCHAR(500)")
     ],
+    "affiliation_unique_rows_view": [
+        ("paper_id", "BIGINT"),
+        ("author_id", "BIGINT"),
+        ("affiliation_id", "BIGINT"),
+    ],
     "author": [
         ("author_id", "BIGINT"),
         ("display_name", "VARCHAR(65535)"),
@@ -216,6 +221,7 @@ def get_columns(schema):
 
 queries = {
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
+    "affiliation_unique_rows_view": f"SELECT {get_columns(schemas['affiliation_unique_rows_view'])} FROM mid.affiliation_unique_rows_view",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000 WHERE merge_into_id IS NULL",
     "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
@@ -347,6 +353,19 @@ def delete_s3_file(s3_key):
     logger.info(f"Successfully deleted S3 file s3://{s3_bucket}/{s3_key}")
 
 
+def record_redshift_table_update_timestamp(redshift_table_name):
+    """in the postgres database, maintain a table which records the last time the redshift tables were synced"""
+    from app import db
+    from sqlalchemy import text
+
+    log_table = 'public.redshift_sync_logs'
+    now = datetime.datetime.now(datetime.timezone.utc)
+    sq = f"""INSERT INTO {log_table} (redshift_table, updated_at) VALUES(:redshift_table_name, :now);"""
+    logger.info(f"Updating sync table in postgres: {log_table}")
+    db.session.execute(text(sq), {'redshift_table_name': redshift_table_name, 'now': now})
+    db.session.commit()
+
+
 def main(entity):
     schema = schemas.get(entity)
     query = queries.get(entity)
@@ -364,6 +383,10 @@ def main(entity):
     replace_existing_data(redshift_engine, entity)
     delete_s3_file(s3_key)
     truncate_staging_table(redshift_engine, entity)
+    try:
+        record_redshift_table_update_timestamp(entity)
+    except Exception as e:
+        logger.error(f"An error occurred so skipping sync log update: {e}")
     logger.info(f"{entity} completed in {time.time() - start_time:.2f} seconds")
 
 
