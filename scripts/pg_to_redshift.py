@@ -285,6 +285,7 @@ def export_postgres_to_s3(query, s3_key, entity):
     """
     if entity == 'affiliation':
         # testing this
+        command = command.strip()
         command += ' --expected-size 1500000000000'
     logger.info(f"Executing command to save {entity}s to s3://{s3_bucket}/{s3_key}")
     start_time = time.time()
