@@ -2775,10 +2775,10 @@ class Work(db.Model):
               if (self.work_citations_norm_percentile) \
               and (self.work_citations_norm_percentile.normalized_citation_percentile or 
                    (self.work_citations_norm_percentile.normalized_citation_percentile == 0.0)) else None
-        
         return {"value": normalized_citation_percentile, 
                 "is_in_top_1_percent": normalized_citation_percentile >= 0.99, 
-                "is_in_top_10_percent": normalized_citation_percentile >= 0.90} if normalized_citation_percentile else None
+                "is_in_top_10_percent": normalized_citation_percentile >= 0.90} if (normalized_citation_percentile or 
+                                                                                    normalized_citation_percentile==0.0) else None
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
