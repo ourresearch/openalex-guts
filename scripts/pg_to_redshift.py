@@ -33,7 +33,6 @@ schemas = {
         ("affiliation_id", "BIGINT"),
         ("author_sequence_number", "INTEGER"),
         ("original_author", "VARCHAR(65535)"),
-        ("original_affiliation", "VARCHAR(65535)"),
         ("original_orcid", "VARCHAR(500)")
     ],
     "author": [
@@ -283,10 +282,6 @@ def export_postgres_to_s3(query, s3_key, entity):
     command = f"""
     psql {postgres_db_url} -c "\\COPY ({query}) TO STDOUT WITH (FORMAT CSV, HEADER, DELIMITER ',');" | aws s3 cp - s3://{s3_bucket}/{s3_key}
     """
-    if entity == 'affiliation':
-        # testing this
-        command = command.strip()
-        command += ' --expected-size 1500000000000'
     logger.info(f"Executing command to save {entity}s to s3://{s3_bucket}/{s3_key}")
     start_time = time.time()
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
