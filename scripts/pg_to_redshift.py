@@ -169,6 +169,7 @@ schemas = {
     "work": [
         ("paper_id", "BIGINT"),
         ("original_title", "VARCHAR(65535)"),
+        ("doi", "VARCHAR(500)"),
         ("doi_lower", "VARCHAR(500)"),
         ("journal_id", "BIGINT"),
         ("merge_into_id", "BIGINT"),
