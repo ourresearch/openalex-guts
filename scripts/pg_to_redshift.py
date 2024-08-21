@@ -53,6 +53,12 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("paper_reference_id", "BIGINT")
     ],
+    "citation_institutions_mv": [
+        ("affiliation_id", "BIGINT"),
+        ("paper_count", "INTEGER"),
+        ("oa_paper_count", "INTEGER"),
+        ("citation_count", "INTEGER"),
+    ],
     "citation_papers_mv": [
         ("paper_id", "BIGINT"),
         ("citation_count", "INTEGER")
@@ -139,6 +145,7 @@ schemas = {
         ("type", "VARCHAR(500)"),
         ("issn", "VARCHAR(500)"),
         ("is_in_doaj", "BOOLEAN"),
+        ("journal_id", "BIGINT"),
     ],
     "source_type": [
         ("source_type_id", "VARCHAR(500)"),
@@ -190,7 +197,8 @@ schemas = {
     "work_topic": [
         ("paper_id", "BIGINT"),
         ("topic_id", "INTEGER"),
-        ("score", "FLOAT")
+        ("score", "FLOAT"),
+        ("topic_rank", "INTEGER")
     ],
     "work_type": [
         ("work_type_id", "VARCHAR(500)"),
@@ -225,6 +233,7 @@ queries = {
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000 WHERE merge_into_id IS NULL",
     "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
     "citation": f"SELECT {get_columns(schemas['citation'])} FROM mid.citation",
+    "citation_institutions_mv": f"SELECT {get_columns(schemas['citation_institutions_mv'])} FROM mid.citation_institutions_mv",
     "citation_papers_mv": f"SELECT {get_columns(schemas['citation_papers_mv'])} FROM mid.citation_papers_mv",
     "country": f"SELECT {get_columns(schemas['country'])} FROM mid.country",
     "continent": f"SELECT {get_columns(schemas['continent'])} FROM mid.continent",
