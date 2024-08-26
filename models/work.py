@@ -255,6 +255,7 @@ class Work(db.Model):
     genre = db.Column(db.Text)
     is_paratext = db.Column(db.Boolean)
     oa_status = db.Column(db.Text)
+    language = db.Column(db.Text)
     best_url = db.Column(db.Text)
     best_free_url = db.Column(db.Text)
     best_free_version = db.Column(db.Text)
@@ -2112,7 +2113,7 @@ class Work(db.Model):
 
 
     @cached_property
-    def language(self):
+    def language_calculated(self):
         # override language for selected journals
         if self.journal and self.journal.language_override:
             return self.journal.language_override.language
@@ -2782,6 +2783,7 @@ class Work(db.Model):
 
     def to_dict(self, return_level="full"):
         truncated_title = truncate_on_word_break(self.work_title, 500)
+        self.language = self.language_calculated
 
         corresponding_author_ids: List[str] = []
         corresponding_institution_ids: List[str] = []
