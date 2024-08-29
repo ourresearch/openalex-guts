@@ -295,6 +295,9 @@ class Work(db.Model):
         if not self.affiliations:
             return
 
+        before_all_affiliations = self.affiliations
+        before_affiliations = [aff for aff in self.affiliations if
+                               aff.affiliation_id is not None]
         record_author_dict_list = []
 
         if self.affiliation_records_sorted:
@@ -408,6 +411,13 @@ class Work(db.Model):
                         seen_ids.add(affiliation_id)
 
                     affiliation_sequence_no += 1
+        new_affiliations = [aff for aff in self.affiliations if
+                            aff.affiliation_id is not None]
+        aff_count_diff = len(new_affiliations) - len(before_affiliations)
+        if aff_count_diff < 0:
+            logger.warn(
+                f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
+            self.affiliations = before_all_affiliations
 
     def update_orcid(self):
         if not self.affiliations:
