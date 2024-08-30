@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-08-29
+- add new object citation_normalized_percentile to works, which is a percentile rank of citations normalized by the number of works in the same year and subfield
+- add more references to works using previous MAG snapshot
+- restored some missing affiliations
+
 RELEASE 2024-07-30
 - new work type: retraction
 - used data from Pubmed to reclassify 4M works from type "article" to one of: editorial, erratum, letter, preprint, review, retraction
