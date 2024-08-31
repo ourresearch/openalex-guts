@@ -195,7 +195,7 @@ SOURCE_TYPES_INDEX = "source-types-v1"
 SUBFIELDS_INDEX = "subfields-v2"
 TOPICS_INDEX = "topics-v4"
 WORK_TYPES_INDEX = "work-types-v1"
-WORKS_INDEX_PREFIX = "works-v24"
+WORKS_INDEX_PREFIX = "works-v25"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
 
 # endpoint prefixes
