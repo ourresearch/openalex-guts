@@ -176,7 +176,7 @@ sentry_sdk.init(
 )
 
 # indexes
-AUTHORS_INDEX = "authors-v13"
+AUTHORS_INDEX = "authors-v14"
 CONCEPTS_INDEX = "concepts-v8"
 CONTINENTS_INDEX = "continents-v1"
 COUNTRIES_INDEX = "countries-v2"
