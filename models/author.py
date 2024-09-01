@@ -286,7 +286,7 @@ class Author(db.Model):
         formatted_affiliations = []
 
         for affiliation in self.affiliations:
-            if affiliation.affiliation_id is not None and affiliation.work.merge_into_id is None:
+            if affiliation.affiliation_id is not None and affiliation.affiliation_id != -1 and affiliation.work.merge_into_id is None:
                 institution = affiliation.institution
                 year = affiliation.work.year
                 if institution not in seen_institutions and year is not None:
