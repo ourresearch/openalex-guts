@@ -266,7 +266,7 @@ queries = {
     "work": f"""SELECT {get_columns(schemas['work'])} FROM mid.work WHERE merge_into_id IS NULL AND "year" IS NOT NULL""",
     "work_concept": f"SELECT {get_columns(schemas['work_concept'])} FROM mid.work_concept WHERE score > 0.3",
     "work_keyword": f"SELECT {get_columns(schemas['work_keyword'])} FROM mid.work_keyword",
-    "work_sdg": f"SELECT {get_columns(schemas['work_sdg'])} FROM public.normalized_sdg_scores",
+    "work_sdg": f"SELECT {get_columns(schemas['work_sdg'])} FROM public.normalized_sdg_scores WHERE score > 0.4",
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic",
     "work_type": f"SELECT {get_columns(schemas['work_type'])} FROM mid.work_type",
     "work_fwci": f"SELECT {get_columns(schemas['work_fwci'])} FROM counts.work_fwci",
