@@ -181,11 +181,11 @@ schemas = {
         ("best_url", "VARCHAR(65535)"),
         ("best_free_url", "VARCHAR(65535)"),
         ("oa_status", "VARCHAR(500)"),
-        ("language", "VARCHAR(300)"),
         ("type", "VARCHAR(500)"),
         ("type_crossref", "VARCHAR(500)"),
         ("year", "INTEGER"),
-        ("created_date", "VARCHAR(500)")
+        ("created_date", "VARCHAR(500)"),
+        ("language", "VARCHAR(300)"),
     ],
     "work_concept": [
         ("paper_id", "BIGINT"),
