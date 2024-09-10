@@ -27,6 +27,10 @@ redshift_engine = create_engine(redshift_db_url)
 current_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 schemas = {
+    "abstract": [
+        ("paper_id", "BIGINT"),
+        ("abstract", "VARCHAR(65535)")
+    ],
     "affiliation": [
         ("paper_id", "BIGINT"),
         ("author_id", "BIGINT"),
@@ -235,6 +239,7 @@ def get_columns(schema):
 
 
 queries = {
+    "abstract": f"SELECT {get_columns(schemas['abstract'])} FROM mid.abstract",
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
     "affiliation_unique_rows_view": f"SELECT {get_columns(schemas['affiliation_unique_rows_view'])} FROM mid.affiliation_unique_rows_view",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000 AND merge_into_id IS NULL",
