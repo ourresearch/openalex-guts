@@ -196,6 +196,10 @@ schemas = {
         ("paper_id", "BIGINT"),
         ("field_of_study", "BIGINT")
     ],
+    "work_funder": [
+        ("paper_id", "BIGINT"),
+        ("funder_id", "BIGINT")
+    ],
     "work_keyword": [
         ("paper_id", "BIGINT"),
         ("keyword_id", "VARCHAR(500)"),
@@ -277,6 +281,7 @@ queries = {
     "work_topic": f"SELECT {get_columns(schemas['work_topic'])} FROM mid.work_topic",
     "work_type": f"SELECT {get_columns(schemas['work_type'])} FROM mid.work_type",
     "work_fwci": f"SELECT {get_columns(schemas['work_fwci'])} FROM counts.work_fwci",
+    "work_funder": f"SELECT {get_columns(schemas['work_funder'])} FROM mid.work_funder",
 }
 
 
