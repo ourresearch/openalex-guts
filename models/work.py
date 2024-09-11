@@ -295,6 +295,9 @@ class Work(db.Model):
     def update_institutions(self, affiliation_retry_attempts=30):
         if not self.affiliations:
             return
+        
+        is_curation_request = False
+        is_curation_request_temp = False
 
         before_all_affiliations = self.affiliations
         before_affiliations = [aff for aff in self.affiliations if
@@ -347,10 +350,13 @@ class Work(db.Model):
             old_institution_ids = set(
                 [a.affiliation_id for a in author_affiliations if
                  a.affiliation_id])
-
-            new_institution_id_lists = models.Institution.get_institution_ids_from_strings(
+            
+            new_institution_id_lists, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
                 original_affiliations, self.paper_id, retry_attempts=affiliation_retry_attempts
             )
+            if is_curation_request_temp:
+                is_curation_request = True
+            
             new_institution_ids = set()
             for new_institution_id_list in new_institution_id_lists:
                 new_institution_ids.update(
@@ -416,9 +422,10 @@ class Work(db.Model):
                             aff.affiliation_id is not None]
         aff_count_diff = len(new_affiliations) - len(before_affiliations)
         if aff_count_diff < 0:
-            logger.warn(
-                f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
-            self.affiliations = before_all_affiliations
+            if not is_curation_request:
+                logger.warn(
+                    f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
+                self.affiliations = before_all_affiliations
 
     def update_orcid(self):
         if not self.affiliations:
@@ -1406,6 +1413,10 @@ class Work(db.Model):
         before_affiliations = [aff for aff in self.affiliations if
                                aff.affiliation_id is not None]
         has_pdf_affiliations = self.has_pdf_affiliations
+
+        is_curation_request = False
+        is_curation_request_temp = False
+
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
@@ -1491,11 +1502,13 @@ class Work(db.Model):
                         my_institutions = []
 
                         if raw_affiliation_string:
-                            institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                            institution_id_matches, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
                                 [raw_affiliation_string],
                                 self.paper_id,
                                 retry_attempts=affiliation_retry_attempts
                             )
+                            if is_curation_request_temp:
+                                is_curation_request = True
                             for institution_id_match in [m for m in
                                                          institution_id_matches[
                                                              0] if m]:
@@ -1538,12 +1551,13 @@ class Work(db.Model):
                             aff.affiliation_id is not None]
         aff_count_diff = len(new_affiliations) - len(before_affiliations)
         if aff_count_diff < 0:
-            if has_pdf_affiliations:
-                logger.info(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID (PDF AFFILIATIONS)')
-            else:
-                logger.warn(
-                    f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
-                self.affiliations = before_all_affiliations
+            if not is_curation_request:
+                if has_pdf_affiliations:
+                    logger.info(f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID (PDF AFFILIATIONS)')
+                else:
+                    logger.warn(
+                        f'[AFFILIATION UPDATE] LOST {abs(aff_count_diff)} AFFILIATIONS ON WORK ID, NOT SAVING: {self.work_id} ({self.doi})')
+                    self.affiliations = before_all_affiliations
         elif aff_count_diff > 0:
             logger.info(
                 f'[AFFILIATION UPDATE] GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id} ({self.doi})')
@@ -1551,7 +1565,7 @@ class Work(db.Model):
     def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
-
+        
         if not self.affiliation_records_sorted:
             logger.info("no affiliation data found in any of the records")
             return
@@ -1578,7 +1592,7 @@ class Work(db.Model):
                     my_institutions = []
 
                     if raw_affiliation_string:
-                        institution_id_matches = models.Institution.get_institution_ids_from_strings(
+                        institution_id_matches, _ = models.Institution.get_institution_ids_from_strings(
                             [raw_affiliation_string],
                             self.paper_id,
                             retry_attempts=affiliation_retry_attempts

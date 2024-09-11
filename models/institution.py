@@ -438,13 +438,14 @@ class Institution(db.Model):
     @classmethod
     def get_institution_ids_from_strings(cls, institution_names, work_id, retry_attempts=30):
         if not institution_names:
-            return []
+            return [], False
 
         name_to_ids_dict = dict([(n, [None]) for n in institution_names])
         known_names = AffiliationString.query.filter(
             AffiliationString.original_affiliation.in_(institution_names)
         ).all()
 
+        is_curation_request = False
         curation_requests = AffiliationStringCuration.query.filter(
             AffiliationStringCuration.work_id == work_id
             ).all()
@@ -464,6 +465,7 @@ class Institution(db.Model):
         for known_name in known_names:
             known_ids = known_name.affiliation_ids_override or known_name.affiliation_ids
             if known_name.original_affiliation in aff_change_dict.keys():
+                is_curation_request = True
                 known_ids = [i for i in known_ids + aff_change_dict[known_name.original_affiliation]['add'] 
                              if i not in aff_change_dict[known_name.original_affiliation]['remove']]
             name_to_ids_dict[known_name.original_affiliation] = [follow_merged_into_id(k) for k in known_ids]
@@ -539,8 +541,8 @@ class Institution(db.Model):
                 final_name_to_ids_dict[k] = [None]
             else:
                 final_name_to_ids_dict[k] = v
-
-        return [final_name_to_ids_dict[n] for n in institution_names]
+        
+        return [final_name_to_ids_dict[n] for n in institution_names], is_curation_request
 
     def oa_percent(self):
         if not (self.counts and self.counts.paper_count and self.counts.oa_paper_count):
