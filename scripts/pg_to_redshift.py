@@ -150,6 +150,7 @@ schemas = {
         ("issn", "VARCHAR(500)"),
         ("is_in_doaj", "BOOLEAN"),
         ("journal_id", "BIGINT"),
+        ("publisher_id", "BIGINT"),
     ],
     "source_type": [
         ("source_type_id", "VARCHAR(500)"),
