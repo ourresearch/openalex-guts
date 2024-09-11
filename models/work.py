@@ -348,7 +348,7 @@ class Work(db.Model):
                  a.affiliation_id])
 
             new_institution_id_lists = models.Institution.get_institution_ids_from_strings(
-                original_affiliations, retry_attempts=affiliation_retry_attempts
+                original_affiliations, self.paper_id, retry_attempts=affiliation_retry_attempts
             )
             new_institution_ids = set()
             for new_institution_id_list in new_institution_id_lists:
@@ -1492,6 +1492,7 @@ class Work(db.Model):
                         if raw_affiliation_string:
                             institution_id_matches = models.Institution.get_institution_ids_from_strings(
                                 [raw_affiliation_string],
+                                self.paper_id,
                                 retry_attempts=affiliation_retry_attempts
                             )
                             for institution_id_match in [m for m in
@@ -1578,6 +1579,7 @@ class Work(db.Model):
                     if raw_affiliation_string:
                         institution_id_matches = models.Institution.get_institution_ids_from_strings(
                             [raw_affiliation_string],
+                            self.paper_id,
                             retry_attempts=affiliation_retry_attempts
                         )
                         for institution_id_match in [m for m in

@@ -436,7 +436,7 @@ class Institution(db.Model):
         return normalize_title_like_sql(raw_string, remove_stop_words)
 
     @classmethod
-    def get_institution_ids_from_strings(cls, institution_names, retry_attempts=30):
+    def get_institution_ids_from_strings(cls, institution_names, work_id, retry_attempts=30):
         if not institution_names:
             return []
 
@@ -445,8 +445,27 @@ class Institution(db.Model):
             AffiliationString.original_affiliation.in_(institution_names)
         ).all()
 
+        curation_requests = AffiliationStringCuration.query.filter(
+            AffiliationStringCuration.work_id == work_id
+            ).all()
+
+        aff_change_dict = {}
+        if curation_requests:
+            for curation_request in curation_requests:
+                if curation_request.openalex_approve:
+                    add_affs = curation_request.affiliation_ids_add if curation_request.affiliation_ids_add else []
+                    remove_affs = curation_request.affiliation_ids_remove if curation_request.affiliation_ids_remove else []
+                    if aff_change_dict.get(curation_request.original_affiliation):
+                        aff_change_dict[curation_request.original_affiliation]['add'] += add_affs
+                        aff_change_dict[curation_request.original_affiliation]['remove'] += remove_affs
+                    else:
+                        aff_change_dict[curation_request.original_affiliation] = {'add': add_affs, 'remove': remove_affs}
+
         for known_name in known_names:
             known_ids = known_name.affiliation_ids_override or known_name.affiliation_ids
+            if known_name.original_affiliation in aff_change_dict.keys():
+                known_ids = [i for i in known_ids + aff_change_dict[known_name.original_affiliation]['add'] 
+                             if i not in aff_change_dict[known_name.original_affiliation]['remove']]
             name_to_ids_dict[known_name.original_affiliation] = [follow_merged_into_id(k) for k in known_ids]
 
         unknown_names = [
@@ -627,6 +646,17 @@ class AffiliationString(db.Model):
     original_affiliation = db.Column(db.Text, primary_key=True)
     affiliation_ids = db.Column(JSONB)
     affiliation_ids_override = db.Column(JSONB)
+
+class AffiliationStringCuration(db.Model):
+    __table_args__ = {'schema': 'authorships'}
+    __tablename__ = "work_specific_affiliation_string_curation"
+
+    work_id = db.Column(db.BigInteger, primary_key=True)
+    original_affiliation = db.Column(db.Text, primary_key=True)
+    affiliation_ids_add = db.Column(JSONB)
+    affiliation_ids_remove = db.Column(JSONB)
+    openalex_approve = db.Column(db.Boolean)
+
 
 
 class InstitutionAncestors(db.Model):
