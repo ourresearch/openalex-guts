@@ -34,6 +34,7 @@ from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
+from models.institution import AffiliationStringCuration
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
     matching_author_strings, get_crossref_json_from_unpaywall, \
     words_within_distance
@@ -299,6 +300,11 @@ class Work(db.Model):
         is_curation_request = False
         is_curation_request_temp = False
 
+        curation_requests = AffiliationStringCuration.query.filter(
+            AffiliationStringCuration.work_id == self.paper_id,
+            AffiliationStringCuration.openalex_approve == True
+            ).all()
+
         before_all_affiliations = self.affiliations
         before_affiliations = [aff for aff in self.affiliations if
                                aff.affiliation_id is not None]
@@ -352,7 +358,7 @@ class Work(db.Model):
                  a.affiliation_id])
             
             new_institution_id_lists, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
-                original_affiliations, self.paper_id, retry_attempts=affiliation_retry_attempts
+                original_affiliations, curation_requests, retry_attempts=affiliation_retry_attempts
             )
             if is_curation_request_temp:
                 is_curation_request = True
@@ -1417,6 +1423,11 @@ class Work(db.Model):
         is_curation_request = False
         is_curation_request_temp = False
 
+        curation_requests = AffiliationStringCuration.query.filter(
+            AffiliationStringCuration.work_id == self.paper_id,
+            AffiliationStringCuration.openalex_approve == True
+            ).all()
+
         if self.affiliations:
             old_affiliations = {}
             for author_aff in self.affiliations:
@@ -1504,7 +1515,7 @@ class Work(db.Model):
                         if raw_affiliation_string:
                             institution_id_matches, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
                                 [raw_affiliation_string],
-                                self.paper_id,
+                                curation_requests,
                                 retry_attempts=affiliation_retry_attempts
                             )
                             if is_curation_request_temp:
@@ -1572,6 +1583,11 @@ class Work(db.Model):
 
         record = self.affiliation_records_sorted[0]
 
+        curation_requests = AffiliationStringCuration.query.filter(
+            AffiliationStringCuration.work_id == self.paper_id,
+            AffiliationStringCuration.openalex_approve == True
+            ).all()
+
         author_sequence_order = 1
         for author_dict in record.cleaned_authors_json:
             original_name = author_dict["raw"]
@@ -1594,7 +1610,7 @@ class Work(db.Model):
                     if raw_affiliation_string:
                         institution_id_matches, _ = models.Institution.get_institution_ids_from_strings(
                             [raw_affiliation_string],
-                            self.paper_id,
+                            curation_requests,
                             retry_attempts=affiliation_retry_attempts
                         )
                         for institution_id_match in [m for m in

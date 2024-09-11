@@ -436,7 +436,7 @@ class Institution(db.Model):
         return normalize_title_like_sql(raw_string, remove_stop_words)
 
     @classmethod
-    def get_institution_ids_from_strings(cls, institution_names, work_id, retry_attempts=30):
+    def get_institution_ids_from_strings(cls, institution_names, curation_requests, retry_attempts=30):
         if not institution_names:
             return [], False
 
@@ -446,9 +446,6 @@ class Institution(db.Model):
         ).all()
 
         is_curation_request = False
-        curation_requests = AffiliationStringCuration.query.filter(
-            AffiliationStringCuration.work_id == work_id
-            ).all()
 
         aff_change_dict = {}
         if curation_requests:
