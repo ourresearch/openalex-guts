@@ -2920,6 +2920,7 @@ class Work(db.Model):
                 )
             },
             "authorships": self.affiliations_list,
+            "institution_assertions": self.get_institution_assertions,
             "countries_distinct_count": self.countries_distinct_count,
             "institutions_distinct_count": len(self.institutions_distinct),
             "corresponding_author_ids": corresponding_author_ids,
