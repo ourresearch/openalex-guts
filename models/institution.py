@@ -650,8 +650,10 @@ class AffiliationStringCuration(db.Model):
     __table_args__ = {'schema': 'authorships'}
     __tablename__ = "work_specific_affiliation_string_curation"
 
-    work_id = db.Column(db.BigInteger, primary_key=True)
-    original_affiliation = db.Column(db.Text, primary_key=True)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"),
+                        primary_key=True)
+    original_affiliation = db.Column(db.Text, db.ForeignKey("mid.affiliation_string_v2.original_affiliation"),
+                                     primary_key=True)
     affiliation_ids_add = db.Column(JSONB)
     affiliation_ids_remove = db.Column(JSONB)
     openalex_approve = db.Column(db.Boolean)
@@ -660,8 +662,9 @@ class InstitutionAssertions(db.Model):
     __table_args__ = {'schema': 'mid'}
     __tablename__ = "institution_assertion"
 
-    work_id = db.Column(db.BigInteger, primary_key=True)
-    institution_id = db.Column(db.BigInteger, primary_key=True)
+    work_id = db.Column(db.BigInteger, db.ForeignKey("mid.work.paper_id"), primary_key=True)
+    institution_id = db.Column(db.BigInteger, db.ForeignKey("mid.institution.affiliation_id"),
+                               primary_key=True)
 
 class InstitutionAncestors(db.Model):
     __table_args__ = {'schema': 'mid'}

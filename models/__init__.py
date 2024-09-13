@@ -22,7 +22,7 @@ from models.country import Country
 from models.continent import Continent
 from models.doi_ra import DOIRegistrationAgency
 from models.funder import Funder, WorkFunder
-from models.institution import Institution
+from models.institution import Institution, InstitutionAssertions, AffiliationStringCuration
 from models.institution import InstitutionAncestors
 from models.institution_topic import InstitutionTopic
 from models.institution_type import InstitutionType
@@ -88,6 +88,9 @@ Work.doi_ra = db.relationship("DOIRegistrationAgency", lazy='selectin', uselist=
 Work.retraction_watch = db.relationship("RetractionWatch", lazy='selectin', uselist=False)
 Work.work_fwci = db.relationship("WorkFWCI", lazy='selectin', uselist=False)
 Work.work_citations_norm_percentile = db.relationship("WorkCitationNormPer", lazy='selectin', uselist=False)
+Work.institution_assertions = db.relationship("InstitutionAssertions", lazy='selectin', cascade="all, delete-orphan")
+InstitutionAssertions.institution = db.relationship("Institution", lazy='selectin', uselist=False)
+Work.institution_curation_requests = db.relationship("AffiliationStringCuration", lazy='selectin', cascade="all, delete-orphan")
 
 Work.related_versions = db.relationship(
     "WorkRelatedVersion",

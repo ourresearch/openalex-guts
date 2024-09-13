@@ -251,6 +251,8 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.openapc),
             selectinload(models.Work.embeddings),
             selectinload(models.Work.sdg),
+            selectinload(models.Work.institution_assertions).raiseload('*'),
+            selectinload(models.Work.institution_curation_requests).raiseload('*'),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).selectinload(models.Publisher.self_and_ancestors).raiseload('*'),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.institution).raiseload('*'),
             selectinload(models.Work.safety_journals).selectinload(models.Source.merged_into_source).selectinload(models.Source.publisher_entity).raiseload('*'),
