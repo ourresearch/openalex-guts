@@ -37,6 +37,8 @@ def base_works_query():
         selectinload(models.Work.funders).raiseload('*'),
         selectinload(models.Work.counts_by_year).raiseload('*'),
         selectinload(models.Work.abstract),
+        selectinload(models.Work.institution_assertions).raiseload('*'),
+        selectinload(models.Work.institution_curation_requests).raiseload('*'),
         selectinload(models.Work.extra_ids).raiseload('*'),
         selectinload(models.Work.related_works).raiseload('*'),
         selectinload(models.Work.related_versions).raiseload('*'),

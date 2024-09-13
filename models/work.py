@@ -34,8 +34,7 @@ from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
-from models.institution import AffiliationStringCuration, InstitutionAssertions, \
-    as_institution_openalex_id, Institution
+from models.institution import as_institution_openalex_id
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
     matching_author_strings, get_crossref_json_from_unpaywall, \
     words_within_distance
@@ -301,10 +300,12 @@ class Work(db.Model):
         is_curation_request = False
         is_curation_request_temp = False
 
-        curation_requests = AffiliationStringCuration.query.filter(
-            AffiliationStringCuration.work_id == self.paper_id,
-            AffiliationStringCuration.openalex_approve == True
-            ).all()
+        curation_requests = self.institution_curation_requests
+        # print("test_curations: ", test_curation_requests)
+        # curation_requests = AffiliationStringCuration.query.filter(
+        #     AffiliationStringCuration.work_id == self.paper_id,
+        #     AffiliationStringCuration.openalex_approve == True
+        #     ).all()
 
         before_all_affiliations = self.affiliations
         before_affiliations = [aff for aff in self.affiliations if
@@ -1424,10 +1425,11 @@ class Work(db.Model):
         is_curation_request = False
         is_curation_request_temp = False
 
-        curation_requests = AffiliationStringCuration.query.filter(
-            AffiliationStringCuration.work_id == self.paper_id,
-            AffiliationStringCuration.openalex_approve == True
-            ).all()
+        curation_requests = self.institution_curation_requests
+        # curation_requests = AffiliationStringCuration.query.filter(
+        #     AffiliationStringCuration.work_id == self.paper_id,
+        #     AffiliationStringCuration.openalex_approve == True
+        #     ).all()
 
         if self.affiliations:
             old_affiliations = {}
@@ -1584,10 +1586,11 @@ class Work(db.Model):
 
         record = self.affiliation_records_sorted[0]
 
-        curation_requests = AffiliationStringCuration.query.filter(
-            AffiliationStringCuration.work_id == self.paper_id,
-            AffiliationStringCuration.openalex_approve == True
-            ).all()
+        curation_requests = self.institution_curation_requests
+        # curation_requests = AffiliationStringCuration.query.filter(
+        #     AffiliationStringCuration.work_id == self.paper_id,
+        #     AffiliationStringCuration.openalex_approve == True
+        #     ).all()
 
         author_sequence_order = 1
         for author_dict in record.cleaned_authors_json:
@@ -2008,19 +2011,17 @@ class Work(db.Model):
         return list(set(institution_ids))
     
     @cached_property
-    def institution_assertions(self):
-        institution_assertions = InstitutionAssertions.query.filter(
-            InstitutionAssertions.work_id == self.paper_id,
-            ).all()
+    def get_institution_assertions(self):
+        institution_assertions = self.institution_assertions
         
         if institution_assertions:
             distinct_authorship_institutions = self.institutions_distinct
-            institution_assertions_short_ids = [x.institution_id for x in institution_assertions 
+            institution_assertions_short_ids = [x for x in institution_assertions 
                                                 if as_institution_openalex_id(x.institution_id) 
                                                 not in distinct_authorship_institutions]
             if institution_assertions_short_ids:
-                print([Institution.query.filter(Institution.affiliation_id==x).first().to_dict('minimum') for x in 
-                       institution_assertions_short_ids])
+                # this will not work
+                print([x.institution.to_dict('minimum') for x in institution_assertions_short_ids])
             return []
         else:
             return []
