@@ -34,7 +34,8 @@ from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
-from models.institution import AffiliationStringCuration, InstitutionAssertions, as_institution_openalex_id
+from models.institution import AffiliationStringCuration, InstitutionAssertions, \
+    as_institution_openalex_id, Institution
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
     matching_author_strings, get_crossref_json_from_unpaywall, \
     words_within_distance
@@ -2017,7 +2018,9 @@ class Work(db.Model):
             institution_assertions_short_ids = [x.institution_id for x in institution_assertions 
                                                 if as_institution_openalex_id(x.institution_id) 
                                                 not in distinct_authorship_institutions]
-            # print([models.Institution.query.filter(models.Institution.affiliation_id == x).first() for x in institution_assertions_short_ids])
+            if institution_assertions_short_ids:
+                print([Institution.query.filter(Institution.affiliation_id==x).first().to_dict('minimum') for x in 
+                       institution_assertions_short_ids])
             return []
         else:
             return []
