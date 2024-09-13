@@ -656,7 +656,12 @@ class AffiliationStringCuration(db.Model):
     affiliation_ids_remove = db.Column(JSONB)
     openalex_approve = db.Column(db.Boolean)
 
+class InstitutionAssertions(db.Model):
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "institution_assertion"
 
+    work_id = db.Column(db.BigInteger, primary_key=True)
+    institution_id = db.Column(db.BigInteger, primary_key=True)
 
 class InstitutionAncestors(db.Model):
     __table_args__ = {'schema': 'mid'}
