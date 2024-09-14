@@ -2020,9 +2020,9 @@ class Work(db.Model):
                                                 if as_institution_openalex_id(x.institution_id) 
                                                 not in distinct_authorship_institutions]
             if institution_assertions_short_ids:
-                # this will not work
-                print([x.institution.to_dict('minimum') for x in institution_assertions_short_ids])
-            return []
+                return [x.institution.to_dict('minimum') for x in institution_assertions_short_ids]
+            else:
+                return []
         else:
             return []
 
