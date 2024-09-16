@@ -160,6 +160,7 @@ def normalize_doi(doi, return_none_if_error=False):
             raise NoDoiException("There's no DOI at all.")
 
     doi = doi.strip().lower()
+    doi = replace_doi_bad_chars(doi)
 
     # test cases for this regex are at https://regex101.com/r/zS4hA0/4
     p = re.compile(r"(10\.\d+/[^\s]+)")
@@ -406,8 +407,14 @@ def is_ip(ip):
     return False
 
 
-def clean_doi(dirty_doi, return_none_if_error=False):
+def replace_doi_bad_chars(doi):
     replace_chars = {"‐": "-"}
+    for char, replacement in replace_chars.items():
+        doi = doi.replace(char, replacement)
+    return doi
+
+
+def clean_doi(dirty_doi, return_none_if_error=False):
     if not dirty_doi:
         if return_none_if_error:
             return None
@@ -416,11 +423,7 @@ def clean_doi(dirty_doi, return_none_if_error=False):
 
     dirty_doi = dirty_doi.strip()
     dirty_doi = dirty_doi.lower()
-
-    # Replace bad chars
-    for char, replacement in replace_chars.items():
-        dirty_doi = dirty_doi.replace(char, replacement)
-
+    dirty_doi = replace_doi_bad_chars(dirty_doi)
 
     # test cases for this regex are at https://regex101.com/r/zS4hA0/1
     p = re.compile(r"(10\.\d+\/[^\s]+)")
