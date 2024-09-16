@@ -407,6 +407,7 @@ def is_ip(ip):
 
 
 def clean_doi(dirty_doi, return_none_if_error=False):
+    replace_chars = {"‐": "-"}
     if not dirty_doi:
         if return_none_if_error:
             return None
@@ -415,6 +416,11 @@ def clean_doi(dirty_doi, return_none_if_error=False):
 
     dirty_doi = dirty_doi.strip()
     dirty_doi = dirty_doi.lower()
+
+    # Replace bad chars
+    for char, replacement in replace_chars.items():
+        dirty_doi = dirty_doi.replace(char, replacement)
+
 
     # test cases for this regex are at https://regex101.com/r/zS4hA0/1
     p = re.compile(r"(10\.\d+\/[^\s]+)")
