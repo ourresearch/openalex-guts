@@ -258,6 +258,7 @@ class Work(db.Model):
     is_retracted = db.Column(db.Boolean)
     oa_status = db.Column(db.Text)
     language = db.Column(db.Text)
+    license = db.Column(db.Text)
     best_url = db.Column(db.Text)
     best_free_url = db.Column(db.Text)
     best_free_version = db.Column(db.Text)
@@ -2848,6 +2849,7 @@ class Work(db.Model):
         truncated_title = truncate_on_word_break(self.work_title, 500)
         self.language = self.language_calculated
         self.is_retracted = self.is_retracted_calculated
+        self.license = self.dict_locations[0].get('license') if self.dict_locations else None
 
         corresponding_author_ids: List[str] = []
         corresponding_institution_ids: List[str] = []
