@@ -191,6 +191,8 @@ schemas = {
         ("year", "INTEGER"),
         ("created_date", "VARCHAR(500)"),
         ("language", "VARCHAR(300)"),
+        ("is_retracted", "BOOLEAN"),
+        ("license", "VARCHAR(500)"),
     ],
     "work_concept": [
         ("paper_id", "BIGINT"),
