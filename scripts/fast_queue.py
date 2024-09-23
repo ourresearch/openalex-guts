@@ -249,7 +249,6 @@ def get_objects(entity_type, object_ids):
             selectinload(models.Work.journal).selectinload(models.Source.language_override).raiseload('*'),
             selectinload(models.Work.journal).raiseload('*'),
             selectinload(models.Work.openapc),
-            selectinload(models.Work.embeddings),
             selectinload(models.Work.sdg),
             selectinload(models.Work.institution_assertions).raiseload('*'),
             selectinload(models.Work.institution_assertions).selectinload(models.InstitutionAssertions.institution).raiseload('*'),
