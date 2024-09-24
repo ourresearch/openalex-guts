@@ -277,6 +277,20 @@ Record.mag_record = db.relationship(
 )
 
 
+Record.legacy_records = db.relationship(
+    "Record",
+    lazy='selectin',
+    uselist=True,
+    viewonly=True,
+    primaryjoin=and_(
+        foreign(Record.record_type) == 'crossref_doi',
+        remote(Record.record_type).like('legacy_%'),
+        foreign(Record.work_id) > 0,
+        foreign(Record.work_id) == remote(Record.work_id),
+    )
+)
+
+
 
 Record.child_records = db.relationship(
     'Record',

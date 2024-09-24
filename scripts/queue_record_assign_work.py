@@ -135,6 +135,7 @@ def get_records(record_ids):
         joinedload(models.Record.parseland_record).raiseload('*'),
         joinedload(models.Record.pdf_record).raiseload('*'),
         selectinload(models.Record.mag_record).raiseload('*'),
+        selectinload(models.Record.legacy_records).raiseload('*'),
         joinedload(models.Record.hal_records).raiseload('*'),
         orm.Load(models.Record).raiseload('*')
     ).filter(models.Record.id.in_(record_ids)).all()

@@ -21,6 +21,8 @@ def base_works_query():
         selectinload(models.Work.records).selectinload
         (models.Record.mag_record).raiseload('*'),
         selectinload(models.Work.records).selectinload
+        (models.Record.legacy_records).raiseload('*'),
+        selectinload(models.Work.records).selectinload
         (models.Record.hal_records).raiseload('*'),
         selectinload(models.Work.records).selectinload
         (models.Record.child_records).raiseload('*'),
