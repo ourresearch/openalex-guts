@@ -135,6 +135,7 @@ def merge_authors(cloned_parent_record, original_parent_record,
         parsed_records.get('mag_record'),
         parsed_records.get('hal_record'),
         parsed_records.get('parseland_record'),
+        parsed_records.get('legacy_record'),
         parsed_records.get('pdf_record'))
     sorted_parsed_records = [mag_record, hal_record, pl_record]
     sorted_parsed_records = [record for record in sorted_parsed_records if record]

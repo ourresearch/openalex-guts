@@ -157,7 +157,8 @@ class Record(db.Model):
         parsed_records = {'parseland_record': self.parseland_record,
                           'pdf_record': self.pdf_record,
                           'hal_record': self.best_hal_affiliations_record,
-                          'mag_record': self.mag_record}
+                          'mag_record': self.mag_record,
+                          'legacy_record': self.legacy_records[0] if self.legacy_records else None}
         return merge_primary_with_parsed(self, **parsed_records)
 
     def __init__(self, **kwargs):
