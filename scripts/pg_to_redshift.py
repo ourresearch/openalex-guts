@@ -254,6 +254,7 @@ def get_columns(schema):
 queries = {
     "abstract": f"SELECT {get_columns(schemas['abstract'])} FROM mid.abstract",
     "affiliation": f"SELECT {get_columns(schemas['affiliation'])} FROM mid.affiliation",
+    "affiliation_string_v2": f"SELECT {get_columns(schemas['affiliation_string_v2'])} FROM mid.affiliation_string_v2",
     "affiliation_unique_rows_view": f"SELECT {get_columns(schemas['affiliation_unique_rows_view'])} FROM mid.affiliation_unique_rows_view",
     "author": f"SELECT {get_columns(schemas['author'])} FROM mid.author WHERE author_id > 5000000000 AND merge_into_id IS NULL",
     "author_orcid": f"SELECT {get_columns(schemas['author_orcid'])} FROM mid.author_orcid",
