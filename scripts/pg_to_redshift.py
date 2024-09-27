@@ -41,7 +41,7 @@ schemas = {
     ],
     "affiliation_string_v2": [
         ("original_affiliation", "VARCHAR(65535)"),
-        ("affiliations_ids", "VARCHAR(65535)"),
+        ("affiliation_ids", "VARCHAR(65535)"),
         ("affiliation_ids_override", "VARCHAR(65535)"),
         ("updated", "TIMESTAMP"),
     ],
