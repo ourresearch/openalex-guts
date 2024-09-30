@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-09-27
+- added ~14M affiliations to works
+- adjusted year retrieved from Crossref, using the earliest from issued, published, approved, created, deposited. This affects ~20M works.
+
 RELEASE 2024-08-29
 - add new object citation_normalized_percentile to works, which is a percentile rank of citations normalized by the number of works in the same year and subfield
 - add more references to works using previous MAG snapshot
