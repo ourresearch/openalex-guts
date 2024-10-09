@@ -309,8 +309,8 @@ class Work(db.Model):
         #     ).all()
 
         before_all_affiliations = self.affiliations
-        before_affiliations = [aff for aff in self.affiliations if
-                               aff.affiliation_id is not None]
+        before_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
+                               aff.affiliation_id is not None])
         record_author_dict_list = []
 
         if self.affiliation_records_sorted:
@@ -427,9 +427,9 @@ class Work(db.Model):
                         seen_ids.add(affiliation_id)
 
                     affiliation_sequence_no += 1
-        new_affiliations = [aff for aff in self.affiliations if
-                            aff.affiliation_id is not None]
-        aff_count_diff = len(new_affiliations) - len(before_affiliations)
+        new_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
+                            aff.affiliation_id is not None])
+        aff_count_diff = len(new_affiliation_strings) - len(before_affiliation_strings)
         if aff_count_diff < 0:
             if not is_curation_request:
                 logger.warn(
@@ -1419,8 +1419,8 @@ class Work(db.Model):
             * Author sequence numbers are incorrect
         """
         before_all_affiliations = self.affiliations
-        before_affiliations = [aff for aff in self.affiliations if
-                               aff.affiliation_id is not None]
+        before_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
+                               aff.affiliation_id is not None])
         has_pdf_affiliations = self.has_pdf_affiliations
 
         is_curation_request = False
@@ -1562,9 +1562,9 @@ class Work(db.Model):
                 "no affiliations found for this work, going through the normal add_affiliation process")
             self.add_affiliations(affiliation_retry_attempts)
 
-        new_affiliations = [aff for aff in self.affiliations if
-                            aff.affiliation_id is not None]
-        aff_count_diff = len(new_affiliations) - len(before_affiliations)
+        new_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
+                            aff.affiliation_id is not None])
+        aff_count_diff = len(new_affiliation_strings) - len(before_affiliation_strings)
         if aff_count_diff < 0:
             if not is_curation_request:
                 if has_pdf_affiliations:
