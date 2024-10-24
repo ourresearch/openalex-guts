@@ -164,6 +164,7 @@ class WorkTypeDetective:
             r'Back Cover[\]\)]*$',
             r'^Inside Front Cover',
             r'^Issue Information',
+            r'^Issue Publication Information$'
             r'^List of contents',
             r'^List of Tables$',
             r'^List of Figures$',
