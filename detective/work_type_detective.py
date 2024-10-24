@@ -69,6 +69,17 @@ class WorkTypeDetective:
         return self.work.journal_id in PREPRINT_JOURNAL_IDS or (self.work.journal_id is None and self.work.genre == 'posted-content') # From Unpaywall
 
     @property
+    def is_supplementary_materials(self):
+        exprs = [
+            lambda: self.work.original_title and 'supplementary table' in self.work.original_title.lower(),
+            lambda: self.work.original_title and 'Graphical abstract TOC'.lower() in self.work.original_title.lower(),
+        ]
+        for expr in exprs:
+            if expr():
+                return True
+        return False
+
+    @property
     def is_review(self):
         return self.work.journal_id in REVIEW_JOURNAL_IDS or (
                 self.work.original_title and words_within_distance(self.work.original_title.lower(), 'a', 'review', 2))
@@ -78,7 +89,7 @@ class WorkTypeDetective:
         # this is what goes into the `Work.type` attribute
         if self.looks_like_paratext:
             return "paratext"
-        if self.work.original_title and 'supplementary table' in self.work.original_title.lower():
+        if self.is_supplementary_materials:
             return 'supplementary-materials'
         if self.is_review:
             return 'review'
@@ -146,6 +157,7 @@ class WorkTypeDetective:
             r'^Back Matter',
             r'Back Matter]*$',
             r'Back Cover]*$',
+            r'Call for Papers',
             r'^Contents$',
             r'^Contents:',
             r'^Cover Image',
@@ -153,25 +165,32 @@ class WorkTypeDetective:
             r'^Editorial Board',
             r'Editor Report$',
             r'^Front Cover',
+            r'^Front Matter',
             r'\[Front Cover\]',
             r'\[Inside Back Cover.*\]',
             r'\[Back Inside Cover.*\]',
             r'^Frontispiece',
             r'^Graphical Contents List$',
             r'^Index$',
+            r'^Inhalt$',
             r'^Inside Back Cover',
             r'^Inside Cover',
             r'Back Cover[\]\)]*$',
             r'^Inside Front Cover',
             r'^Issue Information',
             r'^Issue Publication Information$'
+            r'^Issue Editorial Masthead$'
+            r'^Calendar of Events$'
             r'^List of contents',
             r'^List of Tables$',
             r'^List of Figures$',
             r'^List of Plates$',
             r'^Masthead',
             r'\[Masthead\]',
+            r'^Notes and News$',
+            r'^Obituary$',
             r'^Pages de début$',
+            r'^Short(?:er)? Notices'
             r'^Title page',
             r"^Editor's Preface",
         ]
