@@ -2435,7 +2435,7 @@ class Work(db.Model):
         self.type_crossref = self.type_crossref_calculated
 
         if work_has_null_author_ids(my_dict):
-            logger.info('not saving work because some authors have null IDs')
+            logger.info(f"not saving work {self.paper_id} because some authors have null IDs")
             # log this to db
             sq = """
             INSERT INTO logs.store_fail_null_authors
