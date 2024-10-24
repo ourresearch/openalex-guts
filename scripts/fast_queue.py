@@ -18,7 +18,7 @@ from util import elapsed
 
 # test this script locally
 # 1. Save environment variables to .env file with: heroku config -s > .env
-# 2. Run the script to save an example ID: heroku local:run python -- -m scripts.fast_queue --entity=work --method=store --id=2008120268
+# 2. Run the script to save an example ID: heroku local:run -- python -m scripts.fast_queue --entity=work --method=store --id=2008120268
 # 3. Changes should be reflected in elasticsearch and the api.
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
@@ -92,6 +92,8 @@ def run(**kwargs):
                     log_work_store_time(loop_start, time(), chunk)
                 elif queue_table == 'queue.work_authors_changed_store':
                     remove_object_ids_from_queue(queue_table, object_ids)
+                    # push to back of redis queue, ensures the work gets added to fast queue!
+                    _redis.zadd(REDIS_WORK_QUEUE, {work_id: time() for work_id in object_ids})
                 else:
                     update_object_ids_in_queue(queue_table, object_ids)
 
@@ -159,15 +161,18 @@ def fetch_queue_chunk_ids_from_redis(queue_table, chunk_size):
 
 
 def fetch_queue_chunk_ids_from_pg(queue_table, chunk_size):
+    order_by_clause = "finished asc nulls first, rand"
+    if queue_table == "queue.work_authors_changed_store":
+        # get new ids first, for when queue is backed up
+        order_by_clause = "id desc"
+
     text_query = f"""
               with chunk as (
                   select id
                   from {queue_table}
                   where started is null
                   and (finished is null or finished < now() - '1 hour'::interval)
-                  order by
-                      finished asc nulls first,
-                      rand
+                  order by {order_by_clause}
                   limit :chunk
                   for update skip locked
               )

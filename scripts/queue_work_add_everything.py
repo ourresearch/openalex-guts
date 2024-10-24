@@ -1,11 +1,14 @@
 import argparse
+import logging
 import re
 from time import sleep, time, mktime, gmtime
 from timeit import default_timer as timer
 
 from humanfriendly import format_timespan
 from redis import Redis
+from redis.exceptions import ConnectionError
 from sqlalchemy import text
+from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type, before_sleep_log
 
 import models
 from app import REDIS_QUEUE_URL, db, logger
@@ -83,6 +86,12 @@ class QueueWorkAddEverything:
                 logger.info(f'processed {len(rows)} Works in {elapsed(start_time, 2)} seconds')
 
     @staticmethod
+    @retry(
+        wait=wait_fixed(2),
+        stop=stop_after_attempt(5),
+        retry=retry_if_exception_type(ConnectionError),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
     def prioritize_in_redis_fast_queue(works):
         redis_queue_time = time()
         redis_queue_mapping = {
