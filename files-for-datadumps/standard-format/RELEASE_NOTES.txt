@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-10-31
+- detect additional paratext
+- fixed author alternate names bug
+
 RELEASE 2024-09-27
 - added ~14M affiliations to works
 - adjusted year retrieved from Crossref, using the earliest from issued, published, approved, created, deposited. This affects ~20M works.
