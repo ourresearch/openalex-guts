@@ -1,5 +1,6 @@
 import argparse
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep, time
 
 from elasticsearch import Elasticsearch
@@ -34,19 +35,25 @@ def run(**kwargs):
     else:
         queue_table = f"queue.{entity_type.lower()}_store"
 
-    if single_id := kwargs.get('id'):
-        if objects := get_objects(entity_type, [single_id]):
-            logger.info(f'found object {objects[0]}')
+    if ids := kwargs.get('id'):
+        if objects := get_objects(entity_type, ids):
+            logger.info(f'found objects: {[str(obj) for obj in objects]}')
             bulk_actions = []
-            for o in objects:
-                record_actions = o.store()
-                bulk_actions += [bulk_action for bulk_action in record_actions if bulk_action]
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_obj = {executor.submit(o.store): o for o in objects}
+                for future in as_completed(future_to_obj):
+                    o = future_to_obj[future]
+                    try:
+                        record_actions = future.result()
+                        bulk_actions += [action for action in record_actions if action]
+                    except Exception as e:
+                        logger.error(f"Error storing object {o}: {e}")
             if kwargs.get('show_difference'):
                 show_difference(bulk_actions)
             index_and_merge_object_records(bulk_actions)
             db.session.commit()
         else:
-            logger.warn(f'found no object with id {single_id}')
+            logger.warn(f'found no objects with ids {ids}')
     else:
         objects_updated = 0
         limit = kwargs.get('limit')
@@ -444,7 +451,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run fast queue.")
     parser.add_argument('--entity', type=str, help="the entity type to run")
     parser.add_argument('--method', type=str, help="the method to run")
-    parser.add_argument('--id', nargs="?", type=str, help="id of the one thing you want to update (case sensitive)")
+    parser.add_argument('--id', nargs="*", type=str, help="IDs of the objects to update (case sensitive)")
     parser.add_argument('--limit', "-l", nargs="?", type=int, help="how many objects to work on")
     parser.add_argument('--queue_table', type=str, nargs="?", help="the queue table to use, optional")
     parser.add_argument(
