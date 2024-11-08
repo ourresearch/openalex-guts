@@ -2140,10 +2140,9 @@ class Work(db.Model):
         return "https://doi.org/{}".format(self.doi.lower())
 
     @property
-    def is_closed_springer(self):
-        publisher_str = (
-                                self.journal and self.journal.publisher) or self.publisher
-        if publisher_str and 'springer' in publisher_str.lower():
+    def is_closed_springer_or_elsevier(self):
+        publisher_str = (self.journal and self.journal.publisher) or self.publisher
+        if publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower()):
             return not self.is_oa
         return False
 
@@ -2425,7 +2424,8 @@ class Work(db.Model):
             my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
             my_dict['authorships_truncated'] = True
 
-        if self.is_closed_springer:
+        if self.is_closed_springer_or_elsevier:
+            logger.info(f"not saving abstract for {self.paper_id} {self.doi}")
             my_dict.pop('abstract', None)
             my_dict["abstract_inverted_index"] = None
 
@@ -3008,7 +3008,7 @@ class Work(db.Model):
             if return_level == "full":
                 response["abstract_inverted_index"] = self.abstract.to_dict(
                     "minimum") if self.abstract else None
-                if self.is_closed_springer:
+                if self.is_closed_springer_or_elsevier:
                     response["abstract_inverted_index"] = None
 
             response["counts_by_year"] = self.display_counts_by_year
