@@ -5,7 +5,6 @@ import traceback
 from datetime import datetime
 from time import time, sleep
 
-import psutil
 import requests
 from redis.client import Redis
 from sqlalchemy import text
@@ -13,7 +12,7 @@ from sqlalchemy import text
 import models
 from app import REDIS_QUEUE_URL, logger, db
 from models import REDIS_ADD_THINGS_QUEUE
-from scripts.works_query import base_works_query
+from scripts.works_query import base_slow_queue_works_query
 from util import work_has_null_author_ids, elapsed, get_openalex_json
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
@@ -117,8 +116,7 @@ def enqueue_txt_file(fname, methods=None, fast_queue_priority=None):
                 'SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
                 params={'dois': dois}).fetchall()
             doi_work_ids = [r[0] for r in doi_work_ids]
-        all_work_ids = [int(item) for item in
-                        set(lines) - set(dois)] + doi_work_ids
+        all_work_ids = [int(item) if item.isnumeric() else item for item in set(lines) - set(dois)] + doi_work_ids
         enqueue_jobs(all_work_ids, priority=0,
                      methods=methods,
                      fast_queue_priority=fast_queue_priority)
@@ -195,7 +193,7 @@ def main():
             sleep(10)
             continue
         jobs_map = {job['work_id']: job for job in jobs}
-        works = base_works_query().filter(
+        works = base_slow_queue_works_query().filter(
             models.Work.paper_id.in_([job['work_id'] for job in jobs])
         ).all()
 
