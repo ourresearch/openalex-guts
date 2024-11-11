@@ -13,7 +13,7 @@ from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_t
 import models
 from app import REDIS_QUEUE_URL, db, logger
 from models import REDIS_WORK_QUEUE
-from scripts.works_query import base_works_query
+from scripts.works_query import base_slow_queue_works_query
 from util import elapsed, work_has_null_author_ids
 
 _redis = Redis.from_url(REDIS_QUEUE_URL)
@@ -166,7 +166,7 @@ class QueueWorkAddEverything:
         job_time = time()
 
         try:
-            objects = base_works_query().filter(
+            objects = base_slow_queue_works_query().filter(
                 models.Work.paper_id.in_(object_ids)
             ).all()
         except Exception as e:
@@ -174,7 +174,7 @@ class QueueWorkAddEverything:
             objects = []
             for object_id in object_ids:
                 try:
-                    objects += base_works_query().filter(
+                    objects += base_slow_queue_works_query().filter(
                         models.Work.paper_id == object_id
                     ).all()
                 except Exception as e:
