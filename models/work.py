@@ -302,15 +302,10 @@ class Work(db.Model):
         is_curation_request_temp = False
 
         curation_requests = self.institution_curation_requests
-        # print("test_curations: ", test_curation_requests)
-        # curation_requests = AffiliationStringCuration.query.filter(
-        #     AffiliationStringCuration.work_id == self.paper_id,
-        #     AffiliationStringCuration.openalex_approve == True
-        #     ).all()
 
         before_all_affiliations = self.affiliations
         before_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
-                               aff.affiliation_id is not None])
+                               aff.original_affiliation is not None])
         record_author_dict_list = []
 
         if self.affiliation_records_sorted:
@@ -428,7 +423,7 @@ class Work(db.Model):
 
                     affiliation_sequence_no += 1
         new_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
-                            aff.affiliation_id is not None])
+                            aff.original_affiliation is not None])
         aff_count_diff = len(new_affiliation_strings) - len(before_affiliation_strings)
         if aff_count_diff < 0:
             if not is_curation_request:
@@ -1420,17 +1415,13 @@ class Work(db.Model):
         """
         before_all_affiliations = self.affiliations
         before_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
-                               aff.affiliation_id is not None])
+                               aff.original_affiliation is not None])
         has_pdf_affiliations = self.has_pdf_affiliations
 
         is_curation_request = False
         is_curation_request_temp = False
 
         curation_requests = self.institution_curation_requests
-        # curation_requests = AffiliationStringCuration.query.filter(
-        #     AffiliationStringCuration.work_id == self.paper_id,
-        #     AffiliationStringCuration.openalex_approve == True
-        #     ).all()
 
         if self.affiliations:
             old_affiliations = {}
@@ -1448,19 +1439,6 @@ class Work(db.Model):
             if not self.affiliation_records_sorted:
                 logger.info(
                     "no affiliation data found in any of the records, skipping this update")
-                # author_sequence_numbers = sorted(list(
-                #     set([aff.author_sequence_number for aff in
-                #          self.affiliations])))
-                # true_sequence_numbers = list(
-                #     range(1, len(author_sequence_numbers) + 1))
-
-                # new_author_sequence_dict = dict(
-                #     zip(author_sequence_numbers, true_sequence_numbers))
-                # for affil in self.affiliations:
-                #     affil.author_sequence_number = new_author_sequence_dict[
-                #         affil.author_sequence_number]
-                #     affil.updated_date = datetime.datetime.utcnow().isoformat()
-                #     affil.author_id = None
                 return
 
             self.affiliations = []
@@ -1492,22 +1470,6 @@ class Work(db.Model):
                         f"{author_sequence_order}_{curr_norm_name}"][
                         "author_id"] \
                         if f"{author_sequence_order}_{curr_norm_name}" in old_affiliations else None
-
-                    ##### commenting this out until ORCID is fixed (can probably remove "update_orcid" as well ######
-                    # Look in old affiliations to see if we have an orcid (only if there is an author_id)
-                    # if old_author_id:
-                    #     old_orcid = old_affiliations[
-                    #         f"{author_sequence_order}_{curr_norm_name}"][
-                    #             "orcid"]
-
-                    # If we have a different orcid, need to run through AND again
-                    # if old_orcid and original_orcid and (original_orcid != old_orcid):
-                    #     old_author_id = None
-                    # elif not old_orcid and original_orcid:
-                    #     old_author_id = None
-                    # elif old_orcid and not original_orcid:
-                    #     old_author_id = None
-                    ######################################################
 
                     for affiliation_dict in author_dict["affiliation"]:
                         raw_affiliation_string = affiliation_dict["name"] if \
@@ -1563,7 +1525,7 @@ class Work(db.Model):
             self.add_affiliations(affiliation_retry_attempts)
 
         new_affiliation_strings = set([aff.original_affiliation for aff in self.affiliations if
-                            aff.affiliation_id is not None])
+                            aff.original_affiliation is not None])
         aff_count_diff = len(new_affiliation_strings) - len(before_affiliation_strings)
         if aff_count_diff < 0:
             if not is_curation_request:
@@ -1588,10 +1550,6 @@ class Work(db.Model):
         record = self.affiliation_records_sorted[0]
 
         curation_requests = self.institution_curation_requests
-        # curation_requests = AffiliationStringCuration.query.filter(
-        #     AffiliationStringCuration.work_id == self.paper_id,
-        #     AffiliationStringCuration.openalex_approve == True
-        #     ).all()
 
         author_sequence_order = 1
         for author_dict in record.cleaned_authors_json:
