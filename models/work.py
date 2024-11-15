@@ -1649,15 +1649,7 @@ class Work(db.Model):
             record = self.crossref_record
         if hasattr(record, "unpaywall") and record.unpaywall:
             self.is_paratext = record.unpaywall.is_paratext
-            if all((self.publisher and 'elsevier' in self.publisher.lower() or (
-                    self.journal and self.journal.publisher_id == 4310320990),
-                    self.oa_status == 'hybrid',
-                    any([loc['license'] == 'publisher-specific-oa' for loc in
-                         record.unpaywall.oa_locations]))) or self.is_springer_ebook:  # https://openalex.zendesk.com/agent/tickets/1747
-                self.oa_status = record.unpaywall.oa_status
-            else:
-                self.oa_status = self.update_oa_status_if_better(
-                    record.unpaywall.oa_status)  # this isn't guaranteed to be accurate, since it may be changed in to_dict()
+            self.oa_status = record.unpaywall.oa_status
             self.best_free_url = record.unpaywall.best_oa_location_url
             self.best_free_version = record.unpaywall.best_oa_location_version
 
@@ -2580,7 +2572,7 @@ class Work(db.Model):
                     and other_location.url_for_pdf not in seen_urls
             ):
                 logger.info(
-                    f'Appending Unpaywall location to work - {self.paper_id}')
+                    f'[{self.paper_id}] Appending Unpaywall location to work - {json.dumps({"landing_page": other_location.url_for_landing_page, "pdf": other_location.url_for_pdf})}')
                 other_location_dict = other_location.to_locations_dict()
 
                 if other_location_dict['pdf_url']:
