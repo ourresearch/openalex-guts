@@ -66,6 +66,7 @@ from models.work_extra_id import WorkExtraIds
 from models.work_related_work import WorkRelatedWork
 from models.work_fwci import WorkFWCI
 from models.work_citations_normalized_percentile import WorkCitationNormPer
+from util import normalize
 
 REDIS_WORK_QUEUE = 'queue:work_store'
 REDIS_ADD_THINGS_QUEUE = 'queue:add_things'
@@ -226,6 +227,10 @@ Record.journals = db.relationship(
             foreign(Record.journal_issn_l).is_(None),
             or_(foreign(Record.genre).ilike('%conference%'), foreign(Record.genre).ilike('%proceeding%')),
             foreign(Record.normalized_conference) == remote(Source.normalized_conference)
+        ),
+        and_(
+            foreign(Record.journal_issn_l).is_(None),
+            func.normalize_title(foreign(Record.venue_name)) == remote(Source.normalized_name)
         )
     )
 )
