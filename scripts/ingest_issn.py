@@ -16,7 +16,8 @@ def get_auth_token():
     username, password = os.environ.get('ISSN_PORTAL_CREDENTIALS').split(':')
 
     if not username or not password:
-        raise ValueError("ISSN Portal credentials not found in environment variables")
+        raise ValueError(
+            "ISSN Portal credentials not found in environment variables")
 
     auth_url = f"https://api.issn.org/authenticate/{username}/{password}"
     response = requests.get(auth_url, headers={"Accept": "application/json"})
@@ -48,6 +49,7 @@ def extract_issn_from_id(id_string):
         if '-' in part and len(part) == 9:
             return part
     return None
+
 
 def get_publisher_id(publisher_name):
     params = {
@@ -130,7 +132,7 @@ def parse_journal(issn_record):
     if not journal['publisher'] and 'provisionActivityStatement' in record:
         journal['publisher'] = record['provisionActivityStatement'].split()[-1]
         journal['original_publisher'] = \
-        record['provisionActivityStatement'].split()[-1]
+            record['provisionActivityStatement'].split()[-1]
 
     if 'name' in record:
         names = record['name'] if isinstance(record['name'], list) else [
@@ -159,23 +161,26 @@ def parse_journal(issn_record):
 
 
 def check_issn_exists(issn: str):
-
     existing_journal = db.session.query(Source).filter(
         issn == any_(Source.issns_text_array)
     ).first()
 
     return existing_journal is not None, existing_journal
 
+
 def doaj_response(issn: str):
     r = requests.get(f'https://doaj.org/toc/{issn}')
     if not r.ok:
         return {'is_in_doaj': False, 'apc_found': False}
     soup = BeautifulSoup(r.text, parser='lxml', features='lxml')
-    zero_apc_tag = soup.find('article', lambda tag: tag.text.contains('no publication fees'))
+    zero_apc_tag = soup.find('article', lambda tag: tag.text.contains(
+        'no publication fees'))
     if zero_apc_tag:
         apc_prices = {'price': 0, 'currency': 'USD'}
-        return {'is_in_doaj': True, 'apc_prices': apc_prices, 'apc_usd': 0, 'apc_found': True}
-    apc_tag = soup.find('article', lambda tag: tag.text.contains('journal charges up to'))
+        return {'is_in_doaj': True, 'apc_prices': apc_prices, 'apc_usd': 0,
+                'apc_found': True}
+    apc_tag = soup.find('article',
+                        lambda tag: tag.text.contains('journal charges up to'))
     if not apc_tag:
         raise Exception('APC data not found in DOAJ')
     apc_prices = []
@@ -187,72 +192,116 @@ def doaj_response(issn: str):
         apc_prices.append({'price': int(price), 'currency': currency})
     return {'is_in_doaj': True,
             'apc_prices': apc_prices,
-            'apc_usd': [price for price in apc_prices if price['currency'] == 'USD'][0],
+            'apc_usd':
+                [price for price in apc_prices if price['currency'] == 'USD'][
+                    0],
             'apc_found': True}
 
 
-def ingest_issn(issn: str, publisher_id=None, is_core=False, is_oa=False) -> tuple[Source, str]:
+def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
+                overwrite_journal_id=None) -> tuple[Source, str]:
+    if overwrite_journal_id:
+        existing_journal = db.session.query(Source).filter(
+            Source.id == overwrite_journal_id).first()
+        if not existing_journal:
+            return None, f'Journal with ID {overwrite_journal_id} not found'
+        issn = existing_journal.issn
+        if not issn:
+            return None, f'Journal with ID {overwrite_journal_id} has no ISSN'
+    elif not issn:
+        return None, 'ISSN must be provided when not overwriting'
+
     token = get_auth_token()
     issn_record = fetch_issn_record(issn, token)
     parsed_journal = parse_journal(issn_record)
 
-    for issn_to_check in parsed_journal['issns']:
-        exists, existing_journal = check_issn_exists(issn_to_check)
-        if exists:
-            return existing_journal, f'Journal already exists: {existing_journal}'
+    if not overwrite_journal_id:
+        for issn_to_check in parsed_journal['issns']:
+            exists, existing_journal = check_issn_exists(issn_to_check)
+            if exists:
+                return existing_journal, f'Journal already exists: {existing_journal}'
 
     doaj_data = doaj_response(issn)
     if not publisher_id:
-        publisher_id = get_publisher_id(publisher_name=parsed_journal['publisher'])
+        publisher_id = get_publisher_id(
+            publisher_name=parsed_journal['publisher'])
         if not publisher_id:
             return None, f'Publisher "{parsed_journal["publisher"]}" not found in OpenAlex. Unable to ingest.'
 
-    new_journal = Source(
+    journal_data = {
         **doaj_data,
-        is_core=is_core,
-        is_oa=doaj_data['is_in_doaj'] or is_oa,
-        display_name=parsed_journal['display_name'],
-        normalized_name=parsed_journal['normalized_name'],
-        issn=parsed_journal['issn'],
-        issns=json.dumps(parsed_journal['issns']),
-        issns_text_array=parsed_journal['issns'],
-        publisher=parsed_journal['publisher'],
-        publisher_id=publisher_id,
-        original_publisher=parsed_journal['publisher'],
-        webpage=parsed_journal['webpage'],
-        type=parsed_journal['type'],
-        country=parsed_journal['country'],
-        country_code=parsed_journal['country_code'],
-        alternate_titles=parsed_journal['alternate_titles'],
-        abbreviated_title=parsed_journal['abbreviated_title'],
-        updated_date=datetime.now(),
-        created_date=datetime.now(),
-    )
+        'is_core': is_core,
+        'is_oa': doaj_data['is_in_doaj'] or is_oa,
+        'display_name': parsed_journal['display_name'],
+        'normalized_name': parsed_journal['normalized_name'],
+        'issn': parsed_journal['issn'],
+        'issns': json.dumps(parsed_journal['issns']),
+        'issns_text_array': parsed_journal['issns'],
+        'publisher': parsed_journal['publisher'],
+        'publisher_id': publisher_id,
+        'original_publisher': parsed_journal['publisher'],
+        'webpage': parsed_journal['webpage'],
+        'type': parsed_journal['type'],
+        'country': parsed_journal['country'],
+        'country_code': parsed_journal['country_code'],
+        'alternate_titles': parsed_journal['alternate_titles'],
+        'abbreviated_title': parsed_journal['abbreviated_title'],
+        'updated_date': datetime.now()
+    }
 
     try:
-        db.session.add(new_journal)
-        db.session.commit()
-        return new_journal, None
+        if overwrite_journal_id:
+            for key, value in journal_data.items():
+                setattr(existing_journal, key, value)
+
+            db.session.commit()
+            return existing_journal, None
+        else:
+            # Create new journal
+            journal_data['created_date'] = datetime.now()
+            new_journal = Source(**journal_data)
+            db.session.add(new_journal)
+            db.session.commit()
+            return new_journal, None
+
     except Exception as e:
         db.session.rollback()
-        raise Exception(f"Failed to insert new journal record: {str(e)}") from e
+        raise Exception(
+            f"Failed to {'update' if overwrite_journal_id else 'insert'} journal record: {str(e)}") from e
 
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--issn', type=str, help='ISSN to ingest')
-    parser.add_argument('--publisher_id', type=int, help='Publisher ID override', required=False, default=None)
-    parser.add_argument('--is_core', type=bool, help='is_core override', required=False, default=False)
-    parser.add_argument('--is_oa', type=bool, help='is_oa override', required=False, default=False)
+    parser.add_argument('--issn', type=str,
+                        help='ISSN to ingest (not required when using --overwrite_journal_id)',
+                        required=False)
+    parser.add_argument('--publisher_id', type=int,
+                        help='Publisher ID override', required=False,
+                        default=None)
+    parser.add_argument('--is_core', type=bool, help='is_core override',
+                        required=False, default=False)
+    parser.add_argument('--is_oa', type=bool, help='is_oa override',
+                        required=False, default=False)
+    parser.add_argument('--overwrite_journal_id', type=int,
+                        help='Journal ID to overwrite', required=False,
+                        default=None)
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
-    source, error = ingest_issn(args.issn, args.publisher_id, args.is_core, args.is_oa)
+    if not args.issn and not args.overwrite_journal_id:
+        print("Error: Either --issn or --overwrite_journal_id must be provided")
+        return
+
+    source, error = ingest_issn(args.issn, args.publisher_id, args.is_core,
+                                args.is_oa, args.overwrite_journal_id)
     if error:
         print(error)
         return
-    print(f'New journal created: {source}')
+    print(
+        f'Journal {"updated" if args.overwrite_journal_id else "created"}: {source}')
+
 
 if __name__ == '__main__':
     main()
