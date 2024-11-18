@@ -137,7 +137,7 @@ def refresh_single(doi):
         'SELECT id, work_id FROM ins.recordthresher_record WHERE doi = :doi AND record_type = :record_type AND work_id > 0',
         {'doi': doi, 'record_type': 'crossref_doi'}).fetchone()
     upw_responses = get_upw_responses([doi])
-    upsert_in_db(upw_responses[0]['response_jsonb'], recordthresher_id, doi)
+    upsert_in_db(upw_responses[0]['response_jsonb'], recordthresher_id.encode(), doi)
     enqueue_jobs([work_id], priority=0)
     db.session.commit()
 
