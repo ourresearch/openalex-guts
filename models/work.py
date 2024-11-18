@@ -1776,6 +1776,13 @@ class Work(db.Model):
         return sorted(records, key=lambda record: (record.score, record.cleaned_affiliations_count), reverse=True)
 
     @property
+    def override_record(self):
+        for record in self.records_sorted:
+            if record.record_type == 'override':
+                return record
+        return None
+
+    @property
     def only_mag_records(self):
         if self.records_merged:
             return all(
@@ -2094,6 +2101,13 @@ class Work(db.Model):
         publisher_str = (self.journal and self.journal.publisher) or self.publisher
         if publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower()):
             return not self.is_oa
+        return False
+
+    @property
+    def is_manual_closed(self):
+        for record in self.records_sorted:
+            if record.record_type == 'override' and not record.is_oa:
+                return True
         return False
 
     @property
@@ -2492,7 +2506,7 @@ class Work(db.Model):
                     'doi': doi_url,
                 }
 
-                if self.is_springer_ebook:
+                if self.is_springer_ebook or self.is_manual_closed:
                     override_all_oa_false = True
                 # bare minimum: include the DOI as the landing page URL
                 if not doi_location['landing_page_url']:
@@ -2666,6 +2680,34 @@ class Work(db.Model):
 
             locations.append(lastchance_location)
 
+        if (r := self.override_record) and (r.work_pdf_url or r.record_webpage_url) and (r.work_pdf_url not in seen_urls and r.record_webpage_url not in seen_urls):
+            override_location = {
+                'source': r.journal and r.journal.to_dict(
+                        return_level='minimum'),
+                'pdf_url': r.work_pdf_url,
+                'landing_page_url': r.record_webpage_url,
+                'version': r.open_version,
+                'license': r.display_open_license,
+                'license_id': r.display_open_license_id,
+                'is_oa': r.is_oa,
+            }
+
+            if not override_location['version']:
+                override_location['version'] = self.guess_version()
+
+            override_location['is_accepted'] = is_accepted(
+                override_location['version'])
+            override_location['is_published'] = is_published(
+                override_location['version'])
+
+            if override_location['pdf_url']:
+                seen_urls.add(override_location['pdf_url'])
+
+            if override_location['landing_page_url']:
+                seen_urls.add(override_location['landing_page_url'])
+
+            locations.append(override_location)
+
         # Sources created manually using only the original_venue property from works that otherwise don't have Sources
         # ! Note that this does name matching of sources, which is problematic. I'm too nervous to change it now because I don't know how many works it will affect, so I'm just hard-coding manual exceptions.
         source_match_exceptions = ['Zoonoses']
@@ -2817,7 +2859,7 @@ class Work(db.Model):
         is_oa = self.is_oa
         oa_status = self.oa_status or "closed"
         # Springer e-book exception
-        if self.is_springer_ebook:
+        if self.is_springer_ebook or self.is_manual_closed:
             self.oa_status = oa_status = 'closed'
         # if is_oa and oa_status are inconsistent, we need to fix
         elif is_oa is False and oa_status != 'closed':
