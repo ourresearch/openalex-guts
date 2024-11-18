@@ -24,6 +24,7 @@ gunicorn==20.1.0
 heroku3==4.2.3
 humanfriendly==9.1
 gspread~=6.1.4
+google-api-python-client~=2.151.0
 idna==2.7
 itsdangerous==2.0.1
 Jinja2==3.0.1
