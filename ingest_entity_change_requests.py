@@ -33,7 +33,8 @@ WORK_COLUMN_MAP = {
     'Where can we find the fulltext or pdf?\n\n👉 paste the URL that links to the open version of the fulltext or pdf': 'fulltext_url',
     'How is the work licensed?\n\n👉 Select the licence type from the list below.\n': 'license',
     'What is the Work ID of the record that appears to be the main record (i.e., has more metadata available).\n\n👉 Paste a single Work ID, like "W2884670852"\n\n(how to find a work ID)': 'merge_into',
-    'Which Work ID(s) are duplicates of the main record?\n\n👉 Paste a single Work ID, like "W2884670852", or multiple Work IDs separated by commas, like "W2884670852,W2317271409"\n\n(how to find a work ID)': 'merge_duplicates'
+    'Which Work ID(s) are duplicates of the main record?\n\n👉 Paste a single Work ID, like "W2884670852", or multiple Work IDs separated by commas, like "W2884670852,W2317271409"\n\n(how to find a work ID)': 'merge_duplicates',
+    'Finally, which OA color should this work be?': 'oa_status'
 }
 
 SOURCE_COLUMN_MAP = {
@@ -104,8 +105,12 @@ class GoogleSheetsClient:
 
 
 class EntityHandler:
+
+    HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY")
+
     def __init__(self, oax_db_session):
         self.oax_db_session = oax_db_session
+        self.heroku_conn = heroku3.from_key(self.HEROKU_API_KEY)
         self.changes_made = False
 
     def log_change(self, field_name: str, before, after):
@@ -212,6 +217,11 @@ class SourceHandler(EntityHandler):
                 self.log_change("merge_into_date", source.merge_into_date,
                                 datetime.now())
 
+    def fast_store_source(self, source_id ):
+        app = self.heroku_conn.apps()["openalex-guts"]
+        command = f"python -m scripts.fast_queue --entity=source --method=store --id={source_id}"
+        app.run_command(command, printout=False)
+
     def process_rows(self, df):
         for row in df.to_dict('records'):
             self.changes_made = False
@@ -254,6 +264,7 @@ class SourceHandler(EntityHandler):
 
                 if self.changes_made:
                     self.oax_db_session.commit()
+                    self.fast_store_source(source.id)
                     print("✓ Changes committed successfully")
                 else:
                     print("✓ No changes needed")
@@ -263,11 +274,9 @@ class SourceHandler(EntityHandler):
 
 
 class WorkHandler(EntityHandler):
-    HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY")
 
     def __init__(self, oax_db_session, unpaywall_db_session):
         self.unpaywall_db_session = unpaywall_db_session
-        self.heroku_conn = heroku3.from_key(self.HEROKU_API_KEY)
         super().__init__(oax_db_session)
 
     def refresh_in_unpaywall(self, doi):
@@ -298,7 +307,7 @@ class WorkHandler(EntityHandler):
             else:
                 raise
 
-    def manual_open_in_openalex(self, work_id, fulltext_url):
+    def manual_open_in_openalex(self, work_id, fulltext_url, oa_status=None):
         existing_record = self.oax_db_session.execute(
             '''
             SELECT id FROM ins.recordthresher_record
@@ -308,21 +317,33 @@ class WorkHandler(EntityHandler):
         ).fetchone()
 
         if existing_record:
+            recordthresher_id = existing_record[0]
             self.oax_db_session.execute(
                 '''
                 UPDATE ins.recordthresher_record
-                SET is_oa = TRUE, work_pdf_url = :fulltext_url
+                SET is_oa = TRUE, work_pdf_url = :fulltext_url, is_work_pdf_url_free_to_read = TRUE
                 WHERE id = :record_id
                 ''',
-                {"fulltext_url": fulltext_url, "record_id": existing_record[0]}
+                {"fulltext_url": fulltext_url, "record_id": recordthresher_id}
             )
         else:
-            self.oax_db_session.execute(
+            result = self.oax_db_session.execute(
                 '''
                 INSERT INTO ins.recordthresher_record (id, work_id, record_type, is_oa, work_pdf_url)
                 VALUES (make_recordthresher_id(), :work_id, 'override', TRUE, :fulltext_url)
+                RETURNING id
                 ''',
                 {"work_id": work_id, "fulltext_url": fulltext_url}
+            )
+            recordthresher_id = result.fetchone()[0]
+
+        if oa_status:
+            self.oax_db_session.execute(
+                '''
+                INSERT INTO ins.oa_status_manual (recordthresher_id, oa_status)
+                VALUES (:id, :oa_status)
+                ''',
+                {"id": recordthresher_id, "oa_status": oa_status}
             )
 
         self.oax_db_session.commit()
@@ -356,6 +377,14 @@ class WorkHandler(EntityHandler):
 
         self.oax_db_session.commit()
 
+    @staticmethod
+    def _get_oa_status(oa_status_str):
+        statuses = {'green', 'gold', 'bronze', 'hybrid', 'diamond'}
+        for status in statuses:
+            if status in oa_status_str.lower():
+                return status
+        return 'bronze'
+
     def change_title(self, work: Work, new_title: str) -> None:
         if not new_title:
             return
@@ -364,7 +393,7 @@ class WorkHandler(EntityHandler):
             work.updated_date = datetime.now()
             self.changes_made = True
 
-    def change_oa_status(self, work: Work, is_oa: str, url: str = '') -> None:
+    def change_oa_status(self, work: Work, is_oa: str, url: str = '', oa_status: str ='') -> None:
         if not is_oa and not url:
             return
         new_status = 'open' if is_oa.upper() == 'TRUE' or url else 'closed'
@@ -377,7 +406,7 @@ class WorkHandler(EntityHandler):
                 if not url:
                     raise ValueError(
                         'URL must be provided to manually open a work')
-                self.manual_open_in_openalex(work.id, url)
+                self.manual_open_in_openalex(work.id, url, oa_status)
             else:
                 upw_response = self.get_unpaywall_response(work.doi)
                 if upw_response['is_oa']:
@@ -391,11 +420,12 @@ class WorkHandler(EntityHandler):
                         if not url:
                             raise ValueError('URL must be provided to manually open a work')
                         response_jsonb_override = {"pdf_url": url}
+                        if oa_status:
+                            response_jsonb_override['oa_status_set'] = self._get_oa_status(oa_status)
                         self.unpaywall_db_session.execute('INSERT INTO oa_manual (doi, response_jsonb) VALUES (:doi, :response_jsonb)', {'doi': work.doi.lower(), 'response_jsonb': json.dumps(response_jsonb_override)})
                         self.unpaywall_db_session.commit()
                 self.update_in_unpaywall(work.doi.lower())
                 unpaywall_recordthresher_refresh(work.doi.lower())
-        enqueue_slow_queue(work.id, priority=-1, fast_queue_priority=-1)
         work.updated_date = datetime.now()
         self.changes_made = True
 
@@ -462,7 +492,7 @@ class WorkHandler(EntityHandler):
                     self.change_title(work, row['title'])
                 # Do not do oa status edit type for now, the form only specifies open/closed, we need to know if green, bronze, etc
                 elif 'oa status' in edit_type:
-                    self.change_oa_status(work, row['is_oa'], row['fulltext_url'])
+                    self.change_oa_status(work, row['is_oa'], row['fulltext_url'], row['oa_status'])
                 elif 'language' in edit_type:
                     self.change_language(work, row['language'])
                 elif 'source' in edit_type:
@@ -476,6 +506,8 @@ class WorkHandler(EntityHandler):
 
                 if self.changes_made:
                     self.oax_db_session.commit()
+                    enqueue_slow_queue(work.id, priority=-1,
+                                       fast_queue_priority=-1)
                     print("✓ Changes committed successfully")
                 else:
                     print("✓ No changes needed")
