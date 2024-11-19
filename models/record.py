@@ -153,6 +153,19 @@ class Record(db.Model):
         return best_record
 
     @cached_property
+    def oa_status_manual(self):
+        result = db.session.execute(
+            '''
+            SELECT oa_status 
+            FROM ins.oa_status_manual 
+            WHERE recordthresher_id = :recordthresher_id
+            ''',
+            {'recordthresher_id': self.id}
+        ).first()
+
+        return result['oa_status'] if result else None
+
+    @cached_property
     def with_parsed_data(self):
         parsed_records = {'parseland_record': self.parseland_record,
                           'pdf_record': self.pdf_record,
