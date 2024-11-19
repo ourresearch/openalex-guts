@@ -2116,7 +2116,7 @@ class Work(db.Model):
 
     @cached_property
     def is_oa(self):
-        return True if self.oa_locations else False
+        return bool(self.oa_locations) and not self.is_closed_in_unpaywall
 
     @cached_property
     def type_crossref_calculated(self):
@@ -2482,6 +2482,14 @@ class Work(db.Model):
 
         return journal_id_match or publisher_host_type_match or legacy_mag_match
 
+    @property
+    def override_location_record(self):
+        if r := self.override_record:
+            if r.work_pdf_url or r.record_webpage_url:
+                return r
+        return None
+
+
     @cached_property
     def dict_locations(self):
         from models.location import is_accepted, is_published
@@ -2680,7 +2688,7 @@ class Work(db.Model):
 
             locations.append(lastchance_location)
 
-        if (r := self.override_record) and (r.work_pdf_url or r.record_webpage_url) and (r.work_pdf_url not in seen_urls and r.record_webpage_url not in seen_urls):
+        if (r := self.override_location_record) and (r.work_pdf_url not in seen_urls and r.record_webpage_url not in seen_urls):
             override_location = {
                 'source': r.journal and r.journal.to_dict(
                         return_level='minimum'),
@@ -2811,6 +2819,18 @@ class Work(db.Model):
                     [line.strip() for line in clean_fulltext.splitlines() if
                      line.strip()])
                 return clean_fulltext
+
+    @property
+    def unpaywall(self):
+        if self.crossref_record and self.crossref_record.unpaywall:
+            return self.crossref_record.unpaywall
+        return None
+
+    @cached_property
+    def is_closed_in_unpaywall(self):
+        if self.unpaywall:
+            return self.unpaywall.oa_status == 'closed'
+        return False
     
     def get_final_keywords(self):
         # Adding in leaf concepts
@@ -2874,6 +2894,10 @@ class Work(db.Model):
         if oa_status == 'gold' and self.apc_list and self.apc_list.get(
                 'value') == 0:
             oa_status = self.oa_status = 'diamond'
+
+        if r := self.override_location_record:
+            if r.oa_status_manual:
+                oa_status = self.oa_status = r.oa_status_manual
 
         response = {
             "id": self.openalex_id,
