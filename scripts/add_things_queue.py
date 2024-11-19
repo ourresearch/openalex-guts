@@ -117,6 +117,7 @@ def enqueue_txt_file(fname, methods=None, fast_queue_priority=None):
                 params={'dois': dois}).fetchall()
             doi_work_ids = [r[0] for r in doi_work_ids]
         all_work_ids = [int(item) if item.isnumeric() else item for item in set(lines) - set(dois)] + doi_work_ids
+        all_work_ids = list(set(all_work_ids))
         enqueue_jobs(all_work_ids, priority=0,
                      methods=methods,
                      fast_queue_priority=fast_queue_priority)
@@ -165,7 +166,9 @@ def enqueue_from_sql(sql_query, methods=None, fast_queue_priority=None):
 def main():
     args = parse_args()
     if args.filename:
-        enqueue_txt_file(args.filename)
+        enqueue_txt_file(args.filename,
+                         methods=args.methods,
+                         fast_queue_priority=args.fast_queue_priority)
         return
     elif args.filter:
         enqueue_from_api(args.filter,
