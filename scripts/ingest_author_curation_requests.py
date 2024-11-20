@@ -17,6 +17,9 @@ AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 GCLOUD_AUTHOR_CURATION_CREDS = os.getenv('GCLOUD_AUTHOR_CURATION')
 
+logger.info("g_cloud_cred_type: ", type(GCLOUD_AUTHOR_CURATION_CREDS))
+logger.info("g_cloud_cred: ", GCLOUD_AUTHOR_CURATION_CREDS['type'])
+
 # the following actions are allowed by this curation workflow
 workflows_allowed = ['Merge another profile into mine','Change the display name', 'Remove works from my profile','Add works to my profile']
 
