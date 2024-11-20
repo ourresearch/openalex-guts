@@ -13,10 +13,9 @@ from google.oauth2 import service_account
 from app import logger
 
 # load config vars
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_ACCESS_KEY_ID = os.getenv('AWS_SAGEMAKER_ACCOUNT_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SAGEMAKER_ACCOUNT_SECRET')
 GCLOUD_AUTHOR_CURATION_CREDS = os.getenv('GCLOUD_AUTHOR_CURATION')
-logger.info("g_cloud_cred: ", GCLOUD_AUTHOR_CURATION_CREDS[:10])
 
 # the following actions are allowed by this curation workflow
 workflows_allowed = ['Merge another profile into mine','Change the display name', 'Remove works from my profile','Add works to my profile']
@@ -24,8 +23,6 @@ workflows_allowed = ['Merge another profile into mine','Change the display name'
 # define the scope
 scope = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/spreadsheets']
 creds_dict = json.loads(GCLOUD_AUTHOR_CURATION_CREDS.replace('\\\n', '\\n'))
-logger.info("g_cloud_cred_type: ", type(creds_dict))
-logger.info("g_cloud_cred: ", creds_dict['type'])
 
 # add credentials to the account
 creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=scope)
