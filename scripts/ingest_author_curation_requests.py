@@ -22,7 +22,7 @@ workflows_allowed = ['Merge another profile into mine','Change the display name'
 
 # define the scope
 scope = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/spreadsheets']
-creds_dict = json.loads(GCLOUD_AUTHOR_CURATION_CREDS)
+creds_dict = json.loads(GCLOUD_AUTHOR_CURATION_CREDS.replace('\\\n', '\\n'))
 
 # add credentials to the account
 creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=scope)
