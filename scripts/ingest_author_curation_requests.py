@@ -10,6 +10,7 @@ from nameparser import HumanName
 from unidecode import unidecode
 import gspread
 from google.oauth2 import service_account
+from app import logger
 
 # load config vars
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -47,7 +48,7 @@ def get_secret(secret_name = "prod/psqldb/conn_string"):
             SecretId=secret_name
         )
     except:
-        print("Can't get secret")
+        logger.info("Can't get secret")
 
     # Decrypts secret using the associated KMS key.
     secret_string = get_secret_value_response['SecretString']
@@ -133,12 +134,12 @@ def check_block_vs_block_reg(block_1_names_list, block_2_names_list):
     # check first names
     first_check, _ = match_block_names(block_1_names_list[0], block_1_names_list[1], block_2_names_list[0], 
                                     block_2_names_list[1])
-    # print(f"FIRST {first_check}")
+    # logger.info(f"FIRST {first_check}")
     
     if first_check:
         last_check, _ = match_block_names(block_1_names_list[-2], block_1_names_list[-1], block_2_names_list[-2], 
                                            block_2_names_list[-1])
-        # print(f"LAST {last_check}")
+        # logger.info(f"LAST {last_check}")
         if last_check:
 
             # check to see if first name in last and last name in first
@@ -189,7 +190,7 @@ def check_block_vs_block_reg(block_1_names_list, block_2_names_list):
             return 0
     else:
         swap_check = check_if_last_name_swapped_to_front_creates_match(block_1_names_list, block_2_names_list)
-        # print(f"SWAP {swap_check}")
+        # logger.info(f"SWAP {swap_check}")
         if swap_check:
             return 1
         else:
@@ -662,7 +663,7 @@ def freeze_author_id(author_id, email, session_cur, session_conn):
 def get_best_authorship(author_id, work_id, session_conn, session_cur):
     session_cur.execute("select display_name from mid.author where author_id = %s", (author_id,))
     author_name = session_cur.fetchone()[0]
-    print("Matching authorships to: ", author_name)
+    logger.info("Matching authorships to: ", author_name)
 
     author_name_blocked = get_name_match_list_reg(transform_name_for_search(transform_author_name(author_name)))
 
@@ -727,20 +728,20 @@ def merge_author_profiles(curation_data, sheet_instance):
 
                     author_id_to_merge = check_author_id(author_id_to_merge)
                     if author_id_to_merge == 0:
-                        print(f'Invalid author id to merge: {author_id_to_merge}')
+                        logger.info(f'Invalid author id to merge: {author_id_to_merge}')
                         author_ids_bad_merge.append(author_id_to_merge)
                         continue
                     elif author_id == author_id_to_merge:
-                        print(f'Author id and author id to merge are the same: {author_id}')
+                        logger.info(f'Author id and author id to merge are the same: {author_id}')
                         author_ids_bad_merge.append(author_id_to_merge)
                         continue
                     elif (main_orcid != merge_orcid) and (main_orcid != '') and (merge_orcid != ''):
-                        print(f'ORCID for author id {author_id} does not match ORCID for author id to merge {author_id_to_merge}')
+                        logger.info(f'ORCID for author id {author_id} does not match ORCID for author id to merge {author_id_to_merge}')
                         author_ids_bad_merge.append(author_id_to_merge)
                         continue
                     else:
                         try:
-                            print(f'Merging author {author_id_to_merge} into author {author_id}')
+                            logger.info(f'Merging author {author_id_to_merge} into author {author_id}')
                             cur.execute("insert into authorships.author_id_merges (merge_from_id, merge_to_id, request_type, request_date) values (%s, %s, %s, now())", 
                                         (author_id_to_merge, author_id, "user_curation"))
                             cur.execute("update mid.author set merge_into_id = %s, merge_into_date = now() where author_id = %s", (author_id, author_id_to_merge))
@@ -783,13 +784,13 @@ def remove_works_from_profile(curation_data, sheet_instance):
                     work_id_to_remove = work_ids_to_remove[0]
                     work_id_to_remove = check_work_id(work_id_to_remove)
                     if work_id_to_remove == 0:
-                        print(f'Invalid work id to remove: {work_id_to_remove}')
+                        logger.info(f'Invalid work id to remove: {work_id_to_remove}')
                         work_ids_bad_remove.append(work_id_to_remove)
                         continue
                     else:
                         try:
                             random_int = random.randint(1, 39)
-                            print(f'Removing work {work_id_to_remove} from author {author_id}')
+                            logger.info(f'Removing work {work_id_to_remove} from author {author_id}')
                             cur.execute("insert into authorships.remove_works (paper_id, author_id, request_type, request_date, partition_col) values (%s, %s, 'user_curation', now(), %s)", 
                                         (work_id_to_remove, author_id, random_int))
                             cur.execute("update mid.affiliation set updated_date = now(), author_id = null where author_id = %s and paper_id = %s", 
@@ -803,19 +804,19 @@ def remove_works_from_profile(curation_data, sheet_instance):
                     for work_id_to_remove in work_ids_to_remove:
                         work_id_to_remove = check_work_id_and_get_seq_no(work_id_to_remove, author_id)
                         if work_id_to_remove == '0':
-                            print(f'Invalid work author id to remove: {work_id_to_remove}')
+                            logger.info(f'Invalid work author id to remove: {work_id_to_remove}')
                             work_ids_bad_remove.append(work_id_to_remove)
                             continue
                         else:
                             final_work_ids_to_remove.append(work_id_to_remove)
 
                     if final_work_ids_to_remove:
-                        print("Moving all works to a new cluster")
+                        logger.info("Moving all works to a new cluster")
                         cluster_label = f"{final_work_ids_to_remove[0]}_user_curation_{datetime.now().strftime('%Y%m%d%H')}"
                         for work_id_to_remove in final_work_ids_to_remove:
                             try:
                                 random_int = random.randint(1, 39)
-                                print(f'- Removing work {work_id_to_remove} from author {author_id}')
+                                logger.info(f'- Removing work {work_id_to_remove} from author {author_id}')
                                 cur.execute("insert into authorships.overmerged_authors (work_author_id_for_cluster, all_works_To_cluster, request_type, request_date, partition_col) values (%s, %s, 'user_curation', now(), %s)", 
                                             (cluster_label, work_id_to_remove, random_int))
                                 conn.commit()
@@ -857,24 +858,24 @@ def add_works_to_profile(curation_data, sheet_instance):
                 for work_id_to_add in work_ids_to_add:
                     work_id_to_add = check_work_id(work_id_to_add)
                     if work_id_to_add == 0:
-                        print(f'Invalid work id to add: {work_id_to_add}')
+                        logger.info(f'Invalid work id to add: {work_id_to_add}')
                         work_ids_bad_add.append(work_id_to_add)
                         continue
                     else:
                         author_sequence_number = get_best_authorship(author_id, work_id_to_add, conn, cur)
                         if author_sequence_number == -1:
-                            print(f'Could not find a good match for work id {work_id_to_add}')
+                            logger.info(f'Could not find a good match for work id {work_id_to_add}')
                             work_ids_bad_add.append(work_id_to_add)
                             continue
                         elif author_sequence_number == -2:
-                            print(f'Author ID is already matched to this work')
+                            logger.info(f'Author ID is already matched to this work')
                             work_ids_bad_add.append(work_id_to_add)
                             continue
                         else:
                             try:
                                 work_author_id = f"{work_id_to_add}_{author_sequence_number}"
                                 random_int = random.randint(1, 39)
-                                print(f'Adding work {work_id_to_add} to author {author_id}')
+                                logger.info(f'Adding work {work_id_to_add} to author {author_id}')
                                 cur.execute("insert into authorships.add_works (work_author_id, new_author_id, request_type, request_date, partition_col) values (%s, %s, 'user_curation', now(), %s)", 
                                             (work_author_id, author_id, random_int))
                                 conn.commit()
@@ -910,7 +911,7 @@ def change_display_name(curation_data, sheet_instance):
                 author_id_found = cur.fetchone()
                 if author_id_found:
                     # update table for new display name
-                    print(f'Updating display name for author {author_id}: {row["display_name_requested"]}')
+                    logger.info(f'Updating display name for author {author_id}: {row["display_name_requested"]}')
                     cur.execute("update authorships.change_author_display_name set new_display_name = %s, request_date = now() where author_id = %s", 
                                 (row['display_name_requested'], author_id))
                     conn.commit()
@@ -919,7 +920,7 @@ def change_display_name(curation_data, sheet_instance):
                         cur.execute("insert into authorships.change_author_display_name (author_id, new_display_name, requested_by, request_date) values (%s, %s, 'user_curation', now())", 
                                     (author_id, row['display_name_requested']))
                         conn.commit()
-                        print(f'Adding display name for author {author_id}: {row["display_name_requested"]}')
+                        logger.info(f'Adding display name for author {author_id}: {row["display_name_requested"]}')
                     except:
                         conn.rollback
                         _ = sheet_instance.update([["no", "Error updating display name"]], 
@@ -962,33 +963,33 @@ def main():
 
         # Merge profiles
         if new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0]>0:
-            print("---- New profile merge requests: ", new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0])
+            logger.info("---- New profile merge requests: ", new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0])
             _ = merge_author_profiles(new_data[new_data['workflow_type']=='Merge another profile into mine'].copy(), sheet_instance)
         else:
-            print("---- No new profile merge requests")
+            logger.info("---- No new profile merge requests")
 
         # Remove works
         if new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0]>0:
-            print("---- New works removal requests: ", new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0])
+            logger.info("---- New works removal requests: ", new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0])
             _ = remove_works_from_profile(new_data[new_data['workflow_type']=='Remove works from my profile'].copy(), sheet_instance)
         else:
-            print("---- No new remove works requests")
+            logger.info("---- No new remove works requests")
 
         # Add works
         if new_data[new_data['workflow_type']=='Add works to my profile'].shape[0]>0:
-            print("---- New works addition requests: ", new_data[new_data['workflow_type']=='Add works to my profile'].shape[0])
+            logger.info("---- New works addition requests: ", new_data[new_data['workflow_type']=='Add works to my profile'].shape[0])
             _ = add_works_to_profile(new_data[new_data['workflow_type']=='Add works to my profile'].copy(), sheet_instance)
         else:
-            print("---- No new add works requests")
+            logger.info("---- No new add works requests")
 
         # Change display name
         if new_data[new_data['workflow_type']=='Change the display name'].shape[0]>0:
-            print("---- New display name change requests: ", new_data[new_data['workflow_type']=='Change the display name'].shape[0])
+            logger.info("---- New display name change requests: ", new_data[new_data['workflow_type']=='Change the display name'].shape[0])
             _ = change_display_name(new_data[new_data['workflow_type']=='Change the display name'].copy(), sheet_instance)
         else:
-            print("---- No new display name change requests")
+            logger.info("---- No new display name change requests")
     else:
-        print("No new data to process")
+        logger.info("No new data to process")
 
 if __name__ == '__main__':
     main()
