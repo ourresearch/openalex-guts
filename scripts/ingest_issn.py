@@ -6,10 +6,13 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from sqlalchemy import any_
 
+from models import Publisher
 from models.source import Source
 from app import db
 
 import requests
+
+from scripts.add_things_queue import enqueue_dois
 
 
 def get_auth_token():
@@ -61,6 +64,78 @@ def get_publisher_id(publisher_name):
     if not j['results']:
         return None
     return j['results'][0]['id'].split('/P')[-1]
+
+
+def add_publisher(publisher_name):
+    params = {'query': publisher_name}
+    r = requests.get('https://api.ror.org/organizations', params=params)
+    r.raise_for_status()
+    j = r.json()
+
+    if not j['items']:
+        return None
+
+    ror_obj = j['items'][0]
+
+    p = Publisher()
+    p.created_date = datetime.now()
+    p.display_name = ror_obj.get('name')
+    p.alternate_titles = ror_obj.get('aliases', [])
+    p.country_codes = [ror_obj.get('country', {}).get('country_code')]
+    p.parent_publisher = None
+    p.hierarchy_level = None
+    p.ror_id = ror_obj.get('id')
+    p.wikidata_id = ror_obj.get('external_ids', {}).get('Wikidata', {}).get(
+        'preferred')
+    if p.wikidata_id:
+        p.wikidata_id = 'https://www.wikipedia.org/entity/' + p.wikidata_id
+    p.homepage_url = ror_obj.get('links', [None])[0]
+    p.image_url = None
+    p.image_thumbnail_url = None
+    p.country_name = ror_obj.get('country', {}).get('country_name')
+
+    db.session.add(p)
+    db.session.commit()
+    p.store()
+    return p
+
+
+
+def crossref_issn_works(issn):
+    api_key = os.environ['CROSSREF_API_KEY']
+    cursor = '*'
+    params = {'select': 'DOI', 'cursor': cursor, 'rows': '100'}
+    headers = {
+        "crossref-api-key": api_key
+    }
+    while cursor:
+        r = requests.get(f'https://api.crossref.org/journals/{issn}/works',
+                         headers=headers,
+                         params=params)
+        r.raise_for_status()
+        j = r.json()
+
+        total_results = j['message'].get('total-results', 0)
+
+        for result in j['message']['items']:
+            yield result['DOI'], total_results
+
+        cursor = j.get('message', {}).get('next-cursor')
+
+
+def enqueue_issn_works_to_slow_queue(issn):
+    chunk_size = 100
+    chunk = []
+    count = 0
+    for i, (doi, total_results) in enumerate(crossref_issn_works(issn)):
+        chunk.append(doi)
+        total_works = total_results
+        count += 1
+
+        if len(chunk) >= chunk_size:
+            enqueue_dois(chunk, priority=-1, fast_queue_priority=-1)
+            chunk.clear()
+            print(f'{count}/{total_works} works enqueued to slow queue')
 
 
 def parse_journal(issn_record):
@@ -226,7 +301,11 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
         publisher_id = get_publisher_id(
             publisher_name=parsed_journal['publisher'])
         if not publisher_id:
-            return None, f'Publisher "{parsed_journal["publisher"]}" not found in OpenAlex. Unable to ingest.'
+            if p := add_publisher(parsed_journal['publisher']):
+                publisher_id = p.publisher_id
+                print(f'New Publisher created: {p}')
+            else:
+                return None, f'Publisher "{parsed_journal["publisher"]}" not found in OpenAlex. Unable to ingest.'
 
     journal_data = {
         **doaj_data,
@@ -262,6 +341,8 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
             new_journal = Source(**journal_data)
             db.session.add(new_journal)
             db.session.commit()
+            print('Enqueueing works with matching ISSN to slow queue')
+            enqueue_issn_works_to_slow_queue(issn)
             return new_journal, None
 
     except Exception as e:
