@@ -954,10 +954,10 @@ def main():
                             'openalex_accept','notes','ingested','ingest_notes']
 
     # check for new data
-    if records_data[(records_data['ingested']!='yes') & 
+    if records_data[(~records_data['ingested'].isin(['yes','no'])) & 
                     (records_data['openalex_accept']=='yes') & 
                     (records_data['workflow_type'].isin(workflows_allowed))].shape[0]>0:
-        new_data = records_data[(records_data['ingested']!='yes') & 
+        new_data = records_data[(~records_data['ingested'].isin(['yes','no'])) & 
                                 (records_data['openalex_accept']=='yes') & 
                                 (records_data['workflow_type'].isin(workflows_allowed))].copy()
 
