@@ -16,16 +16,16 @@ from app import logger
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 GCLOUD_AUTHOR_CURATION_CREDS = os.getenv('GCLOUD_AUTHOR_CURATION')
-
-logger.info("g_cloud_cred_type: ", type(GCLOUD_AUTHOR_CURATION_CREDS))
-logger.info("g_cloud_cred: ", GCLOUD_AUTHOR_CURATION_CREDS['type'])
+logger.info("g_cloud_cred: ", GCLOUD_AUTHOR_CURATION_CREDS[:10])
 
 # the following actions are allowed by this curation workflow
 workflows_allowed = ['Merge another profile into mine','Change the display name', 'Remove works from my profile','Add works to my profile']
 
 # define the scope
 scope = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/spreadsheets']
-creds_dict = json.loads(GCLOUD_AUTHOR_CURATION_CREDS.replace('\\\n', '\\n'))
+creds_dict = json.loads(GCLOUD_AUTHOR_CURATION_CREDS)
+logger.info("g_cloud_cred_type: ", type(creds_dict))
+logger.info("g_cloud_cred: ", creds_dict['type'])
 
 # add credentials to the account
 creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=scope)
