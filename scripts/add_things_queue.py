@@ -105,6 +105,16 @@ def enqueue_from_api(oa_filters, methods=None, fast_queue_priority=None):
                 logger.warn(f'[!] Error fetching page for filter - {oa_filter}')
                 logger.exception(traceback.format_exception())
 
+def enqueue_dois(dois, methods=None, priority=0, fast_queue_priority=None):
+    doi_work_ids = db.session.execute(text(
+        'SELECT work_id FROM ins.recordthresher_record WHERE doi IN :dois AND work_id > 0'),
+        params={'dois': dois}).fetchall()
+    doi_work_ids = [r[0] for r in doi_work_ids]
+    all_work_ids = list(set(doi_work_ids))
+    enqueue_jobs(all_work_ids, priority=priority,
+                 methods=methods,
+                 fast_queue_priority=fast_queue_priority)
+
 
 def enqueue_txt_file(fname, methods=None, fast_queue_priority=None):
     with open(fname) as f:
