@@ -648,7 +648,7 @@ def check_work_id_and_get_seq_no(work_id_string, author_id):
 def get_list_of_ids(id_list_string):
     # get list of ideas that are separated by commas
     if quick_string_check(id_list_string):
-        return [x for x in id_list_string.split(',') if x.strip()]
+        return [x for x in id_list_string.split(',') if x.replace(" ", "").strip()]
     else:
         return []
     
