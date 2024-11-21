@@ -237,6 +237,9 @@ class Publisher(db.Model):
         self.json_entity_hash = entity_hash
         return bulk_actions
 
+    def __repr__(self):
+        return "<Publisher ( {} ) {} {}>".format(self.openalex_id, self.publisher_id, self.display_name)
+
 
 class PublisherSelfAndAncestors(db.Model):
     __table_args__ = {'schema': 'mid'}
