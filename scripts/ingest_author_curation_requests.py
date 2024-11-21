@@ -963,21 +963,21 @@ def main():
 
         # Merge profiles
         if new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0]>0:
-            logger.info("---- New profile merge requests: ", new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0])
+            logger.info(f"---- New profile merge requests: {str(new_data[new_data['workflow_type']=='Merge another profile into mine'].shape[0])}")
             _ = merge_author_profiles(new_data[new_data['workflow_type']=='Merge another profile into mine'].copy(), sheet_instance)
         else:
             logger.info("---- No new profile merge requests")
 
         # Remove works
         if new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0]>0:
-            logger.info("---- New works removal requests: ", new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0])
+            logger.info(f"---- New works removal requests: {str(new_data[new_data['workflow_type']=='Remove works from my profile'].shape[0])}")
             _ = remove_works_from_profile(new_data[new_data['workflow_type']=='Remove works from my profile'].copy(), sheet_instance)
         else:
             logger.info("---- No new remove works requests")
 
         # Add works
         if new_data[new_data['workflow_type']=='Add works to my profile'].shape[0]>0:
-            logger.info("---- New works addition requests: ", new_data[new_data['workflow_type']=='Add works to my profile'].shape[0])
+            logger.info(f"---- New works addition requests: {str(new_data[new_data['workflow_type']=='Add works to my profile'].shape[0])}")
             _ = add_works_to_profile(new_data[new_data['workflow_type']=='Add works to my profile'].copy(), sheet_instance)
         else:
             logger.info("---- No new add works requests")
