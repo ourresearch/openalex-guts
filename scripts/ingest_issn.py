@@ -4,15 +4,14 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 from bs4 import BeautifulSoup
-from sqlalchemy import any_
+from sqlalchemy import any_, text
 
 from models import Publisher
 from models.source import Source
 from app import db
 
 import requests
-
-from scripts.add_things_queue import enqueue_dois
+from .journal_issn_util import enqueue_issn_works_to_slow_queue
 
 
 def get_auth_token():
@@ -66,76 +65,104 @@ def get_publisher_id(publisher_name):
     return j['results'][0]['id'].split('/P')[-1]
 
 
-def add_publisher(publisher_name):
-    params = {'query': publisher_name}
-    r = requests.get('https://api.ror.org/organizations', params=params)
-    r.raise_for_status()
-    j = r.json()
+def search_wikidata_entity(name):
+    params = {
+        'action': 'wbsearchentities',
+        'format': 'json',
+        'search': name,
+        'language': 'en'
+    }
+    response = requests.get('https://www.wikidata.org/w/api.php', params=params)
+    response.raise_for_status()
+    results = response.json()
 
-    if not j['items']:
+    if not results.get('search'):
         return None
 
-    ror_obj = j['items'][0]
+    return results['search'][0]['id']
+
+
+def get_wikidata_entity(entity_id, props=None):
+    params = {
+        'action': 'wbgetentities',
+        'format': 'json',
+        'ids': entity_id,
+        'language': 'en'
+    }
+    if props:
+        params['props'] = props
+
+    response = requests.get('https://www.wikidata.org/w/api.php', params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    if not data.get('entities') or entity_id not in data['entities']:
+        return None
+
+    return data['entities'][entity_id]
+
+
+def get_claim_value(claims, property_id):
+    return claims.get(property_id, [{}])[0].get('mainsnak', {}).get('datavalue',
+                                                                    {}).get(
+        'value')
+
+
+def add_publisher(publisher_name):
+    entity_id = search_wikidata_entity(publisher_name)
+    if not entity_id:
+        return None
+
+    entity = get_wikidata_entity(entity_id)
+    if not entity:
+        return None
+
+    claims = entity.get('claims', {})
 
     p = Publisher()
     p.created_date = datetime.now()
-    p.display_name = ror_obj.get('name')
-    p.alternate_titles = ror_obj.get('aliases', [])
-    p.country_codes = [ror_obj.get('country', {}).get('country_code')]
+    p.display_name = entity.get('labels', {}).get('en', {}).get('value')
+    p.alternate_titles = [alias['value'] for alias in
+                          entity.get('aliases', {}).get('en', [])]
+
+    country_claim = get_claim_value(claims, 'P17')
+    if country_claim:
+        country_id = country_claim.get('id')
+        country_entity = get_wikidata_entity(country_id, 'claims|labels')
+
+        if country_entity:
+            country_claims = country_entity.get('claims', {})
+            iso_code = get_claim_value(country_claims, 'P298')
+            if iso_code:
+                p.country_codes = [iso_code]
+                p.country_code = iso_code
+            else:
+                p.country_codes = []
+
+            p.country_name = country_entity.get('labels', {}).get('en', {}).get(
+                'value')
+    else:
+        p.country_codes = []
+        p.country_name = None
+
     p.parent_publisher = None
     p.hierarchy_level = None
-    p.ror_id = ror_obj.get('id')
-    p.wikidata_id = ror_obj.get('external_ids', {}).get('Wikidata', {}).get(
-        'preferred')
-    if p.wikidata_id:
-        p.wikidata_id = 'https://www.wikipedia.org/entity/' + p.wikidata_id
-    p.homepage_url = ror_obj.get('links', [None])[0]
+    p.wikidata_id = f'https://www.wikidata.org/entity/{entity_id}'
+
+    homepage_url = get_claim_value(claims, 'P856')
+    p.homepage_url = homepage_url if homepage_url else None
+
     p.image_url = None
     p.image_thumbnail_url = None
-    p.country_name = ror_obj.get('country', {}).get('country_name')
+
+    ror_id = get_claim_value(claims, 'P3500')
+    if ror_id:
+        p.ror_id = f"https://ror.org/{ror_id}"
 
     db.session.add(p)
     db.session.commit()
     p.store()
     return p
-
-
-
-def crossref_issn_works(issn):
-    api_key = os.environ['CROSSREF_API_KEY']
-    cursor = '*'
-    params = {'select': 'DOI', 'cursor': cursor, 'rows': '100'}
-    headers = {
-        "crossref-api-key": api_key
-    }
-    while cursor:
-        r = requests.get(f'https://api.crossref.org/journals/{issn}/works',
-                         headers=headers,
-                         params=params)
-        r.raise_for_status()
-        j = r.json()
-
-        total_results = j['message'].get('total-results', 0)
-
-        for result in j['message']['items']:
-            yield result['DOI'], total_results
-
-        cursor = j.get('message', {}).get('next-cursor')
-
-
-def enqueue_issn_works_to_slow_queue(issn):
-    chunk_size = 100
-    chunk = []
-    count = 0
-    for i, (doi, total_results) in enumerate(crossref_issn_works(issn)):
-        chunk.append(doi)
-        total_works = total_results
-        count += 1
-
-        if len(chunk) >= chunk_size:
-            enqueue_dois(chunk, priority=-1, fast_queue_priority=-1)
-            chunk.clear()
-            print(f'{count}/{total_works} works enqueued to slow queue')
 
 
 def parse_journal(issn_record):
@@ -216,7 +243,13 @@ def parse_journal(issn_record):
                                        name != journal['display_name']]
 
     if 'alternateName' in record:
-        journal['abbreviated_title'] = record['alternateName']
+        if isinstance(record['alternateName'], list):
+            journal['abbreviated_title'] = min(record['alternateName'], key=len)
+        elif isinstance(record['alternateName'], str):
+            journal['abbreviated_title'] = record['alternateName']
+
+    if 'isFormatOf' in record:
+        journal['issns'].add(extract_issn_from_id(record['isFormatOf']))
 
     if 'spatial' in record:
         spatial_ref = record['spatial']
@@ -247,19 +280,17 @@ def doaj_response(issn: str):
     r = requests.get(f'https://doaj.org/toc/{issn}')
     if not r.ok:
         return {'is_in_doaj': False, 'apc_found': False}
-    soup = BeautifulSoup(r.text, parser='lxml', features='lxml')
-    zero_apc_tag = soup.find('article', lambda tag: tag.text.contains(
-        'no publication fees'))
+    soup = BeautifulSoup(r.content, parser='lxml', features='lxml')
+    zero_apc_tag = soup.find(lambda tag: tag.name == 'article' and 'no publication fees' in tag.get_text().lower())
     if zero_apc_tag:
         apc_prices = {'price': 0, 'currency': 'USD'}
         return {'is_in_doaj': True, 'apc_prices': apc_prices, 'apc_usd': 0,
                 'apc_found': True}
-    apc_tag = soup.find('article',
-                        lambda tag: tag.text.contains('journal charges up to'))
+    apc_tag = soup.find(lambda tag: tag.name == 'article' and 'journal charges up to' in tag.get_text().lower())
     if not apc_tag:
         raise Exception('APC data not found in DOAJ')
     apc_prices = []
-    apc_list = apc_tag.find('li')
+    apc_list = apc_tag.find_all('li')
     if not apc_list:
         raise Exception('APC data not found in DOAJ')
     for tag in apc_list:
@@ -269,7 +300,7 @@ def doaj_response(issn: str):
             'apc_prices': apc_prices,
             'apc_usd':
                 [price for price in apc_prices if price['currency'] == 'USD'][
-                    0],
+                    0]['price'],
             'apc_found': True}
 
 

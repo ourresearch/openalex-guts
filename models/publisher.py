@@ -24,6 +24,7 @@ class Publisher(db.Model):
     display_name = db.Column(db.Text)
     alternate_titles = db.Column(JSONB)
     country_codes = db.Column(JSONB)
+    country_code = db.Column(db.Text)
     parent_publisher = db.Column(db.BigInteger, db.ForeignKey('mid.publisher.publisher_id'))
     hierarchy_level = db.Column(db.Integer)
     ror_id = db.Column(db.Text)
