@@ -575,7 +575,7 @@ def transform_author_name(author):
 def quick_string_check(raw_string):
     # string should only include the letter 'a', 'w', numbers, and commas
     if raw_string.strip().replace(" ", ""):
-        if all([x in ['a','w',','] or x.isdigit() for x in raw_string.lower().replace(" ", "").strip()]):
+        if all([x in ['a','w',','] or x.isdigit() for x in raw_string.lower().replace(".",",").replace(" ", "").strip()]):
             return True
     return False
 
@@ -648,7 +648,7 @@ def check_work_id_and_get_seq_no(work_id_string, author_id):
 def get_list_of_ids(id_list_string):
     # get list of ideas that are separated by commas
     if quick_string_check(id_list_string):
-        return [x for x in id_list_string.split(',') if x.replace(" ", "").strip()]
+        return [x.replace(" ", "") for x in id_list_string.replace(".",",").split(',') if x.strip()]
     else:
         return []
     
