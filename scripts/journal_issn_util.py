@@ -7,15 +7,27 @@ from .add_things_queue import enqueue_jobs
 from app import db
 from models import Source
 
-def enqueue_issn_works_to_slow_queue(issn):
+def enqueue_issn_works_to_slow_queue(issn, source_id):
     query = text("""
-        SELECT work_id 
-        FROM ins.recordthresher_record 
-        WHERE json_to_text_array(journal_issns) @> ARRAY[:issn]::text[]
+        WITH first_query AS (
+            SELECT work_id 
+            FROM ins.recordthresher_record 
+            WHERE json_to_text_array(journal_issns) @> ARRAY[:issn]::text[]
+        ),
+        second_query AS (
+            SELECT paper_id AS work_id
+            FROM mid.work 
+            WHERE journal_id = :source_id
+        )
+        SELECT DISTINCT work_id
+        FROM first_query
+        UNION
+        SELECT DISTINCT work_id
+        FROM second_query;
     """)
 
-    rows = db.session.execute(query, {"issn": issn}).fetchall()
-    work_ids = [work_id[0] for work_id in rows]
+    rows = db.session.execute(query, {"issn": issn, 'source_id': source_id}).fetchall()
+    work_ids = set([work_id[0] for work_id in rows])
     chunk_size = 100
     chunk = []
     count = 0
@@ -27,9 +39,10 @@ def enqueue_issn_works_to_slow_queue(issn):
             enqueue_jobs(chunk, priority=-1, fast_queue_priority=-1)
             chunk.clear()
             print(f'{count}/{len(work_ids)} works enqueued to slow queue')
-    enqueue_jobs(chunk, priority=-1, fast_queue_priority=-1)
-    chunk.clear()
-    print(f'{count}/{len(work_ids)} works enqueued to slow queue')
+    if chunk:
+        enqueue_jobs(chunk, priority=-1, fast_queue_priority=-1)
+        chunk.clear()
+        print(f'{count}/{len(work_ids)} works enqueued to slow queue')
 
 
 def undelete_journal(source_id):
@@ -50,7 +63,7 @@ def undelete_journal(source_id):
 def run_issn_works_through_queues(source):
     for issn in source.issns_text_array:
         print(f'Enqueuing {issn} works to slow queue')
-        enqueue_issn_works_to_slow_queue(issn)
+        enqueue_issn_works_to_slow_queue(issn, source.journal_id)
 
 
 def only_run_queues(source_id):
