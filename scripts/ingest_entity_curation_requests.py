@@ -16,10 +16,13 @@ from app import db, unpaywall_db_engine
 from models.source import Source
 from models.work import Work
 from scripts.works_query import base_fast_queue_works_query
-from scripts.unpaywall_recordthresher_refresh import refresh_single as unpaywall_recordthresher_refresh
+from scripts.unpaywall_recordthresher_refresh import \
+    refresh_single as unpaywall_recordthresher_refresh
 from scripts.add_things_queue import enqueue_job as enqueue_slow_queue
 
 WORK_COLUMN_MAP = {
+    'Approved? Y/N': 'is_approved',
+    'Completed?': 'is_completed',
     'Timestamp': 'timestamp',
     'Email Address': 'email',
     'Is this your work?': 'is_representative',
@@ -38,6 +41,8 @@ WORK_COLUMN_MAP = {
 }
 
 SOURCE_COLUMN_MAP = {
+    'Approved? Y/N': 'is_approved',
+    'Completed?': 'is_completed',
     'Timestamp': 'timestamp',
     'Email Address': 'email',
     'Do you represent this source?': 'is_representative',
@@ -73,7 +78,8 @@ class GoogleSheetsClient:
 
         scopes = [
             'https://www.googleapis.com/auth/drive.readonly',
-            'https://www.googleapis.com/auth/spreadsheets.readonly'
+            'https://www.googleapis.com/auth/spreadsheets'
+            # Changed to allow writing
         ]
 
         return service_account.Credentials.from_service_account_info(
@@ -101,15 +107,31 @@ class GoogleSheetsClient:
 
         df = pd.DataFrame(data[1:], columns=data[0])
         df = df.rename(columns=column_map)
+        # Add row number for tracking
+        df['sheet_row'] = range(2,
+                                len(df) + 2)  # 2-based indexing for Google Sheets
         return df
+
+    def mark_row_completed(self, sheet_id, row_number, worksheet_name=None):
+        """Mark a row as completed in the Google Sheet."""
+        try:
+            sheet = self.client.open_by_key(sheet_id)
+            worksheet = sheet.worksheet(
+                worksheet_name) if worksheet_name else sheet.get_worksheet(0)
+            # Column B is the "Completed?" column
+            worksheet.update_cell(row_number, 2, 'Y')
+            print(f"✓ Marked row {row_number} as completed")
+        except Exception as e:
+            print(f"Error marking row {row_number} as completed: {str(e)}")
 
 
 class EntityHandler:
-
     HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY")
 
-    def __init__(self, oax_db_session):
+    def __init__(self, oax_db_session, sheets_client, sheet_id):
         self.oax_db_session = oax_db_session
+        self.sheets_client = sheets_client
+        self.sheet_id = sheet_id
         self.heroku_conn = heroku3.from_key(self.HEROKU_API_KEY)
         self.changes_made = False
 
@@ -121,7 +143,28 @@ class EntityHandler:
         return True
 
     def process_rows(self, df):
-        raise NotImplementedError("Subclasses must implement process_rows")
+        for i, row in enumerate(df.to_dict('records')):
+            # Skip if already completed
+            if row.get('is_completed', '').upper() == 'Y':
+                print(f'Skipping completed row {row["sheet_row"]}')
+                continue
+
+            if row['is_approved'].lower().startswith('n') or not row[
+                'is_approved']:
+                print(
+                    f'Skipping unapproved request row {row["sheet_row"]}')
+                continue
+
+            # Process the row (implemented by subclasses)
+            if self.process_single_row(row):
+                # Mark as completed in Google Sheet only if processing was successful
+                self.sheets_client.mark_row_completed(self.sheet_id,
+                                                      row['sheet_row'])
+
+    def process_single_row(self, row):
+        """Process a single row. Should be implemented by subclasses."""
+        raise NotImplementedError(
+            "Subclasses must implement process_single_row")
 
 
 class SourceHandler(EntityHandler):
@@ -217,67 +260,79 @@ class SourceHandler(EntityHandler):
                 self.log_change("merge_into_date", source.merge_into_date,
                                 datetime.now())
 
-    def fast_store_source(self, source_id ):
+    def change_publisher_id(self, source: Source, publisher_id: str) -> None:
+        if not publisher_id:
+            return
+        publisher_id = int(publisher_id.strip('p').strip('P'))
+        if self.log_change('publisher_id', source.publisher_id, publisher_id):
+            source.publisher_id = publisher_id
+            source.updated_date = datetime.now()
+            self.changes_made = True
+
+    def fast_store_source(self, source_id):
         app = self.heroku_conn.apps()["openalex-guts"]
         command = f"python -m scripts.fast_queue --entity=source --method=store --id={source_id}"
         app.run_command(command, printout=False)
 
-    def process_rows(self, df):
-        for row in df.to_dict('records'):
-            self.changes_made = False
+    def process_single_row(self, row):
+        self.changes_made = False
 
-            if not row['source_id'].lower().startswith('s'):
-                print(f"Invalid source ID format: {row['source_id']}")
-                continue
+        if not row['source_id'].lower().startswith('s'):
+            print(f"Invalid source ID format: {row['source_id']}")
+            return False
 
-            internal_id = int(row['source_id'][1:])
-            source = self.oax_db_session.query(Source).filter_by(
-                journal_id=internal_id).first()
+        internal_id = int(row['source_id'][1:])
+        source = self.oax_db_session.query(Source).filter_by(
+            journal_id=internal_id).first()
 
-            if not source:
-                print(f"Source not found: {row['source_id']}")
-                continue
+        if not source:
+            print(f"Source not found: {row['source_id']}")
+            return False
 
-            print(
-                f"\nProcessing source {row['source_id']} - {row['edit_type']}")
-            try:
-                edit_type = row['edit_type'].lower()
+        print(f"\nProcessing source {row['source_id']} - {row['edit_type']}")
+        try:
+            edit_type = row['edit_type'].lower()
 
-                if 'display name' in edit_type:
-                    self.change_display_name(source, row['display_name'])
-                elif 'oa status' in edit_type:
-                    self.change_oa_status(source, row['is_open_access'])
-                elif 'doaj' in edit_type:
-                    self.change_doaj_status_handler(source, row['in_doaj'])
-                elif 'apc' in edit_type:
-                    self.change_apc_handler(source, row['apc_price'])
-                elif 'homepage' in edit_type:
-                    self.change_homepage_url_handler(source,
-                                                     row['homepage_url'])
-                elif 'issn' in edit_type:
-                    self.change_issn_handler(source, row['issn_remove'],
-                                             row['issn_add'])
-                elif 'merge' in edit_type:
-                    self.merge_sources_handler(source, row['merge_ids'])
-                else:
-                    print(f"Unknown edit type: {edit_type}")
+            if 'display name' in edit_type:
+                self.change_display_name(source, row['display_name'])
+            elif 'oa status' in edit_type:
+                self.change_oa_status(source, row['is_open_access'])
+            elif 'doaj' in edit_type:
+                self.change_doaj_status_handler(source, row['in_doaj'])
+            elif 'apc' in edit_type:
+                self.change_apc_handler(source, row['apc_price'])
+            elif 'homepage' in edit_type:
+                self.change_homepage_url_handler(source, row['homepage_url'])
+            elif 'issn' in edit_type:
+                self.change_issn_handler(source, row['issn_remove'],
+                                         row['issn_add'])
+            elif 'merge' in edit_type:
+                self.merge_sources_handler(source, row['merge_ids'])
+            elif 'host organization' in edit_type:
+                self.change_publisher_id(source, row['publisher_id'])
+            else:
+                print(f"Unknown edit type: {edit_type}")
 
-                if self.changes_made:
-                    self.oax_db_session.commit()
-                    self.fast_store_source(source.id)
-                    print("✓ Changes committed successfully")
-                else:
-                    print("✓ No changes needed")
-            except Exception as e:
-                print(f"Error processing source {row['source_id']}: {str(e)}")
-                self.oax_db_session.rollback()
+            if self.changes_made:
+                self.oax_db_session.commit()
+                self.fast_store_source(source.id)
+                print("✓ Changes committed successfully")
+                return True
+            else:
+                print("✓ No changes needed")
+                return True
+
+        except Exception as e:
+            print(f"Error processing source {row['source_id']}: {str(e)}")
+            self.oax_db_session.rollback()
+            return False
 
 
 class WorkHandler(EntityHandler):
-
-    def __init__(self, oax_db_session, unpaywall_db_session):
+    def __init__(self, oax_db_session, unpaywall_db_session, sheets_client,
+                 sheet_id):
+        super().__init__(oax_db_session, sheets_client, sheet_id)
         self.unpaywall_db_session = unpaywall_db_session
-        super().__init__(oax_db_session)
 
     def refresh_in_unpaywall(self, doi):
         app = self.heroku_conn.apps()["oadoi"]
@@ -291,9 +346,9 @@ class WorkHandler(EntityHandler):
 
     @staticmethod
     def get_unpaywall_response(doi):
-        r = requests.get(f'https://api.unpaywall.org/v2/{doi}?email=team@ourresearch.org')
-        r.raise_for_status()
-        return r.json()
+        r = requests.get(
+            f'https://api.unpaywall.org/v2/{doi}?email=team@ourresearch.org')
+        return r
 
     def manual_close_in_unpaywall(self, doi):
         try:
@@ -303,7 +358,8 @@ class WorkHandler(EntityHandler):
             self.unpaywall_db_session.commit()
         except IntegrityError as e:
             if e.args[0].startswith('duplicate key value'):
-                print(f"WARNING: Duplicate DOI {doi} detected. Skipping oa_manual insertion.")
+                print(
+                    f"WARNING: Duplicate DOI {doi} detected. Skipping oa_manual insertion.")
             else:
                 raise
 
@@ -393,36 +449,48 @@ class WorkHandler(EntityHandler):
             work.updated_date = datetime.now()
             self.changes_made = True
 
-    def change_oa_status(self, work: Work, is_oa: str, url: str = '', oa_status: str ='') -> None:
+
+    def change_oa_status(self, work: Work, is_oa: str, url: str = '',
+                         oa_status: str = '') -> None:
         if not is_oa and not url:
             return
         new_status = 'open' if is_oa.upper() == 'TRUE' or url else 'closed'
         if new_status == 'closed':
-            self.manual_close_in_unpaywall(work.doi)
+            if work.doi:
+                self.manual_close_in_unpaywall(work.doi)
             self.manual_close_in_openalex(work.id)
         else:
             # should be open
-            if not work.doi:
+            upw_response = self.get_unpaywall_response(work.doi)
+            if not work.doi or not upw_response.ok:
                 if not url:
                     raise ValueError(
                         'URL must be provided to manually open a work')
-                self.manual_open_in_openalex(work.id, url, oa_status)
+                self.manual_open_in_openalex(work.id, url, self._get_oa_status(oa_status) if oa_status else None)
             else:
-                upw_response = self.get_unpaywall_response(work.doi)
-                if upw_response['is_oa']:
+                upw_response_json = upw_response.json()
+                if upw_response_json['is_oa']:
                     print(f'Work {work.doi} is already oa in Unpaywall')
                 else:
                     self.refresh_in_unpaywall(work.doi.lower())
-                    upw_response = self.get_unpaywall_response(work.doi)
-                    if upw_response['is_oa']:
-                        print(f'Refresh successfully opened {work.doi} in Unpaywall')
+                    upw_response_json = self.get_unpaywall_response(work.doi).json()
+                    if upw_response_json['is_oa']:
+                        print(
+                            f'Refresh successfully opened {work.doi} in Unpaywall')
                     else:
                         if not url:
-                            raise ValueError('URL must be provided to manually open a work')
+                            raise ValueError(
+                                'URL must be provided to manually open a work')
                         response_jsonb_override = {"pdf_url": url}
                         if oa_status:
-                            response_jsonb_override['oa_status_set'] = self._get_oa_status(oa_status)
-                        self.unpaywall_db_session.execute('INSERT INTO oa_manual (doi, response_jsonb) VALUES (:doi, :response_jsonb)', {'doi': work.doi.lower(), 'response_jsonb': json.dumps(response_jsonb_override)})
+                            response_jsonb_override[
+                                'oa_status_set'] = self._get_oa_status(
+                                oa_status)
+                        self.unpaywall_db_session.execute(
+                            'INSERT INTO oa_manual (doi, response_jsonb) VALUES (:doi, :response_jsonb)',
+                            {'doi': work.doi.lower(),
+                             'response_jsonb': json.dumps(
+                                 response_jsonb_override)})
                         self.unpaywall_db_session.commit()
                 self.update_in_unpaywall(work.doi.lower())
                 unpaywall_recordthresher_refresh(work.doi.lower())
@@ -455,66 +523,71 @@ class WorkHandler(EntityHandler):
             work.updated_date = datetime.now()
             self.changes_made = True
 
-    def merge_works(self, work: Work, merge_into: str, merge_duplicates: str) -> None:
+    def merge_works(self, work: Work, merge_into: str,
+                    merge_duplicates: str) -> None:
         if merge_into and merge_into.lower().startswith('w'):
             new_merge_id = int(merge_into[1:])
-            if self.log_change("merge_into_id", work.merge_into_id, new_merge_id):
+            if self.log_change("merge_into_id", work.merge_into_id,
+                               new_merge_id):
                 work.merge_into_id = new_merge_id
                 work.merge_into_date = datetime.now()
                 self.changes_made = True
-                self.log_change("merge_into_date", work.merge_into_date, datetime.now())
+                self.log_change("merge_into_date", work.merge_into_date,
+                                datetime.now())
 
-    def process_rows(self, df):
-        for row in df.to_dict('records'):
-            self.changes_made = False
+    def process_single_row(self, row):
+        self.changes_made = False
+        work_id = row['work_id']
 
-            work_id = row['work_id']
-            # Handle different work ID formats
-            if 'openalex.org/' in work_id:
-                work_id = work_id.split('/')[-1]
+        if 'openalex.org/' in work_id:
+            work_id = work_id.split('/')[-1]
 
-            if not work_id.lower().startswith('w'):
-                print(f"Invalid work ID format: {work_id}")
-                continue
+        if not work_id.lower().startswith('w'):
+            print(f"Invalid work ID format: {work_id}")
+            return False
 
-            internal_id = int(work_id[1:])
-            work = base_fast_queue_works_query().filter_by(paper_id=internal_id).first()
+        internal_id = int(work_id[1:])
+        work = base_fast_queue_works_query().filter_by(
+            paper_id=internal_id).first()
 
-            if not work:
-                print(f"Work not found: {work_id}")
-                continue
+        if not work:
+            print(f"Work not found: {work_id}")
+            return False
 
-            print(f"\nProcessing work {work_id} - {row['edit_type']}")
-            try:
-                edit_type = row['edit_type'].lower()
+        print(f"\nProcessing work {work_id} - {row['edit_type']}")
+        try:
+            edit_type = row['edit_type'].lower()
 
-                if 'title' in edit_type:
-                    self.change_title(work, row['title'])
-                # Do not do oa status edit type for now, the form only specifies open/closed, we need to know if green, bronze, etc
-                elif 'oa status' in edit_type:
-                    self.change_oa_status(work, row['is_oa'], row['fulltext_url'], row['oa_status'])
-                elif 'language' in edit_type:
-                    self.change_language(work, row['language'])
-                elif 'source' in edit_type:
-                    self.change_source(work, row['source_id'])
-                elif 'license' in edit_type:
-                    self.change_license(work, row['license'])
-                elif 'merge' in edit_type:
-                    self.merge_works(work, row['merge_into'], row['merge_duplicates'])
-                else:
-                    print(f"Unknown edit type: {edit_type}")
+            if 'title' in edit_type:
+                self.change_title(work, row['title'])
+            elif 'oa status' in edit_type:
+                self.change_oa_status(work, row['is_oa'], row['fulltext_url'],
+                                      row['oa_status'])
+            elif 'language' in edit_type:
+                self.change_language(work, row['language'])
+            elif 'source' in edit_type:
+                self.change_source(work, row['source_id'])
+            elif 'license' in edit_type:
+                self.change_license(work, row['license'])
+            elif 'merge' in edit_type:
+                self.merge_works(work, row['merge_into'],
+                                 row['merge_duplicates'])
+            else:
+                print(f"Unknown edit type: {edit_type}")
 
-                if self.changes_made:
-                    self.oax_db_session.commit()
-                    enqueue_slow_queue(work.id, priority=-1,
-                                       fast_queue_priority=-1)
-                    print("✓ Changes committed successfully")
-                else:
-                    print("✓ No changes needed")
+            if self.changes_made:
+                self.oax_db_session.commit()
+                enqueue_slow_queue(work.id, priority=-1, fast_queue_priority=-1)
+                print("✓ Changes committed successfully")
+                return True
+            else:
+                print("✓ No changes needed")
+                return True
 
-            except Exception as e:
-                print(f"Error processing work {work_id}: {str(e)}")
-                self.oax_db_session.rollback()
+        except Exception as e:
+            print(f"Error processing work {work_id}: {str(e)}")
+            self.oax_db_session.rollback()
+            return False
 
 
 def main():
@@ -523,25 +596,31 @@ def main():
     parser.add_argument('--entity', type=str, required=True,
                         choices=['works', 'sources'],
                         help='Entity type to process (works or sources)')
+    parser.add_argument('--row_num', type=int, required=False,
+                        help='Row number to process')
     args = parser.parse_args()
 
     sheets_client = GoogleSheetsClient()
 
-    if args.entity == 'works':
+    if 'work' in args.entity:
         sheet = sheets_client.get_sheet_by_name('OpenAlex work record')
         column_map = WORK_COLUMN_MAP
-        upw_session  = sessionmaker(bind=unpaywall_db_engine)
-        handler = WorkHandler(db.session, upw_session())
+        upw_session = sessionmaker(bind=unpaywall_db_engine)
+        handler = WorkHandler(db.session, upw_session(), sheets_client,
+                              sheet['id'])
     else:  # sources
         sheet = sheets_client.get_sheet_by_name('OpenAlex Source Profile')
         column_map = SOURCE_COLUMN_MAP
-        handler = SourceHandler(db.session)
+        handler = SourceHandler(db.session, sheets_client, sheet['id'])
 
     if not sheet:
         print(f"Change requests sheet not found for {args.entity}")
         return
 
     df = sheets_client.read_sheet_to_df(sheet['id'], column_map)
+    if args.row_num:
+        df = df.iloc[
+            [args.row_num - 2]]  # Adjust for 0-based indexing and header row
     handler.process_rows(df)
     db.session.close()
 
