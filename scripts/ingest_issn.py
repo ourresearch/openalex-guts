@@ -1,16 +1,20 @@
 import json
 import os
+import time
 from argparse import ArgumentParser
 from datetime import datetime
+from threading import Thread
 
 from bs4 import BeautifulSoup
-from sqlalchemy import any_, text
+from sqlalchemy import any_
 
 from models import Publisher
 from models.source import Source
 from app import db
 
 import requests
+
+from util import normalize_title_like_sql
 from .journal_issn_util import enqueue_issn_works_to_slow_queue
 
 
@@ -26,6 +30,17 @@ def get_auth_token():
     response.raise_for_status()
 
     return response.json()['token']
+
+
+TOKEN = get_auth_token()
+
+def refresh_token():
+    global TOKEN
+    while True:
+        time.sleep(60*30)
+        print('Refreshing ISSN Portal auth token')
+        TOKEN = get_auth_token()
+        print('Done refreshing ISSN Portal auth token')
 
 
 def fetch_issn_record(issn, token):
@@ -54,6 +69,8 @@ def extract_issn_from_id(id_string):
 
 
 def get_publisher_id(publisher_name):
+    if p := db.session.query(Publisher).filter(Publisher.display_name == publisher_name).first():
+        return p.publisher_id
     params = {
         'search': publisher_name
     }
@@ -65,21 +82,71 @@ def get_publisher_id(publisher_name):
     return j['results'][0]['id'].split('/P')[-1]
 
 
-def search_wikidata_entity(name):
+def is_publisher_entity(entity):
+    publisher_claims = {'Q3918', 'Q2516866', 'Q45400320', 'Q2085381', 'Q3972943'}
+    claims = entity.get('claims', {})
+    instance_of_claims = claims.get('P31', [])
+
+    for claim in instance_of_claims:
+        mainsnak = claim.get('mainsnak', {})
+        datavalue = mainsnak.get('datavalue', {})
+        value = datavalue.get('value', {})
+
+        if value.get('id') in publisher_claims:
+            return True
+
+    return False
+
+
+def search_ror_api(name):
+    params = {
+        'query': name
+    }
+    response = requests.get('https://api.ror.org/organizations', params=params)
+    response.raise_for_status()
+    results = response.json()
+
+    for item in results.get('items', []):
+        external_ids = item.get('external_ids', {})
+        wikidata = external_ids.get('Wikidata', {})
+        if wikidata and wikidata.get('preferred'):
+            return wikidata['preferred'].split('/')[-1]
+
+    return None
+
+
+def find_publisher_entity(name):
     params = {
         'action': 'wbsearchentities',
         'format': 'json',
         'search': name,
-        'language': 'en'
+        'language': 'en',
+        'limit': 50
     }
     response = requests.get('https://www.wikidata.org/w/api.php', params=params)
     response.raise_for_status()
     results = response.json()
 
-    if not results.get('search'):
-        return None
+    # Check each Wikidata result until we find a publisher
+    if results.get('search'):
+        for result in results['search']:
+            entity = get_wikidata_entity(result['id'])
+            if entity and is_publisher_entity(entity):
+                return entity
 
-    return results['search'][0]['id']
+    # If no valid publisher found in Wikidata search, try ROR API
+    wikidata_id = None
+    try:
+        wikidata_id = search_ror_api(name)
+    except Exception as e:
+        pass
+    if wikidata_id:
+        entity = get_wikidata_entity(wikidata_id)
+        publisher_exists = db.session.query(Publisher).filter(Publisher.wikidata_id.ilike(f'%{wikidata_id}%')).first()
+        if entity and is_publisher_entity(entity) and not publisher_exists:
+            return entity
+
+    return None
 
 
 def get_wikidata_entity(entity_id, props=None):
@@ -109,11 +176,7 @@ def get_claim_value(claims, property_id):
 
 
 def add_publisher(publisher_name):
-    entity_id = search_wikidata_entity(publisher_name)
-    if not entity_id:
-        return None
-
-    entity = get_wikidata_entity(entity_id)
+    entity = find_publisher_entity(publisher_name)
     if not entity:
         return None
 
@@ -123,7 +186,7 @@ def add_publisher(publisher_name):
     p.created_date = datetime.now()
     p.display_name = entity.get('labels', {}).get('en', {}).get('value')
     p.alternate_titles = [alias['value'] for alias in
-                          entity.get('aliases', {}).get('en', [])]
+                         entity.get('aliases', {}).get('en', [])]
 
     country_claim = get_claim_value(claims, 'P17')
     if country_claim:
@@ -139,14 +202,14 @@ def add_publisher(publisher_name):
             else:
                 p.country_codes = []
 
-            p.country_name = country_entity.get('labels', {}).get('en', {}).get(
-                'value')
+            p.country_name = country_entity.get('labels', {}).get('en', {}).get('value')
     else:
         p.country_codes = []
         p.country_name = None
 
     p.parent_publisher = None
     p.hierarchy_level = None
+    entity_id = entity['id']
     p.wikidata_id = f'https://www.wikidata.org/entity/{entity_id}'
 
     homepage_url = get_claim_value(claims, 'P856')
@@ -175,11 +238,13 @@ def parse_journal(issn_record):
     if not record:
         raise ValueError("Could not find main journal record in ISSN data")
 
+    main_title = record['mainTitle']
+    if isinstance(main_title, list):
+        main_title = main_title[0]
+
     journal = {
-        'display_name': record.get('mainTitle'),
-        'normalized_name': record.get('mainTitle',
-                                      '').lower().strip() if record.get(
-            'mainTitle') else None,
+        'display_name': main_title,
+        'normalized_name': normalize_title_like_sql(main_title),
 
         'issn': None,
         'issns': set(),
@@ -225,6 +290,8 @@ def parse_journal(issn_record):
 
     if 'publisher' in record:
         publisher_id = record['publisher']
+        if isinstance(publisher_id, list):
+            publisher_id = publisher_id[0]
         for item in issn_record['@graph']:
             if item.get('@id') == publisher_id:
                 journal['publisher'] = item.get('name')
@@ -317,8 +384,7 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
     elif not issn:
         return None, 'ISSN must be provided when not overwriting'
 
-    token = get_auth_token()
-    issn_record = fetch_issn_record(issn, token)
+    issn_record = fetch_issn_record(issn, TOKEN)
     parsed_journal = parse_journal(issn_record)
 
     if not overwrite_journal_id:
@@ -336,7 +402,7 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
                 publisher_id = p.publisher_id
                 print(f'New Publisher created: {p}')
             else:
-                return None, f'Publisher "{parsed_journal["publisher"]}" not found in OpenAlex. Unable to ingest.'
+                print(f'Publisher "{parsed_journal["publisher"]}" not found. Creating source without publisher.')
 
     journal_data = {
         **doaj_data,
@@ -373,7 +439,7 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
             db.session.add(new_journal)
             db.session.commit()
             print('Enqueueing works with matching ISSN to slow queue')
-            enqueue_issn_works_to_slow_queue(issn)
+            enqueue_issn_works_to_slow_queue(issn, new_journal.journal_id)
             return new_journal, None
 
     except Exception as e:
@@ -384,7 +450,7 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--issn', type=str,
+    parser.add_argument('--issn', type=str, nargs='+',
                         help='ISSN to ingest (not required when using --overwrite_journal_id)',
                         required=False)
     parser.add_argument('--publisher_id', type=int,
@@ -406,11 +472,20 @@ def main():
         print("Error: Either --issn or --overwrite_journal_id must be provided")
         return
 
-    source, error = ingest_issn(args.issn, args.publisher_id, args.is_core,
-                                args.is_oa, args.overwrite_journal_id)
-    if error:
-        print(error)
-        return
+    if len(args.issn) == 1:
+        source, error = ingest_issn(args.issn[0], args.publisher_id, args.is_core,
+                                    args.is_oa, args.overwrite_journal_id)
+
+        if error:
+            print(error)
+            return
+    else:
+        Thread(target=refresh_token, daemon=True).start()
+        for issn in args.issn:
+            source, error = ingest_issn(issn)
+            if error:
+                print(error)
+                return
     print(
         f'Journal {"updated" if args.overwrite_journal_id else "created"}: {source}')
 
