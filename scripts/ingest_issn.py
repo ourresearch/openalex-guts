@@ -484,13 +484,13 @@ def main():
     else:
         Thread(target=refresh_token, daemon=True).start()
         for i, issn in enumerate(args.issn):
-            print(f'Ingesting ISSN {issn} ({i + 1} / {len(args.issn)}))')
+            print(f'Ingesting ISSN {issn} ({i + 1} / {len(args.issn)})')
             source, error = ingest_issn(issn)
             if error:
                 print(error)
                 continue
             print(
-                f'Journal created: {source} ({i + 1} / {len(args.issn)}))')
+                f'Journal created: {source} ({i + 1} / {len(args.issn)})')
 
 
 
