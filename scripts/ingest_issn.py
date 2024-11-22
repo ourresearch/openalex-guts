@@ -479,15 +479,19 @@ def main():
         if error:
             print(error)
             return
+        print(
+            f'Journal {"updated" if args.overwrite_journal_id else "created"}: {source}')
     else:
         Thread(target=refresh_token, daemon=True).start()
-        for issn in args.issn:
+        for i, issn in enumerate(args.issn):
+            print(f'Ingesting ISSN {issn} ({i + 1} / {len(args.issn)}))')
             source, error = ingest_issn(issn)
             if error:
                 print(error)
-                return
-    print(
-        f'Journal {"updated" if args.overwrite_journal_id else "created"}: {source}')
+                continue
+            print(
+                f'Journal created: {source} ({i + 1} / {len(args.issn)}))')
+
 
 
 if __name__ == '__main__':
