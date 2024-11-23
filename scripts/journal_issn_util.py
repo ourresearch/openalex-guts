@@ -1,11 +1,20 @@
+import os
 from argparse import ArgumentParser
 
+import heroku3
 from sqlalchemy import text
 
 from .add_things_queue import enqueue_jobs
 
 from app import db
 from models import Source
+
+def fast_store_source(source_id, heroku_conn=None):
+    if not heroku_conn:
+        heroku_conn = heroku3.from_key(os.environ.get("HEROKU_API_KEY"))
+    app = heroku_conn.apps()["openalex-guts"]
+    command = f"python -m scripts.fast_queue --entity=source --method=store --id={source_id}"
+    app.run_command(command, printout=False)
 
 def enqueue_issn_works_to_slow_queue(issn, source_id):
     query = text("""
@@ -55,8 +64,7 @@ def undelete_journal(source_id):
     source.merge_into_id = None
     source.merge_into_date = None
     db.session.commit()
-    source.store()
-
+    fast_store_source(source_id)
     run_issn_works_through_queues(source)
 
 
