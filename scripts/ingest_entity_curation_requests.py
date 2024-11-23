@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import datetime
 import argparse
 
@@ -133,7 +134,7 @@ class EntityHandler:
         self.sheets_client = sheets_client
         self.sheet_id = sheet_id
         self.heroku_conn = heroku3.from_key(self.HEROKU_API_KEY)
-        self.changes_made = False
+        self.changed_ids = []
 
     def log_change(self, field_name: str, before, after):
         if before == after:
@@ -176,7 +177,7 @@ class SourceHandler(EntityHandler):
                            new_display_name):
             source.display_name = new_display_name
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def change_oa_status(self, source: Source, is_oa: str) -> None:
         if not is_oa:
@@ -185,7 +186,7 @@ class SourceHandler(EntityHandler):
         if self.log_change("is_oa", source.is_oa, new_oa):
             source.is_oa = new_oa
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def change_doaj_status_handler(self, source: Source, in_doaj: str) -> None:
         if not in_doaj:
@@ -194,7 +195,7 @@ class SourceHandler(EntityHandler):
         if self.log_change("is_in_doaj", source.is_in_doaj, new_doaj):
             source.is_in_doaj = new_doaj
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def change_apc_handler(self, source: Source, apc_price: str) -> None:
         if not apc_price:
@@ -205,7 +206,7 @@ class SourceHandler(EntityHandler):
                 source.apc_usd = new_price
                 source.apc_found = True
                 source.updated_date = datetime.now()
-                self.changes_made = True
+                self.changed_ids = [source.id]
                 self.log_change("apc_found", source.apc_found, True)
         except ValueError:
             print(f"Invalid APC price format: {apc_price}")
@@ -217,7 +218,7 @@ class SourceHandler(EntityHandler):
         if self.log_change("webpage", source.webpage, homepage_url):
             source.webpage = homepage_url
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def change_issn_handler(self, source: Source, issn_remove: str,
                             issn_add: str) -> None:
@@ -240,7 +241,7 @@ class SourceHandler(EntityHandler):
             source.issns_text_array = list(new_issns)
             source.issns = json.dumps(list(new_issns))
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def merge_sources_handler(self, source: Source, merge_ids: str) -> None:
         if not merge_ids:
@@ -250,15 +251,17 @@ class SourceHandler(EntityHandler):
         for merge_id in merge_id_list:
             if not merge_id.lower().startswith('s'):
                 continue
-            internal_id = int(merge_id[1:])
-            if self.log_change("merge_into_id", source.merge_into_id,
-                               internal_id):
-                source.merge_into_id = internal_id
-                source.merge_into_date = datetime.now()
-                source.updated_date = datetime.now()
-                self.changes_made = True
-                self.log_change("merge_into_date", source.merge_into_date,
-                                datetime.now())
+            source_id = int(merge_id[1:])
+            merge_source = db.session.query(Source).get(source_id)
+            if self.log_change(f"S{source_id}.merge_into_id", merge_source.merge_into_id,
+                               source.id):
+                now = datetime.now()
+                self.log_change(f"S{source_id}.merge_into_date", merge_source.merge_into_date,
+                                now)
+                merge_source.merge_into_id = source.id
+                merge_source.merge_into_date = now
+                merge_source.updated_date = now
+                self.changed_ids.append(source_id)
 
     def change_publisher_id(self, source: Source, publisher_id: str) -> None:
         if not publisher_id:
@@ -267,7 +270,7 @@ class SourceHandler(EntityHandler):
         if self.log_change('publisher_id', source.publisher_id, publisher_id):
             source.publisher_id = publisher_id
             source.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [source.id]
 
     def fast_store_source(self, source_id):
         app = self.heroku_conn.apps()["openalex-guts"]
@@ -275,7 +278,7 @@ class SourceHandler(EntityHandler):
         app.run_command(command, printout=False)
 
     def process_single_row(self, row):
-        self.changes_made = False
+        self.changed_ids = []
 
         if not row['source_id'].lower().startswith('s'):
             print(f"Invalid source ID format: {row['source_id']}")
@@ -313,9 +316,9 @@ class SourceHandler(EntityHandler):
             else:
                 print(f"Unknown edit type: {edit_type}")
 
-            if self.changes_made:
+            for source_id in self.changed_ids:
                 self.oax_db_session.commit()
-                self.fast_store_source(source.id)
+                self.fast_store_source(source_id)
                 print("✓ Changes committed successfully")
                 return True
             else:
@@ -447,7 +450,7 @@ class WorkHandler(EntityHandler):
         if self.log_change("paper_title", work.paper_title, new_title):
             work.paper_title = new_title
             work.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [work.id]
 
 
     def change_oa_status(self, work: Work, is_oa: str, url: str = '',
@@ -495,7 +498,7 @@ class WorkHandler(EntityHandler):
                 self.update_in_unpaywall(work.doi.lower())
                 unpaywall_recordthresher_refresh(work.doi.lower())
         work.updated_date = datetime.now()
-        self.changes_made = True
+        self.changed_ids = [work.id]
 
     def change_language(self, work: Work, language: str) -> None:
         if not language:
@@ -504,7 +507,7 @@ class WorkHandler(EntityHandler):
         if self.log_change("language", work.language, new_language):
             work.language = new_language
             work.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [work.id]
 
     def change_license(self, work: Work, license: str) -> None:
         if not license:
@@ -512,7 +515,7 @@ class WorkHandler(EntityHandler):
         if self.log_change("license", work.license, license):
             work.license = license
             work.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [work.id]
 
     def change_source(self, work: Work, source_id: str) -> None:
         if not source_id or not source_id.lower().startswith('s'):
@@ -521,22 +524,26 @@ class WorkHandler(EntityHandler):
         if self.log_change("journal_id", work.journal_id, new_journal_id):
             work.journal_id = new_journal_id
             work.updated_date = datetime.now()
-            self.changes_made = True
+            self.changed_ids = [work.id]
 
-    def merge_works(self, work: Work, merge_into: str,
+    def merge_works(self, merge_into: str,
                     merge_duplicates: str) -> None:
-        if merge_into and merge_into.lower().startswith('w'):
-            new_merge_id = int(merge_into[1:])
-            if self.log_change("merge_into_id", work.merge_into_id,
-                               new_merge_id):
-                work.merge_into_id = new_merge_id
-                work.merge_into_date = datetime.now()
-                self.changes_made = True
-                self.log_change("merge_into_date", work.merge_into_date,
-                                datetime.now())
+        merge_into_id = re.split(r'w', merge_into, flags=re.IGNORECASE)[-1]
+        need_merged_ids = [int(re.split(r'w', w, flags=re.IGNORECASE)[-1]) for w in merge_duplicates]
+        for work_id in need_merged_ids:
+            w = db.session.query(Work).get(work_id)
+            if self.log_change(f"W{work_id}.merge_into_id", w.merge_into_id,
+                               merge_into_id):
+                now = datetime.now()
+                self.log_change(f"W{work_id}.merge_into_date", w.merge_into_date,
+                                now)
+                w.merge_into_id = merge_into_id
+                w.merge_into_date = now
+                self.changed_ids.append(work_id)
+
 
     def process_single_row(self, row):
-        self.changes_made = False
+        self.changed_ids = []
         work_id = row['work_id']
 
         if 'openalex.org/' in work_id:
@@ -570,14 +577,14 @@ class WorkHandler(EntityHandler):
             elif 'license' in edit_type:
                 self.change_license(work, row['license'])
             elif 'merge' in edit_type:
-                self.merge_works(work, row['merge_into'],
+                self.merge_works(row['merge_into'],
                                  row['merge_duplicates'])
             else:
                 print(f"Unknown edit type: {edit_type}")
 
-            if self.changes_made:
+            for work_id in self.changed_ids:
                 self.oax_db_session.commit()
-                enqueue_slow_queue(work.id, priority=-1, fast_queue_priority=-1)
+                enqueue_slow_queue(work_id, priority=-1, fast_queue_priority=-1)
                 print("✓ Changes committed successfully")
                 return True
             else:
