@@ -218,7 +218,7 @@ def add_publisher(publisher_name):
     p.image_url = None
     p.image_thumbnail_url = None
 
-    ror_id = get_claim_value(claims, 'P3500')
+    ror_id = get_claim_value(claims, 'P6782')
     if ror_id:
         p.ror_id = f"https://ror.org/{ror_id}"
 
