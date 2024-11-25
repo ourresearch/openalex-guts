@@ -528,10 +528,10 @@ class WorkHandler(EntityHandler):
 
     def merge_works(self, merge_into: str,
                     merge_duplicates: str) -> None:
-        merge_into_id = re.split(r'w', merge_into, flags=re.IGNORECASE)[-1]
-        need_merged_ids = [int(re.split(r'w', w, flags=re.IGNORECASE)[-1]) for w in merge_duplicates]
+        merge_into_id = int(re.split(r'w', merge_into, flags=re.IGNORECASE)[-1])
+        need_merged_ids = [int(re.split(r'w', w, flags=re.IGNORECASE)[-1]) for w in merge_duplicates.split(',')]
         for work_id in need_merged_ids:
-            w = db.session.query(Work).get(work_id)
+            w = base_fast_queue_works_query().get(work_id)
             if self.log_change(f"W{work_id}.merge_into_id", w.merge_into_id,
                                merge_into_id):
                 now = datetime.now()
@@ -601,7 +601,6 @@ def main():
     parser = argparse.ArgumentParser(
         description='Process OpenAlex entity changes')
     parser.add_argument('--entity', type=str, required=True,
-                        choices=['works', 'sources'],
                         help='Entity type to process (works or sources)')
     parser.add_argument('--row_num', type=int, required=False,
                         help='Row number to process')
