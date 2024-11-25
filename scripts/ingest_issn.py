@@ -130,8 +130,11 @@ def find_publisher_entity(name):
     # Check each Wikidata result until we find a publisher
     if results.get('search'):
         for result in results['search']:
-            entity = get_wikidata_entity(result['id'])
-            if entity and is_publisher_entity(entity):
+            wikidata_id = result['id']
+            entity = get_wikidata_entity(wikidata_id)
+            publisher_exists = db.session.query(Publisher).filter(
+                Publisher.wikidata_id.ilike(f'%{wikidata_id}%')).first()
+            if entity and is_publisher_entity(entity) and not publisher_exists:
                 return entity
 
     # If no valid publisher found in Wikidata search, try ROR API
@@ -397,7 +400,7 @@ def ingest_issn(issn: str = None, publisher_id=None, is_core=False, is_oa=False,
     if not publisher_id:
         publisher_id = get_publisher_id(
             publisher_name=parsed_journal['publisher'])
-        if not publisher_id:
+        if publisher_id is None:
             if p := add_publisher(parsed_journal['publisher']):
                 publisher_id = p.publisher_id
                 print(f'New Publisher created: {p}')
