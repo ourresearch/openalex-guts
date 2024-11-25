@@ -494,6 +494,9 @@ def main():
                     f'Journal created: {source} ({i + 1} / {len(args.issn)})')
             except Exception as e:
                 print(f'Error ingesting ISSN {issn}: {e}')
+                if 'psycopg2' in e:
+                    db.session.rollback()
+
 
 
 
