@@ -352,7 +352,7 @@ def doaj_response(issn: str):
     soup = BeautifulSoup(r.content, parser='lxml', features='lxml')
     zero_apc_tag = soup.find(lambda tag: tag.name == 'article' and 'no publication fees' in tag.get_text().lower())
     if zero_apc_tag:
-        apc_prices = {'price': 0, 'currency': 'USD'}
+        apc_prices = [{'price': 0, 'currency': 'USD'}]
         return {'is_in_doaj': True, 'apc_prices': apc_prices, 'apc_usd': 0,
                 'apc_found': True}
     apc_tag = soup.find(lambda tag: tag.name == 'article' and 'journal charges up to' in tag.get_text().lower())
