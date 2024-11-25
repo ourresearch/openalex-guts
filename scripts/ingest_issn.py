@@ -130,10 +130,9 @@ def find_publisher_entity(name):
     # Check each Wikidata result until we find a publisher
     if results.get('search'):
         for result in results['search']:
-            wikidata_id = result['id']
-            entity = get_wikidata_entity(wikidata_id)
+            entity = get_wikidata_entity(result['id'])
             publisher_exists = db.session.query(Publisher).filter(
-                Publisher.wikidata_id.ilike(f'%{wikidata_id}%')).first()
+                Publisher.wikidata_id.ilike(f'%{entity["id"]}%')).first()
             if entity and is_publisher_entity(entity) and not publisher_exists:
                 return entity
 
@@ -145,7 +144,7 @@ def find_publisher_entity(name):
         pass
     if wikidata_id:
         entity = get_wikidata_entity(wikidata_id)
-        publisher_exists = db.session.query(Publisher).filter(Publisher.wikidata_id.ilike(f'%{wikidata_id}%')).first()
+        publisher_exists = db.session.query(Publisher).filter(Publisher.wikidata_id.ilike(f'%{entity["id"]}%')).first()
         if entity and is_publisher_entity(entity) and not publisher_exists:
             return entity
 
