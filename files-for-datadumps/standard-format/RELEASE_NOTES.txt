@@ -1,5 +1,13 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2024-11-25
+- added 3.5 million new author IDs after fixing bug introduced by ORCID integration
+- added 103 new sources (journals) that started publishing in latter part of 2024
+- ingested 145 author change requests with new curation form
+- added/removed institution affiliations for 3.5k works based on works-magnet curation requests
+- processed 50 source curation requests
+- curated 5 institutions that were lacking affiliations
+
 RELEASE 2024-10-31
 - detect additional paratext
 - fixed author alternate names bug
