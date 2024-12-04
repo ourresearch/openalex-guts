@@ -825,15 +825,17 @@ def remove_works_from_profile(curation_data, sheet_instance):
                                 work_ids_bad_remove.append(work_id_to_remove)
                     else:
                         work_ids_bad_remove = work_ids_to_remove.copy()
-
-            if work_ids_bad_remove:
-                _ = sheet_instance.update([["no", f"Invalid work ids to remove: {''.join(str(work_ids_bad_remove))}"]], 
-                                          'L'+str(row.request_row_num+2))
+                if work_ids_bad_remove:
+                    _ = sheet_instance.update([["no", f"Invalid work ids to remove: {''.join(str(work_ids_bad_remove))}"]], 
+                                            'L'+str(row.request_row_num+2))
+                else:
+                    _ = sheet_instance.update([["yes", ""]], 
+                                            'L'+str(row.request_row_num+2))
+                    
+                    _ = freeze_author_id(author_id, row.email, cur, conn)
             else:
-                _ = sheet_instance.update([["yes", ""]], 
+                _ = sheet_instance.update([["no", f"Could not find works to remove: {''.join(str(row['works_to_remove']))}"]], 
                                           'L'+str(row.request_row_num+2))
-                
-                _ = freeze_author_id(author_id, row.email, cur, conn)
 
     cur.close()
     conn.close()
