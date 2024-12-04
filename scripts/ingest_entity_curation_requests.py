@@ -205,6 +205,12 @@ class SourceHandler(EntityHandler):
             if self.log_change("apc_usd", source.apc_usd, new_price):
                 source.apc_usd = new_price
                 source.apc_found = True
+                if not source.apc_prices:
+                    source.apc_prices = [{'currency': 'USD', 'price': new_price}]
+                elif isinstance(source.apc_prices, list):
+                    source.apc_prices.append({'currency': 'USD', 'price': new_price})
+                else:
+                    raise Exception(f'Source.apc_prices is not null and is not a list - S{source.journal_id}')
                 source.updated_date = datetime.now()
                 self.changed_ids = [source.id]
                 self.log_change("apc_found", source.apc_found, True)
