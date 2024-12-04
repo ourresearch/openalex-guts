@@ -269,7 +269,7 @@ class Source(db.Model):
 
     @property
     def apc_usd_with_0(self):
-        if self.apc_usd:
+        if self.apc_usd is not None:
             return self.apc_usd
         elif self.is_in_doaj and not self.apc_prices:
             # in DOAJ but no APC, which means APC is 0
