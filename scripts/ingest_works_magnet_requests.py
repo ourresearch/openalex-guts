@@ -115,7 +115,7 @@ def load_latest_github_issues(sheet_instance, max_issue_id_from_previous, last_r
                                                                 i not in [new for new in x.new_rors.split(";") if new != '']] else False, axis=1)
     df_issues['removed_rors'] = df_issues.apply(lambda x: ";".join([i for i in [prev for prev in x.previous_rors.split(";") if prev !=''] if 
                                                                 i not in [new for new in x.new_rors.split(";") if new != '']]), axis=1)
-    df_issues['contact_full'] = df_issues['body'].apply(lambda x: [i for i in df_issues.iloc[0]['body'].split('\n') if i.startswith('contact')][0])
+    df_issues['contact_full'] = df_issues['body'].apply(lambda x: [i for i in x.split('\n') if i.startswith('contact')][0])
     df_issues['contact'] = df_issues['contact_full'].apply(lambda x: x.split("@")[0] if len(x.split("@"))>0 else "")
     df_issues['contact_domain'] = df_issues['contact_full'].apply(lambda x: x.split("@")[1] if len(x.split("@"))>0 else "")
     df_issues['OpenAlex'] = ""
