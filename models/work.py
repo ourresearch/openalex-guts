@@ -506,23 +506,6 @@ class Work(db.Model):
             "topics": topic_ids
         }
 
-    def keywords_and_leaf_concepts(self):
-        all_concepts = [concept.to_dict("keyword") for concept in self.concepts_sorted]
-
-        concepts_to_use = []
-        keyword_ids_used = [keyword.keyword_id for keyword in self.keywords_sorted if keyword.keyword_id != ""] if self.keywords_sorted else []
-        for concept in all_concepts:
-            if concept.get('use_as_keyword') and concept.get('keyword_id') and is_valid_keyword_id(concept.get('keyword_id')):
-                if concept.get('keyword_id') not in keyword_ids_used and concept.get('score') > 0.4:
-                    # query Keyword table to get openalex_id
-                    keyword = models.Keyword.query.get(concept.get('keyword_id'))
-                    concepts_to_use.append({"id": keyword.openalex_id, 
-                                            "display_name": concept.get('display_name'), 
-                                            "score": concept.get('score')})
-                    keyword_ids_used.append(concept.get('keyword_id'))
-        
-        return concepts_to_use
-
     def get_concepts_input_hash(self):
         return hashlib.md5(
             json.dumps(self.concept_api_input_data(), sort_keys=True).encode(
@@ -540,121 +523,6 @@ class Work(db.Model):
             json.dumps(self.keyword_api_input_data(), sort_keys=True).encode(
                 'utf-8')
         ).hexdigest()
-
-    def add_work_keywords(self):
-        if not self.keywords:
-            self.keywords.append(models.WorkKeyword(
-                paper_id=self.paper_id,
-                keyword_id="",
-                score=0.0,
-                keywords_input_hash="",
-                algorithm_version=2,
-                updated=datetime.datetime.utcnow().isoformat()
-            ))
-
-        current_keywords_input_hash = self.get_keywords_input_hash()
-
-        if self.keywords[0].keywords_input_hash == '-1':
-            logger.info(
-                'skipping keyword matching because keywords have already been gathered. Set input hash to current.')
-            for i in range(len(self.keywords)):
-                self.keywords[
-                    i].keywords_input_hash = current_keywords_input_hash
-            return
-        elif self.keywords[
-            0].keywords_input_hash == current_keywords_input_hash:
-            logger.info(
-                'skipping keyword matching because inputs are unchanged')
-            return
-
-        api_key = os.getenv("SAGEMAKER_API_KEY")
-
-        headers = {"X-API-Key": api_key}
-        api_url = "https://qapir74yac.execute-api.us-east-1.amazonaws.com/api/"
-
-        keyword_inputs = self.keyword_api_input_data()
-
-        if not keyword_inputs['topics']:
-            self.keywords = []
-            self.keywords.append(models.WorkKeyword(
-                paper_id=self.paper_id,
-                keyword_id="",
-                score=0.0,
-                keywords_input_hash=current_keywords_input_hash,
-                algorithm_version=2,
-                updated=datetime.datetime.utcnow().isoformat()
-            ))
-            logger.info('skipping keyword matching because there are no topics')
-            return
-        elif (keyword_inputs['title'] == '') & (
-                keyword_inputs['abstract_inverted_index'] is None):
-            self.keywords = []
-            self.keywords.append(models.WorkKeyword(
-                paper_id=self.paper_id,
-                keyword_id="",
-                score=0.0,
-                keywords_input_hash=current_keywords_input_hash,
-                algorithm_version=2,
-                updated=datetime.datetime.utcnow().isoformat()
-            ))
-            logger.info(
-                'skipping keyword matching because there is no title or abstract')
-            return
-
-        number_tries = 0
-        keep_calling = True
-        all_keywords = None
-        response_json = None
-        r = None
-
-        while keep_calling:
-            r = requests.post(api_url,
-                              json=json.dumps([keyword_inputs], sort_keys=True),
-                              headers=headers)
-
-            if r.status_code == 200:
-                try:
-                    response_json = r.json()
-                    resp_data = response_json[0]
-                    all_keywords = [i for i in resp_data]
-                    keep_calling = False
-                except Exception as e:
-                    logger.error(
-                        f"error {e} in add_work_keywords with {self.id}, response {r}, called with {api_url} data: {keyword_inputs}")
-                    all_keywords = None
-                    keep_calling = False
-
-            elif r.status_code == 500:
-                logger.error(
-                    f"Error on try #{number_tries}, now trying again: Error back from API endpoint: {r} {r.status_code}")
-                sleep(0.5)
-                number_tries += 1
-                if number_tries > 60:
-                    keep_calling = False
-
-            else:
-                logger.error(
-                    f"Error, not retrying: Error back from API endpoint: {r} {r.status_code} {r.text} for input {keyword_inputs}")
-                all_keywords = None
-                keep_calling = False
-
-        if r.status_code == 200:
-            if all_keywords:
-                self.keywords = []
-                for one_keyword in all_keywords:
-                    score = one_keyword.get("score")
-                    keyword_id = one_keyword.get("keyword_id")
-                    if is_valid_keyword_id(keyword_id):
-                        new_work_keyword = models.WorkKeyword(
-                            paper_id=self.paper_id,
-                            keyword_id=keyword_id,
-                            score=score,
-                            keywords_input_hash=current_keywords_input_hash,
-                            algorithm_version=2,
-                            updated=datetime.datetime.utcnow().isoformat()
-                        )
-
-                        self.keywords.append(new_work_keyword)
 
     def add_work_topics(self):
         current_topics_input_hash = self.get_topics_input_hash()
@@ -745,9 +613,10 @@ class Work(db.Model):
     def add_work_concepts(self):
         current_concepts_input_hash = self.get_concepts_input_hash()
 
-        # if self.concepts_input_hash == current_concepts_input_hash:
-        #     logger.info('skipping concept tagging because inputs are unchanged')
-        #     return
+        if self.concepts_input_hash == current_concepts_input_hash:
+            logger.info(
+                'skipping concept tagging because inputs are unchanged')
+            return
 
         self.full_updated_date = datetime.datetime.utcnow().isoformat()
 
@@ -794,15 +663,18 @@ class Work(db.Model):
 
         if r.status_code == 200:
             self.concepts = []
+            self.keywords = []
             self.concepts_for_related_works = []
 
             if concept_names:
+                keyword_ids_used = []
                 for i, concept_name in enumerate(concept_names):
                     score = response_json[0]["scores"][i]
                     field_of_study = response_json[0]["tag_ids"][i]
 
                     if field_of_study and is_valid_concept_id(field_of_study):
                         new_work_concept = models.WorkConcept(
+                            paper_id=self.paper_id,
                             field_of_study=field_of_study,
                             score=score,
                             algorithm_version=3,
@@ -815,6 +687,22 @@ class Work(db.Model):
                         if score > 0.3:
                             self.concepts_for_related_works.append(
                                 field_of_study)
+                            
+                        concept = models.Concept.query.get(field_of_study).to_dict("keyword")
+                        keyword_id = concept.get('keyword_id')
+                        if concept.get('use_as_keyword') and keyword_id and is_valid_keyword_id(keyword_id):
+                            if concept.get('keyword_id') not in keyword_ids_used and score > 0.4:
+                                new_work_keyword = models.WorkKeyword(
+                                    paper_id=self.paper_id,
+                                    keyword_id=keyword_id,
+                                    score=score,
+                                    keyword_input_hash=current_concepts_input_hash,
+                                    algorithm='concept_keyword',
+                                    updated=datetime.datetime.utcnow().isoformat()
+                                )
+                                
+                                self.keywords.append(new_work_keyword)
+                                keyword_ids_used.append(keyword_id)
 
             self.concepts_input_hash = current_concepts_input_hash
 
@@ -881,11 +769,6 @@ class Work(db.Model):
             self.add_work_topics()
             logger.info(
                 f'add_work_topics took {elapsed(start_time, 2)} seconds')
-
-            start_time = time()
-            self.add_work_keywords()
-            logger.info(
-                f'add_work_keywords took {elapsed(start_time, 2)} seconds')
 
             start_time = time()
             self.add_related_works()  # must be after work_concepts
@@ -2832,20 +2715,6 @@ class Work(db.Model):
             return self.unpaywall.oa_status == 'closed'
         return False
     
-    def get_final_keywords(self):
-        # Adding in leaf concepts
-        concepts_to_use = self.keywords_and_leaf_concepts()
-
-        final_keywords  = [keyword.to_dict("minimum") for keyword in
-                             self.keywords if
-                             keyword.keyword_id != ""] if self.keywords else []
-        
-        final_keywords += concepts_to_use
-
-        final_keywords_sorted = sorted(final_keywords, key=lambda x: x['score'], reverse=True) if final_keywords else []
-
-        return final_keywords_sorted
-    
     @property
     def citations_normalized_percentile(self):
         normalized_citation_percentile = round(self.work_citations_norm_percentile.normalized_citation_percentile, 6) \
@@ -3009,7 +2878,8 @@ class Work(db.Model):
                 "referenced_works": self.references_list_sorted,
                 "referenced_works_count": len(self.references_list_sorted),
                 "sustainable_development_goals": self.sustainable_development_goals,
-                "keywords": self.get_final_keywords(),
+                "keywords": [keyword.to_dict("minimum") for keyword in
+                             self.keywords_sorted],
                 "grants": grant_dicts,
                 "apc_list": self.apc_list,
                 "apc_paid": self.apc_paid,
