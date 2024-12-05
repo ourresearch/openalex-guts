@@ -663,7 +663,7 @@ def freeze_author_id(author_id, email, session_cur, session_conn):
 def get_best_authorship(author_id, work_id, session_conn, session_cur):
     session_cur.execute("select display_name from mid.author where author_id = %s", (author_id,))
     author_name = session_cur.fetchone()[0]
-    logger.info("Matching authorships to: ", author_name)
+    logger.info(f"Matching authorships to: {author_name}")
 
     author_name_blocked = get_name_match_list_reg(transform_name_for_search(transform_author_name(author_name)))
 
