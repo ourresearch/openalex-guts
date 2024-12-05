@@ -69,7 +69,7 @@ def parse_args():
     return parser.parse_args()
 
 def get_open_github_issues():
-    fields = ['raw_affiliation_name', 'new_rors', 'previous_rors', 'works_examples']
+    fields = ['raw_affiliation_name', 'new_rors', 'previous_rors', 'works_examples','body']
     def parse_body(e):
         elt = {}
         for lx, line in enumerate(e.split('\n')):
