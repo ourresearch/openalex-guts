@@ -1982,7 +1982,8 @@ class Work(db.Model):
     @property
     def is_closed_springer_or_elsevier(self):
         publisher_str = (self.journal and self.journal.publisher) or self.publisher
-        if publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower()):
+        host_org = self.records_sorted and self.records_sorted[0].journal and self.records_sorted[0].journal.host_organization_id
+        if (publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower())) or (host_org and host_org.split('/P')[-1] in {'4310319955', '4310319965'}):
             return not self.is_oa
         return False
 
