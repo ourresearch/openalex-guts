@@ -1984,7 +1984,13 @@ class Work(db.Model):
         top_publisher_blacklist = {4310320990, 4310319965}
         publisher_str = (self.journal and self.journal.publisher) or self.publisher
         host_org = self.records_sorted and self.records_sorted[0].journal and self.records_sorted[0].journal.host_organization
-        host_org_blacklisted = any([int(host_org.split('/P')[-1]) in top_publisher_blacklist for host_org in host_org.lineage()]) if host_org else False
+        lineage = []
+        if host_org:
+            if isinstance(host_org.lineage, list):
+                lineage = host_org.lineage
+            else:
+                lineage = host_org.lineage()
+        host_org_blacklisted = any([int(re.search(r'\d+$', org_id).group(0)) in top_publisher_blacklist for org_id in lineage])
         if (publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower())) or host_org_blacklisted:
             return not self.is_oa
         return False
