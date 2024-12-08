@@ -1983,13 +1983,7 @@ class Work(db.Model):
     def is_closed_springer_or_elsevier(self):
         top_publisher_blacklist = {4310320990, 4310319965}
         publisher_str = (self.journal and self.journal.publisher) or self.publisher
-        host_org = self.records_sorted and self.records_sorted[0].journal and self.records_sorted[0].journal.host_organization
-        lineage = []
-        if host_org:
-            if isinstance(host_org.lineage, list):
-                lineage = host_org.lineage
-            else:
-                lineage = host_org.lineage()
+        lineage = self.dict_locations and self.dict_locations[0].get('source') and self.dict_locations[0]['source']['host_organization_lineage']
         host_org_blacklisted = any([int(re.search(r'\d+$', org_id).group(0)) in top_publisher_blacklist for org_id in lineage])
         if (publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower())) or host_org_blacklisted:
             return not self.is_oa
