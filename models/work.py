@@ -1986,7 +1986,7 @@ class Work(db.Model):
         lineage = self.dict_locations and self.dict_locations[0].get('source') and self.dict_locations[0]['source']['host_organization_lineage']
         host_org_blacklisted = any([int(re.search(r'\d+$', org_id).group(0)) in top_publisher_blacklist for org_id in lineage]) if lineage else False
         if (publisher_str and ('springer' in publisher_str.lower() or 'elsevier' in publisher_str.lower())) or host_org_blacklisted:
-            return not self.is_oa
+            return self.oa_status not in {'gold', 'hybrid', 'diamond'}
         return False
 
     @property
