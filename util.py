@@ -910,7 +910,8 @@ def openalex_works_paginate(oax_filter, select=None):
     params = {'mailto': 'team@ourresearch.org',
               'filter': oax_filter,
               'per-page': '200',
-              'cursor': '*'}
+              'cursor': '*',
+              'bypass_cache': 'true'}
     if select:
         params['select'] = select
     s = requests.session()
