@@ -75,7 +75,6 @@ SUPER_SYSTEM_INSTITUTIONS = {
     2800216316,  # Oklahoma State University System
     2800918300,  # Oregon University System
     2746051580,  # Université Paris Sciences et Lettres
-    277688954,   # University of Paris-Saclay
     55547365,    # Payame Noor University
     29957033,    # Pennsylvania State System of Higher Education
     111350863,   # Pontifical Catholic University of Puerto Rico
