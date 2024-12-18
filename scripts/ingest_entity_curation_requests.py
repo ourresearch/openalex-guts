@@ -14,12 +14,14 @@ from psycopg2 import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app import db, unpaywall_db_engine
+from models import Record
 from models.source import Source
 from models.work import Work
 from scripts.works_query import base_fast_queue_works_query
 from scripts.unpaywall_recordthresher_refresh import \
     refresh_single as unpaywall_recordthresher_refresh
 from scripts.add_things_queue import enqueue_job as enqueue_slow_queue
+from util import make_recordthresher_id
 
 WORK_COLUMN_MAP = {
     'Approved? Y/N': 'is_approved',
@@ -38,7 +40,8 @@ WORK_COLUMN_MAP = {
     'How is the work licensed?\n\n👉 Select the licence type from the list below.\n': 'license',
     'What is the Work ID of the record that appears to be the main record (i.e., has more metadata available).\n\n👉 Paste a single Work ID, like "W2884670852"\n\n(how to find a work ID)': 'merge_into',
     'Which Work ID(s) are duplicates of the main record?\n\n👉 Paste a single Work ID, like "W2884670852", or multiple Work IDs separated by commas, like "W2884670852,W2317271409"\n\n(how to find a work ID)': 'merge_duplicates',
-    'Finally, which OA color should this work be?': 'oa_status'
+    'Finally, which OA color should this work be?': 'oa_status',
+    'What should the abstract text be?\n\n👉 Paste the abstract text, exactly how it should appear. ': 'abstract'
 }
 
 SOURCE_COLUMN_MAP = {
@@ -585,6 +588,8 @@ class WorkHandler(EntityHandler):
             elif 'merge' in edit_type:
                 self.merge_works(row['merge_into'],
                                  row['merge_duplicates'])
+            elif 'abstract' in edit_type:
+                self.change_abstract(work, row['abstract'])
             else:
                 print(f"Unknown edit type: {edit_type}")
 
@@ -601,6 +606,16 @@ class WorkHandler(EntityHandler):
             print(f"Error processing work {work_id}: {str(e)}")
             self.oax_db_session.rollback()
             return False
+
+    def change_abstract(self, work, new_abs_text):
+        or_record = self.oax_db_session.query(Record).filter(Record.record_type == 'override').filter(Record.work_id == work.paper_id).first()
+        if or_record:
+            or_record.abstract = new_abs_text
+        else:
+            or_record = Record(record_type='override', work_id=work.paper_id, id=make_recordthresher_id())
+            self.oax_db_session.add(or_record)
+        self.log_change('abstract', work.abstract, new_abs_text)
+        self.changed_ids = [work.paper_id]
 
 
 def main():
