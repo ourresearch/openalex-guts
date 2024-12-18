@@ -110,11 +110,11 @@ class view:
         # log start and save basic variable passed by function
         logging.info(f'Starting creation of view with object number: \'{view_number}\'')
         self.raw_header = raw_header
-        # parse view name nd log it
+        # parse view name and log it
         self.view_name = parse_view_name(raw_header)
         logging.info(
             f'View name \'{self.view_name}\' extracted for following header: \'{raw_header}\' (view with object number: \'{view_number}\')')
-        # parse view comment nd log it
+        # parse view comment and log it
         self.view_comment = parse_view_comment(raw_header)
         logging.info(
             f'View comment \'{self.view_comment}\' extracted for following header: \'{raw_header}\' (view with object number: \'{view_number}\')')
