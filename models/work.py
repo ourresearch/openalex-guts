@@ -624,7 +624,7 @@ class Work(db.Model):
         api_key = os.getenv("SAGEMAKER_API_KEY")
 
         headers = {"X-API-Key": api_key}
-        api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/"  # for vesion with abstracts
+        api_url = "https://l7a8sw8o2a.execute-api.us-east-1.amazonaws.com/api/"  # for version with abstracts
 
         number_tries = 0
         keep_calling = True
@@ -764,7 +764,7 @@ class Work(db.Model):
             logger.info(
                 f'add_work_concepts took {elapsed(start_time, 2)} seconds')
 
-            # After initial burst, need to move this here becauase topics is slow
+            # After initial burst, need to move this here because topics is slow
             start_time = time()
             self.add_work_topics()
             logger.info(
