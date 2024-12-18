@@ -513,7 +513,7 @@ def dict_from_dir(obj, keys_to_ignore=None, keys_to_show="all"):
             pass
         else:
             try:
-                # convert datetime objects...generally this will fail becase
+                # convert datetime objects...generally this will fail because
                 # most things aren't datetime object.
                 ret[k] = time.mktime(value.timetuple())
             except AttributeError:

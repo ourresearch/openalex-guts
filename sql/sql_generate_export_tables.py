@@ -308,9 +308,9 @@ DELIMITER as '\\t';"""
                                 raise ValueError(f'Cannot parse comment for following row: {line}')
                         # If column isn't renamed (using AS notation), then lets just take normal column name
                         else:
-                            # Lets double check that extraction of column name wont fail
+                            # Lets double check that extraction of column name won't fail
                             if re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE):
-                                # Lets double check that extraction of column name wont fail
+                                # Lets double check that extraction of column name won't fail
                                 if re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE).group(REG_COLUMN_NAME_GROUP):
                                     columns.append(re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE).group(
                                         REG_COLUMN_NAME_GROUP))
@@ -404,7 +404,7 @@ class parser:
 # """)
 
             f.close()
-        # If output file genereation failed, then log error and raise it
+        # If output file generation failed, then log error and raise it
         except:
             logging.error(f'Cannot generate output file {self.output_file_path} !')
             raise ValueError(f'Cannot generate output file {self.output_file_path} !')

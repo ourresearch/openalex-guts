@@ -116,7 +116,7 @@ if True:
 # # make sure this is all set, and do it before the next step
 # update mid.work set doi_lower=lower(doi) where doi_lower is null and doi is not null
 #
-# # add unpaywall data to eveything with a doi that doesn't have it yet
+# # add unpaywall data to everything with a doi that doesn't have it yet
 # update mid.work set
 #         genre=u.genre,
 #         is_paratext=u.is_paratext,
