@@ -2,6 +2,7 @@ import datetime
 import time
 import unicodedata
 
+import shortuuid
 import sqlalchemy
 import logging
 import math
@@ -925,3 +926,6 @@ def openalex_works_paginate(oax_filter, select=None):
         if not page:
             break
         yield page
+
+def make_recordthresher_id():
+    return shortuuid.uuid()[:22]
