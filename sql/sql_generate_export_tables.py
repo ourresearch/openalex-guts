@@ -84,7 +84,7 @@ def parse_view_name(raw_header):
             logging.error(f'Cannot parse table_name out for following query: {raw_header}')
             raise ValueError(f'Cannot parse table_name out for following query: {raw_header}')
         else:
-            # in case of view_name retrival, return it out of function
+            # in case of view_name retrieval, return it out of function
             return re.search(f'{VIEW_TABLENAME_REGEXP}', raw_header, re.IGNORECASE).group(REG_GROUP_TABLE_NAME)
 
 # ---------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ def parse_view_name(raw_header):
 def parse_view_comment(raw_header):
     # check if header has view comment inside
     if re.match(f'{VIEW_TABLENAME_REGEXP}', raw_header, re.IGNORECASE):
-        # if comment retrival failed, then logg err and raise it
+        # if comment retrieval failed, then logg err and raise it
         if not re.search(f'{VIEW_COMMENT_REGEXP}', raw_header, re.IGNORECASE).group(REG_GROUP_COMMENT):
             logging.error(f'Cannot parse comment out for following query: {raw_header}')
             raise ValueError(f'Cannot parse comment out for following query: {raw_header}')
