@@ -7,8 +7,8 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_SAGEMAKER_ACCOUNT_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SAGEMAKER_ACCOUNT_SECRET")
 
 def connect_to_db():
     secret = get_secret()
