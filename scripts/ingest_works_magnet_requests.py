@@ -133,7 +133,7 @@ def load_latest_github_issues(sheet_instance, max_issue_id_from_previous, last_r
     num_issues_to_load = df_issues[df_issues['issue_id']>max_issue_id_from_previous].shape[0]
     if num_issues_to_load == 0:
         logger.info("No new issues to load")
-        return
+        return df_issues
     _ = sheet_instance.update(df_issues[df_issues['issue_id']>max_issue_id_from_previous]\
         [['issue_id','has_added','has_removed','new_rors','previous_rors','raw_affiliation_name','added_rors',
         'removed_rors','works_examples','contact','contact_domain']].sort_values('issue_id').values.tolist(), f'A{last_row_index+2}')
@@ -311,7 +311,7 @@ def auto_approve_requests(sheet_instance, records_data):
         _ = sheet_instance.update(final_approval_df\
                                   [['Notes2']].values.tolist(), 'O2')
 
-def load_latest_approvals_to_db(sheet_instance, records_data, open_issues, max_issue_id_from_previous, last_row_index):
+def load_latest_approvals_to_db(records_data, open_issues):
     raw_strings = open_issues[['issue_id','raw_affiliation_name']].rename(columns={'issue_id':'issue_number', 'raw_affiliation_name': 'original_affiliation'})\
     .sort_values('issue_number').reset_index(drop=True).copy()
 
@@ -498,7 +498,7 @@ def main():
         _ = auto_approve_requests(sheet_instance, records_data)
 
         logger.info("Load latest approvals to the database")
-        _ = load_latest_approvals_to_db(sheet_instance, records_data, open_issues, max_issue_id_from_previous, last_row_index)
+        _ = load_latest_approvals_to_db(records_data, open_issues)
 
 if __name__ == '__main__':
     main()
