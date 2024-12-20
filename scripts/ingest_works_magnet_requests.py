@@ -464,7 +464,7 @@ def main():
     args = parse_args()
 
     # get the instance of the Spreadsheet
-    sheet = client.open('affiliation curation')
+    sheet = client.open('affiliation curation (DO NOT SORT EXCEPT BY ISSUE NUMBER)')
 
     # get the first sheet of the Spreadsheet
     sheet_instance = sheet.get_worksheet(0)
