@@ -254,7 +254,7 @@ def auto_approve_requests(sheet_instance, records_data):
 
     # pull issues into a dataframe
     issues_and_approve = pd.DataFrame(records_data)\
-        [['issue_number','OpenAlex Approve?','Notes2']]
+        [['issue_number','raw_affiliation_name','added_rors','removed_rors','OpenAlex Approve?','Notes2']]
     
     issues_needing_approval = issues_and_approve[issues_and_approve['OpenAlex Approve?'] == ''].copy()
     
