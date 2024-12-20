@@ -3,8 +3,7 @@ import boto3
 import os
 import botocore
 import psycopg2
-import openai
-print(openai.__version__)
+from openai import OpenAI
 from pydantic import BaseModel
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
