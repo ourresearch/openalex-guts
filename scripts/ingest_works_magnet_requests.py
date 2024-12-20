@@ -365,7 +365,11 @@ def load_latest_approvals_to_db(records_data, open_issues):
     # Get the latest work_specific_affiliation_string_curation table
     query = f"SELECT * FROM authorships.work_specific_affiliation_string_curation"
 
-    current_curation_table = pd.read_sql_query(query, engine)
+    with engine.connect() as conn:
+        current_curation_table = pd.read_sql(
+            sql=query,
+            con=conn.connection
+        )
 
     same_rows = final_df_for_curation.merge(current_curation_table[['github_issue_number', 'work_id','create_date']], 
                                         how='inner', on=['github_issue_number','work_id'])
