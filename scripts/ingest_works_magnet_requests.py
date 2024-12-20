@@ -8,7 +8,7 @@ import time
 import requests
 import psycopg2
 import gspread
-import works_magnet_auto_approver as auto_approver
+import scripts.works_magnet_auto_approver as auto_approver
 from google.oauth2 import service_account
 from multiprocessing import Pool
 from sqlalchemy import create_engine
