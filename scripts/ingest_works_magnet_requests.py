@@ -240,11 +240,15 @@ def auto_approve_requests(sheet_instance, records_data):
     # get the ror to aff id mapping
     secret = get_secret()
     engine = \
-    create_engine(f"postgresql://awsuser:{secret['password']}@{secret['host']}:{secret['port']}/{secret['dbname']}")
+        create_engine(f"postgresql://awsuser:{secret['password']}@{secret['host']}:{secret['port']}/{secret['dbname']}")
 
     query = f"SELECT affiliation_id, ror_id, display_name FROM mid.institution where merge_into_id is null"
 
-    current_institution_table = pd.read_sql_query(query, engine)
+    with engine.connect() as conn:
+        current_institution_table = pd.read_sql(
+            sql=query,
+            con=conn.connection
+        )
 
     ror_to_aff_id = current_institution_table.set_index('ror_id').to_dict()['affiliation_id']
 
@@ -323,7 +327,11 @@ def load_latest_approvals_to_db(sheet_instance, records_data, open_issues, max_i
 
     query = f"SELECT affiliation_id, ror_id, display_name FROM mid.institution where merge_into_id is null"
 
-    current_institution_table = pd.read_sql_query(query, engine)
+    with engine.connect() as conn:
+        current_institution_table = pd.read_sql(
+            sql=query,
+            con=conn.connection
+        )
 
     ror_to_aff_id = current_institution_table.set_index('ror_id').to_dict()['affiliation_id']
 
