@@ -299,10 +299,6 @@ def auto_approve_requests(sheet_instance, records_data):
 
     final_approval_df = df1.reset_index().sort_values('issue_number').copy()
 
-    logger.info("Updating the spreadsheet with the auto-approval results")
-    logger.info(f"TEST: {issues_and_approve.shape[0]} issues in original DF")
-    logger.info(f"TEST: {len(final_approval_df['OpenAlex Approve?'].tolist())} rows in new notes/approval list")
-
     if issues_and_approve.shape[0] == len(final_approval_df['OpenAlex Approve?'].tolist()):
         logger.info("Updating the spreadsheet with the auto-approval results")
         _ = sheet_instance.update(final_approval_df\
@@ -429,7 +425,7 @@ def load_latest_approvals_to_db(records_data, open_issues):
     for index, insert_row in new_rows.iterrows():
         _ = insert_into_curation_table(cur, conn, insert_row)
 
-    logger.info(f"The following issues did not get added to the database because of a error: {', '.join(did_not_get_added)}")
+    logger.info(f"The following issues did not get added to the database because of a error: {', '.join([str(x) for x in did_not_get_added])}")
     for index, insert_row in new_rows[~new_rows['github_issue_number'].isin(did_not_get_added)].iterrows():
         _ = insert_into_add_most_things(cur, conn, insert_row.work_id)
 
@@ -445,7 +441,7 @@ def load_latest_approvals_to_db(records_data, open_issues):
     # close the github tickets and comment on them
     for i, github_issue_number in enumerate(final_issues_to_add_list):
         time.sleep(10) # sleep for 10 seconds to avoid rate limit on github
-        logger.info(f"row {i}: closing issue {github_issue_number}")
+        logger.info(f"row {str(i)}: closing issue {str(github_issue_number)}")
         # comment on the issue
         data = {'body': f'This issue was accepted and ingested by the OpenAlex team on {curr_date}. The new affiliations should be visible within the next 7 days.'}
         url = f"https://api.github.com/repos/dataesr/openalex-affiliations/issues/{github_issue_number}/comments"
@@ -456,8 +452,8 @@ def load_latest_approvals_to_db(records_data, open_issues):
                 time.sleep(60)
                 resp = requests.post(url=url, data=json.dumps(data), headers=headers)
                 if resp.status_code != 201:
-                    logger.info(f"Error while commenting on issue {github_issue_number} (second try)")
-                    logger.info(f"Exiting github approval process. The following issues need to be closed but were skipped: {', '.join(final_issues_to_add_list[i:])}")
+                    logger.info(f"Error while commenting on issue {str(github_issue_number)} (second try)")
+                    logger.info(f"Exiting github approval process. The following issues need to be closed but were skipped: {', '.join([str(x) for x in final_issues_to_add_list[i:]])}")
                     did_not_finish = True
                     break
 
