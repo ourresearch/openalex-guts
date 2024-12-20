@@ -1,4 +1,3 @@
-from math import log
 import pandas as pd
 import argparse
 import boto3
