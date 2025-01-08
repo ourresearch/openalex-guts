@@ -436,7 +436,7 @@ class Institution(db.Model):
         return normalize_title_like_sql(raw_string, remove_stop_words)
 
     @classmethod
-    def get_institution_ids_from_strings(cls, institution_names, curation_requests, retry_attempts=30):
+    def get_institution_ids_from_strings(cls, institution_names, curation_requests, ror_match, retry_attempts=30):
         if not institution_names:
             return [], False
 
@@ -499,6 +499,9 @@ class Institution(db.Model):
 
                             if institution_ids == [-1] or institution_ids == []:
                                 institution_ids = [None]
+                            else:
+                                if ror_match and ror_match not in institution_ids:
+                                    institution_ids.append(follow_merged_into_id(ror_match))
 
                             name_to_ids_dict[unknown_name] = institution_ids
 
@@ -645,6 +648,19 @@ class AffiliationString(db.Model):
     original_affiliation = db.Column(db.Text, primary_key=True)
     affiliation_ids = db.Column(JSONB)
     affiliation_ids_override = db.Column(JSONB)
+
+class RORAffiliationString(db.Model):
+    """
+    This table is used to store the ROR ID for an affiliation string. Only affiliation IDs that match to mid.ror_institutions_for_parser_gap are
+    stored in this table.
+    """
+    __table_args__ = {'schema': 'mid'}
+    __tablename__ = "affiliation_string_ror"
+
+    original_affiliation = db.Column(db.Text, primary_key=True)
+    affiliation_id =  db.Column(db.BigInteger)
+    random_int = db.Column(db.Integer)
+    updated_date = db.Column(db.DateTime)
 
 class AffiliationStringCuration(db.Model):
     __table_args__ = {'schema': 'authorships'}

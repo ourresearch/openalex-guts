@@ -40,6 +40,7 @@ from models.publisher import Publisher
 from models.record import Record
 from models.retraction_watch import RetractionWatch
 from models.ror import Ror
+from models.ror_matching import RORGapInstitution
 from models.source import Source
 from models.source_language_override import SourceLanguageOverride
 from models.summary_stats import AuthorImpactFactor, AuthorHIndex, AuthorI10Index, AuthorI10Index2Year, AuthorHIndex2Year
