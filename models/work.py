@@ -3,7 +3,10 @@ import hashlib
 import json
 import os
 import re
+import random
 from collections import defaultdict
+import stat
+from elasticsearch import Elasticsearch
 from enum import IntEnum
 from functools import cache
 from time import sleep
@@ -16,6 +19,7 @@ from humanfriendly import format_timespan
 import sentry_sdk
 from sqlalchemy import event, orm, text, and_, desc
 from sqlalchemy.orm import selectinload
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.types import ARRAY
 
@@ -28,13 +32,15 @@ from app import db
 from app import get_apiurl_from_openalex_url
 from app import get_db_cursor
 from app import logger
+from app import ELASTIC_URL
 from const import PREPRINT_JOURNAL_IDS, REVIEW_JOURNAL_IDS, \
     MAX_AFFILIATIONS_PER_AUTHOR
 from models.concept import is_valid_concept_id
 from models.topic import is_valid_topic_id
 from models.keyword import is_valid_keyword_id
 from models.work_sdg import get_and_save_sdgs
-from models.institution import as_institution_openalex_id
+from models.institution import as_institution_openalex_id, RORAffiliationString
+from models.ror_matching import RORGapInstitution, RORStrategy
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
     matching_author_strings, get_crossref_json_from_unpaywall, \
     words_within_distance
@@ -356,7 +362,7 @@ class Work(db.Model):
                  a.affiliation_id])
             
             new_institution_id_lists, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
-                original_affiliations, curation_requests, retry_attempts=affiliation_retry_attempts
+                original_affiliations, curation_requests, None, retry_attempts=affiliation_retry_attempts
             )
             if is_curation_request_temp:
                 is_curation_request = True
@@ -1329,6 +1335,7 @@ class Work(db.Model):
             record = self.affiliation_records_sorted[0]
 
             author_sequence_order = 1
+            aff_string_to_ror = {}
             for author_dict in record.cleaned_authors_json:
                 original_name = author_dict["raw"]
                 if author_dict.get("family"):
@@ -1362,9 +1369,27 @@ class Work(db.Model):
                         my_institutions = []
 
                         if raw_affiliation_string:
+                            # The following code takes the raw affiliation string and tries to match it with a ROR ID (based on ROR matching algorithm)
+                            if raw_affiliation_string not in aff_string_to_ror:
+                                ror_string_match = RORAffiliationString.query.filter(RORAffiliationString.original_affiliation.in_([raw_affiliation_string])).first()
+                                if ror_string_match:
+                                    aff_string_to_ror[raw_affiliation_string] = {'aff_id': ror_string_match.affiliation_id, 'new_string': False}
+                                else:
+                                    ror_match = self.search_affiliation(raw_affiliation_string, 'search-ror-institutions-v2')
+                                    if ror_match['matched_candidate']:
+                                        ror_id = ror_match['matched_candidate'][0]['id'].split("/")[-1]
+                                        ror_matched_affiliation_id = models.RORGapInstitution.query.filter_by(ror_id=ror_id).first()
+                                        if ror_matched_affiliation_id:
+                                            aff_string_to_ror[raw_affiliation_string] = {'aff_id': ror_matched_affiliation_id.affiliation_id, 'new_string': True}
+                                        else:
+                                            aff_string_to_ror[raw_affiliation_string] = {'aff_id': None, 'new_string': True}
+                                    else:
+                                        aff_string_to_ror[raw_affiliation_string] = {'aff_id': None, 'new_string': True}
+                            
                             institution_id_matches, is_curation_request_temp = models.Institution.get_institution_ids_from_strings(
                                 [raw_affiliation_string],
                                 curation_requests,
+                                aff_string_to_ror[raw_affiliation_string]['aff_id'],
                                 retry_attempts=affiliation_retry_attempts
                             )
                             if is_curation_request_temp:
@@ -1402,6 +1427,16 @@ class Work(db.Model):
                                 self.affiliations.append(my_affiliation)
                                 affiliation_sequence_order += 1
                     author_sequence_order += 1
+            for k, v in aff_string_to_ror.items():
+                if v['new_string']:
+                    db.session.execute(
+                        insert(RORAffiliationString).values(
+                            original_affiliation=k,
+                            affiliation_id=v['aff_id'],
+                            random_int=random.randint(1, 50),
+                            updated_date=datetime.datetime.utcnow().isoformat()
+                            ).on_conflict_do_nothing(index_elements=['original_affiliation'])
+                            )
         else:
             logger.info(
                 "no affiliations found for this work, going through the normal add_affiliation process")
@@ -1421,6 +1456,23 @@ class Work(db.Model):
         elif aff_count_diff > 0:
             logger.info(
                 f'[AFFILIATION UPDATE] GAINED {abs(aff_count_diff)} AFFILIATIONS ON WORK ID: {self.work_id} ({self.doi})')
+            
+    def search_affiliation(self, raw_affiliation_string, ror_search_index_name):
+
+        es = Elasticsearch([ELASTIC_URL], timeout=30)
+        resp = {'elastic_response':es.search(body={
+                    "size": 150,
+                    "query": {
+                        "nested": {
+                            "path": "names",
+                            "score_mode": "max",
+                            "query": {"match": {"names.name": {"query": raw_affiliation_string}}},
+                        }
+                    },
+                }, index=ror_search_index_name)["hits"]["hits"]}
+
+        single_search_strategy = RORStrategy()
+        return {'matched_candidate': single_search_strategy.match(raw_affiliation_string, resp['elastic_response'])}
 
     def add_affiliations(self, affiliation_retry_attempts=30):
         self.affiliations = []
@@ -1435,6 +1487,7 @@ class Work(db.Model):
         curation_requests = self.institution_curation_requests
 
         author_sequence_order = 1
+        aff_string_to_ror = {}
         for author_dict in record.cleaned_authors_json:
             original_name = author_dict["raw"]
             if author_dict.get("family"):
@@ -1454,11 +1507,31 @@ class Work(db.Model):
                     my_institutions = []
 
                     if raw_affiliation_string:
+                        # The following code takes the raw affiliation string and tries to match it with a ROR ID (based on ROR matching algorithm)
+                        if raw_affiliation_string not in aff_string_to_ror:
+                            ror_string_match = RORAffiliationString.query.filter(RORAffiliationString.original_affiliation.in_([raw_affiliation_string])).first()
+                            if ror_string_match:
+                                # ror_matched_affiliation_id = models.RORGapInstitution.query.filter_by(ror_id=ror_string_match[0].ror_id).first()
+                                aff_string_to_ror[raw_affiliation_string] = {'aff_id': ror_string_match.affiliation_id, 'new_string': False}
+                            else:
+                                ror_match = self.search_affiliation(raw_affiliation_string, 'search-ror-institutions-v2')
+                                if ror_match['matched_candidate']:
+                                    ror_id = ror_match['matched_candidate'][0]['id'].split("/")[-1]
+                                    ror_matched_affiliation_id = models.RORGapInstitution.query.filter_by(ror_id=ror_id).first()
+                                    if ror_matched_affiliation_id:
+                                        aff_string_to_ror[raw_affiliation_string] = {'aff_id': ror_matched_affiliation_id.affiliation_id, 'new_string': True}
+                                    else:
+                                        aff_string_to_ror[raw_affiliation_string] = {'aff_id': None, 'new_string': True}
+                                else:
+                                    aff_string_to_ror[raw_affiliation_string] = {'aff_id': None, 'new_string': True}
+                        
                         institution_id_matches, _ = models.Institution.get_institution_ids_from_strings(
                             [raw_affiliation_string],
                             curation_requests,
+                            aff_string_to_ror[raw_affiliation_string]['aff_id'],
                             retry_attempts=affiliation_retry_attempts
                         )
+                        
                         for institution_id_match in [m for m in
                                                      institution_id_matches[0]
                                                      if m]:
@@ -1491,6 +1564,16 @@ class Work(db.Model):
                             self.affiliations.append(my_affiliation)
                             affiliation_sequence_order += 1
                 author_sequence_order += 1
+        for k, v in aff_string_to_ror.items():
+            if v['new_string']:
+                db.session.execute(
+                    insert(RORAffiliationString).values(
+                        original_affiliation=k,
+                        affiliation_id=v['aff_id'],
+                        random_int=random.randint(1, 50),
+                        updated_date=datetime.datetime.utcnow().isoformat()
+                        ).on_conflict_do_nothing(index_elements=['original_affiliation'])
+                        )
 
     def update_oa_status_if_better(self, new_oa_status):
         # update oa_status, only if it's better than the oa_status we already have
