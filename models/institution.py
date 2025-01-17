@@ -156,15 +156,15 @@ class Institution(db.Model):
     def relationship_dicts(self):
         response = []
         q = """
-           select relationship_type, ror_grid_equivalents.ror_id as related_ror_id 
+           select relationship_type, related_ror_id 
             from ins.ror_relationships
-            join ins.ror_grid_equivalents on ror_grid_equivalents.grid_id = ror_relationships.related_grid_id
             WHERE ror_relationships.ror_id = :ror_id        
             """
         rows = db.session.execute(text(q), {"ror_id": self.ror_id}).fetchall()
         relationship_dict = {}
         for row in rows:
             relationship_dict[row["related_ror_id"]] = row["relationship_type"].lower()
+        
         ror_ids = relationship_dict.keys()
         if ror_ids:
             objs = db.session.query(Institution).options(selectinload(Institution.ror).raiseload('*'), selectinload(Institution.ancestors).raiseload('*'), orm.Load(Institution).raiseload('*')).filter(Institution.ror_id.in_(ror_ids)).all()
@@ -559,7 +559,7 @@ class Institution(db.Model):
     def type(self):
         return self.ror.ror_type.lower() if (self.ror and self.ror.ror_type) else None
 
-    def to_dict(self, return_level="full"):
+    def to_dict(self, return_level="full"):        
         
         response = {
             "id": self.openalex_id,
