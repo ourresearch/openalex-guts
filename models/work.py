@@ -43,7 +43,7 @@ from models.institution import as_institution_openalex_id, RORAffiliationString
 from models.ror_matching import RORGapInstitution, RORStrategy
 from util import clean_doi, entity_md5, normalize_title_like_sql, \
     matching_author_strings, get_crossref_json_from_unpaywall, \
-    words_within_distance
+    words_within_distance, TOP_TITLES
 from util import clean_html
 from util import detect_language_from_abstract_and_title
 from util import elapsed
@@ -1144,6 +1144,9 @@ class Work(db.Model):
         if not title_key or not author_key:
             return None
         title_normalized = normalize_title_like_sql(reference_json[title_key])
+        if title_normalized in TOP_TITLES:
+            # Querying for this title would take too long and cause a crash, ignore/return None
+            return None
         work_matches_by_title = db.session.query(Work).options(
             orm.Load(Work).joinedload(Work.affiliations).raiseload('*'),
             orm.Load(Work).raiseload('*')

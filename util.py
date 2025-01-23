@@ -28,9 +28,15 @@ from requests.adapters import HTTPAdapter
 import csv
 from langdetect import detect_langs, DetectorFactory, LangDetectException
 
-from app import unpaywall_db_engine
+from app import unpaywall_db_engine, db
 
 UNPAYWALL_DB_CONN = None
+
+def fetch_top_1k_titles():
+    result = db.session.execute('SELECT unpaywall_normalize_title FROM top_1000_titles;').fetchall()
+    return {row[0] for row in result}
+
+TOP_TITLES = fetch_top_1k_titles()
 
 
 def entity_md5(entity_repr):
