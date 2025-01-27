@@ -31,4 +31,4 @@ for i in range(0, len(indices_to_clean), 3):
             only_expunge_deletes=True,
             wait_for_completion=False
         )
-    time.sleep(3600)
+        time.sleep(3600)
