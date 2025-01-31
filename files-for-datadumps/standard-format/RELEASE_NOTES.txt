@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2025-01-29
+- removed 350k abstracts with invalid or junk content
+- after this release, the snapshot will be updated quarterly
+
 RELEASE 2024-12-31
 - used new ROR matching algorithm to assign affiliations to institutions with zero works; 7.6k additional institutions now have work affiliations
 - added affiliations to 4.5M authorships
