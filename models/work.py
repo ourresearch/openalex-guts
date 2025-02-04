@@ -2147,7 +2147,6 @@ class Work(db.Model):
                 "value": self.openapc.apc_in_euro,
                 "currency": "EUR",
                 "value_usd": self.openapc.apc_in_usd,
-                "provenance": "openapc",
             }
 
         # apc_paid is only relevant if this work is open access gold or hybrid
@@ -2176,7 +2175,6 @@ class Work(db.Model):
                 "value": first_doaj_apc.get("price", None),
                 "currency": first_doaj_apc.get("currency", None),
                 "value_usd": doaj_apc_in_usd,
-                "provenance": "doaj",  # we need to change this
             }
 
     @property
