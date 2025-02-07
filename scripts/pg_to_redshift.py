@@ -12,7 +12,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 """
-Run with: heroku local:run python -- -m scripts.pg_to_redshift --entity=author
+To add fields:
+1. Add the field to the schemas dictionary under the appropriate table, setting the field name in the database and the datatype.
+2. Run the update, for example if it is in the author table: heroku run:detached python -- -m scripts.pg_to_redshift --entity=author
+3. View logs using the suggested log output to ensure the update was successful.
+4. The update will be picked up on the next scheduled run if the entity is in advanced scheduler.
 """
 
 postgres_db_url = os.getenv("POSTGRES_URL")
@@ -157,6 +161,7 @@ schemas = {
         ("is_in_doaj", "BOOLEAN"),
         ("journal_id", "BIGINT"),
         ("publisher_id", "BIGINT"),
+        ("apc_usd", "INTEGER"),
     ],
     "source_type": [
         ("source_type_id", "VARCHAR(500)"),
