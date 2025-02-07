@@ -13,10 +13,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 """
 To add fields:
-1. Add the field to the schemas dictionary under the appropriate table, setting the field name in the database and the datatype.
-2. Run the update, for example if it is in the author table: heroku run:detached python -- -m scripts.pg_to_redshift --entity=author
-3. View logs using the suggested log output to ensure the update was successful.
-4. The update will be picked up on the next scheduled run if the entity is in advanced scheduler.
+1. Add the field to the schemas dictionary under the appropriate table. Example: ("new_field", "VARCHAR(500)").
+2. Update the table in redshift, along with the _staging table to include the new field. Note: you may need to truncate the main table to get the new field added quicky.
+3. Run the update, for example if it is in the author table: heroku run:detached python -- -m scripts.pg_to_redshift --entity=author
+4. View logs using the suggested log output to ensure the update was successful. Such as: heroku logs --app openalex-guts --dyno run.2254 --tail
+5. The update should be ready, and will be picked up on the next scheduled run if the entity is in advanced scheduler.
 """
 
 postgres_db_url = os.getenv("POSTGRES_URL")
