@@ -47,5 +47,5 @@ def export_postgres_to_s3(query, s3_key, chunk_size):
 if __name__ == "__main__":
     s3_bucket = f"openalex-sandbox/affiliations/{time.strftime('%Y-%m-%d')}"
     chunk_size = 4250000  # 850M / 200 parts = 4.25M rows per part
-    query = "SELECT * from mid.affilation ORDER BY paper_id, author_id"
+    query = "SELECT * from mid.affiliation ORDER BY paper_id, author_id"
     export_postgres_to_s3(query, s3_key="affiliations.csv", chunk_size=chunk_size)
