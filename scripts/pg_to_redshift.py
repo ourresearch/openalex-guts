@@ -42,7 +42,8 @@ schemas = {
         ("affiliation_id", "BIGINT"),
         ("author_sequence_number", "INTEGER"),
         ("original_author", "VARCHAR(65535)"),
-        ("original_orcid", "VARCHAR(500)")
+        ("original_orcid", "VARCHAR(500)"),
+        ("is_corresponding_author", "BOOLEAN"),
     ],
     "affiliation_string_v2": [
         ("original_affiliation", "VARCHAR(65535)"),
@@ -163,6 +164,7 @@ schemas = {
         ("journal_id", "BIGINT"),
         ("publisher_id", "BIGINT"),
         ("apc_usd", "INTEGER"),
+        ("is_oa", "BOOLEAN"),
     ],
     "source_type": [
         ("source_type_id", "VARCHAR(500)"),
@@ -205,6 +207,7 @@ schemas = {
         ("language", "VARCHAR(300)"),
         ("is_retracted", "BOOLEAN"),
         ("license", "VARCHAR(500)"),
+        ("publisher", "VARCHAR(65535)"),
     ],
     "work_concept": [
         ("paper_id", "BIGINT"),
