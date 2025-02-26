@@ -3,24 +3,19 @@
 Redshift Materialized View Modification Script
 ---------------------------------------------
 
-This script modifies a materialized view in Amazon Redshift Serverless by dropping it with CASCADE
-and recreating it using its original SQL definition. It also identifies and recreates all dependent
-materialized views in the correct order.
+This script modifies or refreshes a materialized view in Amazon Redshift Serverless. It can also
+identify and recreate/refresh all dependent materialized views in the correct order.
 
 Usage:
-    python3 scripts/modify_redshift_mv.py [options] <mv_name>
-
-Options:
-    -v, --verbose    Enable debug logging
-    -h, --help       Show this help message and exit
+    python3 modify_redshift_mv.py <mv_name> [--refresh [all]]
 
 Example:
-    python3 scripts/modify_redshift_mv.py affiliation_mv
-    python3 scripts/modify_redshift_mv.py --verbose institution_mv
+    python3 modify_redshift_mv.py affiliation_mv
+    python3 modify_redshift_mv.py institution_mv
+    python3 modify_redshift_mv.py affiliation_mv --refresh
+    python3 modify_redshift_mv.py --refresh all
 
 Requirements:
-    - Python 3
-    - psycopg2
     - Redshift connection URL (in REDSHIFT_SERVERLESS_URL environment variable or .env file)
 
 Notes:
@@ -30,7 +25,6 @@ Notes:
       then modifying C will recreate both B and A)
     - A single database connection is used for the entire operation
 """
-
 import argparse
 import os
 import logging
@@ -138,7 +132,6 @@ def find_mv_dependencies(mv_name):
                 pattern = r'\b' + re.escape(other_mv_name) + r'\b'
                 if re.search(pattern, content):
                     dependency_graph[file_mv_name].append(other_mv_name)
-                    logger.debug(f"Direct dependency: {file_mv_name} depends on {other_mv_name}")
     
     # Function to find all dependencies recursively
     def find_all_dependencies(mv, visited=None, all_deps=None):
@@ -216,8 +209,6 @@ def find_mv_dependencies(mv_name):
     # and exclude the target MV itself
     sorted_dependent_mvs = [mv for mv in sorted_mvs if mv in dependent_mvs and mv != mv_name]
     
-    logger.debug(f"Dependency order: {sorted_dependent_mvs}")
-    
     return sorted_dependent_mvs
 
 def get_mv_sql(mv_name):
@@ -259,7 +250,6 @@ def execute_sql(conn, sql):
         with conn.cursor() as cursor:
             cursor.execute(sql)
         conn.commit()
-        logger.info("SQL executed successfully")
     except Exception as e:
         conn.rollback()
         logger.error(f"Error executing SQL: {e}")
@@ -318,7 +308,6 @@ def modify_mv(mv_name):
     logger.info(f"Found {len(dependent_mvs)} dependent materialized views: {dependent_mvs}")
     
     # Create a single connection for the entire operation
-    logger.info("Connecting to Redshift")
     conn = get_db_connection()
     try:
         # Drop the materialized view with CASCADE
@@ -337,28 +326,173 @@ def modify_mv(mv_name):
     finally:
         # Always close the connection
         conn.close()
-        logger.info("Closed Redshift connection")
     
     logger.info(f"Modification of materialized view {mv_name} completed successfully")
 
 
+def get_all_materialized_views():
+    """
+    Get a list of all materialized views in the SQL directory.
+    
+    Returns:
+        list: List of all materialized view names
+    """
+    # Path to SQL files directory
+    sql_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'sql', 'redshift')
+    
+    # Get all SQL files
+    sql_files = glob.glob(os.path.join(sql_dir, "*.sql"))
+    
+    # Extract MV names from filenames
+    mv_names = [os.path.basename(sql_file).replace('.sql', '') for sql_file in sql_files]
+    
+    return mv_names
+
+def refresh_mv(conn, mv_name):
+    """
+    Refresh a materialized view.
+    
+    Args:
+        conn: Database connection
+        mv_name (str): Name of the materialized view to refresh
+    """
+    logger.info(f"Refreshing materialized view: {mv_name}")
+    
+    # SQL to refresh the materialized view
+    sql = f"REFRESH MATERIALIZED VIEW {mv_name};"
+    
+    # Execute the SQL
+    execute_sql(conn, sql)
+    
+    logger.info(f"Successfully refreshed materialized view: {mv_name}")
+
+def refresh_all_mvs():
+    """
+    Refresh all materialized views in the correct dependency order.
+    """
+    logger.info("Starting refresh of all materialized views")
+    
+    # Get all materialized views
+    all_mvs = get_all_materialized_views()
+    
+    # Build a complete dependency graph
+    dependency_graph = {}
+    
+    # Path to SQL files directory
+    sql_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'sql', 'redshift')
+    
+    # Get all SQL files
+    sql_files = glob.glob(os.path.join(sql_dir, "*.sql"))
+    
+    # Build the dependency graph
+    for sql_file in sql_files:
+        file_mv_name = os.path.basename(sql_file).replace('.sql', '')
+        dependency_graph[file_mv_name] = []
+        
+        # Read the SQL file content
+        with open(sql_file, 'r') as f:
+            content = f.read()
+        
+        # Check for dependencies in the content
+        for other_sql_file in sql_files:
+            other_mv_name = os.path.basename(other_sql_file).replace('.sql', '')
+            if other_mv_name != file_mv_name:
+                # Pattern to match the MV name in SQL files
+                pattern = r'\b' + re.escape(other_mv_name) + r'\b'
+                if re.search(pattern, content):
+                    dependency_graph[file_mv_name].append(other_mv_name)
+    
+    # Topological sort to ensure correct dependency order
+    def topological_sort(graph):
+        """
+        Perform topological sort on the dependency graph.
+        This ensures that a view is only refreshed after all its dependencies.
+        """
+        # Track visited nodes and result
+        visited = set()
+        temp_visited = set()  # For cycle detection
+        result = []
+        
+        def visit(node):
+            if node in temp_visited:
+                # Cycle detected, which shouldn't happen with MVs
+                logger.warning(f"Cycle detected in dependency graph involving {node}")
+                return
+            
+            if node not in visited:
+                temp_visited.add(node)
+                
+                # Visit all dependencies first
+                for dep in graph.get(node, []):
+                    visit(dep)
+                
+                temp_visited.remove(node)
+                visited.add(node)
+                result.append(node)
+        
+        # Visit all nodes
+        for node in graph:
+            if node not in visited:
+                visit(node)
+        
+        return result
+    
+    # Get the sorted list of all MVs
+    sorted_mvs = topological_sort(dependency_graph)
+    
+    # Create a single connection for the entire operation
+    conn = get_db_connection()
+    try:
+        # Refresh all materialized views in the correct order
+        for mv_name in sorted_mvs:
+            refresh_mv(conn, mv_name)
+        
+        logger.info("Successfully refreshed all materialized views")
+    finally:
+        # Always close the connection
+        conn.close()
+
 def main():
-    """Main function to parse arguments and modify the materialized view."""
-    parser = argparse.ArgumentParser(description="Modify a materialized view in Amazon Redshift Serverless.")
-    parser.add_argument("mv_name", help="Name of the materialized view to modify")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug log level")
+    """Main function to parse arguments and modify or refresh the materialized view."""
+    parser = argparse.ArgumentParser(description="Modify or refresh a materialized view in Amazon Redshift Serverless.")
+    parser.add_argument("mv_name", nargs='?', help="Name of the materialized view to modify or refresh")
+    parser.add_argument("--refresh", nargs='?', const=True, help="Refresh the materialized view instead of modifying it. Use '--refresh all' to refresh all views.")
     args = parser.parse_args()
     
-    # Set log level based on command line argument
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-        logging.getLogger().setLevel(logging.DEBUG)
-        logger.debug("Debug logging enabled")
-    
     try:
-        modify_mv(args.mv_name)
+        if args.refresh == 'all':
+            # Refresh all materialized views
+            refresh_all_mvs()
+        elif args.refresh:
+            # Refresh the specified materialized view and its dependencies
+            if not args.mv_name:
+                parser.error("MV name is required when using --refresh without 'all'")
+            
+            # Find dependent materialized views
+            dependent_mvs = find_mv_dependencies(args.mv_name)
+            logger.info(f"Found {len(dependent_mvs)} dependent materialized views: {dependent_mvs}")
+            
+            # Create a single connection for the entire operation
+            conn = get_db_connection()
+            try:
+                # Refresh the specified materialized view
+                refresh_mv(conn, args.mv_name)
+                
+                # Refresh dependent materialized views in the correct order
+                for dep_mv in dependent_mvs:
+                    refresh_mv(conn, dep_mv)
+                
+                logger.info(f"Successfully refreshed all dependent materialized views")
+            finally:
+                # Always close the connection
+                conn.close()
+        else:
+            # Modify the materialized view
+            if not args.mv_name:
+                parser.error("MV name is required when not using --refresh all")
+            modify_mv(args.mv_name)
     except Exception as e:
-        logger.error(f"Error modifying materialized view: {e}")
+        logger.error(f"Error: {e}")
         raise
 
 if __name__ == "__main__":
