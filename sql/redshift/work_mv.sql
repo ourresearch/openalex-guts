@@ -21,6 +21,7 @@ SELECT w.paper_id,
        w.publisher,
        COALESCE(c.citation_count, 0)                              AS cited_by_count,
        wf.fwci,
+       CASE WHEN wfu.work_id IS NOT NULL THEN true ELSE false END AS has_fulltext,
        wt.topic_id,
        t.display_name                                             AS topic_display_name,
        t.domain_id,
@@ -139,6 +140,8 @@ FROM work w
                              JOIN keyword k
                                   ON wk.keyword_id = k.keyword_id
                     GROUP BY wk.paper_id) kw ON w.paper_id = kw.paper_id
+          LEFT JOIN (SELECT DISTINCT work_id
+                    FROM work_fulltext) wfu ON wfu.work_id = w.paper_id
 WHERE w.merge_into_id IS NULL;
 
 alter table work_mv
