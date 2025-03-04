@@ -247,6 +247,9 @@ schemas = {
         ("fwci", "FLOAT"),
         ("update_date", "VARCHAR(500)"),
     ],
+    "work_fulltext": [
+        ("work_id", "BIGINT"),
+    ],
 }
 
 
@@ -300,6 +303,7 @@ queries = {
     "work_type": f"SELECT {get_columns(schemas['work_type'])} FROM mid.work_type",
     "work_fwci": f"SELECT {get_columns(schemas['work_fwci'])} FROM counts.work_fwci",
     "work_funder": f"SELECT {get_columns(schemas['work_funder'])} FROM mid.work_funder",
+    "work_fulltext": f"SELECT {get_columns(schemas['work_fulltext'])} FROM mid.work_fulltext",
 }
 
 
@@ -417,6 +421,8 @@ def main(entity):
     query = queries.get(entity)
     if not schema or not query:
         raise ValueError(f"Entity {entity} not found in schemas and queries")
+
+    logger.info(f"Starting PG to Redeshift export for {entity}")
 
     create_tables(entity, schema)
 
