@@ -178,9 +178,9 @@ class WorkTypeDetective:
             r'Back Cover[\]\)]*$',
             r'^Inside Front Cover',
             r'^Issue Information',
-            r'^Issue Publication Information$'
-            r'^Issue Editorial Masthead$'
-            r'^Calendar of Events$'
+            r'^Issue Publication Information$',
+            r'^Issue Editorial Masthead$',
+            r'^Calendar of Events$',
             r'^List of contents',
             r'^List of Tables$',
             r'^List of Figures$',
@@ -190,7 +190,7 @@ class WorkTypeDetective:
             r'^Notes and News$',
             r'^Obituary$',
             r'^Pages de début$',
-            r'^Short(?:er)? Notices'
+            r'^Short(?:er)? Notices',
             r'^Title page',
             r"^Editor's Preface",
         ]

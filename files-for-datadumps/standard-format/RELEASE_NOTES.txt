@@ -1,5 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2025-02-27
+- added new works
+
 RELEASE 2025-01-29
 - removed 350k abstracts with invalid or junk content
 - after this release, the snapshot will be updated quarterly
