@@ -4,7 +4,8 @@ WITH
     current_institution AS (SELECT author_id,
                                    affiliation_id,
                                    institution_display_name AS affiliation_display_name,
-                                   type AS affiliation_type
+                                   type AS affiliation_type,
+                                   country_id AS affiliation_country_id
                             FROM author_last_known_affiliations_mv
                             WHERE rank = 1),
     -- Aggregate the top 10 affiliated institutions per author (using the year-based ranking)
@@ -26,7 +27,8 @@ SELECT a.author_id,
        CASE WHEN o.orcid IS NOT NULL THEN true ELSE false END AS has_orcid,
        ci.affiliation_id,
        ci.affiliation_display_name,
-       ci.affiliation_type
+       ci.affiliation_type,
+       ci.affiliation_country_id,
        pi.past_affiliation_ids,
        pi.past_affiliation_display_names,
        pi.past_affiliation_types
