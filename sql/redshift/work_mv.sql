@@ -136,7 +136,7 @@ FROM work w
                            WITHIN GROUP (ORDER BY wk.keyword_id) AS keyword_ids,
                            LISTAGG(k.display_name, '|')
                            WITHIN GROUP (ORDER BY wk.keyword_id) AS keyword_display_names
-                    FROM work_keyword wk
+                    FROM work_keyword_concept wk
                              JOIN keyword k
                                   ON wk.keyword_id = k.keyword_id
                     GROUP BY wk.paper_id) kw ON w.paper_id = kw.paper_id
