@@ -444,13 +444,26 @@ def main(entity):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ETL script to copy data from PostgreSQL to Redshift via S3.")
-    parser.add_argument("--entity", required=True, type=str,
-                        help="The entity to process (e.g., affiliation, institution, work, work_concept).")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--entity", type=str,
+                      help="The entity to process (e.g., affiliation, institution, work, work_concept).")
+    group.add_argument("--all", action="store_true",
+                      help="Process all available entities")
     args = parser.parse_args()
 
-    entity_input = args.entity
-    try:
-        main(entity_input)
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        raise
+    if args.all:
+        logger.info("Processing all entities")
+        for entity in schemas.keys():
+            try:
+                logger.info(f"Processing entity: {entity}")
+                main(entity)
+            except Exception as e:
+                logger.error(f"Error processing entity {entity}: {e}")
+                # Continue with next entity even if one fails
+                continue
+    else:
+        try:
+            main(args.entity)
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            raise
