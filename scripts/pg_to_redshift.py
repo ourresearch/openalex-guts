@@ -121,6 +121,12 @@ schemas = {
         ("institution_type_id", "VARCHAR(500)"),
         ("display_name", "VARCHAR(65535)"),
     ],
+    "institution_ancestors_mv": [
+        ("institution_id", "BIGINT"),
+        ("display_name", "VARCHAR(65535)"),
+        ("ancestor_id", "BIGINT"),
+        ("ancestor_display_name", "VARCHAR(65535)"),
+    ],
     "keyword": [
         ("keyword_id", "VARCHAR(500)"),
         ("display_name", "VARCHAR(65535)"),
