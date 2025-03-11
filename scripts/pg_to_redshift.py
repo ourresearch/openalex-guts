@@ -290,7 +290,7 @@ queries = {
     "funder": f"SELECT {get_columns(schemas['funder'])} FROM mid.funder where merge_into_id IS NULL",
     "institution": f"SELECT {get_columns(schemas['institution'])} FROM mid.institution",
     "institution_type": f"SELECT {get_columns(schemas['institution_type'])} FROM mid.institution_type",
-    "institution_ancestors_mv": f"SELECT {get_columns(schemas['institution_ancestors_mv'])} FROM mid.institution_ancestors_mv",
+    "institution_ancestors_mv": f"SELECT {get_columns(schemas['institution_ancestors_mv'])} FROM mid.institution_ancestors_mv WHERE institution_id NOT IN {str(tuple(SUPER_SYSTEM_INSTITUTIONS))}",
     "keyword": f"SELECT {get_columns(schemas['keyword'])} FROM mid.keyword",
     "language": f"SELECT {get_columns(schemas['language'])} FROM mid.language",
     "license": f"SELECT {get_columns(schemas['license'])} FROM mid.license",
