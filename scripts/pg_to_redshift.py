@@ -126,6 +126,8 @@ schemas = {
         ("display_name", "VARCHAR(65535)"),
         ("ancestor_id", "BIGINT"),
         ("ancestor_display_name", "VARCHAR(65535)"),
+        ("ror_id", "VARCHAR(500)"),
+        ("ancestor_ror_id", "VARCHAR(500)"),
     ],
     "keyword": [
         ("keyword_id", "VARCHAR(500)"),
