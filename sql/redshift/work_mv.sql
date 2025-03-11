@@ -66,32 +66,53 @@ FROM work w
                     FROM work_funder wfu
                              JOIN funder fu ON wfu.funder_id = fu.funder_id
                     GROUP BY wfu.paper_id) funder_list ON w.paper_id = funder_list.paper_id
-    -- Pre-aggregate author, institution, and ROR data with ordering by author_sequence_number
-         LEFT JOIN (SELECT a.paper_id,
-                           LISTAGG(a.author_id::VARCHAR, '|')
-                           WITHIN GROUP (ORDER BY a.author_sequence_number) AS author_ids,
-                           LISTAGG(a.author_display_name, '|')
-                           WITHIN GROUP (ORDER BY a.author_sequence_number) AS author_display_names,
-                           LISTAGG(a.affiliation_id::VARCHAR, '|')
-                           WITHIN GROUP (ORDER BY a.author_sequence_number) AS institution_ids,
-                           LISTAGG(a.institution_display_name, '|')
-                           WITHIN GROUP (ORDER BY a.author_sequence_number) AS institution_display_names,
-                           LISTAGG(a.ror, '|')
-                           WITHIN GROUP (ORDER BY a.author_sequence_number) AS ror_ids
-                    FROM (SELECT af.paper_id,
-                                 af.author_id,
-                                 af.affiliation_id,
-                                 af.author_sequence_number,
-                                 a.display_name AS author_display_name,
-                                 af.ror,
-                                 i.display_name AS institution_display_name
-                          FROM affiliation_distinct_mv af
-                                   LEFT JOIN author_mv a
-                                             ON af.author_id = a.author_id
-                                   LEFT JOIN institution i
-                                             ON af.affiliation_id = i.affiliation_id
-                          WHERE af.author_sequence_number <= 10) a
-                    GROUP BY a.paper_id) aff_auth ON w.paper_id = aff_auth.paper_id
+     -- Pre-aggregate author, institution, and ROR data with ordering by author_sequence_number
+     LEFT JOIN (
+     WITH direct_affiliations AS (
+          -- Get direct affiliations
+          SELECT 
+               af.paper_id,
+               af.author_id,
+               af.author_sequence_number,
+               a.display_name AS author_display_name,
+               af.affiliation_id,
+               i.display_name AS institution_display_name,
+               af.ror
+          FROM affiliation_distinct_mv af
+          LEFT JOIN author_mv a ON af.author_id = a.author_id
+          LEFT JOIN institution i ON af.affiliation_id = i.affiliation_id
+          WHERE af.author_sequence_number <= 5000
+     ),
+     ancestor_affiliations AS (
+          -- Get ancestor affiliations
+          SELECT 
+               da.paper_id,
+               da.author_id,
+               da.author_sequence_number,
+               da.author_display_name,
+               ia.ancestor_id AS affiliation_id,
+               ia.ancestor_display_name AS institution_display_name,
+               ia.ancestor_ror_id AS ror
+          FROM direct_affiliations da
+          JOIN institution_ancestors_mv ia ON da.affiliation_id = ia.institution_id
+          WHERE da.affiliation_id IS NOT NULL
+     ),
+     all_affiliations AS (
+          -- Combine direct and ancestor affiliations
+          SELECT * FROM direct_affiliations
+          UNION ALL
+          SELECT * FROM ancestor_affiliations
+     )
+     SELECT 
+          -- Aggregate all affiliations
+          paper_id,
+          LISTAGG(DISTINCT author_id::VARCHAR, '|') WITHIN GROUP (ORDER BY author_sequence_number) AS author_ids,
+          LISTAGG(DISTINCT author_display_name, '|') WITHIN GROUP (ORDER BY author_sequence_number) AS author_display_names,
+          LISTAGG(DISTINCT affiliation_id::VARCHAR, '|') AS institution_ids,
+          LISTAGG(DISTINCT institution_display_name, '|') AS institution_display_names,
+          LISTAGG(DISTINCT ror, '|') AS ror_ids
+     FROM all_affiliations
+     GROUP BY paper_id) aff_auth ON w.paper_id = aff_auth.paper_id
     -- Pre-aggregate ORCID values (distinct)
          LEFT JOIN (SELECT t1.paper_id,
                            LISTAGG(t1.orcid, '|') AS orcid_ids
