@@ -10,9 +10,9 @@ WITH
                             WHERE rank = 1 AND is_descendant = FALSE),
     -- Aggregate the top 10 affiliated institutions per author (using the year-based ranking)
     past_institutions AS (SELECT author_id,
-                                 '|' || LISTAGG(affiliation_id::VARCHAR, '|') WITHIN GROUP (ORDER BY year DESC)  AS past_affiliation_ids,
-                                 '|' || LISTAGG(institution_display_name, '|') WITHIN GROUP (ORDER BY year DESC) AS past_affiliation_display_names,
-                                 '|' || LISTAGG(type, '|') WITHIN GROUP (ORDER BY year DESC)                     AS past_affiliation_types
+                                 '|' || LISTAGG(affiliation_id::VARCHAR, '|') WITHIN GROUP (ORDER BY year DESC) || '|'  AS past_affiliation_ids,
+                                 '|' || LISTAGG(institution_display_name, '|') WITHIN GROUP (ORDER BY year DESC)  || '|'AS past_affiliation_display_names,
+                                 '|' || LISTAGG(type, '|') WITHIN GROUP (ORDER BY year DESC) || '|'                     AS past_affiliation_types
                           FROM (SELECT DISTINCT author_id,
                                                 affiliation_id,
                                                 institution_display_name,
