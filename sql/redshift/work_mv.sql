@@ -62,8 +62,8 @@ FROM work w
      
      -- Aggregate funder IDs and display names
      LEFT JOIN (SELECT wfu.paper_id,
-                         LISTAGG(fu.funder_id::VARCHAR, '|') AS funder_ids,
-                         LISTAGG(fu.display_name, '|')       AS funder_display_names
+                         '|' || LISTAGG(fu.funder_id::VARCHAR, '|') || '|' AS funder_ids,
+                         '|' || LISTAGG(fu.display_name, '|') || '|' AS funder_display_names
                FROM work_funder wfu
                          JOIN funder fu ON wfu.funder_id = fu.funder_id
                GROUP BY wfu.paper_id) funder_list ON w.paper_id = funder_list.paper_id
