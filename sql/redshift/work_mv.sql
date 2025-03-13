@@ -70,7 +70,7 @@ FROM work w
      
      -- Pre-aggregate author, institution, and ROR data with ordering by author_sequence_number
      LEFT JOIN (
-     WITH direct_affiliations AS (
+     WITH all_affiliations AS (
           -- Get direct affiliations
           SELECT 
                af.paper_id,
@@ -84,41 +84,21 @@ FROM work w
           LEFT JOIN author_mv a ON af.author_id = a.author_id
           LEFT JOIN institution i ON af.affiliation_id = i.affiliation_id
           WHERE af.author_sequence_number <= 5000
-     ),
-     ancestor_affiliations AS (
-          -- Get ancestor affiliations
-          SELECT 
-               da.paper_id,
-               da.author_id,
-               da.author_sequence_number,
-               da.author_display_name,
-               ia.ancestor_id AS affiliation_id,
-               ia.ancestor_display_name AS institution_display_name,
-               ia.ancestor_ror_id AS ror
-          FROM direct_affiliations da
-          JOIN institution_ancestors_mv ia ON da.affiliation_id = ia.institution_id
-          WHERE da.affiliation_id IS NOT NULL
-     ),
-     all_affiliations AS (
-          -- Combine direct and ancestor affiliations
-          SELECT * FROM direct_affiliations
-          UNION ALL
-          SELECT * FROM ancestor_affiliations
      )
      SELECT 
           -- Aggregate all affiliations
           paper_id,
-          LISTAGG(DISTINCT author_id::VARCHAR, '|') WITHIN GROUP (ORDER BY author_sequence_number) AS author_ids,
-          LISTAGG(DISTINCT author_display_name, '|') WITHIN GROUP (ORDER BY author_sequence_number) AS author_display_names,
-          LISTAGG(DISTINCT affiliation_id::VARCHAR, '|') AS institution_ids,
-          LISTAGG(DISTINCT institution_display_name, '|') AS institution_display_names,
-          LISTAGG(DISTINCT ror, '|') AS ror_ids
+          '|' || LISTAGG(DISTINCT author_id::VARCHAR, '|') WITHIN GROUP (ORDER BY author_sequence_number) || '|' AS author_ids,
+          '|' || LISTAGG(DISTINCT author_display_name, '|') WITHIN GROUP (ORDER BY author_sequence_number) || '|' AS author_display_names,
+          '|' || LISTAGG(DISTINCT affiliation_id::VARCHAR, '|') || '|' AS institution_ids,
+          '|' || LISTAGG(DISTINCT institution_display_name, '|') || '|' AS institution_display_names,
+          '|' || LISTAGG(DISTINCT ror, '|') AS ror_ids
      FROM all_affiliations
      GROUP BY paper_id) aff_auth ON w.paper_id = aff_auth.paper_id
      
      -- Pre-aggregate ORCID values (distinct)
      LEFT JOIN (SELECT t1.paper_id,
-                         LISTAGG(t1.orcid, '|') AS orcid_ids
+                         '|' || LISTAGG(t1.orcid, '|') || '|' AS orcid_ids
                FROM (SELECT DISTINCT af.paper_id, a.orcid
                          FROM affiliation_distinct_mv af
                               LEFT JOIN author_mv a
@@ -128,8 +108,8 @@ FROM work w
      
      -- Pre-aggregate country data (distinct)
      LEFT JOIN (SELECT t2.paper_id,
-                         LISTAGG(t2.country_id::VARCHAR, '|')  AS country_ids,
-                         LISTAGG(t2.country_display_name, '|') AS country_display_names
+                         '|' || LISTAGG(t2.country_id::VARCHAR, '|') || '|'  AS country_ids,
+                         '|' || LISTAGG(t2.country_display_name, '|') || '|' AS country_display_names
                FROM (SELECT DISTINCT af.paper_id,
                                         af.country_id,
                                         af.country_display_name
@@ -139,8 +119,8 @@ FROM work w
      
      -- Pre-aggregate continent data (distinct) and is_global_south flag
      LEFT JOIN (SELECT t3.paper_id,
-                         LISTAGG(t3.continent_id::VARCHAR, '|')                       AS continent_ids,
-                         LISTAGG(t3.continent_display_name, '|')                      AS continent_display_names,
+                         '|' || LISTAGG(t3.continent_id::VARCHAR, '|') || '|'  AS continent_ids,
+                         '|' || LISTAGG(t3.continent_display_name, '|') || '|' AS continent_display_names,
                          MAX(CASE WHEN t3.is_global_south THEN 1 ELSE 0 END)::BOOLEAN AS is_global_south
                FROM (SELECT DISTINCT af.paper_id,
                                         af.continent_id,
@@ -152,18 +132,17 @@ FROM work w
     
      -- Pre-aggregate institution types (distinct)
      LEFT JOIN (SELECT af.paper_id,
-                         LISTAGG(DISTINCT af."type", '|')
-                         WITHIN GROUP (ORDER BY af."type") AS institution_types
+                         '|' || LISTAGG(DISTINCT af."type", '|') WITHIN GROUP (ORDER BY af."type") || '|' AS institution_types
                FROM affiliation_distinct_mv af
                WHERE af.author_sequence_number <= 10
                GROUP BY af.paper_id) inst_type ON w.paper_id = inst_type.paper_id
     
      -- Aggregate all keywords per paper without a window function
      LEFT JOIN (SELECT wk.paper_id,
-                         LISTAGG(wk.keyword_id::VARCHAR, '|')
-                         WITHIN GROUP (ORDER BY wk.keyword_id) AS keyword_ids,
-                         LISTAGG(k.display_name, '|')
-                         WITHIN GROUP (ORDER BY wk.keyword_id) AS keyword_display_names
+                         '|' || LISTAGG(wk.keyword_id::VARCHAR, '|')
+                         WITHIN GROUP (ORDER BY wk.keyword_id) || '|' AS keyword_ids,
+                         '|' || LISTAGG(k.display_name, '|')
+                         WITHIN GROUP (ORDER BY wk.keyword_id) || '|' AS keyword_display_names
                FROM work_keyword_concept wk
                          JOIN keyword k
                               ON wk.keyword_id = k.keyword_id
