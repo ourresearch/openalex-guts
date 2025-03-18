@@ -451,7 +451,7 @@ def load_latest_approvals_to_db(records_data, open_issues):
     did_not_finish = False
     # close the github tickets and comment on them
     for i, github_issue_number in enumerate(final_issues_to_add_list):
-        time.sleep(10) # sleep for 10 seconds to avoid rate limit on github
+        time.sleep(2) # sleep to avoid rate limit on github
         logger.info(f"row {str(i)}: closing issue {str(github_issue_number)}")
         # comment on the issue
         data = {'body': f'This issue was accepted and ingested by the OpenAlex team on {curr_date}. The new affiliations should be visible within the next 7 days.'}
