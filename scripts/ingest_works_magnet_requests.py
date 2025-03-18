@@ -91,7 +91,8 @@ def get_open_github_issues():
 
     issues = []
     for p in range(1, 100000):
-        res = requests.get(f'https://api.github.com/repos/dataesr/openalex-affiliations/issues?page={p}', headers=headers)
+        logger.info(f"Getting page {p} of issues")
+        res = requests.get(f'https://api.github.com/repos/dataesr/openalex-affiliations/issues?page={p}&per_page=100', headers=headers)
         current_issues=res.json()
         if len(current_issues):
             issues += current_issues
@@ -255,6 +256,12 @@ def auto_approve_requests(sheet_instance, records_data):
     # pull issues into a dataframe
     issues_and_approve = pd.DataFrame(records_data)\
         [['issue_number','raw_affiliation_name','added_rors','removed_rors','OpenAlex Approve?','Notes2']]
+
+    if issues_and_approve['issue_number'].duplicated().any():
+        # print a warning about the duplicates
+        logger.info(f"Found {issues_and_approve['issue_number'].duplicated().sum()} duplicate issue numbers")
+        # keep only the first occurrence of each issue number
+        issues_and_approve = issues_and_approve.drop_duplicates(subset=['issue_number'], keep='first')
     
     issues_needing_approval = issues_and_approve[issues_and_approve['OpenAlex Approve?'] == ''].copy()
     
@@ -292,6 +299,10 @@ def auto_approve_requests(sheet_instance, records_data):
     logger.info(f"Auto-rejected {num_rejected} issues")
     logger.info(f"Failed to auto-approve {num_failed} issues")
     logger.info(f"Need human approval for {num_need_human} issues")
+
+    if auto_approve_output['issue_number'].duplicated().any():
+        # handle duplicates by keeping only the first occurrence
+        auto_approve_output = auto_approve_output.drop_duplicates(subset=['issue_number'], keep='first')
 
     df1 = issues_and_approve.set_index('issue_number')
     df2 = auto_approve_output.set_index('issue_number')
