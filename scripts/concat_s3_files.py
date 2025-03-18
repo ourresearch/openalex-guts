@@ -136,7 +136,7 @@ def run(bucket_name, prefixes, delete, dry_run, threads):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('bucket', help='bucket contaning the table files')
+    ap.add_argument('bucket', help='bucket containing the table files')
     ap.add_argument('prefix', action='extend', nargs='+', help='base prefix for table files, not including the bucket name')
     ap.add_argument('--threads', '-t', nargs='?', type=int, default=1, help='number of tables to concatenate in parallel')
     ap.add_argument('--delete', default=False, action='store_true', help='delete the source files after concatenating')
