@@ -80,32 +80,81 @@ def parse_args():
     return parser.parse_args()
 
 def get_open_github_issues():
-    fields = ['raw_affiliation_name', 'new_rors', 'previous_rors', 'works_examples','body']
+    fields = ['raw_affiliation_name', 'new_rors', 'previous_rors', 'works_examples', 'body']
+
     def parse_body(e):
+        if not e or not isinstance(e, str):
+            return {}
         elt = {}
         for lx, line in enumerate(e.split('\n')):
             for f in fields:
-                if f+':' in line:
-                    elt[f] = line.replace(f+':', '').strip()
+                if f + ':' in line:
+                    elt[f] = line.replace(f + ':', '').strip()
         return elt
 
     issues = []
-    for p in range(1, 100000):
-        logger.info(f"Getting page {p} of issues")
-        res = requests.get(f'https://api.github.com/repos/dataesr/openalex-affiliations/issues?page={p}&per_page=100', headers=headers)
-        current_issues=res.json()
-        if len(current_issues):
-            issues += current_issues
-        else:
+    url = 'https://api.github.com/repos/dataesr/openalex-affiliations/issues?per_page=100'
+    page_count = 1
+
+    while url:
+        logger.info(f"Getting page {page_count} of issues")
+        res = requests.get(url, headers=headers)
+
+        # Check if the response is valid
+        if res.status_code != 200:
+            logger.error(f"Error fetching issues: {res.status_code} - {res.text}")
             break
+
+        try:
+            current_issues = res.json()
+            # Verify this is a list of issues
+            if not isinstance(current_issues, list):
+                logger.error(f"Unexpected response format on page {page_count}: {current_issues}")
+                break
+
+            if len(current_issues):
+                issues += current_issues
+            else:
+                break
+
+            # Look for pagination link in headers
+            if 'Link' in res.headers:
+                links = {}
+                for link in res.headers['Link'].split(','):
+                    url_part, rel_part = link.split(';')
+                    url_part = url_part.strip('<>')
+                    rel = rel_part.split('=')[1].strip('"')
+                    links[rel] = url_part
+
+                url = links.get('next', None)
+            else:
+                url = None
+
+            page_count += 1
+
+        except Exception as e:
+            logger.error(f"Error parsing JSON response: {e}")
+            break
+
     logger.info(f"{len(issues)} open issues have been retrieved from github")
 
+    valid_issues = []
     for issue in issues:
-        parsed = parse_body(issue['body'])
-        issue.update(parsed)
-        issue_id = issue['url'].split('/')[-1]
-        issue['issue_id'] = int(issue_id)
-    df_issues = pd.DataFrame(issues)[fields+['issue_id']]
+        try:
+            if 'body' in issue and issue['body']:
+                parsed = parse_body(issue['body'])
+                issue.update(parsed)
+                issue_id = issue['url'].split('/')[-1]
+                issue['issue_id'] = int(issue_id)
+                valid_issues.append(issue)
+            else:
+                logger.warning(f"Issue missing body: {issue.get('url', 'Unknown URL')}")
+        except Exception as e:
+            logger.warning(f"Error processing issue: {e}")
+
+    logger.info(f"{len(valid_issues)} valid issues processed")
+    df_issues = pd.DataFrame(valid_issues)[fields + ['issue_id']] if valid_issues else pd.DataFrame(
+        columns=fields + ['issue_id'])
 
     return df_issues.sort_values('issue_id')
 
