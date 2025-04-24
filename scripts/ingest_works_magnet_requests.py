@@ -422,10 +422,10 @@ def auto_approve_requests(sheet_instance, records_data):
     approval_results = []
     for result in all_arrays:
         approval_results.append({
-            'OpenAlex Approve?': result[0],
-            'Notes2': result[1],
-            'issue_number': result[2],
-            'original_affiliation': result[3]
+            'OpenAlex Approve?': result.get('verdict', ''),
+            'Notes2': result.get('reason', ''),
+            'issue_number': result.get('github_issue_num', ''),
+            'original_affiliation': result.get('original_affiliation', '')
         })
 
     # Count results
