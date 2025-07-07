@@ -18,7 +18,6 @@ SELECT w.paper_id,
        w.is_retracted,
        w.license,
        w.created_date,
-       w.publisher,
        COALESCE(c.citation_count, 0)                              AS cited_by_count,
        wf.fwci,
        CASE WHEN wfu.work_id IS NOT NULL THEN true ELSE false END AS has_fulltext,
@@ -49,7 +48,10 @@ SELECT w.paper_id,
        kw.keyword_display_names,
        inst_type.institution_types,
        funder_list.funder_ids,
-       funder_list.funder_display_names
+       funder_list.funder_display_names,
+       w.publisher
+       -- pub_parents.publisher_ids
+
 FROM work w
      LEFT JOIN citation_papers_mv c ON w.paper_id = c.paper_id
      LEFT JOIN work_fwci wf ON w.paper_id = wf.paper_id
@@ -59,6 +61,7 @@ FROM work w
      LEFT JOIN field f ON t.field_id = f.field_id
      LEFT JOIN subfield sf ON t.subfield_id = sf.subfield_id
      LEFT JOIN source s ON w.journal_id = s.journal_id
+     LEFT JOIN journal j ON w.journal_id = j.journal_id
      
      -- Aggregate funder IDs and display names
      LEFT JOIN (SELECT wfu.paper_id,
@@ -136,7 +139,40 @@ FROM work w
                FROM affiliation_distinct_mv af
                WHERE af.author_sequence_number <= 10
                GROUP BY af.paper_id) inst_type ON w.paper_id = inst_type.paper_id
-    
+
+/*
+-- Publisher and publisher parents IDs
+LEFT JOIN (
+    WITH RECURSIVE publisher_parents (journal_id, publisher_id, level) AS (
+        -- Base case: start with the journal's direct publisher
+        SELECT 
+            j.journal_id,
+            pub_base.publisher_id,
+            0 as level
+        FROM journal j
+        JOIN publisher pub_base ON j.publisher_id = pub_base.publisher_id
+        WHERE j.publisher_id IS NOT NULL
+        
+        UNION ALL
+        
+        -- Recursive case: get parent publishers
+        SELECT 
+            ph.journal_id,
+            pub_grandparent.publisher_id,
+            ph.level + 1
+        FROM publisher_parents ph
+        JOIN publisher pub_parent ON ph.publisher_id = pub_parent.publisher_id
+        JOIN publisher pub_grandparent ON pub_parent.parent_publisher = pub_grandparent.publisher_id
+        WHERE pub_parent.parent_publisher IS NOT NULL
+          AND ph.level < 10  -- Prevent infinite recursion
+    )
+    SELECT 
+        journal_id,
+        '|' || LISTAGG(publisher_id::VARCHAR, '|') WITHIN GROUP (ORDER BY level) || '|' AS publisher_ids
+    FROM publisher_parents
+    GROUP BY journal_id
+) pub_parents ON w.journal_id = pub_parents.journal_id
+*/
      -- Aggregate all keywords per paper without a window function
      LEFT JOIN (SELECT wk.paper_id,
                          '|' || LISTAGG(wk.keyword_id::VARCHAR, '|')
