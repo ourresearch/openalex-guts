@@ -148,6 +148,7 @@ schemas = {
         ("publisher_id", "BIGINT"),
         ("display_name", "VARCHAR(65535)"),
         ("country_code", "VARCHAR(500)"),
+        ("parent_publisher", "BIGINT"),
     ],
     "ror": [
         ("ror_id", "VARCHAR(500)"),
