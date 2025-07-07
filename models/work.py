@@ -2076,6 +2076,19 @@ class Work(db.Model):
         return False
 
     @property
+    def is_bad_ssrn_abstract(self):
+        BAD_SSRN_PHRASE = 'download this paper open pdf in browser'
+
+        if ('ssrn.' in self.doi.lower() and
+                self.abstract and
+                self.abstract.abstract and
+                self.abstract.abstract.lower().startswith(BAD_SSRN_PHRASE)):
+            logger.info(f"Bad SSRN abstract found for {self.paper_id} ({self.doi})")
+            return True
+
+        return False
+
+    @property
     def is_manual_closed(self):
         for record in self.records_sorted:
             if record.record_type == 'override' and not record.is_oa:
@@ -2358,7 +2371,7 @@ class Work(db.Model):
             my_dict['authorships'] = my_dict.get('authorships', [])[0:100]
             my_dict['authorships_truncated'] = True
 
-        if self.is_closed_springer_or_elsevier:
+        if self.is_closed_springer_or_elsevier or self.is_bad_ssrn_abstract:
             logger.info(f"not saving abstract for {self.paper_id} {self.doi}")
             my_dict.pop('abstract', None)
             my_dict["abstract_inverted_index"] = None
