@@ -2079,7 +2079,7 @@ class Work(db.Model):
     def is_bad_ssrn_abstract(self):
         BAD_SSRN_PHRASE = 'download this paper open pdf in browser'
 
-        if ('ssrn.' in self.doi.lower() and
+        if self.doi and ('ssrn.' in self.doi.lower() and
                 self.abstract and
                 self.abstract.abstract and
                 self.abstract.abstract.lower().startswith(BAD_SSRN_PHRASE)):
