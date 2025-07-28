@@ -185,7 +185,7 @@ del BG_CYR_TO_LAT_DICT[u"ы"]
 del BG_CYR_TO_LAT_DICT[u"Э"]
 del BG_CYR_TO_LAT_DICT[u"э"]
 
-# Some letters that are pronounced diferently
+# Some letters that are pronounced differently
 BG_CYR_TO_LAT_DICT[u"Й"] = u"Y"
 BG_CYR_TO_LAT_DICT[u"й"] = u"y"
 BG_CYR_TO_LAT_DICT[u"Ц"] = u"TS"

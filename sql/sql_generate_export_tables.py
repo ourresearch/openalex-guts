@@ -84,7 +84,7 @@ def parse_view_name(raw_header):
             logging.error(f'Cannot parse table_name out for following query: {raw_header}')
             raise ValueError(f'Cannot parse table_name out for following query: {raw_header}')
         else:
-            # in case of view_name retrival, return it out of function
+            # in case of view_name retrieval, return it out of function
             return re.search(f'{VIEW_TABLENAME_REGEXP}', raw_header, re.IGNORECASE).group(REG_GROUP_TABLE_NAME)
 
 # ---------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ def parse_view_name(raw_header):
 def parse_view_comment(raw_header):
     # check if header has view comment inside
     if re.match(f'{VIEW_TABLENAME_REGEXP}', raw_header, re.IGNORECASE):
-        # if comment retrival failed, then logg err and raise it
+        # if comment retrieval failed, then logg err and raise it
         if not re.search(f'{VIEW_COMMENT_REGEXP}', raw_header, re.IGNORECASE).group(REG_GROUP_COMMENT):
             logging.error(f'Cannot parse comment out for following query: {raw_header}')
             raise ValueError(f'Cannot parse comment out for following query: {raw_header}')
@@ -110,11 +110,11 @@ class view:
         # log start and save basic variable passed by function
         logging.info(f'Starting creation of view with object number: \'{view_number}\'')
         self.raw_header = raw_header
-        # parse view name nd log it
+        # parse view name and log it
         self.view_name = parse_view_name(raw_header)
         logging.info(
             f'View name \'{self.view_name}\' extracted for following header: \'{raw_header}\' (view with object number: \'{view_number}\')')
-        # parse view comment nd log it
+        # parse view comment and log it
         self.view_comment = parse_view_comment(raw_header)
         logging.info(
             f'View comment \'{self.view_comment}\' extracted for following header: \'{raw_header}\' (view with object number: \'{view_number}\')')
@@ -308,9 +308,9 @@ DELIMITER as '\\t';"""
                                 raise ValueError(f'Cannot parse comment for following row: {line}')
                         # If column isn't renamed (using AS notation), then lets just take normal column name
                         else:
-                            # Lets double check that extraction of column name wont fail
+                            # Lets double check that extraction of column name won't fail
                             if re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE):
-                                # Lets double check that extraction of column name wont fail
+                                # Lets double check that extraction of column name won't fail
                                 if re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE).group(REG_COLUMN_NAME_GROUP):
                                     columns.append(re.search(f'{VIEW_COLUMN_NAME}', line, re.IGNORECASE).group(
                                         REG_COLUMN_NAME_GROUP))
@@ -404,7 +404,7 @@ class parser:
 # """)
 
             f.close()
-        # If output file genereation failed, then log error and raise it
+        # If output file generation failed, then log error and raise it
         except:
             logging.error(f'Cannot generate output file {self.output_file_path} !')
             raise ValueError(f'Cannot generate output file {self.output_file_path} !')
