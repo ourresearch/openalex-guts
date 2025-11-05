@@ -197,6 +197,7 @@ TOPICS_INDEX = "topics-v4"
 WORK_TYPES_INDEX = "work-types-v1"
 WORKS_INDEX_PREFIX = "works-v26"
 WORKS_INDEX = f"{WORKS_INDEX_PREFIX}-*,-*invalid-data"
+WORKS_INDEX_WALDEN = 'works-v26'
 
 # endpoint prefixes
 COUNTRIES_ENDPOINT_PREFIX = "https://openalex.org/countries"

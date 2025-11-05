@@ -50,6 +50,7 @@ from app import (
     SUBFIELDS_INDEX,
     TOPICS_INDEX,
     WORKS_INDEX,
+    WORKS_INDEX_WALDEN,
 )
 
 data_dir = os.path.join(os.path.expanduser('~'), 'data', datetime.now().strftime("%Y_%m_%d"))
@@ -62,7 +63,7 @@ es = Elasticsearch([ELASTIC_URL])
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "works": WORKS_INDEX,
+    "works": WORKS_INDEX_WALDEN,
     "authors": AUTHORS_INDEX,
     "concepts": CONCEPTS_INDEX,
     "funders": FUNDERS_INDEX,
@@ -163,10 +164,17 @@ def export_date(args):
                         entity_type == "works"
                         and record.get("abstract_inverted_index")
                 ):
-                    record["abstract_inverted_index"] = json.loads(
-                        record["abstract_inverted_index"]
-                    )
-                    record["abstract_inverted_index"] = record["abstract_inverted_index"].get("InvertedIndex")
+                    try:
+                        record["abstract_inverted_index"] = json.loads(
+                            record["abstract_inverted_index"]
+                        )
+                        record["abstract_inverted_index"] = record["abstract_inverted_index"].get("InvertedIndex")
+                    except json.JSONDecodeError as e:
+                        print(f"ERROR: Failed to parse abstract_inverted_index for record {record_id} (ID: {hit.id})")
+                        print(f"JSON Error: {e}")
+                        print(f"First 1000 chars of problematic JSON: {record.get('abstract_inverted_index', '')[:1000]}")
+                        # Skip the abstract inverted index for this record
+                        record["abstract_inverted_index"] = None
 
                 line = json.dumps(record) + '\n'
                 line_size = len(line.encode('utf-8'))
