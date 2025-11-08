@@ -141,6 +141,10 @@ def export_date(args):
 
         for hit in response:
             record_id = hit.id
+            # Skip records without an ID
+            if record_id is None:
+                print(f"Skipping record without ID in {entity_type} for date {d}")
+                continue
             # convert to integer
             try:
                 record_id = int(record_id.replace(index_id_prefix, ""))
