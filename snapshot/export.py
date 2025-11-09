@@ -56,8 +56,13 @@ from app import (
 data_dir = os.path.join(os.path.expanduser('~'), 'data', datetime.now().strftime("%Y_%m_%d"))
 print(f"data directory is {data_dir}")
 
-# Configure Elasticsearch client
-es = Elasticsearch([ELASTIC_URL])
+# Configure Elasticsearch client with longer timeout
+es = Elasticsearch(
+    [ELASTIC_URL],
+    timeout=60,
+    max_retries=3,
+    retry_on_timeout=True
+)
 
 # Configure redis client
 r = redis.Redis(host='localhost', port=6379, db=2)
