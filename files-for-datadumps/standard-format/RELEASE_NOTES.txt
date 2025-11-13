@@ -1,5 +1,10 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2025-11-12
+- switch to walden dataset which is now available at s3://openalex/data
+- works, authors, institutions, etc are from walden which is the default in the API
+- includes "xpack" records in works, so full works count is 463M
+
 RELEASE 2025-09-30
 - added new works
 
