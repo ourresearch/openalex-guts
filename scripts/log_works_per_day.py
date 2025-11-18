@@ -27,7 +27,7 @@ entities = [
 for e in entities:
 
     yesterday = (
-        datetime.datetime.utcnow().date() - datetime.timedelta(days=1)
+        datetime.datetime.utcnow().date() - datetime.timedelta(days=2)
     ).isoformat()
 
     num_created = requests.get(
@@ -51,7 +51,7 @@ for e in entities:
         # send warning email
         to_address = "dev@ourresearch.org"
         logger.info(f"sending email alert to {to_address}")
-        subject = f"ALERT OpenAlex No Created or Updated Works ({num_created} created, {num_updated} updated yesterday)"
+        subject = f"ALERT OpenAlex No Created or Updated Works ({num_created} created, {num_updated} updated)"
         body = '\n'.join([f'Filtering by created_date:{yesterday}, there were {num_created} works\n',
                 f'Filtering by updated_date:{yesterday}, there were {num_updated} works\n',
                 '\nThis is an automated alert sent out by the `log_works_per_day.py` script if there are either no created works or no updated works.\n',
