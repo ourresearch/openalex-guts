@@ -48,9 +48,7 @@ from app import (
     PUBLISHERS_INDEX,
     SOURCES_INDEX,
     SUBFIELDS_INDEX,
-    TOPICS_INDEX,
-    WORKS_INDEX,
-    WORKS_INDEX_WALDEN,
+    TOPICS_INDEX
 )
 
 data_dir = os.path.join(os.path.expanduser('~'), 'data', datetime.now().strftime("%Y_%m_%d"))
@@ -68,7 +66,6 @@ es = Elasticsearch(
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "works": WORKS_INDEX_WALDEN,
     "authors": AUTHORS_INDEX,
     "concepts": CONCEPTS_INDEX,
     "funders": FUNDERS_INDEX,
