@@ -1,5 +1,9 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2026-01-15
+- multiple data quality improvements in works and authors
+- fix author bug where deprecated authors were assigned to works
+
 RELEASE 2025-11-12
 - switch to walden dataset which is now available at s3://openalex/data
 - works, authors, institutions, etc are from walden which is the default in the API
