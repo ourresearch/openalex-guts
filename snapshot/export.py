@@ -88,7 +88,7 @@ def get_distinct_updated_dates(index_name):
         "aggs": {
             "distinct_dates": {
                 "date_histogram": {
-                    "field": "updated_date",
+                    "field": "created_date",
                     "calendar_interval": "day",  # aggregate into buckets by day
                 }
             }
@@ -112,7 +112,7 @@ def get_distinct_updated_dates(index_name):
 
 def create_search_query(index_name, d, search_after=None):
     page_size = 1000
-    s = Search(using=es, index=index_name).query("term", updated_date=d)
+    s = Search(using=es, index=index_name).query("term", created_date=d)
     s = s.sort(*["id"])
     s = s.source(excludes=['_source', 'embeddings', 'fulltext', 'abstract', 'vector_embedding', 'version', '@version', '@timestamp'])
     if search_after:
