@@ -263,11 +263,16 @@ def make_manifests():
 
 
 if __name__ == "__main__":
-    for entity, index in entities_to_indices.items():
-        start_time = time.time()
-        r.flushdb()
-        export_entity(index, entity)
-        end_time = time.time()
-        print(f"Total time: {end_time - start_time} seconds")
+    # for entity, index in entities_to_indices.items():
+    #     start_time = time.time()
+    #     r.flushdb()
+    #     export_entity(index, entity)
+    #     end_time = time.time()
+    #     print(f"Total time: {end_time - start_time} seconds")
+    start_time = time.time()
+    r.flushdb()
+    export_entity(INSTITUTIONS_INDEX, "institutions")
+    end_time = time.time()
+    print(f"Total time: {end_time - start_time} seconds")
     r.flushdb()
     make_manifests()
