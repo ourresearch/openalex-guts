@@ -106,6 +106,7 @@ def get_distinct_updated_dates(index_name):
 
     # Sort the dates newest to oldest
     dates.sort(reverse=True)
+    print(f"found {len(dates)} distinct dates: {dates[:10]}{'...' if len(dates) > 10 else ''}")
 
     return dates
 
