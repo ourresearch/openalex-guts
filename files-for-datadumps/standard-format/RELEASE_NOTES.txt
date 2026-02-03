@@ -1,5 +1,8 @@
 OPENALEX STANDARD-FORMAT SNAPSHOT RELEASE NOTES
 
+RELEASE 2026-02-03
+- additional data quality improvements in multiple entities
+
 RELEASE 2026-01-15
 - multiple data quality improvements in works and authors
 - fix author bug where deprecated authors were assigned to works
