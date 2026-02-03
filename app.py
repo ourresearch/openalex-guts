@@ -176,6 +176,7 @@ sentry_sdk.init(
 )
 
 # indexes
+AWARDS_INDEX = "awards-v3"
 AUTHORS_INDEX = "authors-v17"
 CONCEPTS_INDEX = "concepts-v8"
 CONTINENTS_INDEX = "continents-v1"

@@ -39,6 +39,7 @@ import redis
 
 from app import ELASTIC_URL
 from app import (
+    AWARDS_INDEX,
     AUTHORS_INDEX,
     CONCEPTS_INDEX,
     DOMAINS_INDEX,
@@ -66,11 +67,10 @@ es = Elasticsearch(
 r = redis.Redis(host='localhost', port=6379, db=2)
 
 entities_to_indices = {
-    "authors": AUTHORS_INDEX,
+    "awards": AWARDS_INDEX,
     "concepts": CONCEPTS_INDEX,
     "funders": FUNDERS_INDEX,
     "institutions": INSTITUTIONS_INDEX,
-    "publishers": PUBLISHERS_INDEX,
     "sources": SOURCES_INDEX,
     "topics": TOPICS_INDEX,
     "domains": DOMAINS_INDEX,
@@ -113,7 +113,7 @@ def get_distinct_updated_dates(index_name):
 def create_search_query(index_name, d, search_after=None):
     page_size = 1000
     s = Search(using=es, index=index_name).query("term", updated_date=d)
-    s = s.sort(*["-cited_by_count", "id"])
+    s = s.sort(*["id"])
     s = s.source(excludes=['_source', 'embeddings', 'fulltext', 'abstract', 'vector_embedding', 'version', '@version', '@timestamp'])
     if search_after:
         s = s.extra(size=page_size, search_after=search_after)
