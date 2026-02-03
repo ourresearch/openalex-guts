@@ -127,7 +127,8 @@ def export_date(args):
     index_name, entity_type, d = args
     max_file_size = 5 * 1024 ** 3  # 5GB uncompressed
     count = 0
-    index_id_prefix = f"https://openalex.org/{entity_type[0].upper()}"
+    prefix_letter = "G" if entity_type == "awards" else entity_type[0].upper()
+    index_id_prefix = f"https://openalex.org/{prefix_letter}"
     date_dir = os.path.join(data_dir, entity_type, f"updated_date={d}")
 
     part_file_number = 0
