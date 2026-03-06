@@ -188,7 +188,7 @@ def override_location_sources(locations):
 
 class OAStatusEnum(IntEnum):
     # we prioritize publisher-hosted versions
-    # see https://docs.openalex.org/api-entities/works/work-object#any_repository_has_fulltext
+    # see https://developers.openalex.org/api-reference/works
     closed = 0
     unknown = 1
     green = 2
